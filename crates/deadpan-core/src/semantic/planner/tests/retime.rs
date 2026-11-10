@@ -304,6 +304,172 @@ fn gain_steps_over_a_visual_range_adjust_one_envelope_of_that_beat() {
 }
 
 #[test]
+fn a_waveform_selection_mutes_or_steps_exact_samples_of_the_selected_beat() {
+    let document = tree(&["a", "b"], vec![("a", hold(3)), ("b", hold(6))]);
+    let rate = document.presentation_basis().frame_rate;
+    // Beat b starts at Edit frame 3; select 7 mix samples that straddle no
+    // frame boundary, starting 101 samples after frame 4 begins.
+    let first = rate.audio_boundary(ProjectFrame(4)).unwrap().0 + 101;
+    let local =
+        crate::GainRange::from_mix_samples(rate, ProjectFrame(3), first, first + 7).unwrap();
+    let per_sample = ExactRatio::new(
+        i128::from(rate.numerator()),
+        i128::from(rate.denominator()) * 48_000,
+    )
+    .unwrap();
+    assert_eq!(
+        local.end().checked_sub(local.start()).unwrap(),
+        ExactRatio::integer(7).checked_mul(per_sample).unwrap(),
+        "seven samples long, not a whole frame"
+    );
+    assert!(local.start().compare_integer(1).is_gt() && local.end().compare_integer(2).is_lt());
+    let mute = SemanticInstruction::SetAudio {
+        change: AudioChange::SampleRangeMute {
+            start: local.start(),
+            end: local.end(),
+        },
+    };
+    let planned = plan(
+        &document,
+        selected("b", 3),
+        vec![mute.clone()],
+        &BTreeMap::new(),
+    )
+    .unwrap();
+    let clip = planned.document.nodes()[&node("b")]
+        .audio_treatments
+        .clip_gain()
+        .unwrap()
+        .clone();
+    assert_eq!(clip.mute_ranges(), &[local]);
+    let sample_at = |n: i64| {
+        ExactRatio::integer(n)
+            .checked_mul(per_sample)
+            .unwrap()
+            .checked_sub(ExactRatio::integer(3))
+            .unwrap()
+    };
+    // Exactly samples [first, first + 7) are muted, by their own positions.
+    for n in first - 2..first + 9 {
+        assert_eq!(
+            clip.evaluate(sample_at(n)).unwrap().muted,
+            (first..first + 7).contains(&n),
+            "sample {n}"
+        );
+    }
+    assert_eq!(
+        planned.trace[0].resolved_selection,
+        Some(SliceCaptureSelection::Child { node: node("b") })
+    );
+    replays_and_reverts(&document, &planned);
+    // Muting the same range again is no edit.
+    assert!(
+        plan(
+            &document,
+            selected("b", 3),
+            vec![mute.clone(), mute.clone()],
+            &BTreeMap::new()
+        )
+        .is_err()
+    );
+    // The selection must be inside the beat, needs a selected beat and
+    // refuses a frame Visual range.
+    let outside =
+        crate::GainRange::from_mix_samples(rate, ProjectFrame(3), first, first + 48_000).unwrap();
+    let too_long = SemanticInstruction::SetAudio {
+        change: AudioChange::SampleRangeMute {
+            start: outside.start(),
+            end: outside.end(),
+        },
+    };
+    assert!(
+        plan(
+            &document,
+            selected("b", 3),
+            vec![too_long],
+            &BTreeMap::new()
+        )
+        .is_err()
+    );
+    assert!(
+        plan(
+            &document,
+            context("root", 3),
+            vec![mute.clone()],
+            &BTreeMap::new()
+        )
+        .is_err()
+    );
+    assert!(plan(&document, ranged(4, 6), vec![mute], &BTreeMap::new()).is_err());
+    // A step adds one constant envelope over the same exact samples; a
+    // second press adjusts it and the opposite step removes it.
+    let step = |millidecibels| SemanticInstruction::SetAudio {
+        change: AudioChange::SampleRangeStep {
+            start: local.start(),
+            end: local.end(),
+            millidecibels,
+        },
+    };
+    let planned = plan(
+        &document,
+        selected("b", 3),
+        vec![step(-6_000), step(-6_000)],
+        &BTreeMap::new(),
+    )
+    .unwrap();
+    let clip = planned.document.nodes()[&node("b")]
+        .audio_treatments
+        .clip_gain()
+        .unwrap()
+        .clone();
+    assert_eq!(clip.range_step(local), Some(GainDb::new(-12_000).unwrap()));
+    for n in first - 2..first + 9 {
+        let expected = if (first..first + 7).contains(&n) {
+            -12_000
+        } else {
+            0
+        };
+        assert_eq!(
+            clip.evaluate(sample_at(n)).unwrap().millidecibels,
+            ExactRatio::integer(expected),
+            "sample {n}"
+        );
+    }
+    replays_and_reverts(&document, &planned);
+    let planned = plan(
+        &document,
+        selected("b", 3),
+        vec![step(3_000), step(-3_000), mute_and_wire_round_trip(local)],
+        &BTreeMap::new(),
+    )
+    .unwrap();
+    assert_eq!(
+        planned.document.nodes()[&node("b")]
+            .audio_treatments
+            .clip_gain()
+            .unwrap()
+            .envelopes(),
+        &[],
+        "a step back to 0 dB removes its envelope"
+    );
+}
+
+/// A sample-range instruction survives its JSON wire exactly.
+fn mute_and_wire_round_trip(local: crate::GainRange) -> SemanticInstruction {
+    let instruction = SemanticInstruction::SetAudio {
+        change: AudioChange::SampleRangeMute {
+            start: local.start(),
+            end: local.end(),
+        },
+    };
+    let wire = serde_json::to_string(&instruction).unwrap();
+    assert!(wire.contains("sample_range_mute"), "{wire}");
+    let back: SemanticInstruction = serde_json::from_str(&wire).unwrap();
+    assert_eq!(back, instruction);
+    back
+}
+
+#[test]
 fn a_caption_over_a_visual_range_lands_on_that_range_of_its_beat() {
     let document = tree(&["a", "b"], vec![("a", hold(3)), ("b", hold(6))]);
     let caption = |delay: Option<u32>| SemanticInstruction::SetCaption {

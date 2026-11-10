@@ -419,6 +419,13 @@ impl DeadpanApp {
         });
     }
 
+    /// Release the shared Edit waveform slot to another owner; the strip
+    /// measures again when it is next drawn.
+    pub(super) fn timing_ticket_take(&mut self) -> Option<WaveformTicket> {
+        self.timing.key = None;
+        self.timing.ticket.take()
+    }
+
     fn cancel_timing_waveform(&mut self) {
         if let Some(ticket) = self.timing.ticket.take() {
             self.playback.cancel_waveform(ticket);
@@ -451,7 +458,7 @@ impl DeadpanApp {
     /// Ask for the window's waveform when it changed. Trim and the room-tone
     /// sheet share the engine's one Edit waveform slot and take precedence.
     fn request_timing_waveform(&mut self, frames: &Range<i64>) {
-        if self.trim.is_some() || self.room_tone.is_some() {
+        if self.trim.is_some() || self.room_tone.is_some() || self.wave.is_some() {
             self.timing.ticket = None;
             self.timing.key = None;
             return;
@@ -500,6 +507,7 @@ impl DeadpanApp {
         if self.timing.mode == TimelineMode::Story
             || self.trim.is_some()
             || self.room_tone.is_some()
+            || self.wave.is_some()
         {
             return;
         }

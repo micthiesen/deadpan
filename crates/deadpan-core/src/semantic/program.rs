@@ -772,6 +772,23 @@ pub enum AudioChange {
     /// range, and a whole-beat step refuses one, so `.` never turns one into
     /// the other.
     RangeStep { millidecibels: i32 },
+    /// Mute exactly a waveform selection inside the selected beat. `start`
+    /// and `end` are the beat's own output-clock frames, exact ratios that
+    /// fall on 48 kHz mix samples rather than whole frames
+    /// (`GainRange::from_mix_samples`). `.` mutes the same span of the newly
+    /// selected beat.
+    SampleRangeMute {
+        start: crate::ExactRatio,
+        end: crate::ExactRatio,
+    },
+    /// Change the constant step envelope over exactly a waveform selection
+    /// inside the selected beat, in the same exact owner frames as
+    /// `SampleRangeMute`.
+    SampleRangeStep {
+        start: crate::ExactRatio,
+        end: crate::ExactRatio,
+        millidecibels: i32,
+    },
     /// Set the saturation drive, or remove the stage (`:saturate`).
     Saturation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -791,6 +808,16 @@ pub enum AudioChange {
 }
 
 impl AudioChange {
+    /// The exact owner-frame span of a waveform selection change.
+    pub fn sample_range(self) -> Option<(crate::ExactRatio, crate::ExactRatio)> {
+        match self {
+            Self::SampleRangeMute { start, end } | Self::SampleRangeStep { start, end, .. } => {
+                Some((start, end))
+            }
+            _ => None,
+        }
+    }
+
     /// The beat's treatments after this change.
     pub fn apply(
         self,
@@ -809,6 +836,16 @@ impl AudioChange {
                 current.with_clip_gain_or_none(clip().adjust_trim(millidecibels)?)
             }
             Self::RangeStep { .. } => Err(crate::GainError::TimeRange),
+            Self::SampleRangeMute { start, end } => current.with_clip_gain_or_none(
+                clip().with_mute_range(crate::GainRange::new(start, end)?)?,
+            ),
+            Self::SampleRangeStep {
+                start,
+                end,
+                millidecibels,
+            } => current.with_clip_gain_or_none(
+                clip().adjust_range(crate::GainRange::new(start, end)?, millidecibels)?,
+            ),
             Self::Saturation { drive } => {
                 current.with_saturation(drive.map(crate::Saturation::new).transpose()?)
             }

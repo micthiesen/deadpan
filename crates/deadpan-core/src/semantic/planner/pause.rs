@@ -584,6 +584,9 @@ where
         if let Some(scoped) = self.context.scoped.clone() {
             return self.set_scoped_gain(trace_index, change, scoped);
         }
+        if let Some((start, end)) = change.sample_range() {
+            return self.set_sample_range_audio(trace_index, change, start, end);
+        }
         let ranged = self.context.visual_selection.is_some();
         let range_step = match change {
             crate::AudioChange::RangeStep { millidecibels } => Some(millidecibels),
@@ -625,6 +628,79 @@ where
         if &treatments == current {
             return Err(invalid(
                 "the beat already has that gain and saturation; no edit was made",
+            ));
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("an audio change requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        let edit = LeafEdit::new(
+            new_revision,
+            Command::SetAudioTreatments {
+                node: selected.clone(),
+                treatments,
+            },
+        )?;
+        self.commit_leaf(edit)?;
+        self.finish_beat_span(trace_index, selected, local)
+    }
+
+    /// A waveform selection's mute or gain step: the selected direct child,
+    /// over exact owner frames that must lie inside its current duration.
+    /// The selection is its own range, so a frame Visual range refuses.
+    fn set_sample_range_audio(
+        &mut self,
+        trace_index: usize,
+        change: crate::AudioChange,
+        start: ExactRatio,
+        end: ExactRatio,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid(
+                "clear the Visual selection; a waveform selection carries its own exact range",
+            ));
+        }
+        let (selected, local) = self.beat_span(
+            "select the beat containing the waveform selection first",
+            "a waveform selection stays inside one beat",
+        )?;
+        // The beat owns the mix samples its rounded boundaries allocate,
+        // which can start a fraction of a sample before its exact first frame.
+        let index = self.child_indices[&selected];
+        let first = index
+            .checked_sub(1)
+            .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
+        let rate = self.current.presentation_basis().frame_rate;
+        let boundary = |frame: ProjectFrame| {
+            rate.audio_boundary(frame)
+                .map(|sample| sample.0)
+                .map_err(|_| invalid("the beat's audio boundary overflows"))
+        };
+        let owned = crate::GainRange::from_mix_samples(
+            rate,
+            first,
+            boundary(first)?,
+            boundary(ProjectFrame(first.0 + local.end))?,
+        );
+        let inside = owned.is_ok_and(|owned| {
+            !start.compare(owned.start()).is_lt() && !end.compare(owned.end()).is_gt()
+        });
+        if !inside || !start.compare(end).is_lt() {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the waveform selection must be nonempty and inside one beat",
+            ));
+        }
+        let current = &self.current.nodes()[&selected].audio_treatments;
+        let treatments = change.apply(current).map_err(crate::audio_gain::invalid)?;
+        if &treatments == current {
+            return Err(invalid(
+                "that waveform range is already muted; no edit was made",
             ));
         }
         self.charge_step(false)?;

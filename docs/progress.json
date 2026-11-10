@@ -2347,7 +2347,7 @@
               "docs/AUDIO_GAIN.md",
               "docs/SECTION8_COVERAGE.md selective emphasis/sudden silence"
             ],
-            "remaining": "Frame-based automation and mute work; sample-resolution click/syllable ranges and waveform range editing remain absent.",
+            "remaining": "Exact-sample mute and gain-step ranges and keyboard/pointer waveform range editing (:wave) work for a beat of the current group; ranges inside one Repeat play, ranges spanning beats, curved envelopes drawn from a waveform selection and listening qualification remain open.",
             "normative": "8.3,4.5"
           },
           {

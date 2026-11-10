@@ -92,6 +92,7 @@ mod terminal_playback;
 mod transcript;
 mod trim;
 mod wake;
+mod wave_range;
 mod wet_returns;
 mod word_refinement;
 mod youtube;
@@ -621,6 +622,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     room_tone::run(&mut driver)
                 } else if name == "room-tone-gaps" {
                     room_tone::gaps(&mut driver)
+                } else if name == "wave-range" {
+                    wave_range::run(&mut driver)
                 } else if name == "gain" {
                     gain::run(&mut driver)
                 } else if name == "ai-pause" {
@@ -1130,6 +1133,7 @@ impl Driver<'_> {
                 "source":prepared.source,"duration_samples":prepared.audition.duration_samples().0,
             })),
         })));
+        snapshot["wave"] = json!(app.wave.as_ref().map(|wave| wave.state_for_check()));
         snapshot["splice"] = splice::state(self);
         snapshot["slip"] = slip::state(self);
         snapshot["trim"] = trim::state(self);

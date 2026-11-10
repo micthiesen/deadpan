@@ -631,11 +631,14 @@ pub(super) fn audio_change_text(change: deadpan_core::AudioChange) -> String {
     use deadpan_core::AudioChange;
     match change {
         AudioChange::Trim { gain } => format!("Gain set to {} dB", crate::gain::format_db(gain)),
-        AudioChange::Step { millidecibels } | AudioChange::RangeStep { millidecibels } => {
-            let scope = if matches!(change, AudioChange::RangeStep { .. }) {
-                "Range gain"
-            } else {
-                "Gain"
+        AudioChange::SampleRangeMute { .. } => "Waveform range muted".into(),
+        AudioChange::Step { millidecibels }
+        | AudioChange::RangeStep { millidecibels }
+        | AudioChange::SampleRangeStep { millidecibels, .. } => {
+            let scope = match change {
+                AudioChange::RangeStep { .. } => "Range gain",
+                AudioChange::SampleRangeStep { .. } => "Waveform range gain",
+                _ => "Gain",
             };
             let sign = if millidecibels < 0 { "-" } else { "+" };
             let magnitude = millidecibels.unsigned_abs();

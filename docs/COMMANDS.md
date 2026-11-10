@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-228 actions, 150 command verbs.
+234 actions, 151 command verbs.
 
 ## Start & View
 
@@ -150,6 +150,7 @@ Headless status links to [PARITY](PARITY.md).
 | --- | --- | --- | --- | --- | --- |
 | **Gain steps and trim** (`gain.step`)<br>Change the selected beat by 3 dB per count, or only the Edit range inside it (a constant step over exactly that range), or enter an exact absolute trim with :gain +6dB or a signed change with :gain +=3dB. :gain +3dB range=4-10 steps exactly those local frames. Bare :gain opens the Gain draft. Inside Repeat contents, recording and dot accept whole-beat steps and literal trims with This play at every level and no Visual range. Steps use the new owner's gain; trims retain their exact value. Existing envelopes stay intact. Placed sounds take precedence when focused; Original and catalog focus never change a beat. | `+` (`gain.up`), `-` (`gain.down`) | `:gain +3dB \| +=3dB \| mute \| +3dB range=4-10` | Your edit (Normal and Visual), Placed sounds, Repeat contents | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction` |
 | **Mute** (`gain.mute`)<br>The key mutes a Visual range inside the selected beat, or toggles the whole beat's mute without a range. :gain-mute always toggles the whole beat. Recording and dot in Repeat contents require This play at every level and no Visual range; they retain the chosen mute or unmute state and apply it without toggling. The beat keeps its timing; one Undo. | `,m` (`gain.mute`) | `:gain-mute` | Your edit (Normal and Visual), Repeat contents | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (mute)` |
+| **Waveform range (exact samples)** (`wave`)<br>Open the measured Edit mix around the cursor and select exact 48 kHz samples, finer than a frame: for a click, a breath or one syllable. Inside the sheet h/l move the selection's moving end one frame, Shift+h/l 1 ms and [ / ] one sample; Space auditions the selection and m mutes exactly those samples of the beat containing them, while + and - change their gain by 3 dB. Each change is one Undo, recorded in macros, and . repeats it at the same position inside the newly selected beat. A selection must stay inside one beat of the current group. | - | `:wave` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (sample_range_mute, sample_range_step)` |
 | **Saturation** (`saturate`)<br>Drive the selected beat's sound into a soft clipper (tanh, 0 to 24 dB of drive), normally after its clip gain and before the master limiter, as intentional distortion; off removes it. Recording and dot inside Repeat contents require This play at every level and no Visual range, retaining the chosen drive or removal. Other treatments and authored stage order stay intact. One Undo. | - | `:saturate 12dB \| off` | Your edit, Repeat contents | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (saturation)` |
 | **Stereo balance** (`balance`)<br>Balance the selected beat's stereo sound: negative is left, positive is right, and center removes the stage. The favored channel stays unchanged; the opposite channel fades linearly to silence at 100%. Balance follows gain and saturation, before the master limiter. Recording and dot inside Repeat contents require This play at every level and no Visual range. Other treatments stay intact. One Undo; dot and macros retain the chosen value. | - | `:balance -50% \| +50% \| left \| right \| center` | Your edit, Repeat contents | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (balance)` |
 | **EQ and filters** (`equalizer`)<br>Bare :eq opens an unsaved EQ editor with Before/Draft audition. Set bass, middle and treble within -24 to +24 dB, and optional low/high cuts from 80 to 20000 Hz. A typed recipe supplies all three bands; omitted cuts are off. :eq off removes only EQ. Whole-beat typed recipes support dot and macros; inside Repeat contents they require This play at every level and no Visual range, retaining the complete chosen recipe or removal. The interactive draft is separate. Time, other treatments and authored order stay intact. One Undo. | - | `:eq \| bass=3dB middle=-6dB treble=0dB [low-cut=80Hz] [high-cut=12000Hz] \| off` | Your edit, Repeat contents | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (equalizer)` |
@@ -301,6 +302,16 @@ Headless status links to [PARITY](PARITY.md).
 | **Audition room tone** (`room-tone.audition`)<br>Space auditions the exact source samples; Shift+Space loops them. Field edits revoke audition until prepared again. | `Space / Shift+Space` (fixed) | - | Room tone | not recorded | [GUI-only](PARITY.md#holds-pauses-and-punctuation): `none needed` |
 | **Apply room tone** (`room-tone.apply`)<br>Apply the prepared range to the pause as one undoable edit. Tab / Shift+Tab move through controls. | `Enter` (fixed) | - | Room tone | recorded in macros | [Equivalent](PARITY.md#holds-pauses-and-punctuation): `command set_hold_audio or set_repeat_gap_audio, or set_room_tone instruction` |
 | **Cancel room tone** (`room-tone.cancel`)<br>Discard the draft. | `Esc` (fixed) | - | Room tone | not recorded | [GUI-only](PARITY.md#holds-pauses-and-punctuation): `none needed` |
+
+## Waveform Range
+
+| Action | Keys | Command | Where | Macro / dot | Headless |
+| --- | --- | --- | --- | --- | --- |
+| **Select samples** (`wave.select`)<br>h/l (or the arrows) move the selection's moving end one frame, landing on that frame's exact mix boundary; Shift moves it 1 ms (48 samples) and [ / ] one sample. z snaps it to the nearest zero crossing of the measured mix; o swaps the ends; v starts a new selection at the moving end. Dragging on the waveform selects too. | `h/l · Shift+h/l · [/] · z · o · v` (fixed) | - | Waveform range | not recorded | [GUI-only](PARITY.md#audio-and-gain): `selection is native; the change carries exact owner frames` |
+| **Audition the selection** (`wave.audition`)<br>Play exactly the selected samples of the Edit mix once, or stop. | `Space` (fixed) | - | Waveform range | not recorded | [GUI-only](PARITY.md#audio-and-gain): `none needed` |
+| **Mute the selection** (`wave.mute`)<br>Mute exactly the selected samples of the beat containing them: a hard cut to silence with no fade. One Undo; recorded and repeatable with dot. | `m` (fixed) | - | Waveform range | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (sample_range_mute)` |
+| **Gain of the selection** (`wave.gain`)<br>Change exactly the selected samples by 3 dB: one constant step envelope over that range of the beat, adjusted by later presses and removed at 0 dB. One Undo each. | `+ / -` (fixed) | - | Waveform range | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (sample_range_step)` |
+| **Close the waveform range** (`wave.close`)<br>Close the sheet. Applied changes stay; the selection is not saved. | `Esc` (fixed) | - | Waveform range | not recorded | [GUI-only](PARITY.md#audio-and-gain): `none needed` |
 
 ## Gain And Eq Draft
 
@@ -1377,5 +1388,6 @@ Acts on the selected beat.
 - `:track-cancel` acts on this project.
 - `:undo` acts on this project.
 - `:ungroup` acts on the selected beat.
+- `:wave` acts on the selected beat.
 - `:yank` acts on the Visual range, else the selected beat.
 - `:youtube` acts on this project.

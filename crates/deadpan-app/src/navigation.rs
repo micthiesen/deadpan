@@ -44,6 +44,7 @@ pub mod slip;
 mod sound;
 pub mod splice;
 pub mod trim;
+pub mod wave_range;
 pub mod youtube;
 pub mod zoom;
 pub use sound::SoundAction;

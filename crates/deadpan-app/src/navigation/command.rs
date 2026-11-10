@@ -111,6 +111,9 @@ pub enum Entry {
     Slip(i64),
     Trim(super::trim::TrimInput),
     RoomTone,
+    /// `:wave`: select exact mix samples on the Edit waveform and mute or
+    /// change the gain of exactly that range.
+    WaveRange,
     /// `:correct`: correct the Original's transcript words and pauses.
     Correct,
     HoldSilence,
@@ -1107,6 +1110,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "source" | "sequence" | "help" | "registers" | "renders" | "takes" | "splice"
         | "room-tone" | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics"
         | "correct" | "storage" | "backups" | "portable-copy" | "jobs" | "sound-relink"
+        | "wave"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
@@ -1125,6 +1129,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 "portable-copy" => Entry::PortableCopy,
                 "splice" => Entry::Splice,
                 "room-tone" => Entry::RoomTone,
+                "wave" => Entry::WaveRange,
                 "correct" => Entry::Correct,
                 "hold-silence" => Entry::HoldSilence,
                 _ => Entry::Help,
@@ -1132,7 +1137,8 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         }
         "source" | "sequence" | "help" | "registers" | "renders" | "takes" | "splice"
         | "room-tone" | "hold-silence" | "relink" | "recovery" | "models" | "diagnostics"
-        | "correct" | "storage" | "backups" | "portable-copy" | "jobs" | "sound-relink" => {
+        | "correct" | "storage" | "backups" | "portable-copy" | "jobs" | "sound-relink"
+        | "wave" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -2288,6 +2294,7 @@ mod tests {
             ("close", Entry::Close),
             ("help", Entry::Help),
             ("room-tone", Entry::RoomTone),
+            (":wave", Entry::WaveRange),
             (":correct", Entry::Correct),
             (":HOLD-SILENCE", Entry::HoldSilence),
             (" : ", Entry::Empty),

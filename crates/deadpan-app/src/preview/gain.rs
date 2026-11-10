@@ -1411,6 +1411,14 @@ impl DeadpanApp {
             {
                 self.gain_command(Some(Ok(target.clone())), None, ui.ctx());
             }
+            if ui
+                .add(style::row_action(ui, "Waveform range…", ":wave"))
+                .on_hover_text("Select exact samples (a click, a breath) and mute or step them")
+                .reveal_on_focus()
+                .clicked()
+            {
+                self.open_wave_range(ui.ctx());
+            }
         });
         ui.weak(format!(
             "{} envelopes · {} mute ranges. Placed sounds keep their own gain.",

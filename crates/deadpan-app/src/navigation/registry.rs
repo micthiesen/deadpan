@@ -57,6 +57,8 @@ impl Contexts {
     /// The shared default gap row after one play in Repeat contents. It
     /// takes only gap edits and navigation, so contents actions do not apply.
     pub const SHARED_GAP: Self = Self(1 << 20);
+    /// The waveform range sheet (`:wave`).
+    pub const WAVE: Self = Self(1 << 21);
     pub const YOUR_EDIT: Self = Self::EDIT.or(Self::VISUAL);
     pub const TIMELINE: Self = Self::ORIGINAL.or(Self::YOUR_EDIT);
     /// Every editor context: the command line, Help and native menus.
@@ -67,7 +69,7 @@ impl Contexts {
         .or(Self::SHARED_GAP);
     pub const ANYWHERE: Self = Self::EDITOR.or(Self::NO_PROJECT);
 
-    const NAMES: [(Self, &'static str); 21] = [
+    const NAMES: [(Self, &'static str); 22] = [
         (Self::ORIGINAL, "Original"),
         (Self::EDIT, "Your edit"),
         (Self::VISUAL, "Visual"),
@@ -80,6 +82,7 @@ impl Contexts {
         (Self::SLIP, "Slip"),
         (Self::SPLICE, "Place slice"),
         (Self::ROOM_TONE, "Room tone"),
+        (Self::WAVE, "Waveform range"),
         (Self::GAIN, "Gain draft"),
         (Self::CORRECTIONS, "Corrections"),
         (Self::MARKS, "Marks"),
@@ -139,6 +142,7 @@ pub enum Mode {
     Slip,
     Splice,
     RoomTone,
+    Wave,
     Gain,
     Corrections,
     Marks,
@@ -151,12 +155,13 @@ pub enum Mode {
 
 impl Mode {
     #[cfg(test)]
-    pub const ALL: [Self; 12] = [
+    pub const ALL: [Self; 13] = [
         Self::Camera,
         Self::Trim,
         Self::Slip,
         Self::Splice,
         Self::RoomTone,
+        Self::Wave,
         Self::Gain,
         Self::Corrections,
         Self::Marks,
@@ -174,6 +179,7 @@ impl Mode {
             Self::Slip => Contexts::SLIP,
             Self::Splice => Contexts::SPLICE,
             Self::RoomTone => Contexts::ROOM_TONE,
+            Self::Wave => Contexts::WAVE,
             Self::Gain => Contexts::GAIN,
             Self::Corrections => Contexts::CORRECTIONS,
             Self::Marks => Contexts::MARKS,
@@ -338,6 +344,7 @@ pub enum Section {
     Slip,
     Splice,
     RoomTone,
+    Wave,
     GainDraft,
     Corrections,
     Marks,
@@ -348,7 +355,7 @@ pub enum Section {
 }
 
 impl Section {
-    pub const ALL: [Self; 27] = [
+    pub const ALL: [Self; 28] = [
         Self::Start,
         Self::Move,
         Self::Select,
@@ -369,6 +376,7 @@ impl Section {
         Self::Slip,
         Self::Splice,
         Self::RoomTone,
+        Self::Wave,
         Self::GainDraft,
         Self::Corrections,
         Self::Marks,
@@ -400,6 +408,7 @@ impl Section {
             Self::Slip => "SLIP PREVIEW",
             Self::Splice => "PLACE SLICE",
             Self::RoomTone => "ROOM TONE SHEET",
+            Self::Wave => "WAVEFORM RANGE",
             Self::GainDraft => "GAIN AND EQ DRAFT",
             Self::Corrections => "TRANSCRIPT CORRECTIONS",
             Self::Marks => "MARKS PANEL",

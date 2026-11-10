@@ -59,6 +59,14 @@ pub(super) struct Capture {
 }
 
 impl Capture {
+    /// The same capture with `child` as the explicit selected beat and no
+    /// Visual selection: a waveform range names its beat by its samples.
+    pub(super) fn for_child(mut self, child: NodeId) -> Self {
+        self.context.selected_child = Some(child);
+        self.context.visual_selection = None;
+        self
+    }
+
     fn has_scoped_continuation(&self) -> bool {
         self.context.scoped.is_some() || self.has_duration_authority()
     }

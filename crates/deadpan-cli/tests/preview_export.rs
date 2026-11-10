@@ -354,6 +354,75 @@ fn stereo_balance_keeps_channels_through_limited_preview_and_render() -> Result 
     Ok(())
 }
 
+/// Authored-bus stereo samples `[start, end)` read 256 at a time.
+fn authored_bus(package: &std::path::Path, start: i64, end: i64) -> Result<Vec<[f64; 2]>> {
+    let path = package.to_str().ok_or("UTF-8")?;
+    let mut samples = Vec::new();
+    let mut at = start;
+    while at < end {
+        let to = (at + 256).min(end);
+        let audio = success(&[
+            "inspect-audio",
+            path,
+            "--samples",
+            &at.to_string(),
+            &to.to_string(),
+            "--authored-bus",
+        ])?;
+        for pair in audio["audio"]["samples"].as_array().ok_or("samples")? {
+            samples.push([
+                pair[0].as_f64().ok_or("left")?,
+                pair[1].as_f64().ok_or("right")?,
+            ]);
+        }
+        at = to;
+    }
+    assert_eq!(samples.len() as i64, end - start);
+    Ok(samples)
+}
+
+#[test]
+fn a_waveform_sample_range_mutes_and_steps_exactly_those_samples() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let baseline = recipes::sample_range_baseline(&root.join("baseline"))?;
+    let edited = recipes::sample_range(&root.join("edited"))?;
+    let factor = 10.0_f64.powf(-12.0 / 20.0);
+    for ((first, end), scale) in [(recipes::SAMPLE_MUTE, 0.0), (recipes::SAMPLE_STEP, factor)] {
+        // Both edges with 300 samples of context, decoded and compared sample
+        // by sample against the unedited project.
+        for (from, to) in [(first - 300, first + 300), (end - 300, end + 300)] {
+            let before = authored_bus(&baseline.package, from, to)?;
+            let after = authored_bus(&edited.package, from, to)?;
+            let mut audible = 0;
+            for (offset, (old, new)) in before.iter().zip(&after).enumerate() {
+                let sample = from + offset as i64;
+                if (first..end).contains(&sample) {
+                    for channel in 0..2 {
+                        let expected = old[channel] * scale;
+                        assert!(
+                            (new[channel] - expected).abs() <= 1e-6 * old[channel].abs().max(1e-9),
+                            "sample {sample} channel {channel}: {} became {}, expected {expected}",
+                            old[channel],
+                            new[channel]
+                        );
+                    }
+                    if scale == 0.0 {
+                        assert_eq!(new, &[0.0, 0.0], "sample {sample} is exact silence");
+                    }
+                } else {
+                    assert_eq!(
+                        old, new,
+                        "sample {sample} outside the selection is unchanged"
+                    );
+                }
+                audible += usize::from(old[0].abs() > 1e-4);
+            }
+            assert!(audible > 50, "the compared window carries sound: {audible}");
+        }
+    }
+    Ok(())
+}
+
 #[test]
 fn stored_equalizer_changes_preview_and_matches_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);

@@ -59,7 +59,7 @@ use eframe::egui::{Key, Modifiers};
 
 use super::super::editor_map::{Compiled, KeyMode};
 use super::super::{BindingId, EditSelection, RoutingDomain, camera, panels};
-use super::super::{corrections, gain, room_tone, slip, splice, trim};
+use super::super::{corrections, gain, room_tone, slip, splice, trim, wave_range};
 use super::{Contexts, KeyLabels, Keys, Mode, SPECS, VERBS};
 
 struct Shipped(Compiled);
@@ -274,6 +274,9 @@ fn routes(mode: Mode, key: Key, modifiers: Modifiers) -> bool {
             Mode::RoomTone => {
                 room_tone::route_key(key, modifiers, first, second, ime, repeat).is_some()
             }
+            Mode::Wave => {
+                wave_range::route_key(key, modifiers, first, second, ime, repeat).is_some()
+            }
             Mode::Gain => gain::route_key(key, modifiers, first, second, ime, repeat).is_some(),
             Mode::Corrections => {
                 corrections::route_key(key, modifiers, first, second, ime, repeat).is_some()
@@ -343,6 +346,16 @@ fn owner_of(mode: Mode, key: Key, modifiers: Modifiers, flags: [bool; 4]) -> Opt
             room_tone::RoomToneKey::Play | room_tone::RoomToneKey::Loop => "room-tone.audition",
             room_tone::RoomToneKey::Apply => "room-tone.apply",
             room_tone::RoomToneKey::Cancel => "room-tone.cancel",
+        },
+        Mode::Wave => match wave_range::route_key(key, modifiers, first, second, ime, repeat)? {
+            wave_range::WaveKey::Move(_)
+            | wave_range::WaveKey::ZeroCrossing
+            | wave_range::WaveKey::Swap
+            | wave_range::WaveKey::Restart => "wave.select",
+            wave_range::WaveKey::Play => "wave.audition",
+            wave_range::WaveKey::Mute => "wave.mute",
+            wave_range::WaveKey::Gain { .. } => "wave.gain",
+            wave_range::WaveKey::Close => "wave.close",
         },
         Mode::Gain => match gain::route_key(key, modifiers, first, second, ime, repeat)? {
             gain::GainKey::Play => "gain.draft.audition",

@@ -151,6 +151,30 @@ impl GainRange {
     pub fn contains(self, local: ExactRatio) -> bool {
         !numeric::compare(local, self.start).is_lt() && numeric::compare(local, self.end).is_lt()
     }
+
+    /// The owner-local range covering exactly the 48 kHz mix samples
+    /// `[first, end)` of an owner starting at project frame `owner_start` on
+    /// the current root clock. Sample `n` sits at project time
+    /// `n × rate⁻¹ / 48000`, so these exact endpoints contain sample `n` if and
+    /// only if `first <= n < end`, at any frame rate and without rounding to a
+    /// frame.
+    pub fn from_mix_samples(
+        rate: crate::FrameRate,
+        owner_start: crate::ProjectFrame,
+        first: i64,
+        end: i64,
+    ) -> Result<Self, GainError> {
+        let frames_per_sample = ExactRatio::new(
+            i128::from(rate.numerator()),
+            i128::from(rate.denominator()) * i128::from(crate::MIX_SAMPLE_RATE),
+        )?;
+        let at = |sample: i64| -> Result<ExactRatio, GainError> {
+            Ok(ExactRatio::integer(sample)
+                .checked_mul(frames_per_sample)?
+                .checked_sub(ExactRatio::integer(owner_start.0))?)
+        };
+        Self::new(at(first)?, at(end)?)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -394,6 +418,18 @@ impl ClipGain {
         }
         next.validate()?;
         Ok(next)
+    }
+
+    /// One more half-open mute range over exactly `range`. An identical
+    /// range already present makes no change, so the caller can report that
+    /// nothing was edited instead of stacking a duplicate.
+    pub fn with_mute_range(&self, range: GainRange) -> Result<Self, GainError> {
+        if self.mute_ranges.contains(&range) {
+            return Ok(self.clone());
+        }
+        let mut mute_ranges = self.mute_ranges.clone();
+        mute_ranges.push(range);
+        Self::new(self.trim, self.muted, self.envelopes.clone(), mute_ranges)
     }
 
     /// The constant step a range change left over exactly `range`, if any.

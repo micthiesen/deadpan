@@ -28,6 +28,20 @@ An empty context cannot start audition; an empty or unavailable waveform and an
 audition failure do not block a valid picture proposal from Apply. These peaks
 do not qualify device delivery, physical listening or full audio processing.
 
+## Native waveform range
+
+The `:wave` sheet ([waveform ranges](AUDIO_GAIN.md#waveform-ranges)) is the
+third consumer. It owns the engine's one Edit waveform slot while open: the
+timing strip neither requests nor polls, and measures again after the sheet
+closes. Its view is 2,400 to 192,000 samples, so the 4,096 leaf bins are one
+sample each at the narrowest zoom. A zero-crossing snap replaces the view's
+request with head ±480 samples, requires one-sample bins, picks the boundary
+nearest the head where the mid of the two channels changes sign or is exact
+zero, then the view measures again. Replies are admitted only for the current
+ticket and revision; an older picture stays drawn until its replacement
+arrives. The measurement is display data; the applied range is computed from
+the selected sample numbers, never from bins.
+
 ## Measured stage
 
 `EditWaveformStage::AuthoredBusBeforeLimiter` is labeled

@@ -1779,6 +1779,7 @@ pub static SCHEMAS: &[(&str, &ArgSchema)] = &[
     // No arguments.
     ("split", &ArgSchema::none(S::BeatAtCursor)),
     ("room-tone", &ArgSchema::none(S::Pause)),
+    ("wave", &ArgSchema::none(S::Beat)),
     ("hold-silence", &ArgSchema::none(S::Pause)),
     ("isolate-gap", &ArgSchema::none(S::Plays)),
     ("lift", &ArgSchema::none(S::VisualOrBeat)),

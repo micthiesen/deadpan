@@ -25,7 +25,7 @@ and the separate performance and listening limits.
 The [measured beat overview](WAVEFORMS.md) now has scoped
 [qualification](qualification/gain-waveform-2026-09-28.md). It measures the
 committed owner before effects, separately from full-mix Before/Draft audition.
-Waveform editing remains open. Encoded export is exercised by the `gain-trim` and
+[Waveform ranges](#waveform-ranges) select exact samples on the Edit mix. Encoded export is exercised by the `gain-trim` and
 `saturation` fixtures in
 [preview-export-2026-10-04](qualification/preview-export-2026-10-04.md).
 The [earlier foundation qualification](qualification/gain-clocks-2026-09-27.md)
@@ -293,6 +293,53 @@ like a mute range; no fade is invented. Evidence:
 beat only; `.` adds +3 dB over a range of the last beat), and the release
 `range-gain` preview/export fixture (a -12 dB step inside a 1 kHz tone pause
 drops its peak to 0.079 while the next tone keeps 0.316).
+
+## Waveform ranges
+
+Specification §8.3 asks for click, breath and syllable emphasis and sudden
+silence with sample-level control. `GainRange` endpoints were already exact
+owner-frame ratios; `GainRange::from_mix_samples(rate, owner_start, first, end)`
+names exactly the 48 kHz mix samples `[first, end)` of an owner starting at
+`owner_start` on the current root clock. Sample `n` sits at project time
+`n / 48000 s`, so the range contains `n` if and only if `first <= n < end`, at
+any frame rate (1,601.6 samples per frame at 29.97 fps) and with no rounding to
+a frame. Existing frame-based data keeps its meaning; no schema changes.
+
+The semantic `SetAudio` changes `SampleRangeMute { start, end }` and
+`SampleRangeStep { start, end, millidecibels }` carry those exact owner frames.
+They need a selected direct child of the current ordinary Sequence and no frame
+Visual range, and refuse unless the range is nonempty and inside the samples
+the beat's rounded boundaries allocate (`[B(start), B(end))`). A mute appends
+one hard mute range (an identical range is no edit); a step adjusts one
+constant step envelope over that range exactly as `RangeStep` does, removing it
+at 0 dB. Both are one Undo, recordable, and `.` applies them at the same
+position inside the newly selected beat. Repeat contents (This play) refuse
+them for now.
+
+`:wave` opens a modal sheet over the measured Edit mix (the
+[Edit waveform](EDIT_WAVEFORMS.md#native-waveform-range) before the limiter),
+starting with one frame selected at the Edit cursor. h/l and the arrows move
+the moving end one frame, landing on that frame's exact mix boundary; Shift
+moves it 1 ms (48 samples) and `[`/`]` one sample. `z` snaps it to the
+nearest sign change of the measured mid signal within 10 ms, `o` swaps the
+ends, `v` restarts the selection at the moving end, and a pointer drag selects
+from where it was pressed. The view follows the moving end and zooms to about
+three times the selection (50 ms to 4 s); frame boundaries, frame numbers and
+beat starts are drawn. The sheet states the absolute and beat-relative sample
+endpoints, the count, milliseconds and Edit frames. Space plays exactly the
+selected samples of the Edit mix; `m` mutes and `+`/`-` step 3 dB. The
+selection is runtime state bound to the session and is never saved.
+
+Evidence: the core planner test at 30000/1001 (seven samples straddling no
+frame boundary, per-sample membership before and after, refusals and Undo);
+`a_waveform_sample_range_mutes_and_steps_exactly_those_samples`, which reads
+the authored bus of an unedited and an edited project and finds the 4,801 muted
+tone samples exactly zero, the 100 stepped samples of the decoded Original click
+exactly -12 dB and every other compared sample bit-identical; the release
+`sample-range` preview/export fixture; and the `wave-range` replay. Owners under
+a retained resumed sample clock follow their retained phase, so a range there is
+exact in the owner's clock rather than at the selected root sample; such
+owners, ranges spanning beats and curved envelopes from a selection remain open.
 
 ## Native editor and qualification
 

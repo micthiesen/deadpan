@@ -3609,6 +3609,123 @@ pub fn range_gain(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// Mix samples muted inside the first tone pause: 4,801 samples that start
+/// 333 samples after Edit frame 4 begins, so neither endpoint is a frame
+/// boundary at 29.97 fps (1,601.6 samples per frame).
+pub const SAMPLE_MUTE: (i64, i64) = (6_406 + 333, 6_406 + 333 + 4_801);
+/// Mix samples stepped -12 dB inside the Original beat at Edit 24: 100
+/// samples of the decoded click (about 67,078..67,385), ending 17.2 samples
+/// before Edit frame 42 begins.
+pub const SAMPLE_STEP: (i64, i64) = (67_150, 67_250);
+
+/// The exact owner frames of absolute mix samples inside a beat starting at
+/// Edit frame `owner_start`, as the native waveform selection computes them.
+fn sample_change(
+    owner_start: i64,
+    samples: (i64, i64),
+    millidecibels: Option<i32>,
+) -> Result<Value> {
+    let rate = deadpan_core::FrameRate::new(30_000, 1_001)?;
+    let range = deadpan_core::GainRange::from_mix_samples(
+        rate,
+        ProjectFrame(owner_start),
+        samples.0,
+        samples.1,
+    )?;
+    let change = match millidecibels {
+        None => deadpan_core::AudioChange::SampleRangeMute {
+            start: range.start(),
+            end: range.end(),
+        },
+        Some(millidecibels) => deadpan_core::AudioChange::SampleRangeStep {
+            start: range.start(),
+            end: range.end(),
+            millidecibels,
+        },
+    };
+    Ok(json!({"type":"set_audio","change":change}))
+}
+
+/// The two tone pauses before the Original with no audio change: the
+/// reference `sample_range` is compared against sample by sample.
+pub fn sample_range_baseline(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "sample-range-baseline")?;
+    tone_pauses(&mut project)?;
+    project.finish(Vec::new(), tone_expectations(), Vec::new())
+}
+
+/// A waveform selection mutes exactly `SAMPLE_MUTE` of the first tone pause
+/// and steps exactly `SAMPLE_STEP` of the decoded Original by -12 dB, through
+/// the semantic instructions the native waveform keys record. Neither range
+/// is frame aligned; every other sample is unchanged.
+pub fn sample_range(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "sample-range")?;
+    let document = tone_pauses(&mut project)?;
+    let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+        return Err("the root is a Sequence".into());
+    };
+    let original = children
+        .get(2)
+        .cloned()
+        .ok_or("the Original beat follows the tones")?;
+    project.run_semantic(
+        json!([sample_change(0, SAMPLE_MUTE, None)?]),
+        0,
+        Some(&node("tone-a")?),
+    )?;
+    let saved = project.run_semantic(
+        json!([
+            sample_change(24, SAMPLE_STEP, Some(-6_000))?,
+            sample_change(24, SAMPLE_STEP, Some(-6_000))?
+        ]),
+        24,
+        Some(&original),
+    )?;
+    let muted = saved.nodes()[&node("tone-a")?]
+        .audio_treatments
+        .clip_gain()
+        .map(|clip| clip.mute_ranges().len());
+    let stepped = saved.nodes()[&original]
+        .audio_treatments
+        .clip_gain()
+        .map(|clip| clip.envelopes().len());
+    if muted != Some(1) || stepped != Some(1) {
+        return Err(format!("unexpected sample ranges {muted:?} {stepped:?}").into());
+    }
+    let mut fixture = project.finish(
+        vec!["Selective emphasis", "Sudden silence"],
+        tone_expectations(),
+        Vec::new(),
+    )?;
+    let (first, end) = SAMPLE_MUTE;
+    fixture.signals = vec![
+        // The four samples on each side keep the -10 dBFS tone.
+        Signal {
+            start: first - 4,
+            count: 4,
+            crossings_per_second: None,
+            crest: None,
+            peak: Some((0.02, 0.33)),
+        },
+        // Every selected sample is exact digital silence.
+        Signal {
+            start: first,
+            count: end - first,
+            crossings_per_second: None,
+            crest: None,
+            peak: Some((-1.0, f64::MIN_POSITIVE)),
+        },
+        Signal {
+            start: end,
+            count: 4,
+            crossings_per_second: None,
+            crest: None,
+            peak: Some((0.02, 0.33)),
+        },
+    ];
+    Ok(fixture)
+}
+
 /// `:pitch +12st` on the first of two 1 kHz tone pauses: a unity-speed
 /// Retime shifting it one octave on the pitch-preserving processor. Its zero
 /// crossings double (about 4,000 per second) while the untouched second tone
@@ -4457,7 +4574,7 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 57] = [
+    let builders: [(&str, Builder); 58] = [
         ("audio-shift", audio_shift),
         ("ramp", ramp),
         ("continuous-ramp", continuous_ramp),
@@ -4469,6 +4586,7 @@ pub fn partition_with_skips(
         ("micro-loop", micro_loop),
         ("gag-set", gag_set),
         ("range-gain", range_gain),
+        ("sample-range", sample_range),
         ("saturation", saturation),
         ("stereo-balance", stereo_balance),
         ("group-saturation", group_saturation),

@@ -90,6 +90,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "room-tone",
     "room-tone-gaps",
     "gain",
+    "wave-range",
     "ai-pause",
     "ai-variants",
     "ai-extension",

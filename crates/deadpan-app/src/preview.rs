@@ -85,6 +85,7 @@ mod thumbnails;
 mod timing;
 mod transcript;
 mod trim;
+mod wave_range;
 mod youtube;
 
 const SEARCH_ID: &str = "source-search";
@@ -198,6 +199,7 @@ pub struct DeadpanApp {
     source_interpretation_target: Option<Result<source_interpretation::Target, String>>,
     hold_command_target: Option<room_tone::CommandTarget>,
     room_tone: Option<room_tone::Draft>,
+    wave: Option<wave_range::WaveRange>,
     timing: timing::Timing,
     /// `:correct`: the transcript and pause correction sheet.
     correction: Option<corrections::Draft>,
@@ -429,6 +431,7 @@ impl DeadpanApp {
             source_interpretation_target: None,
             hold_command_target: None,
             room_tone: None,
+            wave: None,
             timing: timing::Timing::default(),
             correction: None,
             refinement: refinement::State::default(),
@@ -2674,6 +2677,10 @@ impl DeadpanApp {
             self.room_tone_keyboard(context);
             return None;
         }
+        if self.wave.is_some() {
+            self.wave_range_keyboard(context);
+            return None;
+        }
         if self.refinement.open() {
             self.refinement_keyboard(context);
             return None;
@@ -3393,6 +3400,7 @@ impl DeadpanApp {
                 self.open_trim(trim_target, preset, context)
             }
             Ok(navigation::command::Entry::RoomTone) => self.open_room_tone(hold_target, context),
+            Ok(navigation::command::Entry::WaveRange) => self.open_wave_range(context),
             Ok(navigation::command::Entry::Correct) => self.open_corrections(context),
             Ok(navigation::command::Entry::HoldSilence) => self.silence_hold(hold_target),
             Ok(navigation::command::Entry::Action(Action::PasteMoment { before })) => {
@@ -5891,6 +5899,7 @@ impl eframe::App for DeadpanApp {
         if first_pass {
             self.receive(&context);
             self.reconcile_room_tone(&context);
+            self.reconcile_wave_range(&context);
             self.reconcile_gain(&context);
             self.reconcile_splice(&context);
             self.reconcile_slip(&context);
@@ -6056,6 +6065,7 @@ impl eframe::App for DeadpanApp {
             self.help(&context);
             if !self.render.blocking() {
                 self.room_tone_sheet(&context);
+                self.wave_range_sheet(&context);
                 self.corrections_sheet(&context);
             }
             self.render_windows(&context);
@@ -6180,6 +6190,7 @@ impl eframe::App for DeadpanApp {
                 || self.camera_pending.is_some()
                 || self.gain.is_some()
                 || self.room_tone.is_some()
+                || self.wave.is_some()
                 || self.splice.is_some()
                 || self.slip.is_some()
                 || self.trim.is_some(),
