@@ -921,3 +921,130 @@ fn a_pause_inside_a_pitch_preserving_speed_change_resumes_its_processed_output()
         }
     }
 }
+
+/// `outer` (`outer_pitch`) holds `inner` (`inner_pitch`) over a 6-frame
+/// Original, followed by a 4-frame root Source whose own sample clock must
+/// survive the pause.
+fn nested_stage_document(
+    outer: BeatNode,
+    inner_pitch: PitchPolicy,
+) -> (ProjectDocument, FixtureProvider) {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let original = |frames, selected: Range<i64>| {
+        let mut node = source(rate, frames, selected.clone());
+        let NodeKind::Source { source } = &mut node.kind else {
+            unreachable!()
+        };
+        let audio = audio_at_rate(selected.start, selected.end, 44_100);
+        source.audio_mapping = SourceAudioMapping::natural_rate(audio.span, rate).unwrap();
+        source.audio = Some(audio);
+        node
+    };
+    let document = document_with_asset(
+        rate,
+        &["outer", "tail"],
+        [
+            ("outer", outer),
+            ("inner", retime("center", 9, 0..6, inner_pitch)),
+            ("center", original(6, 100..9_000)),
+            ("tail", original(4, 10_000..16_000)),
+        ],
+        BTreeMap::new(),
+        audio_at_rate(0, 44_117, 44_100).span,
+    );
+    let provider = FixtureProvider::from_fixture(
+        "pcm-mono-44100.wav",
+        AudioChannelLayout::Native {
+            channels: 1,
+            mask: 4,
+        },
+    );
+    (document, provider)
+}
+
+/// The pause at `at` must leave every earlier sample unchanged and resume the
+/// processed stage, then the later root Source starting at old frame `tail`,
+/// each on its own origin-rounded sample clock.
+fn assert_paused_render(
+    document: &ProjectDocument,
+    provider: &mut FixtureProvider,
+    (at, frames, tail): (i64, i64, i64),
+    name: &str,
+) {
+    let inserted = insert_pause(document, at, frames, name);
+    assert!(inserted.derived_clocks().is_empty());
+    for faded in [false, true] {
+        let old = record(document, provider, faded, &[256]);
+        assert!(old.samples[ntsc_boundary(at)..].iter().any(|v| v[0] != 0.));
+        let actual = record(&inserted, provider, faded, &[97, 256]);
+        assert_eq!(
+            actual.samples.len(),
+            ntsc_boundary(inserted.duration().unwrap().frames())
+        );
+        assert_resumed(&actual, &old, 0..ntsc_boundary(at), 0);
+        assert_pause(&actual, ntsc_boundary(at)..ntsc_boundary(at + frames));
+        assert_resumed(
+            &actual,
+            &old,
+            ntsc_boundary(at + frames)..ntsc_boundary(tail + frames),
+            ntsc_boundary(at),
+        );
+        assert_resumed(
+            &actual,
+            &old,
+            ntsc_boundary(tail + frames)..actual.samples.len(),
+            ntsc_boundary(tail),
+        );
+        assert_eq!(record(&inserted, provider, faded, &[1, 239]), actual);
+    }
+}
+
+#[test]
+fn a_pause_inside_nested_processing_stages_resumes_every_processed_sample() {
+    let shift = PitchPolicy::Shift { semitones: 3 };
+    for (outer, inner, name) in [
+        (
+            PitchPolicy::Preserve,
+            PitchPolicy::Preserve,
+            "nested-preserve",
+        ),
+        (shift, PitchPolicy::Preserve, "preserve-in-shift"),
+        (PitchPolicy::Preserve, shift, "shift-in-preserve"),
+    ] {
+        // 9 inner output frames slowed again to 12: the pause at root frame
+        // 5 is inner output frame 15/4, which is never cut.
+        let (document, mut provider) =
+            nested_stage_document(retime("inner", 12, 0..9, outer), inner);
+        assert_paused_render(&document, &mut provider, (5, 2, 12), name);
+        // A second pause refines the right half's window.
+        let paused = insert_pause(&document, 5, 2, &format!("{name}-first"));
+        assert_paused_render(
+            &paused,
+            &mut provider,
+            (10, 3, 14),
+            &format!("{name}-second"),
+        );
+    }
+}
+
+#[test]
+fn a_pause_splitting_a_processing_stage_inside_tape_speed_resumes_its_output() {
+    for (inner, name) in [
+        (PitchPolicy::Preserve, "tape-over-preserve"),
+        (PitchPolicy::Shift { semitones: -2 }, "tape-over-shift"),
+    ] {
+        // Tape speed plays the 9 processed frames over 18: root frame 4 is
+        // processed output frame 2, and 2 pause frames fill one child frame.
+        let (document, mut provider) =
+            nested_stage_document(retime("inner", 18, 0..9, PitchPolicy::FollowSpeed), inner);
+        assert_paused_render(&document, &mut provider, (4, 2, 18), name);
+        // A second pause refines the right half's window over its copy.
+        let paused = insert_pause(&document, 4, 2, &format!("{name}-first"));
+        assert_paused_render(
+            &paused,
+            &mut provider,
+            (12, 2, 20),
+            &format!("{name}-second"),
+        );
+    }
+}

@@ -316,9 +316,11 @@ entries; one rounded sample offset for the whole suffix would be incorrect.
 Further pauses may enter the resulting windows or the first pause's adapter.
 See [nested-speed qualification](qualification/nested-speed-pauses-2026-10-18.md).
 
-Repeat ancestors, nested pitch-processing stages, AI pauses, pauses other than
-a silent freeze or black picture, marks and
-placed sounds still refuse, the latter two already in the target query.
+A Preserve or Shift stage inside the tape-speed child is split like a Source
+leaf (see [nested processing stages](#nested-processing-stages)). Repeat
+ancestors, AI pauses, pauses other than a silent freeze or black picture,
+marks and placed sounds still refuse, the latter two already in the target
+query.
 
 ## Pauses inside pitch-preserving speed changes
 
@@ -338,6 +340,47 @@ its copy lose them, and picture capture stops below the stage
 group inside the stage with moving framing refuse: the pause sits beside the
 stage's copies, so neither could stay live over it. Each pause adds one more
 full processing copy, and a later speed change applies to each half separately.
+
+### Nested processing stages
+
+A pause never enters a processing stage's input, so it never needs an inner
+stage's own split point. Two cases follow, both without rounding:
+
+- A processing stage inside another (Preserve in Preserve, Preserve in Shift,
+  or any speed change below them): the pause reaches the outermost processing
+  stage first and splits only that stage at its integral output frame. Each
+  half windows a complete copy of the outer stage, which carries every inner
+  stage whole, so each inner stage keeps its full history and lookahead on
+  both sides. The inner split coordinate (for example output frame 15/4 of the
+  inner stage) is never materialized. Lifting applies to the outer stage only;
+  inner stages keep their own framing, gain and edges inside each copy, as a
+  static group inside the stage does. An inner group or inner speed change
+  with moving framing refuses, because the pause sits beside the copies and
+  could not keep that animation live.
+- A processing stage below one or more tape-speed (FollowSpeed) stages: the
+  pause enters the tape-speed child as usual, and the processing stage (or a
+  transparent window over one) is the leaf it splits, into a window over the
+  original and a window over a complete copy, with the Hold and its speed
+  adapter between them. The rule is the single-stage one, applied in the
+  processing stage's own output clock: the cut there must be a whole frame,
+  and the pause's span at every enclosing stage (and its adapter) must be
+  whole. Derived clocks cannot coexist with a processing stage, and rounding
+  either value would move every later sample, so any fractional value refuses
+  with "choose a position and length that land on whole frames there"; the
+  document is unchanged. `RetimedPauseTarget::needs_exact_clocks(frames)`
+  reports the span half of that condition for hosts. A processing stage with
+  its own framing, gain or edges refuses here: lifting them out of the tape
+  child would change their clock.
+
+Decoded PCM proves both cases at 30000/1001 fps
+(`a_pause_inside_nested_processing_stages_resumes_every_processed_sample`,
+`a_pause_splitting_a_processing_stage_inside_tape_speed_resumes_its_output`):
+every earlier sample is unchanged, the pause is suppressed silence, the
+processed stage resumes the unpaused render on the shifted clock, and the later
+root Source resumes on its own origin-rounded clock, in raw and edge-faded
+reads and after a second pause. Release exports `nested-preserve-pause` (Shift
+over Preserve, 37 pictures) and `tape-over-preserve-pause` (tape over
+Preserve, 36 pictures) match their previews with audio offset verified zero.
 
 ## Editing documents with exact clocks
 
@@ -371,12 +414,15 @@ Current insertion supports existing root seams before arbitrary composite
 suffixes and interiors of Source or ordinary Background/Freeze Hold beats when
 followed by either physical fragments or composite structures, including inside
 unretimed Sequence groups, FollowSpeed speed changes and concrete Repeat plays or
-gaps. A pause inside one Preserve or Shift speed change splits that stage into
-two complete processing contexts at an integral output frame
-(`insert_time::processing_stage`). Still refused there, with a readable
-message: a processing stage nested inside another (its input would be cut),
-a split stage below a transparent window that carries its own framing, gain or
-edges, and an inner group with moving framing. Inserting a selected Original
+gaps. A pause inside a Preserve or Shift speed change splits the outermost
+such stage into two complete processing contexts at an integral output frame
+(`insert_time::processing_stage`), keeping nested stages whole; a processing
+stage below tape-speed stages splits at a whole frame of its own output clock
+([nested processing stages](#nested-processing-stages)). Still refused, with a
+readable message: a fractional cut or pause span in that tape-speed case, a
+split stage below a transparent window that carries its own framing, gain or
+edges, a treated processing stage below a tape-speed stage, and an inner group
+or speed change with moving framing. Inserting a selected Original
 moment is the paste path (`SpliceSource`, [Original moments](SOURCE_MOMENTS.md)),
 not a pause payload. Native scoped-inspector temporal intent also remains guarded;
 the new path addresses the concrete cursor from ordinary Sequence navigation.

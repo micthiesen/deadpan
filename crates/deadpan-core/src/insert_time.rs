@@ -758,8 +758,10 @@ pub(crate) fn processing_stage(
                         "a pause inside a split speed change with its own framing, gain or edges is not supported yet",
                     ));
                 }
-                // The pause sits beside the stage's copies, so a group inside
-                // it cannot keep animated framing live over the pause.
+                // The pause sits beside the stage's copies, so a group or a
+                // nested speed change inside it cannot keep animated framing
+                // live over the pause. Nested stages otherwise need nothing:
+                // each copy keeps them whole, so none is cut or rounded.
                 let mut pending = vec![current];
                 let mut visited = 0usize;
                 while let Some(id) = pending.pop() {
@@ -769,13 +771,20 @@ pub(crate) fn processing_stage(
                     }
                     let node = &document.nodes()[id];
                     if id != current
-                        && matches!(node.kind, NodeKind::Sequence { .. })
+                        && matches!(
+                            node.kind,
+                            NodeKind::Sequence { .. }
+                                | NodeKind::Retime {
+                                    purpose: RetimePurpose::Edit,
+                                    ..
+                                }
+                        )
                         && node.framing.as_ref().is_some_and(|framing| {
                             !matches!(framing.value, crate::FramingValue::Static { .. })
                         })
                     {
                         return Err(invalid(
-                            "a pause inside a pitch-preserving speed change cannot keep an inner group's moving framing live yet",
+                            "a pause inside a pitch-preserving speed change cannot keep an inner group's or speed change's moving framing live yet",
                         ));
                     }
                     pending.extend(document.children(id));

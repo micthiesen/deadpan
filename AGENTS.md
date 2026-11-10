@@ -491,7 +491,10 @@ clocked speed change, and copy derived clocks with copied Retimes. A pause
 inside a Preserve/Shift speed change instead splits the stage into two full
 processing contexts at an integral output frame and lifts its framing, gain
 and edges onto a new enclosing group (`insert_time::processing_stage`); never
-cut a processing stage's input. See
+cut a processing stage's input. Nested processing stages split only the
+outermost, whose copies keep every inner stage whole; a processing stage below
+tape-speed stages splits inside their child only when the cut and every
+changed clock stay whole (`retimed::site_leaf`), and otherwise refuses. See
 [pause insertion](docs/INSERT_TIME.md#pauses-inside-followspeed-speed-changes).
 
 Current native and CLI whole-beat deletion uses `DeleteRipple { node, timing }` through

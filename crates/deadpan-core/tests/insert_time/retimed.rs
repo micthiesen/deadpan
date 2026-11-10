@@ -612,11 +612,204 @@ fn nested_follow_speed_pauses_refuse_processing_stages_and_insufficient_identiti
         .is_err()
     );
     assert_eq!(before, snapshot);
-    let mut wire = serde_json::to_value(&before).unwrap();
-    wire["nodes"]["nested"]["kind"]["pitch"] = json!("preserve");
-    let processed = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    assert!(processed.pause_insertion_target(ProjectFrame(8)).is_err());
-    assert!(apply(&processed, &pause(&processed, "processed", 8, 3, 20)).is_err());
+}
+
+/// `slow` (tape speed, 36 frames over 18) holds a pitch-preserving `nested`
+/// stage (18 frames over 12). A pause splits `nested` inside `slow`'s child.
+fn follow_speed_over_processing(pitch: serde_json::Value) -> ProjectDocument {
+    let mut wire = serde_json::to_value(nested_fixture()).unwrap();
+    wire["nodes"]["nested"]["kind"]["pitch"] = pitch;
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+#[test]
+fn a_processing_stage_inside_follow_speed_splits_into_full_contexts_at_whole_child_frames() {
+    for pitch in [json!("preserve"), json!({"shift": {"semitones": 3}})] {
+        let before = follow_speed_over_processing(pitch);
+        let target = retimed_target(&before, 8);
+        assert_eq!(target.retime, id("slow"));
+        assert_eq!(target.picture_parent, id("slow"));
+        assert!(!target.needs_exact_clocks(duration(2)));
+        assert!(target.needs_exact_clocks(duration(3)));
+        let snapshot = before.clone();
+        // Root frame 8 is child frame 3 of `slow`: a whole output frame of
+        // `nested`. Two pause frames fill exactly one child frame.
+        let after = edit(&before, pause(&before, "whole", 8, 2, target.required_ids));
+        assert_eq!(before, snapshot);
+        assert!(after.derived_clocks().is_empty());
+        assert_eq!(after.duration().unwrap(), duration(42));
+        let (extent, mapping, container) = retime(&after, "slow");
+        assert_eq!((extent, mapping.end().0), (duration(38), 19));
+        let NodeKind::Sequence { children } = &after.nodes()[&container].kind else {
+            panic!("pause container")
+        };
+        assert_eq!(children.len(), 3);
+        let (_, left, inner) = retime(&after, &children[0].to_string());
+        assert_eq!((left.start().0, left.end().0, inner), (0, 3, id("nested")));
+        let (_, right, copy) = retime(&after, &children[2].to_string());
+        assert_eq!((right.start().0, right.end().0), (3, 18));
+        // The right half keeps a complete copy of the processing stage.
+        let speed = |document: &ProjectDocument, node: &NodeId| {
+            let NodeKind::Retime {
+                duration,
+                mapping,
+                pitch,
+                ..
+            } = &document.nodes()[node].kind
+            else {
+                panic!("speed change")
+            };
+            (*duration, *mapping, *pitch)
+        };
+        assert_eq!(speed(&after, &copy), speed(&before, &id("nested")));
+        assert_eq!(speed(&after, &id("nested")), speed(&before, &id("nested")));
+        // The pause keeps its authored frames through the tape-speed adapter.
+        let (adapter_extent, adapter_map, hold) = retime(&after, &children[1].to_string());
+        assert_eq!((adapter_extent, adapter_map.end().0), (duration(1), 2));
+        assert_eq!(hold, id("pause-whole"));
+
+        // A fractional split or child span would need a derived clock, which
+        // cannot coexist with processing: refuse atomically and readably.
+        for (at, frames) in [(8, 3), (9, 2)] {
+            let target = retimed_target(&before, at);
+            let error = apply(
+                &before,
+                &pause(&before, "fractional", at, frames, target.required_ids),
+            )
+            .unwrap_err();
+            assert!(
+                error.message.contains("fractional frame"),
+                "{}",
+                error.message
+            );
+            assert_eq!(before, snapshot);
+        }
+    }
+    // A treated inner stage cannot lift its effects out of the tape-speed
+    // child without changing their clock.
+    let mut wire = serde_json::to_value(follow_speed_over_processing(json!("preserve"))).unwrap();
+    wire["nodes"]["nested"]["framing"] = serde_json::to_value(Framing {
+        clock: Default::default(),
+        value: FramingValue::Static {
+            pose: FramingPose::new(ratio(1, 2), ratio(1, 2), ratio(3, 2)).unwrap(),
+        },
+    })
+    .unwrap();
+    let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let error = treated.pause_insertion_target(ProjectFrame(8)).unwrap_err();
+    assert!(
+        error.message.contains("framing, gain or edges"),
+        "{}",
+        error.message
+    );
+}
+
+/// `slow` (`outer` pitch, 36 frames over 18) holds `nested` (`inner` pitch,
+/// 18 frames over 12): two nested pitch-processing stages.
+fn nested_processing(outer: serde_json::Value, inner: serde_json::Value) -> ProjectDocument {
+    let mut wire = serde_json::to_value(nested_fixture()).unwrap();
+    wire["nodes"]["slow"]["kind"]["pitch"] = outer;
+    wire["nodes"]["nested"]["kind"]["pitch"] = inner;
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+#[test]
+fn nested_processing_stages_split_the_outermost_and_keep_every_inner_stage_whole() {
+    let shift = json!({"shift": {"semitones": 3}});
+    for (outer, inner) in [
+        (json!("preserve"), json!("preserve")),
+        (shift.clone(), json!("preserve")),
+        (json!("preserve"), shift.clone()),
+        (json!("preserve"), json!("follow_speed")),
+    ] {
+        let before = nested_processing(outer, inner);
+        let speed = |document: &ProjectDocument, node: &NodeId| {
+            let NodeKind::Retime {
+                duration,
+                mapping,
+                pitch,
+                ..
+            } = &document.nodes()[node].kind
+            else {
+                panic!("speed change")
+            };
+            (*duration, *mapping, *pitch)
+        };
+        // Root frame 8 is output frame 6 of the outer stage. The inner
+        // boundary, 6/2 = 3 child frames in, is never cut: both copies of
+        // the outer stage carry the inner stage whole.
+        let target = before.insert_time_target(ProjectFrame(8)).unwrap();
+        assert_eq!(
+            (target.parent.clone(), target.lift.clone()),
+            (id("root"), None)
+        );
+        let split = target.split.unwrap();
+        assert_eq!((split.target, split.at), (id("slow"), duration(6)));
+        let after = edit(&before, pause(&before, "first", 8, 3, split.required_ids));
+        assert!(after.derived_clocks().is_empty());
+        assert_eq!(after.duration().unwrap(), duration(43));
+        let root = children(&after).to_vec();
+        assert_eq!(root.len(), 5);
+        assert_eq!(
+            (&root[0], &root[2], &root[4]),
+            (&id("a"), &id("pause-first"), &id("b"))
+        );
+        let (_, left, stage) = retime(&after, &root[1].to_string());
+        assert_eq!((left.start().0, left.end().0, &stage), (0, 6, &id("slow")));
+        let (_, right, copy) = retime(&after, &root[3].to_string());
+        assert_eq!((right.start().0, right.end().0), (6, 36));
+        assert_eq!(speed(&after, &copy), speed(&before, &id("slow")));
+        assert_eq!(speed(&after, &stage), speed(&before, &id("slow")));
+        let inner_copy = retime(&after, &copy.to_string()).2;
+        assert_ne!(inner_copy, id("nested"));
+        assert_eq!(speed(&after, &inner_copy), speed(&before, &id("nested")));
+        assert_eq!(speed(&after, &id("nested")), speed(&before, &id("nested")));
+
+        // A second pause in the right half refines its window; each half
+        // still windows a complete outer stage.
+        let target = after.insert_time_target(ProjectFrame(16)).unwrap();
+        let split = target.split.unwrap();
+        assert_eq!((split.target, split.at), (root[3].clone(), duration(5)));
+        let second = edit(&after, pause(&after, "second", 16, 2, split.required_ids));
+        assert_eq!(second.duration().unwrap(), duration(45));
+        let root = children(&second).to_vec();
+        assert_eq!(root.len(), 7);
+        assert_eq!(root[4], id("pause-second"));
+        let (_, middle, _) = retime(&second, &root[3].to_string());
+        let (_, last, last_copy) = retime(&second, &root[5].to_string());
+        assert_eq!((middle.start().0, middle.end().0), (6, 11));
+        assert_eq!((last.start().0, last.end().0), (11, 36));
+        assert_eq!(speed(&second, &last_copy), speed(&before, &id("slow")));
+    }
+}
+
+#[test]
+fn moving_framing_on_a_nested_speed_change_inside_a_processing_stage_refuses() {
+    let mut wire =
+        serde_json::to_value(nested_processing(json!("preserve"), json!("preserve"))).unwrap();
+    wire["nodes"]["nested"]["framing"] = serde_json::to_value(Framing {
+        clock: Default::default(),
+        value: FramingValue::Envelope {
+            envelope: FramingEnvelope {
+                initial: FramingPose::identity(),
+                segments: vec![FramingSegment {
+                    end: ratio(1, 1),
+                    pose: FramingPose::new(ratio(1, 2), ratio(1, 2), ratio(2, 1)).unwrap(),
+                    curve: FramingCurve::Linear,
+                }],
+            },
+        },
+    })
+    .unwrap();
+    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let snapshot = document.clone();
+    let message = document
+        .insert_time_target(ProjectFrame(8))
+        .unwrap_err()
+        .message;
+    assert!(message.contains("moving framing"), "{message}");
+    assert!(apply(&document, &pause(&document, "moving", 8, 3, 20)).is_err());
+    assert_eq!(document, snapshot);
 }
 
 #[test]

@@ -1184,6 +1184,104 @@ pub fn nested_tape_pause(dir: &Path) -> Result<Fixture> {
     )
 }
 
+/// A pitch-preserving stage (Original [24, 36) over 24 frames) inside a
+/// second stage of 16 frames: 3/4 speed overall, like `nested-tape-pause`.
+/// With a processing `outer`, the pause at Edit 17 splits only the outer
+/// stage into two complete contexts; each keeps the inner stage whole. With
+/// a tape `outer`, the pause enters its child and splits the inner stage at
+/// output frame 6, which needs a whole child frame: Edit 16, two frames.
+fn nested_processing_pause(
+    dir: &Path,
+    name: &'static str,
+    outer: PitchPolicy,
+    (at, frames): (u64, u64),
+) -> Result<Fixture> {
+    let mut project = Project::create(dir, name)?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let target = root_child_at(&document, 12)?.0;
+    project.apply(|_, _, _| {
+        Ok(Command::WrapRetime {
+            node: target.clone(),
+            id: node("inner-preserve")?,
+            duration: FrameDuration::new(24)?,
+            pitch: PitchPolicy::Preserve,
+        })
+    })?;
+    project.apply(|_, _, _| {
+        Ok(Command::WrapRetime {
+            node: node("inner-preserve")?,
+            id: node("outer-stage")?,
+            duration: FrameDuration::new(16)?,
+            pitch: outer,
+        })
+    })?;
+    let edit_at = ProjectFrame(i64::try_from(at)?);
+    project.apply(|project, document, revision| {
+        let required = match document.pause_insertion_target(edit_at)? {
+            PauseInsertionTarget::Ordinary(target) => {
+                target.split.map_or(0, |split| split.required_ids)
+            }
+            PauseInsertionTarget::Retimed(target) => target.required_ids,
+            PauseInsertionTarget::Occurrence(_) => {
+                return Err("a root speed change is not an occurrence".into());
+            }
+        };
+        Ok(Command::InsertTime {
+            at: edit_at,
+            hold: silent(i64::try_from(frames)?, HoldVideo::Background)?,
+            id: node("nested-pause")?,
+            identities: SplitIdentities {
+                nodes: project.fresh(required)?,
+            },
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    let total = 30 - 12 + 16 + frames;
+    let expectations = (0..total)
+        .map(|frame| {
+            let expected = if frame < 12 {
+                base(frame)
+            } else if (at..at + frames).contains(&frame) {
+                Expected::Background
+            } else if frame < 28 + frames {
+                let local = frame - if frame < at { 12 } else { 12 + frames };
+                original(24 + (2 * local + 1) * 3 / 8)
+            } else {
+                original(36 + frame - 28 - frames)
+            };
+            (frame, expected)
+        })
+        .collect();
+    let mut rows = vec!["Hold (insert time)", "Slow delivery"];
+    if outer.semitones() != 0 {
+        rows.push("Pitch shift");
+    }
+    project.finish(rows, expectations, Vec::new())
+}
+
+pub fn nested_preserve_pause(dir: &Path) -> Result<Fixture> {
+    nested_processing_pause(
+        dir,
+        "nested-preserve-pause",
+        PitchPolicy::Shift { semitones: 2 },
+        (17, 3),
+    )
+}
+
+pub fn tape_over_preserve_pause(dir: &Path) -> Result<Fixture> {
+    nested_processing_pause(
+        dir,
+        "tape-over-preserve-pause",
+        PitchPolicy::FollowSpeed,
+        (16, 2),
+    )
+}
+
 /// `:repeat 4 role=audio extend=hold` over Edit [15, 20) of the 30-frame
 /// base: the four plays need [15, 35), so a five-frame silent freeze of Edit
 /// 29 follows the beat. The click at Edit sample 28,781 sounds again 5, 10
@@ -1228,12 +1326,14 @@ pub fn role_repeat_extend(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
-pub const BUILDERS: [(&str, Builder); 25] = [
+pub const BUILDERS: [(&str, Builder); 27] = [
     ("scoped-audio-chain", scoped_audio::build),
     ("role-repeat-extend", role_repeat_extend),
     ("tape-slowed-pause", tape_slowed_pause),
     ("preserve-slowed-pause", preserve_slowed_pause),
     ("nested-tape-pause", nested_tape_pause),
+    ("nested-preserve-pause", nested_preserve_pause),
+    ("tape-over-preserve-pause", tape_over_preserve_pause),
     ("false-start", false_start),
     ("interrupted-answer", interrupted_answer),
     ("callback-register", callback_register),

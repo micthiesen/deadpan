@@ -209,6 +209,9 @@ struct Plan {
     /// Transparent windows above the Retime, innermost first. Each shows the
     /// pause, so each grows by its length.
     windows: Vec<NodeId>,
+    /// The site splits a pitch-processing speed change. Derived clocks cannot
+    /// coexist with processing, so every changed clock must stay integral.
+    processing: bool,
 }
 
 struct Stage {
@@ -228,7 +231,28 @@ fn nested_stage(document: &ProjectDocument, id: &NodeId) -> bool {
                 purpose: RetimePurpose::Partition,
                 ..
             }
-        ) && super::physical_context(document, id, true).is_err())
+        ) && super::physical_context(document, id, true).is_err()
+            // A window over a pitch-processing stage is that stage's split
+            // half: the pause refines it like a window over a Source.
+            && matches!(super::processing_stage(document, id), Ok(None)))
+}
+
+/// Admit a physical leaf, or an untreated pitch-processing speed change (or
+/// a transparent window over one) that splits into two complete processing
+/// contexts like a Source. Its input is never cut. Returns whether the leaf
+/// processes, so the result must stay integral.
+fn site_leaf(document: &ProjectDocument, node: &NodeId) -> Result<bool, EditError> {
+    let error = match super::physical_context(document, node, true) {
+        Ok(_) => return Ok(false),
+        Err(error) => error,
+    };
+    match super::processing_stage(document, node)? {
+        None => Err(error),
+        Some(stage) if stage.lift => Err(super::invalid(
+            "a pause inside a speed change cannot yet split an inner pitch-preserving speed change that has its own framing, gain or edges",
+        )),
+        Some(_) => Ok(true),
+    }
 }
 
 fn clock_of(document: &ProjectDocument, id: &NodeId) -> Result<DerivedRetimeClock, EditError> {
@@ -323,6 +347,7 @@ impl Plan {
             output_slope: ExactRatio::ONE,
             input_slope: slope,
         }];
+        let mut processing = false;
         let site = loop {
             if inner.len() + stages.len() > crate::MAX_DOCUMENT_DEPTH {
                 return Err(super::limit("pause Sequence depth"));
@@ -360,7 +385,7 @@ impl Plan {
                 continue;
             }
             let NodeKind::Sequence { children } = &document.nodes()[&node].kind else {
-                super::physical_context(document, &node, true)?;
+                processing |= site_leaf(document, &node)?;
                 break Site::Leaf {
                     parent,
                     leaf: node,
@@ -398,7 +423,7 @@ impl Plan {
                     if !matches!(document.nodes()[&child].kind, NodeKind::Sequence { .. })
                         && !nested_stage(document, &child)
                     {
-                        super::physical_context(document, &child, true)?;
+                        processing |= site_leaf(document, &child)?;
                         break Site::Leaf {
                             parent: node,
                             leaf: child,
@@ -419,6 +444,7 @@ impl Plan {
             outer,
             inner,
             windows,
+            processing,
         })
     }
 
@@ -608,6 +634,30 @@ pub(crate) fn apply(
     let child_span = hold_frames
         .checked_mul(plan.slope)
         .map_err(DocumentError::from)?;
+    if plan.processing {
+        // Derived clocks cannot coexist with processing, and rounding the
+        // split or the pause's span would move later audio. Every changed
+        // clock must therefore stay whole: the cut in the processing stage's
+        // output and the pause's span at every enclosing stage.
+        let mut values = vec![child_span];
+        if let Site::Leaf { cut, .. } = &plan.site {
+            values.push(*cut);
+        }
+        for stage in &plan.stages {
+            for slope in [stage.output_slope, stage.input_slope] {
+                values.push(
+                    hold_frames
+                        .checked_mul(slope)
+                        .map_err(DocumentError::from)?,
+                );
+            }
+        }
+        if values.iter().any(|value| value.denominator() != 1) {
+            return Err(super::invalid(
+                "this pause would split the inner pitch-preserving speed change, or fill its enclosing speed change, at a fractional frame; choose a position and length that land on whole frames there",
+            ));
+        }
+    }
     let placement_timing = crate::AudioTimingId {
         allocation: timing.allocation.clone(),
         ordinal: timing
