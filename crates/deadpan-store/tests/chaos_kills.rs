@@ -480,7 +480,11 @@ fn random_process_kills_around_deferred_keyframes_never_corrupt_the_history() ->
     let mut committed = vec![ProjectStore::open(&path, AccessMode::ReadOnly)?.head_revision()?];
     let mut keyframes = 0;
     let mut summary = Vec::new();
-    for round in 0..iterations() {
+    // Under load the random kills can all land before a child crosses a
+    // keyframe; keep going (bounded) until one deferred write was exercised.
+    let rounds = iterations();
+    let mut round = 0;
+    while round < rounds || (keyframes == 0 && round < rounds * 4) {
         let log = scratch.path().join(format!("keyframes-{round}.log"));
         let mut child = ProcessCommand::new(std::env::current_exe()?)
             .args([
@@ -548,6 +552,7 @@ fn random_process_kills_around_deferred_keyframes_never_corrupt_the_history() ->
                 .map_err(|error| format!("round {round}: revision {revision} lost: {error}"))?;
         }
         drop(store);
+        round += 1;
     }
     let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
     assert_eq!(store.open_validation().replayed, 0);
