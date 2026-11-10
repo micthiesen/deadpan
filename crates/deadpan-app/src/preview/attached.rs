@@ -45,13 +45,23 @@ impl DeadpanApp {
         let Some(workspace) = &self.workspace else {
             return BTreeMap::new();
         };
+        let document = &workspace.document;
+        // Called every frame for every card: skip projects without attached
+        // sounds and validate durations once, not once per beat.
+        if document.beat_sounds().is_empty() {
+            return BTreeMap::new();
+        }
+        let Ok(durations) = document.durations_shared() else {
+            return BTreeMap::new();
+        };
         beats
             .iter()
             .filter_map(|beat| {
-                let count = attached_sounds(&workspace.document, &beat.id)
-                    .iter()
-                    .filter(|sound| sound.audible.is_some())
-                    .count();
+                let count =
+                    deadpan_cli::sound_events::attached_sounds_with(document, &durations, &beat.id)
+                        .iter()
+                        .filter(|sound| sound.audible.is_some())
+                        .count();
                 (count > 0).then(|| (beat.id.clone(), count))
             })
             .collect()

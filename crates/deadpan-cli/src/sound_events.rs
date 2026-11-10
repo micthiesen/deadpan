@@ -712,9 +712,23 @@ pub fn attached_sounds(
     document: &ProjectDocument,
     beat: &deadpan_core::NodeId,
 ) -> Vec<AttachedSound> {
+    if document.beat_sounds().is_empty() {
+        return Vec::new();
+    }
     let Ok(durations) = document.durations_shared() else {
         return Vec::new();
     };
+    attached_sounds_with(document, &durations, beat)
+}
+
+/// As [`attached_sounds`], with the document's durations computed once by a
+/// caller that asks about many beats (validating them is a whole-document
+/// pass).
+pub fn attached_sounds_with(
+    document: &ProjectDocument,
+    durations: &std::collections::BTreeMap<deadpan_core::NodeId, deadpan_core::FrameDuration>,
+    beat: &deadpan_core::NodeId,
+) -> Vec<AttachedSound> {
     let rate = document.presentation_basis().frame_rate;
     let frames = |id: &deadpan_core::NodeId| {
         durations
