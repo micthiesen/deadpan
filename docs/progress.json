@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-27T04:33:29Z",
+  "updated_at": "2026-11-10T00:51:00Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Full product goal active. Finish the three sound preparation-work failures, then complete sound transport, native/media joins and release acceptance.",
+  "focus": "Remaining partial requirements: occurrence copy/paste and range edits, nested processing-stage pauses, variable-rate speed, full effect/mastering graph, render-plan fragment reuse, qualification corpora and release acceptance.",
   "features": [
     {
       "id": "editing",
@@ -1540,6 +1540,15 @@
       "revision": "a735863e",
       "retrospective": false,
       "summary": "Constant sound block execution qualifies processed root-sound Split/refinement; full general matrix improves to four passes and three work-limit failures, with no acceptance credit added"
+    },
+    {
+      "date": "2026-11-10",
+      "percent": 86,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "76ea290e8",
+      "retrospective": false,
+      "summary": "One-play structural, plays, gaps and shared-gap edits with macros and dot; room tone on Repeat gaps and fragments; sleep policy for every worker; detail lane inside Repeats and speed changes; measured edit and Hold budgets pass (2026-11-09 perf run); App Nap guard for playback; Original y operators; nested gap isolation; resampler phase cache; optimized replays"
     }
   ],
   "assessment": {
@@ -1884,7 +1893,7 @@
               "docs/qualification/targeted-explode-2026-10-25.md strict scope reconciliation",
               "docs/qualification/scoped-target-sampling-2026-10-25.md"
             ],
-            "remaining": "General cuts/copy/paste and timing edits across or inside selected plays remain restricted, including native scoped Split. Qualified sampled-target framing does not complete these structural scopes.",
+            "remaining": "One-play Split, delete, wrap, Repeat plays and gaps, and the shared gap after a play edit one occurrence with macros and dot (2026-11-09). Copy/paste, Trim, Slip and range cuts inside plays, and edits inside speed changes or with placed sounds, still refuse.",
             "normative": "5.2,6.3"
           }
         ]
@@ -1930,7 +1939,7 @@
               "docs/qualification/targeted-explode-2026-10-25.md strict scope reconciliation",
               "docs/qualification/scoped-target-sampling-2026-10-25.md"
             ],
-            "remaining": "Original operator word motions and shot transition handles remain incomplete; scope/role restrictions prevent full object composition. Contained This-play sampled-target framing is now qualified.",
+            "remaining": "Original word, sentence, pause and shot operators work since 2026-11-09. Shot transition handles and scope/role restrictions still limit full object composition.",
             "normative": "6.2,7.3"
           },
           {
@@ -1980,7 +1989,7 @@
               "docs/SCOPED_EDITING.md",
               "docs/REPEAT_GAP_BRANCHES.md"
             ],
-            "remaining": "Native general gap content editing, occurrence copy/paste and remaining temporal scopes refuse.",
+            "remaining": "Shared and owned gaps of one play are editable natively, including nested Repeats (2026-11-09). Occurrence copy/paste and remaining temporal scopes refuse.",
             "normative": "5.2,7.2"
           },
           {
@@ -2032,7 +2041,7 @@
               "docs/SEMANTIC_REPEAT.md",
               "docs/qualification/scoped-framing-ranges-2026-10-25.md"
             ],
-            "remaining": "Many creative operations work, but general one-play/temporal edits and their dot intent remain restricted.",
+            "remaining": "One-play structural and gap edits record and repeat since 2026-11-09. Escalation steps, Trim/Slip inside plays and sampled-target ranges remain restricted.",
             "normative": "6.2,7.4"
           },
           {
@@ -2314,12 +2323,15 @@
           {
             "id": "DP-09.2",
             "deliverable": "Approved room-tone selection, visible waveform/range, audition and bounded crossfade loops",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/ROOM_TONE_AUDIO.md",
-              "docs/WAVEFORMS.md"
+              "docs/WAVEFORMS.md",
+              "docs/ROOM_TONE_AUDIO.md (Repeat gaps and split fragments)",
+              "crates/deadpan-app/src/preview/room_tone.rs",
+              "room-tone-gaps replay; repeat-gap-room-tone preview/export fixture (2026-11-09)"
             ],
-            "remaining": "Range/audition and exact loops exist; room-tone waveform display and native Repeat-gap/fragment controls are explicitly open.",
+            "remaining": "",
             "normative": "8.3,10.4"
           },
           {
@@ -3172,14 +3184,16 @@
           {
             "id": "DP-18.7",
             "deliverable": "Sleep/power/thermal/disk and quit policies across worker types",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/qualification/transcription-sleep-2026-10-17.md",
               "docs/qualification/activity-sleep-2026-10-17.md",
               "docs/qualification/inference-scheduling-2026-10-17.md",
-              "docs/qualification/native-quit-2026-10-09.md"
+              "docs/qualification/native-quit-2026-10-09.md",
+              "docs/qualification/worker-sleep-2026-11-09.md",
+              "docs/JOBS.md (Policy per kind)"
             ],
-            "remaining": "Generation/transcription/pause detection and native Cmd-Q have evidence. Remaining analysis-worker sleep and running model policies remain local work; physical events and Dock/logout are owner checks.",
+            "remaining": "Physical lid-close and Apple-menu sleep are To verify (owner).",
             "confidence": "high"
           },
           {
@@ -3284,14 +3298,17 @@
           {
             "id": "DP-20.2",
             "deliverable": "Story/timing/detail timeline representations, waveforms and virtualized structural/attachment views",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/spec/DEADPAN_SPEC.md:546-552",
               "docs/INTERACTION_REVIEW.md",
               "docs/qualification/gain-waveform-2026-09-28.md",
-              "crates/deadpan-app/src/preview/trim.rs"
+              "crates/deadpan-app/src/preview/trim.rs",
+              "docs/NATIVE_WORKSPACE.md (Timeline scales)",
+              "crates/deadpan-app/src/preview/timing.rs",
+              "split-edits replay; detail_lane_draws_repeat_contents_in_each_revealed_play"
             ],
-            "remaining": "Story cards, thumbnails, Gain and Trim waveforms exist; timeline waveform strips at other scales and complete multi-detail attachment view remain incomplete.",
+            "remaining": "",
             "confidence": "high"
           },
           {
@@ -3614,13 +3631,14 @@
           {
             "id": "DP-24.2",
             "deliverable": "Cached visible ordinary edits and committed Hold fallback budgets at realistic project scale",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/PERFORMANCE.md:1-42",
               "docs/PERFORMANCE.md:250-320",
-              "docs/qualification/compound-wire-reuse-2026-10-24.md"
+              "docs/qualification/compound-wire-reuse-2026-10-24.md",
+              "docs/qualification/performance-2026-11-09.md (edit p95 5 to 23 ms headless, 8.7 ms UI; Hold p95 under 40 ms headless, 12.9 ms UI, including 10,000 beats)"
             ],
-            "remaining": "Real gains are measured, latest offscreen first-pause median 183.389625 ms; 100 ms Hold and 50 ms edit budgets remain open, with no current large native percentile claim.",
+            "remaining": "",
             "confidence": "high"
           },
           {
