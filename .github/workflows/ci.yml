@@ -1,9 +1,10 @@
 name: Rust
 
+# Manual only (owner decision 2026-11-09): until the requirements are
+# complete, verification runs locally (`cargo xtask check`, `gate`,
+# `replays`). Restore the push and pull_request triggers afterwards.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
