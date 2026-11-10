@@ -673,6 +673,22 @@ impl DeadpanApp {
             {
                 context.mixed_hold_duration =
                     Some(Box::new(target.semantic_mixed_hold_duration(&base)?));
+            } else if target.also.is_empty()
+                && target
+                    .target
+                    .repeats
+                    .iter()
+                    .all(|step| step.branch == deadpan_core::RepeatEditBranch::Default)
+                && matches!(
+                    base.document
+                        .nodes()
+                        .get(&target.target.node)
+                        .map(|node| &node.kind),
+                    Some(deadpan_core::NodeKind::Sequence { .. })
+                )
+            {
+                // The shared definition; the planner admits only Ungroup.
+                context.scoped = Some(target.semantic_definition(&base)?);
             } else {
                 context.scoped = Some(target.semantic_framing(&base)?);
             }
@@ -1804,6 +1820,7 @@ impl DeadpanApp {
                         | SemanticInstruction::Retime { .. }
                         | SemanticInstruction::Split
                         | SemanticInstruction::DeleteBeat
+                        | SemanticInstruction::Ungroup
                         | SemanticInstruction::Yank {
                             selector: deadpan_core::SemanticSelector::SelectedBeat,
                             ..
@@ -1828,7 +1845,7 @@ impl DeadpanApp {
                 )
                 && !matches!(&instruction, SemanticInstruction::SetAudio { change } if gain::scoped_audio_change(change))
             {
-                return Err("This play supports whole-beat gain, mute, saturation, balance and EQ, speed changes, freeze and black pauses, pause and gap lengths, silence and room tone, splitting, copying, cutting, deleting and repeating a beat, pasting beside it, Repeat plays and gaps, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
+                return Err("This play supports whole-beat gain, mute, saturation, balance and EQ, speed changes, freeze and black pauses, pause and gap lengths, silence and room tone, splitting, copying, cutting, deleting, ungrouping and repeating a beat, pasting beside it, Repeat plays and gaps, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
             }
             if !captured.matches(self)
                 || self

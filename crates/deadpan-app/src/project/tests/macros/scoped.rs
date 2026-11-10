@@ -374,7 +374,7 @@ fn native_scoped_apply_keeps_zoom_only_dot_noop_and_atomic_failures_and_durable_
     );
     let saved_bad_inner = send(
         &service,
-        save(&same, 3, 'c', program(vec![SemanticInstruction::Ungroup])),
+        save(&same, 3, 'c', program(vec![SemanticInstruction::Explode])),
     );
     let saved_bad = send(
         &service,

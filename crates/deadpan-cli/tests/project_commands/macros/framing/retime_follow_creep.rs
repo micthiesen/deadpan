@@ -527,7 +527,7 @@ fn whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_histo
                 error["error"]["message"]
                     .as_str()
                     .unwrap()
-                    .contains("single-play"),
+                    .contains("All plays contents support only ungrouping"),
                 "{error}"
             );
         }

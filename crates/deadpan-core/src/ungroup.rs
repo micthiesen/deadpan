@@ -11,8 +11,10 @@
 //! treatments, or a Partition that cannot carry the edge), it gets a new
 //! single-child Sequence carrying the group's windowed behavior instead.
 //! Stateful or nonlinear stages (EQ, saturation, balance) and sends shape the
-//! group's mixed children together, so no per-child form is sample-identical:
-//! those groups refuse.
+//! group's combined mix, so no per-child form is sample-identical: those
+//! groups refuse and name the effect (specification §2, Group / ungroup).
+//! A Sequence never carries cutaways or captions (validation keeps them on
+//! Source and Hold hosts), so its children's attachments move with them.
 
 use crate::{
     AudioEdgePolicies, AudioEdgePolicy, AudioEditorialEdges, AudioTreatmentStage, AudioTreatments,
@@ -41,6 +43,15 @@ impl UngroupPlan {
             .iter()
             .filter(|promotion| promotion.wrapper.is_some())
             .count()
+    }
+
+    /// The children that get wrappers, in the order wrapper identities are
+    /// consumed.
+    pub(crate) fn wrapped(&self) -> impl Iterator<Item = &NodeId> {
+        self.promotions
+            .iter()
+            .filter(|promotion| promotion.wrapper.is_some())
+            .map(|promotion| &promotion.child)
     }
 }
 
@@ -83,11 +94,6 @@ pub(crate) fn plan(document: &ProjectDocument, node: &NodeId) -> Result<UngroupP
             "ungroup requires a Sequence",
         ));
     };
-    if !beat.cutaways.is_empty() || !beat.captions.is_empty() {
-        return Err(invalid(
-            "ungroup cannot move this Sequence's cutaways or captions; retain the group",
-        ));
-    }
     let gain = group_gain(&beat.audio_treatments)?;
     let edges = (beat.audio_editorial_edges, beat.audio_edges);
     let has_edges = !edges.0.is_empty() || edges.1 != AudioEdgePolicies::default();
@@ -174,31 +180,30 @@ pub(crate) fn plan(document: &ProjectDocument, node: &NodeId) -> Result<UngroupP
     })
 }
 
+/// The refusal for an effect on the group's combined mix: it has no per-child
+/// equivalent, so the user removes it (or moves it) first, or keeps the group.
+pub(crate) fn combined_mix_refusal(effect: &str) -> EditError {
+    EditError::new(
+        EditErrorCode::InvalidCommand,
+        format!(
+            "ungroup cannot keep this group's {effect}, which acts on its children's combined mix and has no per-child equivalent; remove the group's {effect} first, or keep the group"
+        ),
+    )
+}
+
 /// The group's clip gain, or a readable refusal for stages that act on the
-/// group's mixed children together.
+/// group's combined mix.
 fn group_gain(treatments: &AudioTreatments) -> Result<Option<&ClipGain>, EditError> {
     if !treatments.tail_sends().is_empty() || !treatments.wet_sends().is_empty() {
-        return Err(invalid(
-            "ungroup cannot split this Sequence's effect sends across its children; retain the group",
-        ));
+        return Err(combined_mix_refusal("effect sends"));
     }
     for stage in treatments.order() {
         match stage {
             AudioTreatmentStage::ClipGain => {}
-            AudioTreatmentStage::Saturation => {
-                return Err(invalid(
-                    "ungroup cannot preserve this Sequence's saturation, which shapes its children's mixed sound together; retain the group",
-                ));
-            }
-            AudioTreatmentStage::Equalizer => {
-                return Err(invalid(
-                    "ungroup cannot preserve this Sequence's EQ, which filters its children's sound continuously across their cuts; retain the group",
-                ));
-            }
+            AudioTreatmentStage::Saturation => return Err(combined_mix_refusal("saturation")),
+            AudioTreatmentStage::Equalizer => return Err(combined_mix_refusal("EQ")),
             AudioTreatmentStage::StereoBalance => {
-                return Err(invalid(
-                    "ungroup cannot preserve this Sequence's stereo balance, which applies to its children's mixed sound; retain the group",
-                ));
+                return Err(combined_mix_refusal("stereo balance"));
             }
         }
     }

@@ -580,7 +580,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::SetRepeatPlays { .. }
             | OccurrenceEdit::SetRepeatGaps { .. }
             | OccurrenceEdit::Group { .. }
-            | OccurrenceEdit::Ungroup
+            | OccurrenceEdit::Ungroup { .. }
             | OccurrenceEdit::WrapRepeat { .. }
             | OccurrenceEdit::SetRepeat { .. }
             | OccurrenceEdit::WrapRetime { .. }

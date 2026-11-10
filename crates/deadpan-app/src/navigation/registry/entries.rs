@@ -839,7 +839,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::EDIT,
         replay: Replay::RecordedAndDot,
         headless: eq("ungroup instruction / command", STRUCT),
-        help: "Replace an explicit selected Sequence with its children. Clear every Visual range first. The group's camera path, clip gain and edge choices move onto its children so pictures and sound stay identical; a child with its own framing or other treatments keeps them inside a new single-child group carrying the group's. Groups with saturation, EQ, balance, effect sends, cutaways or captions refuse, because those shape the children's mixed result together. No key is assigned by default; a keymap may bind group.ungroup.",
+        help: "Replace an explicit selected Sequence with its children. Clear every Visual range first. The group's camera path, clip gain and edge choices move onto its children so pictures and sound stay identical; a child with its own framing or other treatments keeps them inside a new single-child group carrying the group's. Captions and cutaways placed over a group already live on its beats and stay put. Groups with saturation, EQ, balance or effect sends refuse, because those act on the children's combined mix with no per-child equivalent; remove the effect first or keep the group. Inside a Repeat's contents it works in This play or in All plays. No key is assigned by default; a keymap may bind group.ungroup.",
     },
     Spec {
         id: "structure.explode",

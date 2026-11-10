@@ -974,12 +974,10 @@ where
             "select a beat before placing a cutaway over it",
             "a cutaway stays inside one beat; select a range inside one beat",
         )?;
-        let (host, offset) = crate::cutaway_host(&self.current, &selected).ok_or_else(|| {
-            EditError::new(
-                EditErrorCode::WrongNodeKind,
-                "cutaways belong to a source or pause beat",
-            )
-        })?;
+        self.attachment_target(
+            &selected,
+            "cutaways belong to a source or pause beat, or a group of them",
+        )?;
         let value = if let Some(value) = self.writes.get(&register) {
             value.clone()
         } else {
@@ -1000,47 +998,22 @@ where
             .video_mapping
             .selection_in_source(*span, source.duration)
             .map_err(crate::DocumentError::from)?;
-        let range = FrameRange::new(
-            ProjectFrame(offset + local.start),
-            ProjectFrame(offset + local.end),
-        )
-        .map_err(crate::DocumentError::from)?;
-        let mut cutaways = self.current.nodes()[&host].cutaways.clone();
-        if cutaways.iter().any(|cutaway| {
-            cutaway.range.start() < range.end() && range.start() < cutaway.range.end()
-        }) {
-            return Err(invalid(
-                "this beat already shows a cutaway there; clear it first",
-            ));
-        }
-        let position = cutaways.partition_point(|cutaway| cutaway.range.start() < range.start());
-        cutaways.insert(
-            position,
-            crate::Cutaway {
-                range,
-                asset: asset.clone(),
-                selection,
-                fit,
-                removed: false,
-            },
-        );
-        self.charge_step(false)?;
-        let SemanticAllocation::ParameterEdit { new_revision } =
-            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
-                step_index: self.steps.len(),
-            })?
-        else {
-            return Err(invalid("a cutaway requires a parameter allocation"));
+        // A whole-beat cutaway's range is replaced by each host's share.
+        let cutaway = crate::Cutaway {
+            range: FrameRange::new(ProjectFrame(local.start), ProjectFrame(local.end))
+                .map_err(crate::DocumentError::from)?,
+            asset: asset.clone(),
+            selection,
+            fit,
+            removed: false,
         };
-        self.reserve_revision(&new_revision)?;
-        let edit = LeafEdit::new(
-            new_revision,
-            Command::SetCutaways {
-                node: host,
-                cutaways,
-            },
+        let commands = self.current.cutaway_over(
+            &selected,
+            local.clone(),
+            &cutaway,
+            self.current.presentation_basis().frame_rate,
         )?;
-        self.commit_leaf(edit)?;
+        self.commit_parameter_commands(commands, "a cutaway requires a parameter allocation")?;
         self.finish_beat_span(trace_index, selected, local)
     }
 
@@ -1074,47 +1047,55 @@ where
             ));
         }
         local.start += delay;
-        let (host, offset) = crate::cutaway_host(&self.current, &selected).ok_or_else(|| {
-            EditError::new(
-                EditErrorCode::WrongNodeKind,
-                "captions belong to a source or pause beat",
-            )
-        })?;
+        self.attachment_target(
+            &selected,
+            "captions belong to a source or pause beat, or a group of them",
+        )?;
         let caption = crate::Caption {
-            range: FrameRange::new(
-                ProjectFrame(offset + local.start),
-                ProjectFrame(offset + local.end),
-            )
-            .map_err(crate::DocumentError::from)?,
+            range: FrameRange::new(ProjectFrame(local.start), ProjectFrame(local.end))
+                .map_err(crate::DocumentError::from)?,
             text: text.to_owned(),
             placement,
             reveal,
         };
-        let mut captions = self.current.nodes()[&host].captions.clone();
-        let position =
-            captions.partition_point(|existing| existing.range.start() <= caption.range.start());
-        captions.insert(position, caption);
-        crate::caption::validate(&captions).map_err(|_| {
-            invalid("this beat already shows a caption there at that placement; clear it first")
-        })?;
-        self.charge_step(false)?;
-        let SemanticAllocation::ParameterEdit { new_revision } =
-            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
-                step_index: self.steps.len(),
-            })?
-        else {
-            return Err(invalid("a caption requires a parameter allocation"));
-        };
-        self.reserve_revision(&new_revision)?;
-        let edit = LeafEdit::new(
-            new_revision,
-            Command::SetCaptions {
-                node: host,
-                captions,
-            },
-        )?;
-        self.commit_leaf(edit)?;
+        let commands = self
+            .current
+            .caption_over(&selected, local.clone(), &caption)?;
+        self.commit_parameter_commands(commands, "a caption requires a parameter allocation")?;
         self.finish_beat_span(trace_index, selected, local)
+    }
+
+    /// A caption or cutaway target: a host (through unity Partitions) or an
+    /// ordinary group, whose hosts each take their share.
+    fn attachment_target(&self, node: &NodeId, refusal: &'static str) -> Result<(), EditError> {
+        if crate::cutaway_host(&self.current, node).is_some()
+            || matches!(self.current.nodes()[node].kind, NodeKind::Sequence { .. })
+        {
+            Ok(())
+        } else {
+            Err(EditError::new(EditErrorCode::WrongNodeKind, refusal))
+        }
+    }
+
+    /// One parameter leaf per host command, all in this instruction's Apply.
+    fn commit_parameter_commands(
+        &mut self,
+        commands: Vec<Command>,
+        refusal: &'static str,
+    ) -> Result<(), EditError> {
+        for command in commands {
+            self.charge_step(false)?;
+            let SemanticAllocation::ParameterEdit { new_revision } =
+                (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                    step_index: self.steps.len(),
+                })?
+            else {
+                return Err(invalid(refusal));
+            };
+            self.reserve_revision(&new_revision)?;
+            self.commit_leaf(LeafEdit::new(new_revision, command)?)?;
+        }
+        Ok(())
     }
 
     /// The selected direct child and its whole local range, or the one

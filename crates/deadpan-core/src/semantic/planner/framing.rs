@@ -56,13 +56,16 @@ pub(super) fn validate_scoped_identity(
             "single-play editing root must be a direct Repeat or Retime child",
         ));
     }
-    if scoped.target.repeats.is_empty()
-        || scoped
+    // All plays at every level names the shared definition, which only
+    // Ungroup admits (`definition_scope`); a mix of the two names neither.
+    let plays = |play: bool| {
+        scoped
             .target
             .repeats
             .iter()
-            .any(|step| !matches!(step.branch, crate::RepeatEditBranch::Play { .. }))
-    {
+            .all(|step| matches!(step.branch, crate::RepeatEditBranch::Play { .. }) == play)
+    };
+    if scoped.target.repeats.is_empty() || !(plays(true) || plays(false)) {
         return Err(unavailable(
             "single-play editing requires every Repeat ancestor to name one explicit Play",
         ));
@@ -88,6 +91,18 @@ pub(super) fn validate_scoped_identity(
     Err(unavailable(
         "single-play editing target lies outside its captured inspector root",
     ))
+}
+
+/// Whether the scoped context names the shared definition (All plays at
+/// every Repeat level) rather than one explicit play.
+pub(super) fn definition_scope(context: &SemanticContext) -> bool {
+    context.scoped.as_ref().is_some_and(|scoped| {
+        scoped
+            .target
+            .repeats
+            .iter()
+            .any(|step| step.branch == crate::RepeatEditBranch::Default)
+    })
 }
 
 fn unavailable(message: &str) -> EditError {

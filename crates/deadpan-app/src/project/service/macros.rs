@@ -171,7 +171,19 @@ fn scoped_macro_target(
         also: Vec::new(),
     };
     target.validate_request(workspace, id.session, &id.revision, scope, context.cursor)?;
-    if target.semantic_framing(workspace)? != *scoped {
+    // All plays at every level is the shared definition, which the planner
+    // admits only for Ungroup.
+    let definition = scoped
+        .target
+        .repeats
+        .iter()
+        .all(|step| step.branch == deadpan_core::RepeatEditBranch::Default);
+    let admitted = if definition {
+        target.semantic_definition(workspace)?
+    } else {
+        target.semantic_framing(workspace)?
+    };
+    if admitted != *scoped {
         return Err("The macro authority differs from its captured native scope.".into());
     }
     Ok(Some(target))

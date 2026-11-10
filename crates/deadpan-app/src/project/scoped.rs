@@ -333,6 +333,33 @@ impl Target {
         })
     }
 
+    /// All plays at every Repeat level over a group: the shared definition,
+    /// which the planner admits only for Ungroup.
+    pub fn semantic_definition(
+        &self,
+        workspace: &Workspace,
+    ) -> Result<deadpan_core::SemanticScopedContext, String> {
+        self.validate(workspace)?;
+        if !self.also.is_empty()
+            || self.target.repeats.is_empty()
+            || self
+                .target
+                .repeats
+                .iter()
+                .any(|step| step.branch != RepeatEditBranch::Default)
+        {
+            return Err("Choose This play, or All plays, at every Repeat level before ungrouping. Mixed choices and several plays are not available.".into());
+        }
+        Ok(deadpan_core::SemanticScopedContext {
+            root: self.root.clone(),
+            target: self.target.clone(),
+            presentation: self
+                .presentation
+                .clone()
+                .ok_or("No play shows this group, so there is nothing to ungroup here.")?,
+        })
+    }
+
     /// Retain per-level authoring choices separately from the concrete picture.
     /// The boolean reports shared definition work for provider admission only;
     /// it must never replace those choices in the authored command.

@@ -1,6 +1,6 @@
 //! Structural edits of one visible Repeat occurrence (`EditOccurrence` Split,
-//! DeleteRipple, PasteSlice, PasteSource, RepeatChild, SetRepeatPlays and
-//! SetRepeatGaps): exact isolation needs before
+//! DeleteRipple, PasteSlice, PasteSource, RepeatChild, SetRepeatPlays,
+//! SetRepeatGaps and Ungroup): exact isolation needs before
 //! allocation and the selection that follows the committed result.
 
 use super::*;
@@ -110,9 +110,19 @@ impl ProjectDocument {
                 }
                 ripple::site(self, instance)?;
             }
+            OccurrenceEdit::Ungroup { wrappers } => {
+                // The isolated copy plans exactly as its definition does.
+                let required = self.ungroup_requirements(&instance.node)?;
+                if wrappers.len() != required {
+                    return Err(EditError::new(
+                        EditErrorCode::IdentityConflict,
+                        format!("this ungroup requires exactly {required} wrapper identities"),
+                    ));
+                }
+            }
             _ => {
                 return Err(invalid(
-                    "a one-play structural edit splits, deletes, pastes beside or repeats a beat, or sets a Repeat's plays or gaps",
+                    "a one-play structural edit splits, deletes, pastes beside, repeats or ungroups a beat, or sets a Repeat's plays or gaps",
                 ));
             }
         }
@@ -165,25 +175,25 @@ impl ProjectDocument {
             OccurrenceEdit::SetRepeatPlays { .. } | OccurrenceEdit::SetRepeatGaps { .. } => {
                 map(&instance.node)
             }
-            OccurrenceEdit::DeleteRipple { .. } => {
-                let parent = self
-                    .parent_of(&instance.node)
-                    .ok_or_else(|| invalid("the deleted beat has no group"))?;
-                let NodeKind::Sequence { children } = &self.nodes()[&parent].kind else {
-                    return Err(invalid("the deleted beat's parent is not a group"));
-                };
-                let slot = children
-                    .iter()
-                    .position(|child| child == &instance.node)
-                    .ok_or_else(|| invalid("the deleted beat left its group"))?;
-                map(children
-                    .get(slot + 1)
-                    .or_else(|| slot.checked_sub(1).and_then(|index| children.get(index)))
-                    .unwrap_or(&parent))
-            }
+            OccurrenceEdit::DeleteRipple { .. } => map(&self.neighbor(&instance.node)?),
+            // The first promoted child, or its wrapper; an empty group's
+            // neighbor, as a deletion selects.
+            OccurrenceEdit::Ungroup { wrappers } => match self.children(&instance.node).next() {
+                Some(first) => {
+                    let plan = crate::ungroup::plan(self, &instance.node)?;
+                    match plan.wrapped().position(|child| child == first) {
+                        Some(index) => wrappers
+                            .get(index)
+                            .cloned()
+                            .ok_or_else(|| invalid("ungroup needs more wrapper identities"))?,
+                        None => map(first),
+                    }
+                }
+                None => map(&self.neighbor(&instance.node)?),
+            },
             _ => {
                 return Err(invalid(
-                    "a one-play structural edit splits, deletes, pastes beside or repeats a beat, or sets a Repeat's plays or gaps",
+                    "a one-play structural edit splits, deletes, pastes beside, repeats or ungroups a beat, or sets a Repeat's plays or gaps",
                 ));
             }
         };
@@ -207,6 +217,28 @@ impl ProjectDocument {
             },
             InstancePath { node, repeats },
         ))
+    }
+}
+
+impl ProjectDocument {
+    /// The beat a removed `node` leaves selected: its following sibling, else
+    /// its preceding one, else its now empty group.
+    pub(crate) fn neighbor(&self, node: &NodeId) -> Result<NodeId, EditError> {
+        let parent = self
+            .parent_of(node)
+            .ok_or_else(|| invalid("the removed beat has no group"))?;
+        let NodeKind::Sequence { children } = &self.nodes()[&parent].kind else {
+            return Err(invalid("the removed beat's parent is not a group"));
+        };
+        let slot = children
+            .iter()
+            .position(|child| child == node)
+            .ok_or_else(|| invalid("the removed beat left its group"))?;
+        Ok(children
+            .get(slot + 1)
+            .or_else(|| slot.checked_sub(1).and_then(|index| children.get(index)))
+            .unwrap_or(&parent)
+            .clone())
     }
 }
 

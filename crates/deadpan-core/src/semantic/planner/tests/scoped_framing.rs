@@ -24,6 +24,9 @@ mod scoped_structure;
 #[path = "scoped_play_gap.rs"]
 mod scoped_play_gap;
 
+#[path = "scoped_ungroup.rs"]
+mod scoped_ungroup;
+
 fn repeated(id: &str, child: &str, plays: u32) -> BeatNode {
     let mut result = BeatNode::sequence(id, vec![]);
     result.kind = NodeKind::Repeat {

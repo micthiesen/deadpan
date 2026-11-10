@@ -2626,3 +2626,134 @@ fn ungrouping_a_framed_group_wraps_children_that_have_their_own_framing() {
     }
     assert_eq!(picture(&new, 3).1.len(), 2);
 }
+
+/// Captions and a cutaway placed over a group inside a Repeat land on its
+/// hosts; ungrouping that group in one play, or in the shared definition,
+/// leaves every picture, camera pose and caption unchanged.
+#[test]
+fn ungrouping_a_captioned_group_inside_a_repeat_keeps_every_picture() {
+    let pose = |x: i128, scale: i128| {
+        FramingPose::new(
+            ExactRatio::new(x, 8).unwrap(),
+            ExactRatio::new(1, 2).unwrap(),
+            ExactRatio::new(scale, 4).unwrap(),
+        )
+        .unwrap()
+    };
+    let mut group = BeatNode::sequence("Group", vec![id("a"), id("b")]);
+    group.framing = Some(Framing::creep(pose(3, 4), pose(5, 6), FramingCurve::Linear).unwrap());
+    let mut a = source(3, 5005, 8008);
+    a.framing = Some(Framing::static_pose(pose(4, 5)).unwrap());
+    let plain = document(
+        &["lead", "rep"],
+        vec![
+            ("lead", source(2, 0, 2002)),
+            ("rep", repeat("body", 3, 0, "rep")),
+            ("body", BeatNode::sequence("Body", vec![id("x"), id("grp")])),
+            ("x", source(2, 20020, 22022)),
+            ("grp", group),
+            ("a", a),
+            ("b", source(4, 10010, 14014)),
+        ],
+    );
+    let caption = Caption {
+        range: range(0, 1),
+        text: "From the second time".into(),
+        placement: CaptionPlacement::Top,
+        reveal: std::num::NonZeroU32::new(2),
+    };
+    let cutaway = Cutaway {
+        range: range(0, 1),
+        asset: asset_id("video"),
+        selection: span(40040, 41041).into(),
+        fit: CutawayFit::Hold,
+        removed: false,
+    };
+    let rate = plain.presentation_basis().frame_rate;
+    let mut captioned = plain.clone();
+    let mut commands = captioned.caption_over(&id("grp"), 1..6, &caption).unwrap();
+    commands.extend(
+        captioned
+            .cutaway_over(&id("grp"), 2..5, &cutaway, rate)
+            .unwrap(),
+    );
+    for (index, command) in commands.into_iter().enumerate() {
+        let request = CommandRequest {
+            project_id: captioned.project_id().clone(),
+            expected_revision: captioned.revision_id().clone(),
+            new_revision: revision(&format!("attach-{index}")),
+            command,
+        };
+        captioned = apply(&captioned, &request)
+            .unwrap()
+            .forward
+            .apply(&captioned)
+            .unwrap();
+    }
+    assert!(captioned.nodes()[&id("grp")].captions.is_empty());
+    assert_eq!(captioned.nodes()[&id("a")].captions.len(), 1);
+    assert_eq!(captioned.nodes()[&id("b")].cutaways.len(), 1);
+    let wrappers = captioned.ungroup_requirements(&id("grp")).unwrap();
+    assert_eq!(wrappers, 1, "`a` keeps its framing inside a wrapper");
+    let instance = InstancePath {
+        node: id("grp"),
+        repeats: vec![RepeatInstance {
+            node: id("rep"),
+            iteration: IterationId {
+                allocation: revision("rep"),
+                ordinal: 1,
+            },
+        }],
+    };
+    let probe = OccurrenceEdit::Ungroup {
+        wrappers: vec![id("wrap")],
+    };
+    let needs = captioned
+        .occurrence_structure_requirements(&instance, &probe)
+        .unwrap();
+    let one_play = Command::EditOccurrence {
+        instance,
+        edit: probe,
+        identities: OccurrenceIdentities {
+            nodes: (0..needs.nodes)
+                .map(|n| id(&format!("isolated-{n}")))
+                .collect(),
+            marks: Vec::new(),
+        },
+    };
+    let all_plays = Command::Ungroup {
+        node: id("grp"),
+        wrappers: vec![id("wrap")],
+    };
+    let old = RenderPlan::compile(&captioned).unwrap();
+    let picture = |plan: &RenderPlan, frame| {
+        let sample = plan.picture(ProjectFrame(frame)).unwrap();
+        let poses: Vec<_> = sample
+            .framing
+            .iter()
+            .filter_map(|layer| layer.pose)
+            .collect();
+        (sample.picture, poses, sample.captions)
+    };
+    let total = captioned.duration().unwrap().frames();
+    let shown: Vec<_> = (0..total)
+        .filter(|frame| !picture(&old, *frame).2.is_empty())
+        .collect();
+    // Play 0 (frames 2..11) hides it; plays 1 and 2 show group frames 1..6.
+    assert_eq!(shown, [14, 15, 16, 17, 18, 23, 24, 25, 26, 27]);
+    for command in [one_play, all_plays] {
+        let request = CommandRequest {
+            project_id: captioned.project_id().clone(),
+            expected_revision: captioned.revision_id().clone(),
+            new_revision: revision("ungrouped"),
+            command,
+        };
+        let edit = apply(&captioned, &request).unwrap();
+        let after = edit.forward.apply(&captioned).unwrap();
+        assert_eq!(edit.inverse.apply(&after).unwrap(), captioned);
+        let new = RenderPlan::compile(&after).unwrap();
+        for frame in 0..total {
+            assert_eq!(picture(&new, frame), picture(&old, frame), "frame {frame}");
+        }
+    }
+}

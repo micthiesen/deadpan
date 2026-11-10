@@ -152,6 +152,20 @@ deletion removes the deleted part and insertions are silent in it. A bed
 drop on such a bed maps the cursor back through its retained route, so
 dropping a bed never needs to discard the route or re-time the recipe.
 
+Also on 2026-11-10, Section 6.3's Group / ungroup row gained an exact
+rule under the same delegated authority, closing DP-03.3. "Without changing
+rendered output" now means every picture and sample: framing, clip gain and
+edge choices distribute exactly (with single-child wrappers where needed),
+while saturation, EQ, stereo balance and effect sends act on the children's
+combined mix with no per-child equivalent, so Ungroup refuses and names the
+effect rather than approximating it. Captions and cutaways stay on Source
+and Hold hosts, as validation already required: placing one over a group
+distributes the exact intersections to the hosts at authoring time, so
+Ungroup has nothing to move. Distribution never enters a Repeat or speed
+change, which keeps a caption's per-play reveal counting the same Repeat.
+Ungroup inside Repeat contents follows the existing This play and All plays
+choices.
+
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
 | [AGENT_HANDOFF.md](spec/archive/1.0/AGENT_HANDOFF.md) | 4,340 | `464f689e1eb5ad6b2905286e516259f07dc83fea8ebb2b0330663976b905ae6c` |

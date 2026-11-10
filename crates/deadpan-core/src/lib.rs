@@ -51,6 +51,7 @@ mod framing;
 pub mod framing_zoom;
 mod gap_override;
 mod generated;
+mod group_attachments;
 mod group_selection;
 mod hdr;
 mod id_hash;
@@ -130,6 +131,7 @@ pub use exact::ExactRatio;
 pub use explode::ExplodeRequirements;
 pub use framing::*;
 pub use generated::*;
+pub use group_attachments::HostSpan;
 pub use group_selection::{GroupSelectionIdentities, GroupSelectionPlan, validate_group_label};
 pub use hdr::*;
 pub use insert_time::{

@@ -914,6 +914,16 @@ where
                     "ordinary inspected Hold authority supports only Hold duration and named duration calls",
                 ));
             }
+            if framing::definition_scope(&self.context)
+                && !matches!(
+                    instruction,
+                    SemanticInstruction::Ungroup | SemanticInstruction::Call { .. }
+                )
+            {
+                return Err(unavailable(
+                    "All plays contents support only ungrouping a selected group and named calls; choose This play at every Repeat level for other edits",
+                ));
+            }
             if self.context.scoped.is_some()
                 && self.context.visual_selection.is_some()
                 && !matches!(
@@ -937,6 +947,7 @@ where
                         | SemanticInstruction::Retime { .. }
                         | SemanticInstruction::Split
                         | SemanticInstruction::DeleteBeat
+                        | SemanticInstruction::Ungroup
                         | SemanticInstruction::SetRepeatPlays { .. }
                         | SemanticInstruction::Repeat {
                             selector: SemanticSelector::SelectedBeat,
@@ -959,7 +970,7 @@ where
                 )
             {
                 return Err(invalid(
-                    "single-play macro authority supports only Zoom, whole-owner gain, mute, saturation, balance and EQ, speed changes, freeze or black pause intent, Hold duration or sound, splitting, copying, cutting, deleting or repeating the beat, pasting beside it, Repeat plays and gaps, and named calls",
+                    "single-play macro authority supports only Zoom, whole-owner gain, mute, saturation, balance and EQ, speed changes, freeze or black pause intent, Hold duration or sound, splitting, copying, cutting, deleting, ungrouping or repeating the beat, pasting beside it, Repeat plays and gaps, and named calls",
                 ));
             }
             if matches!(
@@ -1163,6 +1174,9 @@ where
                 }
                 SemanticInstruction::Group { selector, label } => {
                     self.group(index, selector, label)?;
+                }
+                SemanticInstruction::Ungroup if self.context.scoped.is_some() => {
+                    self.scoped_ungroup(index)?;
                 }
                 SemanticInstruction::Ungroup => self.ungroup(index)?,
                 SemanticInstruction::Explode => self.explode(index)?,

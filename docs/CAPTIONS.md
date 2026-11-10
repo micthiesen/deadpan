@@ -68,8 +68,14 @@ the font is shipped with its OFL notice in the bundle notices
 selected beat, or the Edit range inside it (then `delay=` is refused). Quoted
 text keeps option-like words; unquoted text is its words joined by single
 spaces before any trailing options. A Split fragment places the caption on its
-Source in the Source's clock; groups, Repeats and speed changes are refused
-with guidance. `:caption clear` removes the captions overlapping the range or
+Source in the Source's clock. A selected group (or an Edit range inside it)
+gives each Source or Hold beneath it the exact intersection in that host's
+clock, through nested groups and Split fragments, one `SetCaptions` per host
+in one Apply; every frame shows the same caption, and Ungroup carries the
+shares unchanged ([group editing](GROUP_EDITING.md#effect-distribution)).
+Repeats and speed changes are refused with guidance, also when they lie
+inside a captioned group's range: a caption moved below a Repeat would count
+that Repeat's plays for `reveal`. `:caption clear` removes the captions overlapping the range or
 beat. The inspector lists a beat's captions, including a fragment's Source
 captions over its own frames. Placing a caption commits one semantic
 `SetCaption { text, placement, delay, reveal }` over the selected beat, or over

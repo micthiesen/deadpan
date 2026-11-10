@@ -53,6 +53,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     treated(d, &baseline)?;
     objects::run(d, &baseline)?;
     beat_objects::run(d, &baseline)?;
+    in_plays(d, &baseline)?;
     d.report.skipped.push("Keyboard and IME events are synthetic production event batches. Physical delivery and OS composition remain separate qualification. Composed pixel comparisons run only in visual mode; canonical PCM equivalence is covered by the separate core/audio tests.".into());
     Ok(())
 }
@@ -654,10 +655,45 @@ fn treated(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String>
         "creep from=1 to=1.4 target=center curve=linear",
         "gain -3dB",
         "gain +3dB range=1-5",
+        // A caption over the group lands on both fragments' Sources.
+        "caption \"Across both\" delay=2f",
     ] {
         step(d, &mut history, text)?;
     }
     let treated = document(d)?.clone();
+    let hosts: Vec<_> = treated
+        .children(&group)
+        .map(|child| {
+            deadpan_core::cutaway_host(&treated, child).map(|(host, _)| {
+                treated.nodes()[&host]
+                    .captions
+                    .iter()
+                    .map(|caption| caption.text.clone())
+                    .collect::<Vec<_>>()
+            })
+        })
+        .collect();
+    d.check(
+        ":caption on the selected group places one share on each fragment's Source",
+        hosts
+            == [
+                Some(vec!["Across both".to_owned()]),
+                Some(vec!["Across both".to_owned()]),
+            ]
+            && treated.nodes()[&group].captions.is_empty(),
+        json!(["Across both", "Across both"]),
+        json!(hosts),
+    )?;
+    let captions = plan_captions(d, 18..29)?;
+    d.check(
+        "The group's caption shows from two frames after its start to its end",
+        captions
+            .iter()
+            .enumerate()
+            .all(|(index, shown)| shown.len() == usize::from((22..27).contains(&(index + 18)))),
+        json!({"shown":"Edit 22..27"}),
+        json!(captions),
+    )?;
     let owner = &treated.nodes()[&group];
     let children: Vec<_> = treated.children(&group).cloned().collect();
     let required = treated
@@ -717,11 +753,132 @@ fn treated(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String>
         &pixels,
         "Ungrouping a framed, gained group preserves composed pictures",
     )?;
+    d.check(
+        "Ungrouping the captioned group keeps every frame's caption",
+        plan_captions(d, 18..29)? == captions,
+        json!(captions),
+        json!(plan_captions(d, 18..29)?),
+    )?;
     // One Undo restores the treated group; each earlier step then undoes once.
     for expected in history.iter().rev() {
         undo(d, expected)?;
     }
     Ok(())
+}
+
+/// Each frame's caption texts in the committed plan.
+fn plan_captions(d: &Driver<'_>, frames: std::ops::Range<i64>) -> Result<Vec<Vec<String>>, String> {
+    let workspace = d.app().workspace.as_ref().ok_or("No workspace")?;
+    frames
+        .map(|frame| {
+            workspace
+                .plan
+                .picture(ProjectFrame(frame))
+                .map(|sample| {
+                    sample
+                        .captions
+                        .into_iter()
+                        .map(|caption| caption.text)
+                        .collect()
+                })
+                .map_err(|error| error.to_string())
+        })
+        .collect()
+}
+
+/// A gained group inside a three-play Repeat: `:ungroup` in play 2 changes
+/// only that play (isolating it), `:ungroup` in All plays changes the shared
+/// definition; both keep every picture, and each Undo restores the group.
+fn in_plays(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
+    let mut history = vec![baseline.clone()];
+    at(d, 20)?;
+    visual(d, 7, false)?;
+    let before = d.revision();
+    d.command("group name=\"looped\"")?;
+    d.changed(&before)?;
+    let group = grouped(d, "looped", 20, 7)?;
+    history.push(document(d)?.clone());
+    for text in ["gain -4dB", "group name=\"body\"", "repeat 3"] {
+        let before = d.revision();
+        d.command(text)?;
+        d.changed(&before)?;
+        idle(d)?;
+        history.push(document(d)?.clone());
+    }
+    let repeated = document(d)?.clone();
+    let repeat = d.app().selected_beat.clone().ok_or("No selected Repeat")?;
+    d.check(
+        "The gained group plays three times inside a Repeat of its own Sequence",
+        matches!(&repeated.nodes()[&repeat].kind, NodeKind::Repeat { iterations, .. } if iterations.len() == 3)
+            && repeated.nodes().contains_key(&group)
+            && d.app().sequence_length() == 134,
+        json!({"plays":3,"frames":134}),
+        state(d),
+    )?;
+    let pixels = play_pictures(d)?;
+    for (scope, isolated) in [("scope play 2", true), ("scope all", false)] {
+        at(d, 20)?;
+        d.key(Key::Enter)?;
+        idle(d)?;
+        d.command(scope)?;
+        idle(d)?;
+        d.key(Key::Enter)?;
+        idle(d)?;
+        let before = d.revision();
+        d.command("ungroup")?;
+        d.changed(&before)?;
+        idle(d)?;
+        let after = document(d)?.clone();
+        let overridden = after
+            .overrides()
+            .get(&repeat)
+            .is_some_and(|plays| !plays.is_empty());
+        d.check(
+            if isolated {
+                ":ungroup in play 2 isolates that play and keeps the group for the others"
+            } else {
+                ":ungroup in All plays removes the group from the shared definition"
+            },
+            after.nodes().contains_key(&group) == isolated
+                && overridden == isolated
+                && d.app().sequence_length() == 134
+                && d.app().error.is_none(),
+            json!({"group_kept":isolated,"play_override":isolated}),
+            json!({"group_kept":after.nodes().contains_key(&group),"overrides":after.overrides().get(&repeat),"error":d.app().error}),
+        )?;
+        while d.app().scoped.is_some() {
+            d.key(Key::Escape)?;
+            idle(d)?;
+        }
+        let actual = play_pictures(d)?;
+        d.check(
+            "Ungrouping inside the Repeat keeps every play's composed picture",
+            actual == pixels,
+            json!(pixels),
+            json!(actual),
+        )?;
+        undo(d, &repeated)?;
+    }
+    for expected in history.iter().rev().skip(1) {
+        undo(d, expected)?;
+    }
+    Ok(())
+}
+
+/// Displayed Original frames and fingerprints in each of the three plays.
+fn play_pictures(d: &mut Driver<'_>) -> Result<Vec<(u64, Option<String>)>, String> {
+    let mut pictures = Vec::new();
+    for frame in [21, 30, 33, 40] {
+        at(d, frame)?;
+        let source = d
+            .app()
+            .presentation
+            .displayed_source_frame()
+            .ok_or("Play checkpoint has no displayed Original frame")?
+            .0;
+        pictures.push((source, super::group_pixels::fingerprint(d)?));
+    }
+    Ok(pictures)
 }
 
 fn grouped(d: &mut Driver<'_>, label: &str, start: u64, frames: i64) -> Result<NodeId, String> {

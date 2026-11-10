@@ -1,5 +1,5 @@
-//! `s`, `dd`, `rr`, `p`/`P`, `:repeat N` and `:repeat [N] gap=` on the beat
-//! in the invocation's explicit play. Each is one `EditOccurrence` leaf built exactly
+//! `s`, `dd`, `rr`, `p`/`P`, `:ungroup`, `:repeat N` and `:repeat [N] gap=`
+//! on the beat in the invocation's explicit play. Each is one `EditOccurrence` leaf built exactly
 //! as the native edit builds it; the saved instruction names no node or play,
 //! so a replay or dot resolves the beat and play chain chosen at invocation.
 
@@ -25,6 +25,8 @@ pub(super) enum ScopedStructure {
         register: RegisterName,
         before: bool,
     },
+    /// Ungroup the selected Sequence in this play only.
+    Ungroup,
 }
 
 /// Gap recipes resolved once from the pre-edit document; independent of the
@@ -172,6 +174,7 @@ where
                 count
             }
             ScopedStructure::Repeat { .. } => 1,
+            ScopedStructure::Ungroup => self.ungroup_target(&instance.node)?,
             ScopedStructure::Delete | ScopedStructure::SetPlays { .. } => 0,
             ScopedStructure::SetGaps { .. } | ScopedStructure::Paste { .. } => 0,
         };
@@ -224,6 +227,7 @@ where
                     .as_ref()
                     .expect("pastes resolve their register")
                     .edit(*before, ids, marks, timing)?,
+                ScopedStructure::Ungroup => crate::OccurrenceEdit::Ungroup { wrappers: ids },
             })
         };
         // Isolation sizing and the no-op refusals depend on neither the
@@ -351,6 +355,121 @@ where
             );
         }
         Ok(())
+    }
+
+    /// `Ungroup` inside Repeat/Retime contents: in one explicit play at every
+    /// enclosing Repeat it isolates that occurrence first; with All plays at
+    /// every level it ungroups the shared definition, which every play that
+    /// follows it shows. Both distribute the group's effects exactly.
+    pub(super) fn scoped_ungroup(&mut self, trace_index: usize) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid(
+                "clear the Visual selection before ungrouping a selected Sequence",
+            ));
+        }
+        let scoped = self
+            .context
+            .scoped
+            .clone()
+            .ok_or_else(|| invalid("ungrouping inside a Repeat needs scoped contents"))?;
+        let branches = |play: bool| {
+            scoped
+                .target
+                .repeats
+                .iter()
+                .all(|step| matches!(step.branch, crate::RepeatEditBranch::Play { .. }) == play)
+        };
+        if !scoped.target.repeats.is_empty() && branches(true) {
+            return self.scoped_structure(trace_index, ScopedStructure::Ungroup);
+        }
+        if !branches(false) {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "ungroup in This play at every enclosing Repeat, or in All plays at every level; a mix of the two is not supported",
+            ));
+        }
+        super::framing::validate_scoped_context(&self.current, &self.context)?;
+        let instance = scoped.presentation.clone();
+        if !scoped.target.matches_instance(&self.current, &instance)? {
+            return Err(invalid(
+                "the scoped target differs from its shown play; choose the play again",
+            ));
+        }
+        let node = scoped.target.node.clone();
+        let (start, _) = self.current.occurrence_structure_interval(&instance)?;
+        let required = self.ungroup_target(&node)?;
+        let parent = self
+            .current
+            .parent_of(&node)
+            .ok_or_else(|| invalid("the group has no parent"))?;
+        self.charge_step(false)?;
+        let SemanticAllocation::Ungroup {
+            new_revision,
+            wrappers,
+        } = (self.allocate)(SemanticAllocationRequest::Ungroup {
+            step_index: self.steps.len(),
+            wrappers: required,
+        })?
+        else {
+            return Err(invalid("macro ungrouping requires an Ungroup allocation"));
+        };
+        if wrappers.len() != required {
+            return Err(invalid(
+                "macro Ungroup requires its exact wrapper identities",
+            ));
+        }
+        self.reserve_revision(&new_revision)?;
+        for id in &wrappers {
+            self.reserve_node(id)?;
+        }
+        // The first promoted child (or its wrapper), else the group's neighbor.
+        let selected = match self.current.children(&node).next() {
+            Some(first) => {
+                let plan = crate::ungroup::plan(&self.current, &node)?;
+                plan.wrapped()
+                    .position(|child| child == first)
+                    .map_or_else(|| first.clone(), |index| wrappers[index].clone())
+            }
+            None => self.current.neighbor(&node)?,
+        };
+        let edit = LeafEdit::new(
+            new_revision,
+            Command::Ungroup {
+                node: node.clone(),
+                wrappers,
+            },
+        )?;
+        self.commit_leaf(edit)?;
+        self.context.scoped = Some(SemanticScopedContext {
+            root: scoped.root,
+            target: crate::ScopedNodeTarget {
+                node: selected.clone(),
+                repeats: scoped.target.repeats,
+            },
+            presentation: crate::InstancePath {
+                node: selected,
+                repeats: instance.repeats,
+            },
+        });
+        self.context.cursor = start;
+        super::framing::validate_scoped_context(&self.current, &self.context)?;
+        self.trace[trace_index].resolved_parent = Some(parent);
+        self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child { node });
+        Ok(())
+    }
+
+    /// The selected Sequence's wrapper count; other kinds refuse.
+    fn ungroup_target(&self, node: &NodeId) -> Result<usize, EditError> {
+        if !matches!(
+            self.current.nodes().get(node).map(|node| &node.kind),
+            Some(NodeKind::Sequence { .. })
+        ) {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "ungroup requires a Sequence",
+            ));
+        }
+        self.current.ungroup_requirements(node)
     }
 
     /// The gap Holds of the shown Repeat: each holds the last picture of the

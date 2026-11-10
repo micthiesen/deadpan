@@ -358,7 +358,7 @@ fn headless_scoped_hold_duration_noop_and_late_unsupported_call_leave_history_an
     let (package, before, scoped) = fixture(scratch.path(), &input)?;
     for (version, register, instructions) in [
         (1, "n", vec![resize(3)]),
-        (2, "b", vec![I::Ungroup]),
+        (2, "b", vec![I::Explode]),
         (
             3,
             "a",

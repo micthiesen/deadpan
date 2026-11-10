@@ -68,11 +68,42 @@ group's exact clock, and applies everything in one reversible transaction.
   it, so a union is exact. A transparent fragment that could not carry a Hard
   side without marking it gets a wrapper. An empty group's edge choices act on
   the seam between its neighbors and refuse.
-- **Refusals.** Saturation shapes the children's mixed sound together, EQ
-  filters continuously across their cuts, balance applies to the mixed sum and
-  sends route the group's whole output; no per-child form is sample-identical,
-  so Ungroup refuses with a reason that names the stage. Cutaways and captions
-  on the group also refuse.
+- **Refusals.** Saturation shapes the children's combined mix, EQ filters it
+  continuously across their cuts, balance applies to the mixed sum and sends
+  route the group's whole output; none has a per-child equivalent, so Ungroup
+  refuses before any change (specification §6.3). The message names the
+  effect and the way forward, for example: "ungroup cannot keep this group's
+  saturation, which acts on its children's combined mix and has no per-child
+  equivalent; remove the group's saturation first, or keep the group". The
+  other effects read `EQ`, `stereo balance` and `effect sends` in the same
+  sentence.
+- **Captions and cutaways.** A Sequence never carries them; validation keeps
+  them on Source and Hold hosts. `:caption` or `:cutaway` on a selected group
+  (or an Edit range inside it) gives each host beneath the group the exact
+  intersection of the range in its own clock
+  ([`ProjectDocument::caption_over` and `cutaway_over`](../crates/deadpan-core/src/group_attachments.rs)),
+  descending through nested ordinary Sequences and unity Partitions as
+  `cutaway_host` does, one `SetCaptions`/`SetCutaways` leaf per host in one
+  Apply and one Undo. Every picture center lies in one child, so each frame
+  shows the same caption text, placement and reveal. A cutaway share starts
+  its selection where the whole cutaway would be at that frame; a `hold` share
+  past the selection holds the last picture, a `gap` share past it is
+  dropped, and a `loop` or `bounce` that would repeat inside a later beat
+  refuses ("use fit=hold or fit=gap, or place it inside one beat").
+  `cutaway_over` keeps a video-only delete's `removed` flag on every share. A Repeat or speed change
+  inside the range refuses, for example "a caption over this group reaches
+  "Echo", a Repeat, whose plays would each need it; place the caption
+  inside or around that beat instead": its content plays at several times or
+  another rate, and a caption there would count that inner Repeat's plays for
+  `reveal`. Ungroup therefore carries every caption and cutaway unchanged.
+- **Inside Repeats.** `OccurrenceEdit::Ungroup { wrappers }` ungroups the
+  group in one explicit play after isolating that occurrence, with the same
+  distribution and fresh wrapper identities. In the native inspector,
+  `:ungroup` with This play at every Repeat level issues it through the
+  semantic planner; with All plays at every level it ungroups the shared
+  definition with a plain `Ungroup`, which every play that follows the
+  definition shows (overridden plays keep their own copies). A mix of the two
+  refuses. An All plays scoped context admits only Ungroup and named calls.
 
 `ProjectDocument::ungroup_requirements` reports how many fresh wrapper
 identities the command needs; the semantic planner allocates them, and a
@@ -90,7 +121,19 @@ authored bus through absorb, merge, saturated-child and fragment-wrapper paths);
 golden-render `ungrouping_a_framed_gained_group_renders_exactly_like_the_group`
 (every exported I420 frame and PCM block hashes identically); and the `groups`
 replay, which ungroups a creeping, gained group over a zoomed fragment with real
-keys and compares composed pictures.
+keys and compares composed pictures. Captions, cutaways and Ungroup inside
+Repeats: core `group_attachments` tests (per-frame caption and cutaway
+picture equality for every fit, the Repeat refusal), planner `scoped_ungroup`
+tests (one-play and All plays Ungroup with wrappers, replay and exact Undo,
+the named saturation refusal, `:caption` on a group in one Apply); plan
+`ungrouping_a_captioned_group_inside_a_repeat_keeps_every_picture` (picture,
+camera poses and captions equal on every frame after one-play and All plays
+Ungroup); audio
+`ungrouping_a_gained_group_inside_a_repeat_keeps_every_play_bit_identical`
+(decoded authored bus, including a saturated child's wrapper); golden-render
+`ungrouping_a_captioned_group_inside_a_repeat_renders_exactly_like_the_group`;
+and the `groups` replay, which captions a group, ungroups it, then ungroups a
+gained group in play 2 and in All plays with real keys.
 
 ## Exact structural edits
 
@@ -143,8 +186,6 @@ existing receipt without resurrecting an older action.
 ## Remaining scope
 
 This increment supports structural edits in ordinary Sequence scopes. It does
-not complete temporal edits inside Repeat/Retime occurrences (scoped Ungroup
-supplies no wrapper identities, so a group needing one refuses there), Ungroup
-of groups with saturation, EQ, balance or sends, treated groups inside retained
-independent sound scopes, saved gag recipes, or the full visual slice placement
+not complete temporal edits inside Repeat/Retime occurrences, treated groups
+inside retained independent sound scopes, saved gag recipes, or the full visual slice placement
 workflow. Those requirements and all release gates remain open.

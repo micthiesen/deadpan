@@ -288,6 +288,7 @@ fn occurrence<'a>(edit: &'a OccurrenceEdit, nodes: &mut Vec<&'a NodeId>) {
         OccurrenceEdit::SetRepeatGaps { branches, .. } => {
             nodes.extend(branches.iter().map(|branch| &branch.id));
         }
+        OccurrenceEdit::Ungroup { wrappers } => nodes.extend(wrappers),
         _ => {}
     }
 }

@@ -126,7 +126,13 @@ pub enum OccurrenceEdit {
         id: NodeId,
         label: String,
     },
-    Ungroup,
+    /// Ungroup the selected Sequence in this occurrence, with fresh identities
+    /// for the single-child wrappers its effect distribution needs
+    /// (`ProjectDocument::ungroup_requirements`).
+    Ungroup {
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        wrappers: Vec<NodeId>,
+    },
     WrapRepeat {
         id: NodeId,
         plays: u32,
@@ -267,9 +273,9 @@ impl OccurrenceEdit {
                 id: id.clone(),
                 label: label.clone(),
             },
-            Self::Ungroup => Command::Ungroup {
+            Self::Ungroup { wrappers } => Command::Ungroup {
                 node,
-                wrappers: Vec::new(),
+                wrappers: wrappers.clone(),
             },
             Self::WrapRepeat {
                 id,

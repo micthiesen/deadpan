@@ -734,3 +734,158 @@ fn ungrouping_a_framed_gained_group_renders_exactly_like_the_group() -> Result {
     assert_ne!(plain["audio"], before["audio"], "the gain is audible");
     Ok(())
 }
+
+/// A caption and cutaway placed over a gained, framed group inside a Repeat
+/// land on its hosts. Ungrouping it in play 2 only (isolating that play), then
+/// in the shared definition, must leave every exported picture, caption and
+/// PCM block hashing exactly as before.
+#[test]
+fn ungrouping_a_captioned_group_inside_a_repeat_renders_exactly_like_the_group() -> Result {
+    use deadpan_core::{
+        AudioTreatments, Caption, CaptionPlacement, ClipGain, Cutaway, CutawayFit, ExactRatio,
+        Framing, FramingCurve, FramingPose, GainDb,
+    };
+    let scratch = tempfile::tempdir()?;
+    let mut builder = Builder::create(scratch.path(), "ungroup-plays")?;
+    builder.shorten()?;
+    for at in [8, 14, 20] {
+        builder.split_root(at)?;
+    }
+    let group = NodeId::new("plays-group")?;
+    let body = NodeId::new("plays-body")?;
+    let repeat = NodeId::new("plays-repeat")?;
+    for (start, end, id) in [(1, 3, &group), (1, 2, &body)] {
+        builder.apply(|_, document, _| {
+            Ok(Command::Group {
+                parent: document.root().clone(),
+                start,
+                end,
+                id: id.clone(),
+                label: "Group".into(),
+            })
+        })?;
+    }
+    builder.apply(|_, _, _| {
+        Ok(Command::WrapRepeat {
+            node: body.clone(),
+            id: repeat.clone(),
+            plays: 2,
+            gap: None,
+            anchor_policy: WrapAnchorPolicy::First,
+        })
+    })?;
+    let children: Vec<_> = builder.document()?.children(&group).cloned().collect();
+    let half = ExactRatio::new(1, 2)?;
+    let commands = vec![
+        Command::SetFraming {
+            node: children[1].clone(),
+            framing: Some(Framing::static_pose(FramingPose::new(
+                half,
+                ExactRatio::new(2, 5)?,
+                ExactRatio::new(3, 2)?,
+            )?)?),
+        },
+        Command::SetFraming {
+            node: group.clone(),
+            framing: Some(Framing::creep(
+                FramingPose::default(),
+                FramingPose::new(ExactRatio::new(3, 5)?, half, ExactRatio::new(7, 5)?)?,
+                FramingCurve::Linear,
+            )?),
+        },
+        Command::SetAudioTreatments {
+            node: group.clone(),
+            treatments: AudioTreatments::from_clip_gain(
+                ClipGain::default().with_trim(GainDb::new(-4_000)?),
+            ),
+        },
+    ];
+    for command in commands {
+        builder.apply(|_, _, _| Ok(command))?;
+    }
+    let document = builder.document()?;
+    let rate = document.presentation_basis().frame_rate;
+    let caption = Caption {
+        range: FrameRange::new(ProjectFrame(0), ProjectFrame(1))?,
+        text: "Across the group".into(),
+        placement: CaptionPlacement::Bottom,
+        reveal: None,
+    };
+    let source = document
+        .nodes()
+        .values()
+        .find_map(|node| match &node.kind {
+            NodeKind::Source { source } => Some(source.clone()),
+            _ => None,
+        })
+        .ok_or("a Source")?;
+    let deadpan_core::SourceVideo::Stream { asset, span } = &source.video else {
+        return Err("a video Source".into());
+    };
+    let cutaway = Cutaway {
+        range: FrameRange::new(ProjectFrame(0), ProjectFrame(1))?,
+        asset: asset.clone(),
+        selection: deadpan_core::ExactSourceSpan::from(*span),
+        fit: CutawayFit::Hold,
+        removed: false,
+    };
+    let plain = builder.revision()?;
+    let mut attachments = document.caption_over(&group, 2..10, &caption)?;
+    for command in attachments.drain(..) {
+        builder.apply(|_, _, _| Ok(command))?;
+    }
+    let document = builder.document()?;
+    for command in document.cutaway_over(&group, 4..9, &cutaway, rate)? {
+        builder.apply(|_, _, _| Ok(command))?;
+    }
+    let grouped = builder.revision()?;
+    builder.apply(|builder, document, _| {
+        let NodeKind::Repeat { iterations, .. } = &document.nodes()[&repeat].kind else {
+            return Err("a Repeat".into());
+        };
+        let instance = InstancePath {
+            node: group.clone(),
+            repeats: vec![RepeatInstance {
+                node: repeat.clone(),
+                iteration: iterations.at(1).ok_or("play 2")?,
+            }],
+        };
+        let edit = OccurrenceEdit::Ungroup {
+            wrappers: builder.fresh(document.ungroup_requirements(&group)?)?,
+        };
+        let needs = document.occurrence_structure_requirements(&instance, &edit)?;
+        Ok(Command::EditOccurrence {
+            instance,
+            edit,
+            identities: OccurrenceIdentities {
+                nodes: builder.fresh(needs.nodes)?,
+                marks: Vec::new(),
+            },
+        })
+    })?;
+    let one_play = builder.revision()?;
+    builder.apply(|builder, document, _| {
+        Ok(Command::Ungroup {
+            node: group.clone(),
+            wrappers: builder.fresh(document.ungroup_requirements(&group)?)?,
+        })
+    })?;
+    assert!(!builder.document()?.nodes().contains_key(&group));
+    let before = render("ungroup-plays", &builder.package, &grouped)?;
+    let unattached = render("ungroup-plays", &builder.package, &plain)?;
+    assert_ne!(
+        unattached["pictures"], before["pictures"],
+        "the caption and cutaway are visible"
+    );
+    assert_eq!(
+        unattached["audio"], before["audio"],
+        "attachments change no sound"
+    );
+    for revision in [one_play, builder.revision()?] {
+        let after = render("ungroup-plays", &builder.package, &revision)?;
+        for key in ["frames", "pictures", "audio"] {
+            assert_eq!(after[key], before[key], "ungrouped {key} differs");
+        }
+    }
+    Ok(())
+}

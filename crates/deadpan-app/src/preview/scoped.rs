@@ -10,7 +10,7 @@ pub(super) mod model;
 #[cfg(test)]
 mod range_tests;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime), :splice and s, dd, yy, p, P, rr, :repeat N and :repeat gap= on a beat require one play at every level. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime), :splice and s, dd, yy, p, P, rr, :repeat N and :repeat gap= on a beat require one play at every level; :ungroup takes one play or All plays at every level. Other timing edits and range copying require the parent.";
 /// The shared gap row edits only that gap; `j`/`k` reach the play's contents.
 pub(super) const SHARED_GAP_ONLY: &str = "The shared gap after this play takes a length (Enter), room tone (:room-tone), silence (:hold-silence) or its own copy (:isolate-gap). Select the play's contents with k for other edits.";
 const FRAMING_RANGE_ONLY: &str = "This play's Edit range is for :zoom or :creep. Clear the range with Escape before other beat edits.";
@@ -38,6 +38,9 @@ pub(super) enum ScopedStructure {
         plays: Option<u32>,
         gap: crate::navigation::escalation::GapInput,
     },
+    /// Ungroup the selected Sequence in this play, or in the shared
+    /// definition when every level shows All plays.
+    Ungroup,
 }
 
 impl DeadpanApp {
@@ -120,6 +123,7 @@ impl DeadpanApp {
                 ScopedStructure::Copy
             }),
             Action::PasteMoment { before } => Some(ScopedStructure::Paste { before: *before }),
+            Action::Ungroup => Some(ScopedStructure::Ungroup),
             Action::Repeat { selector, plays } if selector == &selected => {
                 Some(ScopedStructure::Repeat { plays: plays.get() })
             }
@@ -160,6 +164,7 @@ impl DeadpanApp {
         };
         Ok(match edit {
             ScopedStructure::Split => I::Split,
+            ScopedStructure::Ungroup => I::Ungroup,
             ScopedStructure::Delete => I::DeleteBeat,
             ScopedStructure::Copy | ScopedStructure::Cut => {
                 unreachable!("one-play copies and cuts complete their operator")
@@ -243,8 +248,11 @@ impl DeadpanApp {
                         .to_owned(),
                 );
             }
-            if !target.has_single_play_authority() {
-                // All plays and several selected plays keep their refusal.
+            if !target.has_single_play_authority()
+                && !(edit == ScopedStructure::Ungroup && target.also.is_empty())
+            {
+                // All plays and several selected plays keep their refusal;
+                // Ungroup also edits a shared definition, decided by the planner.
                 return Err(STRUCTURE_UNAVAILABLE.to_owned());
             }
             if matches!(edit, ScopedStructure::Copy | ScopedStructure::Cut) {

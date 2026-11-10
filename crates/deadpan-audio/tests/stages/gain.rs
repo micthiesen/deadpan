@@ -1474,3 +1474,116 @@ fn ungrouping_a_treated_group_keeps_the_authored_bus_bit_identical() {
         );
     }
 }
+
+/// Ungroup inside a Repeat, in one play (isolating it) and in the shared
+/// definition, keeps the decoded authored bus bit-identical, including a
+/// saturated child that needs a wrapper carrying the group's gain.
+#[test]
+fn ungrouping_a_gained_group_inside_a_repeat_keeps_every_play_bit_identical() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let mut group = BeatNode::sequence("Group", vec![id("a"), id("b")]);
+    group.audio_treatments = treatment(
+        -2_000,
+        false,
+        vec![curve(50, 600, -6_000, 3_000, GainCurve::Linear)],
+        vec![range(500, 560)],
+    );
+    let mut b = source(rate, 300, 2_000..2_300);
+    b.audio_treatments = treatment(1_500, false, vec![], vec![])
+        .with_saturation(Some(Saturation::new(GainDb::new(6_000).unwrap()).unwrap()))
+        .unwrap();
+    let repeated = BeatNode {
+        label: "Plays".into(),
+        framing: None,
+        audio_editorial_edges: Default::default(),
+        audio_edges: Default::default(),
+        audio_treatments: Default::default(),
+        kind: NodeKind::Repeat {
+            child: id("body"),
+            iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap(),
+            gap: None,
+            escalation: None,
+        },
+        cutaways: Vec::new(),
+        captions: Vec::new(),
+    };
+    let before = document_with_asset(
+        rate,
+        &["lead", "rep"],
+        [
+            ("lead", source(rate, 200, 0..200)),
+            ("rep", repeated),
+            (
+                "body",
+                BeatNode::sequence("Body", vec![id("x"), id("group")]),
+            ),
+            ("x", source(rate, 100, 3_000..3_100)),
+            ("group", group),
+            ("a", source(rate, 400, 1_000..1_400)),
+            ("b", b),
+        ],
+        BTreeMap::new(),
+        audio(0, 8197).span,
+    );
+    assert_eq!(before.ungroup_requirements(&id("group")).unwrap(), 1);
+    let instance = InstancePath {
+        node: id("group"),
+        repeats: vec![RepeatInstance {
+            node: id("rep"),
+            iteration: IterationId {
+                allocation: RevisionId::new("plays").unwrap(),
+                ordinal: 1,
+            },
+        }],
+    };
+    let edit = OccurrenceEdit::Ungroup {
+        wrappers: vec![id("wrapper")],
+    };
+    let needs = before
+        .occurrence_structure_requirements(&instance, &edit)
+        .unwrap();
+    let one_play = Command::EditOccurrence {
+        instance,
+        edit,
+        identities: OccurrenceIdentities {
+            nodes: (0..needs.nodes).map(|n| id(&format!("copy-{n}"))).collect(),
+            marks: Vec::new(),
+        },
+    };
+    let shared = Command::Ungroup {
+        node: id("group"),
+        wrappers: vec![id("wrapper")],
+    };
+    let mut provider = FixtureProvider::new();
+    let total = [2_600];
+    let expected = authored_all(&before, &mut provider, &total);
+    let unity = authored_all(
+        &changed(&before, &[("group", AudioTreatments::default())]),
+        &mut provider,
+        &total,
+    );
+    // The group's gain is audible in every play, including the edited one.
+    for play in 0..3 {
+        let start = 200 + play * 800 + 100;
+        assert_ne!(expected[start..start + 700], unity[start..start + 700]);
+    }
+    for command in [one_play, shared] {
+        let transaction = apply(
+            &before,
+            &CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: RevisionId::new("ungrouped").unwrap(),
+                command,
+            },
+        )
+        .unwrap();
+        let after = transaction.forward.apply(&before).unwrap();
+        assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
+        assert_eq!(authored_all(&after, &mut provider, &total), expected);
+        assert_eq!(
+            authored_all(&after, &mut provider, &[1, 299, 53, 1_000, 1_247]),
+            expected
+        );
+    }
+}
