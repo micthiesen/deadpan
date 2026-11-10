@@ -121,54 +121,166 @@ pub(crate) fn delete(
     Ok(result)
 }
 
-/// The beat's group slot and exact project frame of the seam after (or
-/// before) it in this play.
-fn paste_seam(site: &Site, before: bool) -> (usize, ProjectFrame) {
-    if before {
-        (site.slot, ProjectFrame(site.start))
-    } else {
-        (site.slot + 1, ProjectFrame(site.end))
+/// A one-play paste destination: the seam beside the beat (`p`/`P`), or
+/// Place slice's explicit seam, interior or range in the beat's group.
+pub(crate) enum Destination {
+    Beside { before: bool },
+    At(crate::OccurrencePlacement),
+}
+
+pub(crate) fn placement(
+    before: bool,
+    at: Option<crate::OccurrencePlacement>,
+) -> Result<Destination, EditError> {
+    match at {
+        None => Ok(Destination::Beside { before }),
+        Some(_) if before => Err(invalid(
+            "an explicit one-play placement does not also paste before the beat",
+        )),
+        Some(at) => Ok(Destination::At(at)),
     }
 }
 
-/// Paste a copied edited slice beside the beat in its play only. The slice
-/// installs exactly as the root seam paste installs it; everything after the
-/// seam, including later plays and gaps, keeps its own pre-edit clock.
+/// A destination resolved in the isolated play: the group, its exact start in
+/// this occurrence and the root-equivalent placement in that group.
+struct Resolved {
+    parent: NodeId,
+    origin: ProjectFrame,
+    kind: ResolvedKind,
+}
+
+enum ResolvedKind {
+    Seam(usize),
+    Interior { target: NodeId, at: FrameDuration },
+    Replace(crate::FrameRange),
+}
+
+fn resolve(
+    document: &ProjectDocument,
+    instance: &InstancePath,
+    destination: Destination,
+    splits: &crate::SplitIdentities,
+) -> Result<Resolved, EditError> {
+    let site = site(document, instance)?;
+    let NodeKind::Sequence { children } = &document.nodes()[&site.parent].kind else {
+        unreachable!("the site admitted a Sequence parent")
+    };
+    let durations = document.durations_shared()?;
+    let mut origin = site.start;
+    for child in &children[..site.slot] {
+        origin = origin
+            .checked_sub(durations[child].frames())
+            .ok_or_else(overflow)?;
+    }
+    let origin = ProjectFrame(origin);
+    let kind = match destination {
+        Destination::Beside { before } => {
+            ResolvedKind::Seam(if before { site.slot } else { site.slot + 1 })
+        }
+        Destination::At(crate::OccurrencePlacement::Seam { index }) => {
+            if index > children.len() {
+                return Err(invalid("the one-play seam is outside the beat's group"));
+            }
+            ResolvedKind::Seam(index)
+        }
+        Destination::At(crate::OccurrencePlacement::Interior { index, at }) => {
+            ResolvedKind::Interior {
+                target: children
+                    .get(index)
+                    .cloned()
+                    .ok_or_else(|| invalid("the one-play interior is outside the beat's group"))?,
+                at,
+            }
+        }
+        Destination::At(crate::OccurrencePlacement::Replace { start, end }) => {
+            let at = |offset: FrameDuration| {
+                origin
+                    .0
+                    .checked_add(offset.frames())
+                    .map(ProjectFrame)
+                    .ok_or_else(overflow)
+            };
+            ResolvedKind::Replace(
+                crate::FrameRange::new(at(start)?, at(end)?).map_err(DocumentError::from)?,
+            )
+        }
+    };
+    if matches!(kind, ResolvedKind::Seam(_)) && !splits.is_empty() {
+        return Err(invalid("a seam placement splits nothing"));
+    }
+    Ok(Resolved {
+        parent: site.parent,
+        origin,
+        kind,
+    })
+}
+
+/// Paste a copied edited slice in the beat's play only. The slice installs
+/// exactly as the root `SpliceSlice`, `SpliceSliceAt` or `ReplaceSlice`
+/// installs it in that group; everything after the destination, including
+/// later plays and gaps, keeps its own pre-edit clock.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn paste_slice(
     document: &ProjectDocument,
     instance: &InstancePath,
-    before: bool,
+    destination: Destination,
     slice: &crate::CapturedEditSlice,
     identities: &crate::SlicePasteIdentities,
+    splits: &crate::SplitIdentities,
     timing: &AudioTimingId,
     context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
-    let site = site(document, instance)?;
-    let (index, boundary) = paste_seam(&site, before);
-    let command = Command::SpliceSlice {
-        parent: site.parent,
-        index,
-        slice: slice.clone(),
-        identities: identities.clone(),
-        timing: timing.clone(),
+    let resolved = resolve(document, instance, destination, splits)?;
+    let parent = resolved.parent;
+    let slice = slice.clone();
+    let identities = identities.clone();
+    let timing = timing.clone();
+    let command = match resolved.kind {
+        ResolvedKind::Seam(index) => Command::SpliceSlice {
+            parent,
+            index,
+            slice,
+            identities,
+            timing,
+        },
+        ResolvedKind::Interior { target, at } => Command::SpliceSliceAt {
+            parent,
+            target,
+            at,
+            slice,
+            identities,
+            split_identities: splits.clone(),
+            timing,
+        },
+        ResolvedKind::Replace(range) => Command::ReplaceSlice {
+            parent,
+            range,
+            slice,
+            identities,
+            split_identities: splits.clone(),
+            timing,
+        },
     };
-    crate::edit_slice::apply_in_occurrence(document, &command, boundary, context)
+    crate::edit_slice::apply_in_occurrence(document, &command, resolved.origin, context)
 }
 
-/// Paste one copied Original moment beside the beat in its play only. The new
-/// Source starts unbound on the project-origin grid, as at the root; each
-/// later owner keeps its own pre-edit clock.
+/// Paste one copied Original moment in the beat's play only, as the root
+/// `SpliceSource`, `SpliceSourceAt` or `ReplaceSource` places it in that
+/// group. The new Source starts unbound on the project-origin grid; each later
+/// owner keeps its own pre-edit clock.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn paste_source(
     document: &ProjectDocument,
     instance: &InstancePath,
-    before: bool,
+    destination: Destination,
     source: &crate::SourceNode,
     id: &NodeId,
     label: &str,
+    splits: &crate::SplitIdentities,
     timing: &AudioTimingId,
-    allocation: &crate::RevisionId,
+    context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
+    let allocation = context.allocation;
     validate_timing(document, timing, allocation)?;
     if crate::scoped_edit::occupied_node_ids(document).contains(id) {
         return Err(EditError::new(
@@ -176,18 +288,54 @@ pub(crate) fn paste_source(
             "the pasted beat identity must be fresh, including retained audio names",
         ));
     }
-    let site = site(document, instance)?;
-    let (index, boundary) = paste_seam(&site, before);
-    crate::insert_time::splice_source_in_occurrence(
-        document,
-        &site.parent,
-        index,
-        boundary,
-        id,
-        crate::insert_time::source_leaf(label, source.clone()),
-        timing,
-        allocation,
-    )
+    let resolved = resolve(document, instance, destination, splits)?;
+    let node = crate::insert_time::source_leaf(label, source.clone());
+    match resolved.kind {
+        ResolvedKind::Seam(index) => crate::insert_time::splice_source_in_occurrence(
+            document,
+            &resolved.parent,
+            index,
+            crate::insert_time::source_splice::boundary_in(
+                document,
+                &resolved.parent,
+                index,
+                Some(resolved.origin),
+            )?,
+            id,
+            node,
+            timing,
+            allocation,
+        ),
+        ResolvedKind::Interior { target, at } => {
+            crate::insert_time::source_splice::apply_interior_in_occurrence(
+                document,
+                &resolved.parent,
+                &target,
+                at,
+                resolved.origin,
+                crate::insert_time::source_splice::InteriorInsertion {
+                    node,
+                    id,
+                    identities: splits,
+                    timing,
+                },
+                context,
+            )
+        }
+        ResolvedKind::Replace(range) => crate::insert_time::source_replace::apply_in(
+            document,
+            &resolved.parent,
+            range,
+            crate::insert_time::source_splice::InteriorInsertion {
+                node,
+                id,
+                identities: splits,
+                timing,
+            },
+            context,
+            Some(resolved.origin),
+        ),
+    }
 }
 
 /// Wrap the beat in a new Repeat in its play only. Its first play keeps the
@@ -531,4 +679,104 @@ fn unavailable(message: &str) -> EditError {
 }
 fn overflow() -> EditError {
     EditError::new(EditErrorCode::TimingOverflow, "one-play duration overflow")
+}
+
+/// Place slice's preflight for one destination in the group of a beat shown in
+/// explicit plays at every enclosing Repeat. Computed before isolation: the
+/// isolated copy has the same structure, so its Split names count the same.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OccurrencePlacementPlan {
+    /// The group in the current document (the shared default or the play's
+    /// own branch); isolation may rename it.
+    pub parent: NodeId,
+    /// The group's exact start in this occurrence.
+    pub origin: ProjectFrame,
+    /// The insertion boundary, or the replaced interval's start.
+    pub boundary: ProjectFrame,
+    /// The replaced interval, if any.
+    pub removed: Option<crate::FrameRange>,
+    /// Split names, excluding the inserted contents.
+    pub required_ids: usize,
+}
+
+impl ProjectDocument {
+    /// Resolve Place slice's `at` in the beat's group in this play. `slice` is
+    /// the copied edited content (absent for an Original moment). Nothing is
+    /// allocated or isolated.
+    pub fn occurrence_placement(
+        &self,
+        instance: &InstancePath,
+        at: crate::OccurrencePlacement,
+        slice: Option<&crate::CapturedEditSlice>,
+    ) -> Result<OccurrencePlacementPlan, EditError> {
+        if instance.repeats.is_empty() {
+            return Err(unavailable(
+                "a one-play placement needs This play chosen at every enclosing Repeat",
+            ));
+        }
+        let resolved = resolve(
+            self,
+            instance,
+            Destination::At(at),
+            &crate::SplitIdentities::default(),
+        )?;
+        let inserted = match slice {
+            Some(slice) => {
+                slice.check_destination(self)?;
+                if slice.duration() == FrameDuration::ZERO {
+                    return Err(unavailable(
+                        "an empty copied group adds no time to a play; paste it from the parent",
+                    ));
+                }
+                slice.identity_requirements()?.nodes
+            }
+            None => 1,
+        };
+        let origin = Some(resolved.origin);
+        let (boundary, removed, required_ids) = match &resolved.kind {
+            ResolvedKind::Seam(index) => (
+                crate::insert_time::source_splice::boundary_in(
+                    self,
+                    &resolved.parent,
+                    *index,
+                    origin,
+                )?,
+                None,
+                0,
+            ),
+            ResolvedKind::Interior { target, at } => {
+                let plan = self.splice_interior(
+                    &resolved.parent,
+                    target,
+                    *at,
+                    inserted,
+                    slice.is_some(),
+                    origin,
+                )?;
+                (plan.boundary, None, plan.required_ids)
+            }
+            ResolvedKind::Replace(range) => {
+                let plan = match slice {
+                    Some(slice) => {
+                        self.slice_replacement_in(&resolved.parent, *range, slice, origin)?
+                    }
+                    None => crate::insert_time::sequence_range::preflight_in(
+                        self,
+                        &resolved.parent,
+                        *range,
+                        1,
+                        origin,
+                    )?,
+                };
+                (range.start(), Some(*range), plan.required_ids)
+            }
+        };
+        Ok(OccurrencePlacementPlan {
+            parent: resolved.parent,
+            origin: resolved.origin,
+            boundary,
+            removed,
+            required_ids,
+        })
+    }
 }

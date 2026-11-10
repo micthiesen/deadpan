@@ -696,6 +696,48 @@ fn scoped_hold_duration_preview_and_encoded_output_keep_authored_source_clocks()
 }
 
 #[test]
+fn place_slice_in_one_play_preview_and_encoded_output_keep_later_source_clocks() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::scoped_place::build(&root.join("scoped-place"))?;
+    check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
+    let movie = render(&fixture, &root.join("exports-scoped-place"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+    assert!(passed, "{report}");
+    assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+    assert_eq!(report["summary"]["pictures_failed"], 0);
+    assert_eq!(report["summary"]["nonzero_offsets"], 0);
+    // The first second (before the Original click) is silent; the click
+    // window, which crosses the moved tail, must align at zero lag.
+    let windows = report["audio"].as_array().ok_or("audio windows")?;
+    assert!(windows.iter().all(|window| window["passed"] == true));
+    assert!(windows.iter().all(|window| window["flags"] == json!([])));
+    let signal: Vec<_> = windows
+        .iter()
+        .filter(|window| window["kind"] == "signal")
+        .collect();
+    assert!(!signal.is_empty(), "{report}");
+    for window in signal {
+        assert_eq!(window["blocks"]["low_snr_blocks"], 0);
+        assert_eq!(window["offset_status"], "verified_zero");
+        assert_eq!(window["measured_offset_samples"], 0);
+    }
+    check_provenance(&fixture, &report)?;
+    eprintln!("{}", summary_row(&fixture, &report));
+    if let Some(path) = std::env::var_os("DEADPAN_SCOPED_PLACE_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(
+                &json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
+            )?,
+        )?;
+    }
+    Ok(())
+}
+
+#[test]
 fn ordinary_hold_duration_preview_and_encoded_output_keep_shared_source_clocks() -> Result {
     verify_ordinary_hold_duration(false)
 }

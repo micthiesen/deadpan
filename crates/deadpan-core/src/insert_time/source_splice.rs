@@ -28,7 +28,7 @@ impl ProjectDocument {
         target: &NodeId,
         at: FrameDuration,
     ) -> Result<SourceSpliceInterior, EditError> {
-        self.splice_interior(parent, target, at, 1, false)
+        self.splice_interior(parent, target, at, 1, false, None)
     }
 
     /// Preflight a copied-content insertion, including both Split and imported
@@ -39,6 +39,19 @@ impl ProjectDocument {
         target: &NodeId,
         at: FrameDuration,
         slice: &crate::CapturedEditSlice,
+    ) -> Result<SourceSpliceInterior, EditError> {
+        self.slice_splice_interior_in(parent, target, at, slice, None)
+    }
+
+    /// [`Self::slice_splice_interior`] for a group whose start in one
+    /// isolated Repeat play is `origin`.
+    pub(crate) fn slice_splice_interior_in(
+        &self,
+        parent: &NodeId,
+        target: &NodeId,
+        at: FrameDuration,
+        slice: &crate::CapturedEditSlice,
+        origin: Option<ProjectFrame>,
     ) -> Result<SourceSpliceInterior, EditError> {
         slice.check_destination(self)?;
         if slice.duration() == FrameDuration::ZERO {
@@ -52,16 +65,18 @@ impl ProjectDocument {
             at,
             slice.identity_requirements()?.nodes,
             true,
+            origin,
         )
     }
 
-    fn splice_interior(
+    pub(crate) fn splice_interior(
         &self,
         parent: &NodeId,
         target: &NodeId,
         at: FrameDuration,
         inserted_nodes: usize,
         nested_windows: bool,
+        origin: Option<ProjectFrame>,
     ) -> Result<SourceSpliceInterior, EditError> {
         let node = self.nodes().get(parent).ok_or_else(|| {
             EditError::new(
@@ -81,7 +96,7 @@ impl ProjectDocument {
                     "source splice target is not a direct child of its named Sequence",
                 )
             })?;
-        let start = self.source_splice_boundary(parent, index)?;
+        let start = boundary_in(self, parent, index, origin)?;
         let duration = self.node_duration(target)?;
         if at == FrameDuration::ZERO || at >= duration {
             return Err(super::invalid(
@@ -167,6 +182,97 @@ impl ProjectDocument {
         }
         Ok(ProjectFrame(boundary))
     }
+}
+
+/// The project boundary of a group slot. `origin`, when present, is the
+/// group's exact start in one isolated Repeat play: a Repeat ancestor has no
+/// single position, so the occurrence supplies it.
+pub(crate) fn boundary_in(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    index: usize,
+    origin: Option<ProjectFrame>,
+) -> Result<ProjectFrame, EditError> {
+    let Some(origin) = origin else {
+        return document.source_splice_boundary(parent, index);
+    };
+    let node = document.nodes().get(parent).ok_or_else(|| {
+        EditError::new(
+            EditErrorCode::SelectionUnavailable,
+            "splice parent is missing",
+        )
+    })?;
+    let NodeKind::Sequence { children } = &node.kind else {
+        return Err(super::invalid("source splice parent is not a Sequence"));
+    };
+    let prefix = children
+        .get(..index)
+        .ok_or_else(|| super::invalid("source splice slot is outside its Sequence"))?;
+    let durations = document.durations_shared()?;
+    let mut boundary = origin.0;
+    for child in prefix {
+        boundary = boundary
+            .checked_add(durations[child].frames())
+            .ok_or_else(super::overflow)?;
+    }
+    Ok(ProjectFrame(boundary))
+}
+
+/// `SpliceSourceAt` strictly inside a direct child of a group in one already
+/// isolated Repeat play whose start there is `origin`. Clocks are captured
+/// before Split, as at the root; every later owner, including later plays and
+/// gaps of each enclosing Repeat, keeps its own pre-edit clock.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn apply_interior_in_occurrence(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    target: &NodeId,
+    at: FrameDuration,
+    origin: ProjectFrame,
+    insertion: InteriorInsertion<'_>,
+    context: crate::command::EditContext<'_>,
+) -> Result<ProjectDocument, EditError> {
+    let NodeKind::Source { source } = &insertion.node.kind else {
+        return Err(super::invalid("source splice requires a Source leaf"));
+    };
+    if source.duration == FrameDuration::ZERO {
+        return Err(EditError::new(
+            EditErrorCode::InvalidDuration,
+            "zero-length source splice changes no time or history",
+        ));
+    }
+    if &insertion.timing.allocation != context.allocation {
+        return Err(super::invalid(
+            "source splice timing allocation must equal the new revision",
+        ));
+    }
+    let resolved = document.splice_interior(parent, target, at, 1, false, Some(origin))?;
+    super::validate_identities(document, Some(insertion.id), insertion.identities)?;
+    super::validate_split_budget(document, Some(target), insertion.identities)?;
+    let placement_timing =
+        AudioTimingId {
+            allocation: insertion.timing.allocation.clone(),
+            ordinal: insertion.timing.ordinal.checked_add(1).ok_or_else(|| {
+                super::limit("interior source splice needs a second timing identity")
+            })?,
+        };
+    let allocation = context.allocation;
+    let mut working = document.clone();
+    working.audio_bindings = crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
+        document,
+        insertion.timing.clone(),
+    )?;
+    working = crate::split::apply(&working, target, at, insertion.identities, context)?;
+    super::splice_source_in_occurrence(
+        &working,
+        parent,
+        resolved.index + 1,
+        resolved.boundary,
+        insertion.id,
+        insertion.node,
+        &placement_timing,
+        allocation,
+    )
 }
 
 pub(crate) struct InteriorInsertion<'a> {

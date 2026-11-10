@@ -2006,7 +2006,7 @@
               "docs/qualification/place-slice-macros-2026-10-18.md",
               "docs/SCOPED_EDITING.md"
             ],
-            "remaining": "Placement remains ordinary-Sequence scoped and refuses nested occurrence destinations; broader placement intent remains open.",
+            "remaining": "Placement now targets ordinary Sequences and one explicit Repeat play (seam, interior, Time-range replacement; 2026-11-10); Move into or out of a play, destinations inside speed changes, group-object destinations in a play and recording Place slice in a play refuse, and broader placement intent remains open.",
             "normative": "9.7,7.4"
           },
           {

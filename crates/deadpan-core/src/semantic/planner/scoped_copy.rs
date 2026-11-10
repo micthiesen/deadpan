@@ -67,6 +67,8 @@ impl ScopedPaste {
                         aliases,
                     },
                     timing,
+                    at: None,
+                    splits: Default::default(),
                 }
             }
             Self::Source { source, label, .. } => crate::OccurrenceEdit::PasteSource {
@@ -77,6 +79,8 @@ impl ScopedPaste {
                     .ok_or_else(|| invalid("a one-play paste needs its beat identity"))?,
                 label: label.clone(),
                 timing,
+                at: None,
+                splits: Default::default(),
             },
         })
     }

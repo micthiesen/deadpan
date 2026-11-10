@@ -18,7 +18,7 @@ const CANCEL: &str = "Cancel  Esc";
 const HEADING: &str = "Place slice keyboard controls";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
-    d.report.skipped.push("Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.".into());
+    d.report.skipped.push("Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Destinations inside one Repeat play are replayed by scoped-plays; separate picture/audio placement and destinations inside speed changes remain outside this increment.".into());
     d.report.skipped.push("The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.".into());
     let full_original = document(d)?.nodes().clone();
     let baseline = d.revision();

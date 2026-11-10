@@ -74,6 +74,16 @@ impl ProjectDocument {
                     ));
                 }
             }
+            OccurrenceEdit::PasteSlice {
+                at: Some(at),
+                slice,
+                ..
+            } => {
+                self.occurrence_placement(instance, *at, Some(slice))?;
+            }
+            OccurrenceEdit::PasteSource { at: Some(at), .. } => {
+                self.occurrence_placement(instance, *at, None)?;
+            }
             OccurrenceEdit::DeleteRipple { .. }
             | OccurrenceEdit::RepeatChild { .. }
             | OccurrenceEdit::PasteSlice { .. }

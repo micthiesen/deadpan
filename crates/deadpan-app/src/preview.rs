@@ -1886,7 +1886,11 @@ impl DeadpanApp {
         self.source_interpretation_target = Some(self.capture_source_interpretation());
         self.scoped_command_target = Some(self.scoped_target());
         self.marks.command = Some(self.capture_mark());
-        self.placement_command_target = Some(self.capture_placement_target());
+        self.placement_command_target = Some(if self.scoped.is_some() {
+            self.capture_occurrence_placement_target()
+        } else {
+            self.capture_placement_target()
+        });
         self.copy_command_register = self.copied.selected().and_then(|name| {
             self.workspace
                 .as_ref()

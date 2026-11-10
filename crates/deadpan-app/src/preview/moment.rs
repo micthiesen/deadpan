@@ -35,6 +35,9 @@ pub(super) struct PlacementTarget {
     pub selection: edit_range::Selection,
     pub range: Option<deadpan_core::FrameRange>,
     pub macro_capture: Result<macros::Capture, String>,
+    /// `:splice` inside one explicit Repeat play; `parent` is then the shown
+    /// beat's group there.
+    pub occurrence: Option<crate::project::splice::Occurrence>,
 }
 
 impl PlacementTarget {
@@ -287,10 +290,85 @@ impl DeadpanApp {
             selection: self.edit_range.clone(),
             range: self.selected_edit_range(),
             macro_capture: self.capture_macro_target(),
+            occurrence: None,
+        })
+    }
+
+    /// Place slice inside Repeat contents: the selected beat's group in the
+    /// play chosen at every enclosing Repeat. Fast paste keeps its own
+    /// one-play path; this target serves only `:splice`.
+    pub(super) fn capture_occurrence_placement_target(&self) -> Result<PlacementTarget, String> {
+        const ONE_PLAY: &str = "Place slice inside Repeat contents needs This play at every level (]r) and a beat in a group of that play; All plays and several selected plays place from the parent.";
+        if self.copied.is_pending() {
+            return Err("Wait for the copy to finish saving before placing it.".into());
+        }
+        if self.view != View::Sequence
+            || self.sound_focused()
+            || self.pane == Pane::Sounds
+            || self.event_focused()
+        {
+            return Err("Return to Your edit (:sequence) before placing a slice.".into());
+        }
+        if self.macros.recording() || self.macros.is_pending() {
+            return Err("Place slice inside one Repeat play is not recorded into macros. Stop recording, or record p/P on a beat in the play.".into());
+        }
+        let base = self.workspace.clone().ok_or("Open a project first.")?;
+        let target = self.scoped_target()?.ok_or(ONE_PLAY)?;
+        if !target.has_single_play_authority() {
+            return Err(ONE_PLAY.into());
+        }
+        let instance = target.presentation.clone().ok_or(ONE_PLAY)?;
+        let plan = base
+            .document
+            .occurrence_placement(
+                &instance,
+                deadpan_core::OccurrencePlacement::Seam { index: 0 },
+                None,
+            )
+            .map_err(|error| error.to_string())?;
+        Ok(PlacementTarget {
+            scope: self.sequence_scope.clone(),
+            parent: plan.parent,
+            cursor: self.sequence_cursor,
+            source_cursor: self.source_cursor,
+            pane: self.pane,
+            selected_beat: Some(instance.node.clone()),
+            copied: self.copied.selected_content().cloned(),
+            register: self.copied.selected(),
+            selection: self.edit_range.clone(),
+            range: self.selected_edit_range(),
+            macro_capture: Err(
+                "Place slice inside one Repeat play is not recorded into macros.".into(),
+            ),
+            occurrence: Some(crate::project::splice::Occurrence {
+                instance,
+                target,
+                origin: plan.origin,
+            }),
+            base,
         })
     }
 
     pub(super) fn check_placement_target(&self, target: &PlacementTarget) -> Result<(), String> {
+        if let Some(occurrence) = &target.occurrence {
+            let workspace = self
+                .workspace
+                .as_ref()
+                .ok_or("The captured edit is closed.")?;
+            if workspace.session != target.base.session
+                || workspace.document.revision_id() != target.base.document.revision_id()
+                || self.sequence_scope != target.scope
+                || self.scoped_target()?.as_ref() != Some(&occurrence.target)
+            {
+                return Err(
+                    "The chosen play changed. Enter the command again; no edit was made.".into(),
+                );
+            }
+            if let Some(copied) = &target.copied {
+                copied.check(workspace)?;
+            }
+            return Ok(());
+        }
         self.check_placement_scope()?;
         let workspace = self
             .workspace

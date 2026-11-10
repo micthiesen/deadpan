@@ -21,6 +21,7 @@ pub(super) mod nested_fixed_duration;
 pub(super) mod owned_gap_duration;
 mod pause_macros;
 mod pauses;
+mod place_slice;
 pub(super) mod selected_fixed_duration;
 mod shared_gap;
 mod shared_hold_duration;
@@ -880,5 +881,6 @@ fn play_structure_macro(
         json!({"plays":before}),
         json!({"plays":play_lengths(d, repeat)?}),
     )?;
-    copy_paste::run(d, repeat, before, original, shared_node)
+    copy_paste::run(d, repeat, before, original, shared_node)?;
+    place_slice::run(d, repeat, before, original)
 }

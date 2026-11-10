@@ -30,6 +30,59 @@ pub struct Proposal {
     pub scope: SequenceScope,
     pub parent: NodeId,
     pub destination: Destination,
+    /// A destination in one explicit Repeat play: `parent` is the shown beat's
+    /// group there and every Destination coordinate is in that occurrence.
+    pub occurrence: Option<Occurrence>,
+}
+
+/// Place slice inside the group of a beat shown in explicit plays at every
+/// enclosing Repeat. The service isolates those plays and places the content
+/// in that occurrence only, as the one-play paste does.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Occurrence {
+    /// The beat chosen in the inspector; its group is the destination group.
+    pub instance: deadpan_core::InstancePath,
+    /// The inspector address at entry, which the commit continues from.
+    pub target: super::scoped::Target,
+    /// The group's exact start in this occurrence.
+    pub origin: ProjectFrame,
+}
+
+impl Occurrence {
+    /// The core destination relative to the group's start in this play.
+    pub fn placement(
+        &self,
+        document: &ProjectDocument,
+        parent: &NodeId,
+        destination: &Destination,
+    ) -> Result<deadpan_core::OccurrencePlacement, String> {
+        use deadpan_core::OccurrencePlacement;
+        let offset = |frame: ProjectFrame| {
+            frame
+                .0
+                .checked_sub(self.origin.0)
+                .filter(|offset| *offset >= 0)
+                .ok_or_else(|| "The destination is before this play's group.".to_owned())
+                .and_then(|offset| FrameDuration::new(offset).map_err(|error| error.to_string()))
+        };
+        Ok(match destination {
+            Destination::Slot(index) => OccurrencePlacement::Seam { index: *index },
+            Destination::Interior { target, at } => OccurrencePlacement::Interior {
+                index: document
+                    .children(parent)
+                    .position(|child| child == target)
+                    .ok_or("The destination beat left this play's group.")?,
+                at: *at,
+            },
+            Destination::Replace { range } => OccurrencePlacement::Replace {
+                start: offset(range.start())?,
+                end: offset(range.end())?,
+            },
+            Destination::Object { .. } => {
+                return Err("Inside one Repeat play, Place slice inserts at a seam or inside a beat, or replaces a Time range; group objects place from the parent.".into());
+            }
+        })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -257,12 +310,38 @@ pub struct Prepared {
     pub continuation_scope: SequenceScope,
     pub continuation_node: NodeId,
     pub object: Option<SemanticObjectSelection>,
+    /// In one Repeat play: the placed root's inspector address and concrete
+    /// occurrence after isolation.
+    pub occurrence: Option<(deadpan_core::ScopedNodeTarget, deadpan_core::InstancePath)>,
 }
 
 impl Prepared {
     /// A move can retain several roots. Validate their entire final interval,
     /// without requiring a synthetic group or treating the first root as all of it.
     pub fn validate_result(&self) -> Result<(), String> {
+        if let Some((target, presentation)) = &self.occurrence {
+            let document = &self.snapshot.document;
+            let (start, end) = document
+                .occurrence_structure_interval(presentation)
+                .map_err(|error| error.to_string())?;
+            if presentation.node != self.node
+                || target.node != self.node
+                || !target
+                    .matches_instance(document, presentation)
+                    .map_err(|error| error.to_string())?
+                || !document
+                    .children(&self.parent)
+                    .any(|child| child == &self.node)
+                || (start, end) != (self.range.start(), self.range.end())
+                || self.object.is_some()
+                || self.movement.is_some()
+                || self.result_slot.is_some()
+                || self.empty_slot.is_some()
+            {
+                return Err("Slice differs from its retained one-play result".into());
+            }
+            return Ok(());
+        }
         if let Some(selection) = &self.object {
             let target = Destination::Object {
                 selection: selection.clone(),

@@ -23,9 +23,10 @@ enum Destination<'a> {
 }
 
 struct Placement<'a> {
-    /// A seam inside one already isolated Repeat play. Its boundary comes
-    /// from that occurrence, and later plays and owners keep their clocks.
-    occurrence: bool,
+    /// The parent group's start in one already isolated Repeat play. Its
+    /// boundaries come from that occurrence, and later plays and owners keep
+    /// their own clocks.
+    occurrence: Option<ProjectFrame>,
     parent: &'a NodeId,
     slice: &'a CapturedEditSlice,
     identities: &'a SlicePasteIdentities,
@@ -40,8 +41,10 @@ impl<'a> Placement<'a> {
         command: &'a Command,
         occurrence: Option<ProjectFrame>,
     ) -> Result<Self, EditError> {
-        if occurrence.is_some() && !matches!(command, Command::SpliceSlice { .. }) {
-            return Err(invalid("an occurrence paste inserts at a seam"));
+        if occurrence.is_some() && matches!(command, Command::ReplaceSliceChildren { .. }) {
+            return Err(invalid(
+                "an occurrence paste places at a seam, an interior or a range",
+            ));
         }
         let (parent, slice, identities, timing, splits, destination) = match command {
             Command::SpliceSlice {
@@ -58,10 +61,9 @@ impl<'a> Placement<'a> {
                 None,
                 Destination::Seam {
                     index: *index,
-                    boundary: match occurrence {
-                        Some(boundary) => boundary,
-                        None => document.source_splice_boundary(parent, *index)?,
-                    },
+                    boundary: crate::insert_time::source_splice::boundary_in(
+                        document, parent, *index, occurrence,
+                    )?,
                 },
             ),
             Command::SpliceSliceAt {
@@ -81,7 +83,8 @@ impl<'a> Placement<'a> {
                 Destination::Interior {
                     target,
                     at: *at,
-                    resolved: document.slice_splice_interior(parent, target, *at, slice)?,
+                    resolved: document
+                        .slice_splice_interior_in(parent, target, *at, slice, occurrence)?,
                 },
             ),
             Command::ReplaceSlice {
@@ -99,7 +102,7 @@ impl<'a> Placement<'a> {
                 Some(split_identities),
                 Destination::Replacement {
                     range: *range,
-                    resolved: document.slice_replacement(parent, *range, slice)?,
+                    resolved: document.slice_replacement_in(parent, *range, slice, occurrence)?,
                 },
             ),
             Command::ReplaceSliceChildren {
@@ -123,7 +126,7 @@ impl<'a> Placement<'a> {
         };
         slice.check_destination(document)?;
         Ok(Self {
-            occurrence: occurrence.is_some(),
+            occurrence,
             parent,
             slice,
             identities,
@@ -217,17 +220,18 @@ pub(crate) fn apply(
     apply_inner(document, command, context, false, None).map(|(document, _)| document)
 }
 
-/// Seam paste inside one already isolated Repeat play. `command` is the
-/// `SpliceSlice` at the play's group slot; `boundary` is that slot's exact
-/// project frame in this occurrence. Every later owner, including later plays
-/// and gaps of each enclosing Repeat, keeps its own pre-edit clock.
+/// Placement inside one already isolated Repeat play. `command` is the
+/// `SpliceSlice`, `SpliceSliceAt` or `ReplaceSlice` in the play's group;
+/// `origin` is that group's exact start in this occurrence. Every later owner,
+/// including later plays and gaps of each enclosing Repeat, keeps its own
+/// pre-edit clock.
 pub(crate) fn apply_in_occurrence(
     document: &ProjectDocument,
     command: &Command,
-    boundary: ProjectFrame,
+    origin: ProjectFrame,
     context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
-    apply_inner(document, command, context, false, Some(boundary)).map(|(document, _)| document)
+    apply_inner(document, command, context, false, Some(origin)).map(|(document, _)| document)
 }
 
 /// Set placement collects copied marks until every component is installed.
@@ -293,13 +297,14 @@ fn apply_inner(
             )?
         }
         (Destination::Replacement { range, .. }, Some(timing)) => {
-            crate::insert_time::sequence_range::split_endpoints(
+            crate::insert_time::sequence_range::split_endpoints_in(
                 document,
                 placement.parent,
                 *range,
                 placement.splits.expect("replacement pools"),
                 timing,
                 context,
+                placement.occurrence,
             )?
         }
         _ => document.clone(),
@@ -316,10 +321,11 @@ fn apply_inner(
             resolved.boundary,
         ),
         Destination::Replacement { range, .. } => {
-            let selected = crate::insert_time::sequence_range::selected_children(
+            let selected = crate::insert_time::sequence_range::selected_children_in(
                 &working,
                 placement.parent,
                 *range,
+                placement.occurrence,
             )?;
             (selected.first, selected.end, selected.nodes, range.end())
         }
@@ -336,7 +342,7 @@ fn apply_inner(
         }
     };
     if let Some(timing) = &timings.suffix {
-        working = if placement.occurrence {
+        working = if placement.occurrence.is_some() {
             let affected = crate::insert_time::composite::occurrence_shifted_owners(
                 &working,
                 placement.parent,

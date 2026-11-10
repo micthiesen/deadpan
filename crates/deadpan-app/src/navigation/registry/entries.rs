@@ -791,7 +791,7 @@ pub static SPECS: &[Spec] = &[
             "panel; splice/replace/move commands --dry-run preview",
             STRUCT,
         ),
-        help: "Preview a copied Original or Edit slice at the Edit cursor before placing it; see Place slice for its keys. Open the destination group before opening placement to target it.",
+        help: "Preview a copied Original or Edit slice at the Edit cursor before placing it; see Place slice for its keys. Open the destination group before opening placement to target it. Inside Repeat contents with This play at every level, it places in the selected beat's group in that play only (seam, inside a beat or the play's Time range); Move, speed changes and placed sounds refuse there.",
     },
     Spec {
         id: "insert",

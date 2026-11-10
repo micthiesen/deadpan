@@ -46,6 +46,7 @@ fn proposal(workspace: &Workspace, draft: u64, change: u64) -> Proposal {
         scope: SequenceScope::default(),
         parent: workspace.document.root().clone(),
         destination: Destination::Slot(0),
+        occurrence: None,
     }
 }
 

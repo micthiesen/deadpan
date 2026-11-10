@@ -27,6 +27,23 @@ pub struct OccurrenceIdentities {
     pub marks: Vec<MarkId>,
 }
 
+/// Place slice's destination inside the selected beat's group in one play.
+/// Coordinates are relative to that group's start in this occurrence, so they
+/// survive the isolation that renames the group and its children.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum OccurrencePlacement {
+    /// The seam before the group's child `index` (the group's length for its end).
+    Seam { index: usize },
+    /// Strictly inside the group's child `index`, `at` frames from its start.
+    Interior { index: usize, at: FrameDuration },
+    /// Replace the nonempty frames `[start, end)` from the group's start.
+    Replace {
+        start: FrameDuration,
+        end: FrameDuration,
+    },
+}
+
 /// Operations on the selected node after its repeated ancestors are isolated.
 /// Child indexes and play IDs refer to the selected node, not project time.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -82,6 +99,13 @@ pub enum OccurrenceEdit {
         slice: Box<crate::CapturedEditSlice>,
         identities: crate::SlicePasteIdentities,
         timing: crate::AudioTimingId,
+        /// Place slice's explicit destination in the beat's group in this
+        /// play, instead of the seam beside the beat (`before` is then false).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        at: Option<OccurrencePlacement>,
+        /// Split names for an interior or replacement destination.
+        #[serde(default, skip_serializing_if = "crate::SplitIdentities::is_empty")]
+        splits: crate::SplitIdentities,
     },
     /// Paste one copied Original moment after (or before) the beat in this
     /// occurrence only, as the root `SpliceSource` places it at a seam.
@@ -91,6 +115,10 @@ pub enum OccurrenceEdit {
         id: NodeId,
         label: String,
         timing: crate::AudioTimingId,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        at: Option<OccurrencePlacement>,
+        #[serde(default, skip_serializing_if = "crate::SplitIdentities::is_empty")]
+        splits: crate::SplitIdentities,
     },
     Group {
         start: usize,
@@ -524,9 +552,12 @@ pub(crate) fn apply_captured(
             slice,
             identities,
             timing,
+            at,
+            splits,
         } => {
+            let placement = ripple::placement(*before, *at)?;
             return ripple::paste_slice(
-                &result, &target, *before, slice, identities, timing, context,
+                &result, &target, placement, slice, identities, splits, timing, context,
             );
         }
         OccurrenceEdit::PasteSource {
@@ -535,9 +566,12 @@ pub(crate) fn apply_captured(
             id,
             label,
             timing,
+            at,
+            splits,
         } => {
+            let placement = ripple::placement(*before, *at)?;
             return ripple::paste_source(
-                &result, &target, *before, source, id, label, timing, allocation,
+                &result, &target, placement, source, id, label, splits, timing, context,
             );
         }
         OccurrenceEdit::RepeatChild { id, plays, timing } => {

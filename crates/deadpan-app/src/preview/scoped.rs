@@ -10,7 +10,7 @@ pub(super) mod model;
 #[cfg(test)]
 mod range_tests;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime) and s, dd, yy, p, P, rr, :repeat N and :repeat gap= on a beat require one play at every level. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime), :splice and s, dd, yy, p, P, rr, :repeat N and :repeat gap= on a beat require one play at every level. Other timing edits and range copying require the parent.";
 /// The shared gap row edits only that gap; `j`/`k` reach the play's contents.
 pub(super) const SHARED_GAP_ONLY: &str = "The shared gap after this play takes a length (Enter), room tone (:room-tone), silence (:hold-silence) or its own copy (:isolate-gap). Select the play's contents with k for other edits.";
 const FRAMING_RANGE_ONLY: &str = "This play's Edit range is for :zoom or :creep. Clear the range with Escape before other beat edits.";
@@ -665,15 +665,24 @@ impl DeadpanApp {
         }
         if self.has_scoped_visual_selection()
             && let Ok(command) = command
+            && !matches!(command, Entry::Splice)
             && !scoped_range_command_allowed(command, self.scoped_hold_parameter().is_some())
         {
             self.error = Some(FRAMING_RANGE_ONLY.into());
             return true;
         }
-        let blocked = matches!(
-            command,
-            Ok(Entry::Splice | Entry::Slip(_) | Entry::Trim(_) | Entry::Group { .. })
-        ) || matches!(command, Ok(Entry::Action(action)) if scoped_structural_action(action));
+        // Place slice in one play captures its own refusals and target.
+        let one_play_splice = matches!(command, Ok(Entry::Splice))
+            && self
+                .scoped_target()
+                .ok()
+                .flatten()
+                .is_some_and(|target| target.has_single_play_authority());
+        let blocked = !one_play_splice
+            && (matches!(
+                command,
+                Ok(Entry::Splice | Entry::Slip(_) | Entry::Trim(_) | Entry::Group { .. })
+            ) || matches!(command, Ok(Entry::Action(action)) if scoped_structural_action(action)));
         if blocked {
             self.error = Some(STRUCTURE_UNAVAILABLE.into());
         }

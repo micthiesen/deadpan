@@ -163,6 +163,26 @@ pub struct SourceMomentChildrenReplacementRequest {
     pub ordinals: Range<u64>,
 }
 
+/// Place slice of an Original moment in the group of a beat shown in explicit
+/// plays at every enclosing Repeat. The store derives the Source from measured
+/// evidence; the core isolates those plays and places it in that occurrence
+/// only, in one reversible transaction.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceMomentOccurrenceRequest {
+    pub expected_revision: RevisionId,
+    pub new_revision: RevisionId,
+    pub asset: AssetId,
+    pub instance: deadpan_core::InstancePath,
+    pub at: deadpan_core::OccurrencePlacement,
+    pub node: NodeId,
+    pub label: String,
+    pub isolation: deadpan_core::OccurrenceIdentities,
+    pub identities: SplitIdentities,
+    pub timing: AudioTimingId,
+    pub ordinals: Range<u64>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SourceRegistrationPreview {
     pub asset_id: AssetId,
@@ -443,6 +463,48 @@ impl ProjectStore {
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan =
             prepare_source_children_replacement(&transaction, &self.documents, input, source)?;
+        let (outcome, next) = crate::write_command_plan(
+            &transaction,
+            &self.documents,
+            plan,
+            relevance,
+            self.context_resolver.as_deref(),
+        )?;
+        source.original.recheck(cancelled)?;
+        transaction.commit()?;
+        self.documents.insert(next);
+        Ok(outcome)
+    }
+
+    /// Preview one Original placement in a single Repeat play without writing.
+    pub fn preview_prepared_source_occurrence(
+        &self,
+        input: &SourceMomentOccurrenceRequest,
+        source: &PreparedSourceRegistration,
+        cancelled: &AtomicBool,
+    ) -> Result<EditTransaction, StoreError> {
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self.connection.unchecked_transaction()?;
+        let plan = prepare_source_occurrence(&transaction, &self.documents, input, source)?;
+        source.original.recheck(cancelled)?;
+        Ok(plan.edit)
+    }
+
+    /// Commit the exact previewed one-play placement after fresh source and
+    /// revision checks: isolation, any Split and the insertion share one entry.
+    pub fn commit_prepared_source_occurrence(
+        &mut self,
+        input: &SourceMomentOccurrenceRequest,
+        source: &PreparedSourceRegistration,
+        relevance: Option<&RelevancePlan>,
+        cancelled: &AtomicBool,
+    ) -> Result<CommitOutcome, StoreError> {
+        self.require_writer()?;
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let plan = prepare_source_occurrence(&transaction, &self.documents, input, source)?;
         let (outcome, next) = crate::write_command_plan(
             &transaction,
             &self.documents,
@@ -806,6 +868,44 @@ fn prepare_source_children_replacement(
                 id: input.node.clone(),
                 label: input.label.clone(),
                 timing: input.timing.clone(),
+            },
+        },
+    )
+}
+
+fn prepare_source_occurrence(
+    connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
+    input: &SourceMomentOccurrenceRequest,
+    source: &PreparedSourceRegistration,
+) -> Result<CommandPlan, StoreError> {
+    let (current, moment) = prepared_moment_source(
+        connection,
+        documents,
+        &input.expected_revision,
+        &input.asset,
+        &input.ordinals,
+        source,
+    )?;
+    crate::prepare_command(
+        connection,
+        documents,
+        &CommandRequest {
+            project_id: current.project_id().clone(),
+            expected_revision: input.expected_revision.clone(),
+            new_revision: input.new_revision.clone(),
+            command: Command::EditOccurrence {
+                instance: input.instance.clone(),
+                edit: deadpan_core::OccurrenceEdit::PasteSource {
+                    before: false,
+                    source: Box::new(moment),
+                    id: input.node.clone(),
+                    label: input.label.clone(),
+                    timing: input.timing.clone(),
+                    at: Some(input.at),
+                    splits: input.identities.clone(),
+                },
+                identities: input.isolation.clone(),
             },
         },
     )

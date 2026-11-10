@@ -193,6 +193,10 @@ fn placement_source_revision(command: &Command) -> Result<&RevisionId, StoreErro
         | Command::SpliceSliceAt { slice, .. }
         | Command::ReplaceSlice { slice, .. } => Ok(slice.revision_id()),
         Command::ReplaceSliceChildren { slice, .. } => Ok(slice.revision_id()),
+        Command::EditOccurrence {
+            edit: deadpan_core::OccurrenceEdit::PasteSlice { slice, .. },
+            ..
+        } => Ok(slice.revision_id()),
         Command::SpliceEditSet { set, .. } => Ok(set.revision_id()),
         // prepare_command validates this current source revision, both scopes,
         // the complete identity pool and ordinary media authority. Unlike a

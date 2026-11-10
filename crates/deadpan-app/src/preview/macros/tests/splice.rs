@@ -50,6 +50,7 @@ fn proposal(destination: Destination) -> Proposal {
         scope: SequenceScope::default(),
         parent: node("root"),
         destination,
+        occurrence: None,
     }
 }
 

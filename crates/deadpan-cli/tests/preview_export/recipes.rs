@@ -43,6 +43,9 @@ pub mod mixed_pause;
 #[path = "scoped_duration.rs"]
 pub mod scoped_duration;
 
+#[path = "scoped_place.rs"]
+pub mod scoped_place;
+
 #[path = "ordinary_duration.rs"]
 pub mod ordinary_duration;
 

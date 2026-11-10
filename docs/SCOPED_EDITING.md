@@ -252,6 +252,29 @@ refuses readably without an edit", "p inside play 3 pastes play 2's copy after
 its right part there only and selects it" and "Three Undos remove the paste and
 both splits; the copy remains".
 
+## Place slice in This play
+
+Since 2026-11-10, `:splice` opens Place slice with its destination in the
+selected beat's group as it plays in the chosen occurrence (This play at every
+enclosing Repeat). The draft offers the same seams, `h/l` interior refinement,
+Replace over this play's Time range (`v`, motion, `v`, then `:splice`, then
+`r`), Before/Proposed audition and Enter, and shows the destination as
+"Your edit / Repeat · play N/M · …". Enter commits one `EditOccurrence`
+`PasteSlice`/`PasteSource` with an explicit `at`: the shown plays are isolated
+and the content is placed there only, exactly as at the parent, with every
+later owner on its pre-edit sample entry. The inspector selects the placed beat
+at its start; one Undo restores the shared definition. Move (`m`), group-object
+destinations, destinations inside a speed change in that play, sound-bearing
+documents, All plays and several selected plays refuse readably, and Place
+slice inside a play is not recorded into macros (record `p`/`P` instead). See
+[slice placement](SLICE_PLACEMENT.md#inside-one-repeat-play) for the commands
+and evidence; the `scoped-plays` replay checks ":splice inside play 2 opens a
+one-play proposal at the split seam without an edit", "l refines the destination
+three frames inside play 2's right part; the proposal grows that play only",
+"m refuses Move for a one-play destination readably and keeps the Copy
+proposal", "Enter places the copy inside play 2 only and the inspector selects
+it at its start" and "Two Undos remove the placement and the split".
+
 ## Framing a range in This play
 
 Choose This play at every enclosing Repeat, select a visible child, then use
@@ -331,8 +354,9 @@ one concrete play at every level; Retime ancestors refuse this occurrence path
 capture also refuses a boundary whose preceding picture does not pass through
 the selected insertion parent; black pauses need no sampled picture.
 Mixed owned-gap Hold resizing, Repeat/Retime timing combinations, other
-timing edits (Trim, Slip, motions and ranges), range copies and general macros
-inside these contents remain required work; their native actions refuse
+timing edits (Trim, Slip, motions and range cuts), range copies, Place slice
+inside a speed change and general macros inside these contents remain required
+work; their native actions refuse
 without editing the retained outer beat. Split, beat deletion, Repeat wraps and
 Repeat count and gap changes in This play are described above.
 

@@ -71,6 +71,7 @@ fn proposal(
         scope: SequenceScope::default(),
         parent: workspace.document.root().clone(),
         destination,
+        occurrence: None,
     }
 }
 

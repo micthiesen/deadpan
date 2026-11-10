@@ -23,7 +23,33 @@ pub(crate) fn preflight(
     range: FrameRange,
     inserted_nodes: usize,
 ) -> Result<SequenceRangeEdit, EditError> {
-    preflight_with(document, parent, range, inserted_nodes, EndpointMode::Split)
+    preflight_with(
+        document,
+        parent,
+        range,
+        inserted_nodes,
+        EndpointMode::Split,
+        None,
+    )
+}
+
+/// [`preflight`] for a group inside one isolated Repeat play whose start in
+/// that occurrence is `origin`.
+pub(crate) fn preflight_in(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+    inserted_nodes: usize,
+    origin: Option<ProjectFrame>,
+) -> Result<SequenceRangeEdit, EditError> {
+    preflight_with(
+        document,
+        parent,
+        range,
+        inserted_nodes,
+        EndpointMode::Split,
+        origin,
+    )
 }
 
 pub(crate) fn preflight_capture(
@@ -31,7 +57,7 @@ pub(crate) fn preflight_capture(
     parent: &NodeId,
     range: FrameRange,
 ) -> Result<SequenceRangeEdit, EditError> {
-    preflight_with(document, parent, range, 0, EndpointMode::Capture)
+    preflight_with(document, parent, range, 0, EndpointMode::Capture, None)
 }
 
 /// Deletion retains complete endpoint contexts through Split, just as copied
@@ -41,7 +67,7 @@ pub(crate) fn preflight_deletion(
     parent: &NodeId,
     range: FrameRange,
 ) -> Result<SequenceRangeEdit, EditError> {
-    preflight_with(document, parent, range, 0, EndpointMode::SliceSplit)
+    preflight_with(document, parent, range, 0, EndpointMode::SliceSplit, None)
 }
 
 /// Repeat keeps each complete endpoint context, including composite output.
@@ -51,7 +77,14 @@ pub(crate) fn preflight_repeat(
     parent: &NodeId,
     range: FrameRange,
 ) -> Result<SequenceRangeEdit, EditError> {
-    preflight_with(document, parent, range, 2, EndpointMode::StructuralSplit)
+    preflight_with(
+        document,
+        parent,
+        range,
+        2,
+        EndpointMode::StructuralSplit,
+        None,
+    )
 }
 
 /// Group adds one transparent Sequence around retained endpoint contexts.
@@ -60,7 +93,14 @@ pub(crate) fn preflight_group(
     parent: &NodeId,
     range: FrameRange,
 ) -> Result<SequenceRangeEdit, EditError> {
-    preflight_with(document, parent, range, 1, EndpointMode::StructuralSplit)
+    preflight_with(
+        document,
+        parent,
+        range,
+        1,
+        EndpointMode::StructuralSplit,
+        None,
+    )
 }
 
 enum EndpointMode {
@@ -79,6 +119,18 @@ impl ProjectDocument {
         range: FrameRange,
         slice: &crate::CapturedEditSlice,
     ) -> Result<SequenceRangeEdit, EditError> {
+        self.slice_replacement_in(parent, range, slice, None)
+    }
+
+    /// [`Self::slice_replacement`] for a group whose start in one isolated
+    /// Repeat play is `origin`.
+    pub(crate) fn slice_replacement_in(
+        &self,
+        parent: &NodeId,
+        range: FrameRange,
+        slice: &crate::CapturedEditSlice,
+        origin: Option<ProjectFrame>,
+    ) -> Result<SequenceRangeEdit, EditError> {
         slice.check_destination(self)?;
         if slice.duration() == FrameDuration::ZERO {
             return Err(super::invalid(
@@ -91,6 +143,7 @@ impl ProjectDocument {
             range,
             slice.identity_requirements()?.nodes,
             EndpointMode::SliceSplit,
+            origin,
         )
     }
 }
@@ -101,12 +154,13 @@ fn preflight_with(
     range: FrameRange,
     inserted_nodes: usize,
     mode: EndpointMode,
+    origin: Option<ProjectFrame>,
 ) -> Result<SequenceRangeEdit, EditError> {
-    let start = document.source_splice_boundary(parent, 0)?;
+    let start = super::source_splice::boundary_in(document, parent, 0, origin)?;
     let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
         unreachable!("source_splice_boundary admitted an ordinary Sequence")
     };
-    let end = document.source_splice_boundary(parent, children.len())?;
+    let end = super::source_splice::boundary_in(document, parent, children.len(), origin)?;
     if range.duration() == FrameDuration::ZERO || range.start() < start || range.end() > end {
         return Err(super::invalid(
             "range edit requires a nonempty range inside its named Sequence",
@@ -193,16 +247,31 @@ pub(crate) fn split_endpoints(
     timing: &AudioTimingId,
     context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
+    split_endpoints_in(document, parent, range, identities, timing, context, None)
+}
+
+/// [`split_endpoints`] for a group whose start in one isolated Repeat play
+/// is `origin`.
+pub(crate) fn split_endpoints_in(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+    identities: &SplitIdentities,
+    timing: &AudioTimingId,
+    context: crate::command::EditContext<'_>,
+    origin: Option<ProjectFrame>,
+) -> Result<ProjectDocument, EditError> {
     let mut working = document.clone();
     // Capture sampling lattices BEFORE copying retained physical owners.
     working.audio_bindings =
         crate::audio_binding_lifecycle::capture_unbound_audio_bindings(document, timing.clone())?;
-    split_prepared(
+    split_prepared_in(
         &working,
         parent,
         &[range.start(), range.end()],
         identities,
         context,
+        origin,
     )
     .map(|(document, _)| document)
 }
@@ -215,7 +284,18 @@ pub(crate) fn split_prepared(
     parent: &NodeId,
     boundaries: &[ProjectFrame],
     identities: &SplitIdentities,
+    context: crate::command::EditContext<'_>,
+) -> Result<(ProjectDocument, usize), EditError> {
+    split_prepared_in(document, parent, boundaries, identities, context, None)
+}
+
+fn split_prepared_in(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    boundaries: &[ProjectFrame],
+    identities: &SplitIdentities,
     mut context: crate::command::EditContext<'_>,
+    origin: Option<ProjectFrame>,
 ) -> Result<(ProjectDocument, usize), EditError> {
     if boundaries.len() > 2 {
         return Err(super::invalid(
@@ -225,7 +305,7 @@ pub(crate) fn split_prepared(
     let mut working = document.clone();
     let mut consumed = 0usize;
     for &boundary in boundaries {
-        if let Some((target, at)) = interior(&working, parent, boundary)? {
+        if let Some((target, at)) = interior(&working, parent, boundary, origin)? {
             let count = super::split_node_count(&working, &target)?;
             let end = consumed.checked_add(count).ok_or_else(super::overflow)?;
             let split_ids = SplitIdentities {
@@ -263,11 +343,20 @@ pub(crate) fn selected_children(
     parent: &NodeId,
     range: FrameRange,
 ) -> Result<SelectedChildren, EditError> {
+    selected_children_in(document, parent, range, None)
+}
+
+pub(crate) fn selected_children_in(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+    origin: Option<ProjectFrame>,
+) -> Result<SelectedChildren, EditError> {
     let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
         unreachable!("range preflight admitted an ordinary Sequence")
     };
     let durations = document.durations()?;
-    let mut offset = document.source_splice_boundary(parent, 0)?.0;
+    let mut offset = super::source_splice::boundary_in(document, parent, 0, origin)?.0;
     let mut removed = Vec::new();
     let mut first = None;
     let mut end = 0;
@@ -296,12 +385,13 @@ fn interior(
     document: &ProjectDocument,
     parent: &NodeId,
     at: ProjectFrame,
+    origin: Option<ProjectFrame>,
 ) -> Result<Option<(NodeId, FrameDuration)>, EditError> {
     let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
         unreachable!()
     };
     let durations = document.durations()?;
-    let mut offset = document.source_splice_boundary(parent, 0)?.0;
+    let mut offset = super::source_splice::boundary_in(document, parent, 0, origin)?.0;
     for child in children {
         let next = offset
             .checked_add(durations[child].frames())

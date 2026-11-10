@@ -9,13 +9,19 @@ use deadpan_core::{
 };
 use deadpan_store::source_registration::{
     SourceMomentChildrenReplacementRequest, SourceMomentInsertionRequest,
-    SourceMomentInteriorInsertionRequest, SourceMomentReplacementRequest,
+    SourceMomentInteriorInsertionRequest, SourceMomentOccurrenceRequest,
+    SourceMomentReplacementRequest,
 };
 use deadpan_store::{CommitOutcome, ProjectStore, StoreError};
 
 use super::super::{AssetId, NodeId, PreparedSourceRegistration, Result, display, node, revision};
 use crate::project::Workspace;
-use crate::project::splice::{Destination, Movement};
+use crate::project::splice::{Destination, Movement, Occurrence};
+
+/// The placed root's inspector address and concrete occurrence after
+/// isolation, for a destination in one Repeat play.
+pub(in crate::project::service) type OccurrenceResult =
+    (deadpan_core::ScopedNodeTarget, deadpan_core::InstancePath);
 
 pub(in crate::project::service) enum Request {
     Slot(SourceMomentInsertionRequest),
@@ -39,6 +45,22 @@ pub(in crate::project::service) enum Request {
         request: Box<CommandRequest>,
         inserted: FrameRange,
         movement: Movement,
+    },
+    /// An Original moment placed in one Repeat play.
+    Occurrence {
+        request: Box<SourceMomentOccurrenceRequest>,
+        removed: Option<FrameRange>,
+    },
+}
+
+/// What a one-play placement inserts.
+#[derive(Clone)]
+pub(in crate::project::service) enum OccurrenceContent<'a> {
+    Edited(&'a CapturedEditSlice),
+    Original {
+        asset: &'a AssetId,
+        ordinals: Range<u64>,
+        label: &'a str,
     },
 }
 
@@ -253,6 +275,168 @@ impl Request {
         ))
     }
 
+    /// Place slice in one explicit Repeat play: one `EditOccurrence` that
+    /// isolates the shown plays and places the content there only. Move and
+    /// group objects refuse; sounds and speed changes refuse in the core.
+    pub(in crate::project::service) fn occurrence(
+        workspace: &Workspace,
+        parent: &NodeId,
+        destination: &Destination,
+        occurrence: &Occurrence,
+        content: OccurrenceContent<'_>,
+    ) -> Result<(Self, ProjectFrame, OccurrenceResult)> {
+        let document = &workspace.document;
+        let instance = &occurrence.instance;
+        let at = occurrence.placement(document, parent, destination)?;
+        let slice = match &content {
+            OccurrenceContent::Edited(slice) => Some(*slice),
+            OccurrenceContent::Original { .. } => None,
+        };
+        let plan = document
+            .occurrence_placement(instance, at, slice)
+            .map_err(display)?;
+        if &plan.parent != parent || plan.origin != occurrence.origin {
+            return Err("The chosen play moved; open Place slice again".into());
+        }
+        let new_revision = revision();
+        let timing = AudioTimingId {
+            allocation: new_revision.clone(),
+            ordinal: 0,
+        };
+        let splits = SplitIdentities {
+            nodes: (0..plan.required_ids).map(|_| node()).collect(),
+        };
+        let content_identity = content.clone();
+        let (edit, root) = match content {
+            OccurrenceContent::Edited(slice) => {
+                let identities = super::super::edit_slice::paste_identities(slice)?;
+                let root = identities
+                    .authored
+                    .nodes
+                    .first()
+                    .cloned()
+                    .ok_or("Copied slice has no imported root")?;
+                (
+                    deadpan_core::OccurrenceEdit::PasteSlice {
+                        before: false,
+                        slice: Box::new(slice.clone()),
+                        identities,
+                        timing: timing.clone(),
+                        at: Some(at),
+                        splits: splits.clone(),
+                    },
+                    root,
+                )
+            }
+            OccurrenceContent::Original {
+                asset,
+                ordinals,
+                label,
+            } => {
+                // The store derives this same Source from the stored receipt;
+                // here it only sizes isolation and names the selection.
+                let source = workspace
+                    .sources
+                    .get(asset)
+                    .ok_or("Copied Original is no longer registered")?;
+                let video = source
+                    .receipt
+                    .snapshot()
+                    .video()
+                    .ok_or("Copied Original has no qualified pictures")?;
+                let moment = deadpan_media::source_import_timing::derive_source_moment(
+                    video.index(),
+                    source.receipt.snapshot().audio(),
+                    ordinals.clone(),
+                    document.presentation_basis().frame_rate,
+                )
+                .map_err(|error| error.to_string())?
+                .source_node((*asset).clone());
+                let root = node();
+                (
+                    deadpan_core::OccurrenceEdit::PasteSource {
+                        before: false,
+                        source: Box::new(moment),
+                        id: root.clone(),
+                        label: format!("{label} [{}..{})", ordinals.start, ordinals.end),
+                        timing: timing.clone(),
+                        at: Some(at),
+                        splits: splits.clone(),
+                    },
+                    root,
+                )
+            }
+        };
+        let needs = document
+            .occurrence_structure_requirements(instance, &edit)
+            .map_err(display)?;
+        let isolation = deadpan_core::OccurrenceIdentities {
+            nodes: (0..needs.nodes).map(|_| node()).collect(),
+            marks: (0..needs.marks)
+                .map(|_| {
+                    deadpan_core::MarkId::new(uuid::Uuid::new_v4().to_string())
+                        .expect("UUID is a valid mark identity")
+                })
+                .collect(),
+        };
+        let selection = document
+            .occurrence_structure_selection(instance, &edit, &isolation)
+            .map_err(display)?;
+        if selection.0.node != root {
+            return Err("One-play placement selected a different root".into());
+        }
+        let expected_revision = document.revision_id().clone();
+        let request = match edit {
+            deadpan_core::OccurrenceEdit::PasteSource {
+                label,
+                id,
+                timing,
+                at,
+                splits,
+                ..
+            } => {
+                let OccurrenceContent::Original {
+                    asset, ordinals, ..
+                } = content_identity
+                else {
+                    unreachable!("an Original builds PasteSource")
+                };
+                Self::Occurrence {
+                    request: Box::new(SourceMomentOccurrenceRequest {
+                        expected_revision,
+                        new_revision,
+                        asset: asset.clone(),
+                        instance: instance.clone(),
+                        at: at.ok_or("One-play placement lost its destination")?,
+                        node: id,
+                        label,
+                        isolation,
+                        identities: splits,
+                        timing,
+                        ordinals,
+                    }),
+                    removed: plan.removed,
+                }
+            }
+            edit => Self::Edited {
+                duration: slice.map_or(FrameDuration::ZERO, CapturedEditSlice::duration),
+                request: Box::new(CommandRequest {
+                    project_id: document.project_id().clone(),
+                    expected_revision,
+                    new_revision,
+                    command: Command::EditOccurrence {
+                        instance: instance.clone(),
+                        edit,
+                        identities: isolation,
+                    },
+                }),
+                node: root,
+                removed: plan.removed,
+            },
+        };
+        Ok((request, plan.boundary, selection))
+    }
+
     pub(in crate::project::service) fn capture(
         workspace: &Workspace,
         parent: &NodeId,
@@ -404,6 +588,7 @@ impl Request {
             Self::Replace(request) => Some(&request.node),
             Self::ObjectReplacement { request, .. } => Some(&request.node),
             Self::Edited { node, .. } => Some(node),
+            Self::Occurrence { request, .. } => Some(&request.node),
             Self::Move { .. } => None,
         }
     }
@@ -415,6 +600,7 @@ impl Request {
             Self::Interior(request) => Some(&request.asset),
             Self::Replace(request) => Some(&request.asset),
             Self::ObjectReplacement { request, .. } => Some(&request.asset),
+            Self::Occurrence { request, .. } => Some(&request.asset),
             Self::Edited { .. } | Self::Move { .. } => None,
         }
     }
@@ -441,7 +627,7 @@ impl Request {
                 Some(*removed)
             }
             Self::Slot(_) | Self::Interior(_) | Self::Move { .. } => None,
-            Self::Edited { removed, .. } => *removed,
+            Self::Edited { removed, .. } | Self::Occurrence { removed, .. } => *removed,
         }
     }
 
@@ -471,6 +657,9 @@ impl Request {
             }
             Self::ObjectReplacement { request, .. } => {
                 store.preview_prepared_source_children_replacement(request, source, cancelled)
+            }
+            Self::Occurrence { request, .. } => {
+                store.preview_prepared_source_occurrence(request, source, cancelled)
             }
             Self::Edited { request, .. } | Self::Move { request, .. } => store.preview(request),
         }
@@ -514,6 +703,12 @@ impl Request {
                     None,
                     cancelled,
                 ),
+            Self::Occurrence { request, .. } => store.commit_prepared_source_occurrence(
+                request,
+                require_source(source)?,
+                None,
+                cancelled,
+            ),
             Self::Edited { request, .. } | Self::Move { request, .. } => store.commit(request),
         }
     }

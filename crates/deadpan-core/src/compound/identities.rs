@@ -269,11 +269,17 @@ fn occurrence<'a>(edit: &'a OccurrenceEdit, nodes: &mut Vec<&'a NodeId>) {
         OccurrenceEdit::Insert { subtree, .. }
         | OccurrenceEdit::SetPlayOverride { subtree, .. }
         | OccurrenceEdit::SetGapOverride { subtree, .. } => nodes.extend(subtree.nodes.keys()),
-        OccurrenceEdit::PasteSlice { identities, .. } => {
+        OccurrenceEdit::PasteSlice {
+            identities, splits, ..
+        } => {
             nodes.extend(&identities.authored.nodes);
             nodes.extend(&identities.aliases);
+            nodes.extend(&splits.nodes);
         }
-        OccurrenceEdit::PasteSource { id, .. } => nodes.push(id),
+        OccurrenceEdit::PasteSource { id, splits, .. } => {
+            nodes.push(id);
+            nodes.extend(&splits.nodes);
+        }
         OccurrenceEdit::Group { id, .. }
         | OccurrenceEdit::WrapRepeat { id, .. }
         | OccurrenceEdit::RepeatChild { id, .. }

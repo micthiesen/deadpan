@@ -8,6 +8,7 @@ use super::*;
 use crate::project::macros::{Id, Operation};
 use crate::project::scoped::Target;
 mod copy_paste;
+mod place_slice;
 mod play_gap_replay;
 
 use deadpan_core::{

@@ -140,7 +140,8 @@ pub use insert_time::{
 pub use marks::*;
 pub use move_range::{MoveRangeDestination, SequenceRangeMove};
 pub use occurrence::*;
-pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};
+pub use occurrence_edit::ripple::OccurrencePlacementPlan;
+pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities, OccurrencePlacement};
 pub use output_color::*;
 pub use pause_sound::PauseSoundTarget;
 pub use picture_context::*;

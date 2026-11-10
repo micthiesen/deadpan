@@ -3,7 +3,7 @@
 
 use super::*;
 
-fn enter_play(d: &mut Driver<'_>, play: u32) -> Result<(), String> {
+pub(super) fn enter_play(d: &mut Driver<'_>, play: u32) -> Result<(), String> {
     while d.app().scoped.is_some() {
         d.key(Key::Escape)?;
         idle(d)?;

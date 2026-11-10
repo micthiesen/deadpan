@@ -23,8 +23,8 @@ mod delete;
 mod delete_children;
 mod delete_range;
 pub(crate) mod sequence_range;
-mod source_replace;
-mod source_splice;
+pub(crate) mod source_replace;
+pub(crate) mod source_splice;
 mod target;
 pub(crate) use delete::apply as delete;
 pub(crate) use delete_children::apply as delete_children;
@@ -430,7 +430,7 @@ fn split_captured<T>(
     }
 }
 
-fn validate_split_budget(
+pub(crate) fn validate_split_budget(
     document: &ProjectDocument,
     target: Option<&NodeId>,
     identities: &SplitIdentities,

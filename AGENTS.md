@@ -1151,9 +1151,14 @@ strictly interior ones, and transform marks once after the final structure.
 Use one direct Replace sound map, never intermediate Delete/Insert rounding.
 Keep Edit selection separate from the copied-content register and capture
 command-entry targets including absence. Replace mode fixes the removed range;
-Before and Proposed have separate exact audition windows. Move and
-Repeat/Retime occurrence destinations remain open.
-See [slice placement](docs/SLICE_PLACEMENT.md).
+Before and Proposed have separate exact audition windows. A destination in
+one explicit Repeat play is one `EditOccurrence` `PasteSlice`/`PasteSource`
+with an explicit `OccurrencePlacement` relative to the group's start in that
+play; thread the occurrence origin through the shared boundary helpers
+(`boundary_in`, `*_in`) instead of resolving it from a Repeat ancestor, and
+keep later owners on their pre-edit entries. Move into a play and destinations
+inside speed changes remain open and refuse.
+See [slice placement](docs/SLICE_PLACEMENT.md#inside-one-repeat-play).
 
 `SourceNode.video_mapping` independently chooses `FitBeat` or an exact duration
 with an explicit endpoint policy. Natural-rate import uses the unrounded source

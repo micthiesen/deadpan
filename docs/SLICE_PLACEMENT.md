@@ -25,7 +25,8 @@ groups use cut/paste to move.
 
 The current implementation accepts child seams and strict interiors of direct
 Source, ordinary Hold and supported transparent-fragment children in ordinary
-Sequence groups. The captured group remains the insertion owner. Enter a child
+Sequence groups, and the same destinations in one explicit Repeat play (see
+[Inside one Repeat play](#inside-one-repeat-play)). The captured group remains the insertion owner. Enter a child
 group to place inside it; a proposal never silently descends into that group or
 rounds the insertion to a neighboring beat.
 
@@ -34,6 +35,58 @@ Sequence seams or supported Source/Hold/fragment interiors. Complete composites
 between those endpoints are removed as subtrees. The range stays fixed while
 the source In/Out changes. Zero-duration children exactly at either endpoint
 survive in order; strictly interior ones are removed.
+
+## Inside one Repeat play
+
+Since 2026-11-10, `:splice` also works inside Repeat contents when This play
+is chosen at every enclosing Repeat (`]r`, `:scope play N`). The destination
+group is the selected beat's group as it plays in that occurrence (its own
+override branch, or the shared default). Seams, `j/k` slots, `h/l` refinement
+into a direct Source, ordinary Hold or supported fragment, and Replace over the
+play's Time range (`v`, motion, `v` before `:splice`) all use that
+occurrence's project frames. Before/Proposed comparison, Space, Shift+Space
+and the endpoint strip behave as at the parent; the proposed picture and audio
+come from the genuine proposed occurrence document.
+
+The service builds one `EditOccurrence` whose `PasteSlice` (edited copy) or
+`PasteSource` (Original moment, through the store's
+`SourceMomentOccurrenceRequest`) carries an explicit `at`
+(`OccurrencePlacement::Seam`, `Interior` or `Replace`, relative to the group's
+start in that play) and its Split names. Commit isolates the shown plays
+outside-in, then places the content exactly as the root `SpliceSlice`,
+`SpliceSliceAt`, `ReplaceSlice`, `SpliceSource`, `SpliceSourceAt` or
+`ReplaceSource` places it in that group: endpoint clocks are captured before
+any Split, and every later owner (the rest of the play, later plays and gaps of
+each enclosing Repeat, and everything after) keeps its own pre-edit sample
+entry. Other plays keep the shared definition. One Undo removes isolation,
+Split and placement together. The inspector selects the placed beat at its
+start in that play. `ProjectDocument::occurrence_placement` is the preflight:
+group, its origin in the occurrence, the boundary or removed interval and the
+Split count, computed before isolation.
+
+Refusals, each with a readable message and no edit: All plays or several
+selected plays, a play whose whole contents are one beat (split it first, or
+press Enter), a destination group inside a speed change in that play (a
+FollowSpeed or Preserve Retime between the group and the Repeat; place from
+the parent or outside the speed change), a beat that plays cropped or at a
+fractional clock there, documents with placed or beat sounds, group-object
+(`ig`/`ag`) destinations, empty copied groups, Move (`m`: "Move cannot target
+one Repeat play"), and recording into a macro (record `p`/`P` on a beat in the
+play instead). A speed-change destination is refused rather than approximated:
+the placed material would need its own derived clock under that stage, which
+this increment does not author.
+
+Evidence: core `insert_time::occurrence_structure` (`place_slice_*`: interior
+copied slice, Original replacement across a seam, Original interior and seam,
+copied-slice replacement, refusals; 30000/1001 fps, later plays and the tail
+keep B(12) = 19219 and B(18) = 28829, exact Undo), service
+`project::tests::scoped_structure::place_slice` (preview, refinement, stale
+commit refusal, commit receipt and inspector continuation, Undo, cancel, Move
+refusal), the release preview/export fixture `scoped-place-slice`
+(`place_slice_in_one_play_preview_and_encoded_output_keep_later_source_clocks`:
+48 pictures, the moved tail's decoded click window equal within 1e-6, export
+audio verified at offset zero) and the `scoped-plays` replay (`:splice` in play
+2, `l` refinement, `m` refusal, `b`, Space, Enter, two Undos).
 
 ## Keyboard and visible state
 
@@ -163,5 +216,5 @@ suffix using exact absolute frame-to-sample boundaries.
 ## Remaining specification work
 
 This is partial [§9.7](spec/DEADPAN_SPEC.md#97-visual-slice-placement).
-Picture-only and audio-only policies, named registers, and Repeat/Retime occurrence destinations
-remain required. These controls do not establish completion of DP-05 or DP-20.
+Picture-only and audio-only policies, named registers, Move into or out of one
+Repeat play, and destinations inside speed changes remain required. These controls do not establish completion of DP-05 or DP-20.

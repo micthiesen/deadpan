@@ -391,7 +391,10 @@ impl DeadpanApp {
         context: &egui::Context,
         target: Result<moment::PlacementTarget, String>,
     ) {
-        if let Err(error) = self.check_placement_scope() {
+        let occurrence = target
+            .as_ref()
+            .is_ok_and(|target| target.occurrence.is_some());
+        if !occurrence && let Err(error) = self.check_placement_scope() {
             self.error = Some(error);
             return;
         }
@@ -437,11 +440,27 @@ impl DeadpanApp {
                     self.editor_copy_recipe()
                 )
             })?;
-            let view = target.scope.resolve(&base)?;
+            let view = if let Some(occurrence) = &target.occurrence {
+                if target.selection.object().is_some() {
+                    return Err("Inside one Repeat play, Place slice inserts at a seam or inside a beat, or replaces a Time range; group objects place from the parent.".into());
+                }
+                (
+                    target.parent.clone(),
+                    base.document
+                        .children(&target.parent)
+                        .cloned()
+                        .collect::<Vec<_>>(),
+                    u64::try_from(occurrence.origin.0).map_err(|_| "Negative play origin")?,
+                )
+            } else {
+                let view = target.scope.resolve(&base)?;
+                (view.owner.clone(), view.children.to_vec(), view.start)
+            };
+            let (owner, view_children, view_start) = view;
             if let Some(object) = target.selection.object() {
                 let resolved = base
                     .document
-                    .resolve_object_selection(view.owner, object)
+                    .resolve_object_selection(&owner, object)
                     .map_err(|error| error.to_string())?;
                 if Some(resolved.range) != target.range {
                     return Err(
@@ -449,10 +468,10 @@ impl DeadpanApp {
                     );
                 }
             }
-            let mut seams = Vec::with_capacity(view.children.len() + 1);
-            let mut at = view.start;
+            let mut seams = Vec::with_capacity(view_children.len() + 1);
+            let mut at = view_start;
             seams.push(at);
-            for child in view.children {
+            for child in &view_children {
                 let duration = base
                     .plan
                     .node_duration(child)
@@ -463,8 +482,8 @@ impl DeadpanApp {
                     .ok_or("Slice destination overflow")?;
                 seams.push(at);
             }
-            let parent = view.owner.clone();
-            let children = view.children.to_vec();
+            let parent = owner;
+            let children = view_children;
             let source = copied.source()?;
             let range = source.boundaries()?;
             let source_bounds = match copied {
@@ -534,7 +553,13 @@ impl DeadpanApp {
             scope: target.scope,
             parent,
             destination,
+            occurrence: target.occurrence.clone(),
         };
+        let proposal_scope_label = proposal.occurrence.as_ref().and_then(|_| {
+            let workspace = self.workspace.as_ref()?;
+            let label = self.scoped.as_ref()?.scope_label(workspace).ok()?;
+            Some(format!("Your edit / {label}"))
+        });
         self.stop_playback();
         self.cancel_repeats("Place slice opened");
         self.bindings.clear();
@@ -579,7 +604,9 @@ impl DeadpanApp {
             initial_source: source,
             focus_pending: true,
             keys: Vec::new(),
-            scope_label: if self.scope_labels.is_empty() {
+            scope_label: if let Some(label) = proposal_scope_label {
+                label
+            } else if self.scope_labels.is_empty() {
                 "Your edit".into()
             } else {
                 format!("Your edit / {}", self.scope_labels.join(" / "))
@@ -701,7 +728,8 @@ impl DeadpanApp {
                             }
                         || prepared.base.document.project_id() != &update.id.project
                         || prepared.base.document.revision_id() != &update.id.base_revision
-                        || prepared.parent != expected_parent
+                        || prepared.occurrence.is_some() != draft.proposal.occurrence.is_some()
+                        || (prepared.occurrence.is_none() && prepared.parent != expected_parent)
                         || prepared.empty_slot != expected_slot
                         || prepared.movement.is_some()
                             != (draft.proposal.operation == Operation::Move)
@@ -999,6 +1027,12 @@ impl DeadpanApp {
                 let entering_move = draft.proposal.operation != Operation::Move;
                 if entering_move && draft.empty_structure() {
                     draft.error = Some(empty::PLACEMENT_REASON.into());
+                    return;
+                }
+                if entering_move && draft.proposal.occurrence.is_some() {
+                    draft.error = Some(
+                        "Move cannot target one Repeat play; this placement copies. Move from the parent (Backspace) instead.".into(),
+                    );
                     return;
                 }
                 if entering_move && !draft.edited_source() {

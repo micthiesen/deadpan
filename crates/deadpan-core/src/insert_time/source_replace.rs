@@ -35,6 +35,21 @@ pub(crate) fn apply(
     insertion: super::source_splice::InteriorInsertion<'_>,
     context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
+    apply_in(document, parent, range, insertion, context, None)
+}
+
+/// `ReplaceSource` in a group of one already isolated Repeat play whose start
+/// there is `origin`, or at an ordinary Sequence when `origin` is absent. In
+/// a play, every later owner (including later plays and gaps of each
+/// enclosing Repeat) keeps its own pre-edit clock.
+pub(crate) fn apply_in(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+    insertion: super::source_splice::InteriorInsertion<'_>,
+    context: crate::command::EditContext<'_>,
+    origin: Option<crate::ProjectFrame>,
+) -> Result<ProjectDocument, EditError> {
     let NodeKind::Source { source } = &insertion.node.kind else {
         return Err(super::invalid("replacement requires a Source leaf"));
     };
@@ -49,7 +64,7 @@ pub(crate) fn apply(
             "replacement timing allocation must equal the new revision",
         ));
     }
-    let preflight = document.source_replacement(parent, range)?;
+    let preflight = super::sequence_range::preflight_in(document, parent, range, 1, origin)?;
     super::validate_identities(document, Some(insertion.id), insertion.identities)?;
     if insertion.identities.nodes.len() < preflight.required_ids {
         return Err(super::invalid(
@@ -77,23 +92,29 @@ pub(crate) fn apply(
         identities: insertion.identities.clone(),
         timing: insertion.timing.clone(),
     };
-    let mut working = super::sequence_range::split_endpoints(
+    let mut working = super::sequence_range::split_endpoints_in(
         document,
         parent,
         range,
         insertion.identities,
         insertion.timing,
         context,
+        origin,
     )?;
-    let removed = super::sequence_range::selected_children(&working, parent, range)?;
-    working = super::composite::prepare_suffix(
-        &working,
-        parent,
-        removed.end,
-        range.end(),
-        total,
-        &suffix_timing,
-    )?;
+    let removed = super::sequence_range::selected_children_in(&working, parent, range, origin)?;
+    working = if origin.is_some() {
+        let affected = super::composite::occurrence_shifted_owners(&working, parent, removed.end)?;
+        super::composite::prepare_owners(&working, &affected, range.end(), total, &suffix_timing)?
+    } else {
+        super::composite::prepare_suffix(
+            &working,
+            parent,
+            removed.end,
+            range.end(),
+            total,
+            &suffix_timing,
+        )?
+    };
     let mut result = working.clone();
     let NodeKind::Sequence { children } =
         &mut result.nodes.get_mut(parent).expect("named parent").kind

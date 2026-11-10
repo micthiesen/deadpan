@@ -655,6 +655,8 @@ fn pasting_a_play_copy_in_another_play_changes_only_that_occurrence_and_keeps_la
             identities: slice_pool("paste", &slice),
             slice: Box::new(slice.clone()),
             timing: timing("paste"),
+            at: None,
+            splits: SplitIdentities::default(),
         };
         // `p` on c in play 3 inserts the copy after it, at frame 9.
         let (request, target, presentation) =
@@ -715,6 +717,8 @@ fn pasting_an_original_moment_before_a_beat_in_one_play_keeps_later_plays_clocks
             id: id("moment"),
             label: "Media [0..2)".into(),
             timing: timing("moment"),
+            at: None,
+            splits: SplitIdentities::default(),
         };
         // `P` on a in play 1 inserts two frames at frame 0.
         let (request, target, _) = occurrence(&before, "moment", in_ordinal("a", 0), paste);
@@ -748,6 +752,8 @@ fn one_play_pastes_refuse_whole_contents_and_root_beats_readably() {
         identities: slice_pool("paste", &slice),
         slice: Box::new(slice),
         timing: timing("paste"),
+        at: None,
+        splits: SplitIdentities::default(),
     };
     let whole = before
         .occurrence_structure_requirements(&second_play("body"), &paste)
@@ -762,4 +768,361 @@ fn one_play_pastes_refuse_whole_contents_and_root_beats_readably() {
             .occurrence_structure_requirements(&root, &paste)
             .is_err()
     );
+}
+
+/// root = [rep, tail]; rep plays body = [a, b] (three frames each) three
+/// times, at frames 0, 6 and 12; tail starts at 18, B(18) = 28829.
+fn long_plays() -> ProjectDocument {
+    tree(
+        &["rep", "tail"],
+        vec![
+            ("rep", repeat("body")),
+            ("body", BeatNode::sequence("Body", vec![id("a"), id("b")])),
+            ("a", source(3)),
+            ("b", source(3)),
+            ("tail", source(2)),
+        ],
+    )
+}
+
+/// Place slice in one play: the plan sizes the Split pool before isolation,
+/// then one `EditOccurrence` carries the explicit destination.
+fn placed(
+    document: &ProjectDocument,
+    name: &str,
+    instance: InstancePath,
+    at: OccurrencePlacement,
+    content: impl Fn(SplitIdentities) -> OccurrenceEdit,
+) -> (
+    CommandRequest,
+    ScopedNodeTarget,
+    InstancePath,
+    OccurrencePlacementPlan,
+) {
+    let edit = content(SplitIdentities::default());
+    let slice = match &edit {
+        OccurrenceEdit::PasteSlice { slice, .. } => Some(slice.as_ref().clone()),
+        _ => None,
+    };
+    let plan = document
+        .occurrence_placement(&instance, at, slice.as_ref())
+        .unwrap();
+    let edit = content(pool(&format!("{name}-split"), plan.required_ids));
+    let (request, target, presentation) = occurrence(document, name, instance, edit);
+    (request, target, presentation, plan)
+}
+
+fn moment(frames: i64) -> Box<SourceNode> {
+    let NodeKind::Source { source } = source(frames).kind else {
+        panic!("Source")
+    };
+    Box::new(source)
+}
+
+#[test]
+fn place_slice_inside_a_beat_of_one_play_splits_there_only_and_keeps_later_clocks() {
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = long_plays();
+        // Copy a as it plays in play 1, then place it one frame inside b in
+        // play 2 (b plays there over [9, 12)).
+        let first = InstancePath {
+            node: id("a"),
+            repeats: second_play("a")
+                .repeats
+                .into_iter()
+                .map(|mut step| {
+                    step.iteration.ordinal = 0;
+                    step
+                })
+                .collect(),
+        };
+        let slice = CapturedEditSlice::capture_occurrence(&before, &first, timing("copy")).unwrap();
+        let at = OccurrencePlacement::Interior {
+            index: 1,
+            at: duration(1),
+        };
+        let (request, target, presentation, plan) =
+            placed(&before, "place", second_play("b"), at, |splits| {
+                OccurrenceEdit::PasteSlice {
+                    before: false,
+                    identities: slice_pool("place", &slice),
+                    slice: Box::new(slice.clone()),
+                    timing: timing("place"),
+                    at: Some(at),
+                    splits,
+                }
+            });
+        assert_eq!(plan.parent, id("body"));
+        assert_eq!(plan.origin, ProjectFrame(6));
+        assert_eq!(plan.boundary, ProjectFrame(10));
+        assert_eq!(plan.removed, None);
+        assert!(plan.required_ids > 0);
+        let after = edit(&before, request);
+        assert_eq!(after.duration().unwrap(), duration(23));
+        // Plays 1 and 3 keep the shared definition; play 2 owns its group.
+        assert_eq!(kids(&after, &id("body")), vec![id("a"), id("b")]);
+        assert_eq!(play_root(&after, 0), id("body"));
+        assert_eq!(play_root(&after, 2), id("body"));
+        let owned = kids(&after, &play_root(&after, 1));
+        assert_eq!(owned.len(), 4, "a, b's left part, the copy, b's right part");
+        assert_eq!(owned[2], id("place-node-0"));
+        assert_eq!(target.node, id("place-node-0"));
+        assert!(target.matches_instance(&after, &presentation).unwrap());
+        assert_eq!(
+            after.occurrence_structure_interval(&presentation).unwrap(),
+            (ProjectFrame(10), ProjectFrame(13))
+        );
+        // Play 3 still starts at B(12) = 19219, now at frame 15, and the tail
+        // keeps B(18) = 28829 at frame 21 instead of re-rounding to 33634.
+        assert_eq!(
+            anchored(&after, &in_ordinal("a", 2)),
+            ExactRatio::integer(19219)
+        );
+        assert_eq!(
+            reference_at_anchor(&after, &id("tail")),
+            ExactRatio::integer(28829)
+        );
+    })
+}
+
+#[test]
+fn place_slice_replaces_a_range_of_one_play_with_an_original_moment() {
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = long_plays();
+        // Replace [2, 4) of play 2's group, across the a/b seam, by one frame.
+        let at = OccurrencePlacement::Replace {
+            start: duration(2),
+            end: duration(4),
+        };
+        let (request, target, presentation, plan) =
+            placed(&before, "swap", second_play("a"), at, |splits| {
+                OccurrenceEdit::PasteSource {
+                    before: false,
+                    source: moment(1),
+                    id: id("swap-moment"),
+                    label: "Media [0..1)".into(),
+                    timing: timing("swap"),
+                    at: Some(at),
+                    splits,
+                }
+            });
+        assert_eq!(
+            plan.removed,
+            Some(FrameRange::new(ProjectFrame(8), ProjectFrame(10)).unwrap())
+        );
+        let after = edit(&before, request);
+        assert_eq!(after.duration().unwrap(), duration(19));
+        assert_eq!(kids(&after, &id("body")), vec![id("a"), id("b")]);
+        assert_eq!(play_root(&after, 0), id("body"));
+        assert_eq!(play_root(&after, 2), id("body"));
+        let owned = kids(&after, &play_root(&after, 1));
+        assert_eq!(owned.len(), 3, "a's left part, the moment, b's right part");
+        assert_eq!(owned[1], id("swap-moment"));
+        assert_eq!(target.node, id("swap-moment"));
+        assert_eq!(
+            after.occurrence_structure_interval(&presentation).unwrap(),
+            (ProjectFrame(8), ProjectFrame(9))
+        );
+        assert_eq!(
+            anchored(&after, &in_ordinal("a", 2)),
+            ExactRatio::integer(19219)
+        );
+        assert_eq!(
+            reference_at_anchor(&after, &id("tail")),
+            ExactRatio::integer(28829)
+        );
+    })
+}
+
+#[test]
+fn place_slice_inserts_an_original_moment_inside_and_at_seams_of_one_play() {
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = long_plays();
+        for (name, at, boundary) in [
+            (
+                "inside",
+                OccurrencePlacement::Interior {
+                    index: 0,
+                    at: duration(2),
+                },
+                8,
+            ),
+            ("seam", OccurrencePlacement::Seam { index: 2 }, 12),
+        ] {
+            let (request, target, presentation, plan) =
+                placed(&before, name, second_play("b"), at, |splits| {
+                    OccurrenceEdit::PasteSource {
+                        before: false,
+                        source: moment(2),
+                        id: id(&format!("{name}-moment")),
+                        label: "Media [0..2)".into(),
+                        timing: timing(name),
+                        at: Some(at),
+                        splits,
+                    }
+                });
+            assert_eq!(plan.boundary, ProjectFrame(boundary));
+            let after = edit(&before, request);
+            assert_eq!(after.duration().unwrap(), duration(22));
+            assert_eq!(kids(&after, &id("body")), vec![id("a"), id("b")]);
+            assert_eq!(play_root(&after, 2), id("body"));
+            assert_eq!(target.node, id(&format!("{name}-moment")));
+            assert_eq!(
+                after.occurrence_structure_interval(&presentation).unwrap(),
+                (ProjectFrame(boundary), ProjectFrame(boundary + 2))
+            );
+            assert_eq!(
+                anchored(&after, &in_ordinal("a", 2)),
+                ExactRatio::integer(19219)
+            );
+            assert_eq!(
+                reference_at_anchor(&after, &id("tail")),
+                ExactRatio::integer(28829)
+            );
+        }
+    })
+}
+
+#[test]
+fn place_slice_in_one_play_refuses_speed_changes_and_bad_destinations_readably() {
+    let mut before = long_plays();
+    // body = [a, slow]; slow plays b's three frames over six.
+    let mut nodes: Vec<(&str, BeatNode)> = vec![
+        ("rep", repeat("body")),
+        (
+            "body",
+            BeatNode::sequence("Body", vec![id("a"), id("slow")]),
+        ),
+        ("a", source(3)),
+        ("inner", BeatNode::sequence("Inner", vec![id("b")])),
+        ("b", source(3)),
+        ("tail", source(2)),
+    ];
+    let mut slow = BeatNode::sequence("Slow", vec![]);
+    slow.kind = NodeKind::Retime {
+        child: id("inner"),
+        duration: duration(6),
+        mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(3)).unwrap(),
+        pitch: PitchPolicy::FollowSpeed,
+        purpose: RetimePurpose::Edit,
+    };
+    nodes.push(("slow", slow));
+    let retimed = tree(&["rep", "tail"], nodes);
+    let error = retimed
+        .occurrence_placement(
+            &second_play("b"),
+            OccurrencePlacement::Seam { index: 0 },
+            None,
+        )
+        .unwrap_err();
+    assert!(error.message.contains("speed change"), "{error}");
+    // Destinations outside the group, empty ranges and seams with Split
+    // names refuse before any edit.
+    assert!(
+        before
+            .occurrence_placement(
+                &second_play("a"),
+                OccurrencePlacement::Seam { index: 3 },
+                None
+            )
+            .is_err()
+    );
+    assert!(
+        before
+            .occurrence_placement(
+                &second_play("a"),
+                OccurrencePlacement::Interior {
+                    index: 0,
+                    at: duration(3)
+                },
+                None
+            )
+            .is_err()
+    );
+    assert!(
+        before
+            .occurrence_placement(
+                &second_play("a"),
+                OccurrencePlacement::Replace {
+                    start: duration(2),
+                    end: duration(2)
+                },
+                None
+            )
+            .is_err()
+    );
+    // An explicit destination never also pastes before the beat.
+    let both = OccurrenceEdit::PasteSource {
+        before: true,
+        source: moment(1),
+        id: id("both"),
+        label: "Media".into(),
+        timing: timing("both"),
+        at: Some(OccurrencePlacement::Seam { index: 0 }),
+        splits: SplitIdentities::default(),
+    };
+    let needs = before
+        .occurrence_structure_requirements(&second_play("a"), &both)
+        .unwrap();
+    let request = request(
+        &before,
+        "both",
+        Command::EditOccurrence {
+            instance: second_play("a"),
+            edit: both,
+            identities: OccurrenceIdentities {
+                nodes: (0..needs.nodes)
+                    .map(|index| id(&format!("both-copy-{index}")))
+                    .collect(),
+                marks: vec![],
+            },
+        },
+    );
+    let error = apply(&before, &request).unwrap_err();
+    assert!(error.message.contains("before the beat"), "{error}");
+    before = long_plays();
+    assert_eq!(before.duration().unwrap(), duration(20));
+}
+
+#[test]
+fn place_slice_replaces_a_range_of_one_play_with_an_edited_copy() {
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = long_plays();
+        let slice =
+            CapturedEditSlice::capture_occurrence(&before, &in_ordinal("b", 2), timing("copy"))
+                .unwrap();
+        // Replace play 2's [1, 5) with play 3's copy of b (three frames).
+        let at = OccurrencePlacement::Replace {
+            start: duration(1),
+            end: duration(5),
+        };
+        let (request, target, presentation, _) =
+            placed(&before, "over", second_play("b"), at, |splits| {
+                OccurrenceEdit::PasteSlice {
+                    before: false,
+                    identities: slice_pool("over", &slice),
+                    slice: Box::new(slice.clone()),
+                    timing: timing("over"),
+                    at: Some(at),
+                    splits,
+                }
+            });
+        let after = edit(&before, request);
+        assert_eq!(after.duration().unwrap(), duration(19));
+        assert_eq!(play_root(&after, 0), id("body"));
+        assert_eq!(play_root(&after, 2), id("body"));
+        assert_eq!(target.node, id("over-node-0"));
+        assert_eq!(
+            after.occurrence_structure_interval(&presentation).unwrap(),
+            (ProjectFrame(7), ProjectFrame(10))
+        );
+        assert_eq!(
+            anchored(&after, &in_ordinal("a", 2)),
+            ExactRatio::integer(19219)
+        );
+        assert_eq!(
+            reference_at_anchor(&after, &id("tail")),
+            ExactRatio::integer(28829)
+        );
+    })
 }

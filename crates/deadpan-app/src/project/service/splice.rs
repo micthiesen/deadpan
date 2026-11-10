@@ -10,6 +10,7 @@ use crate::project::splice::{
 
 mod request;
 pub(super) use request::Request;
+use request::{OccurrenceContent, OccurrenceResult};
 
 pub(super) struct Draft {
     proposal: Proposal,
@@ -17,6 +18,8 @@ pub(super) struct Draft {
     cursor: ProjectFrame,
     source: Option<PreparedSourceRegistration>,
     prepared: Option<Arc<PreparedSplice>>,
+    /// The placed root after isolation, for a destination in one play.
+    occurrence: Option<OccurrenceResult>,
 }
 
 impl Service {
@@ -101,6 +104,47 @@ impl Service {
             return Err("Original always copies; Move requires a current edited selection".into());
         }
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        if let Some(occurrence) = &proposal.occurrence {
+            if proposal.operation == Operation::Move {
+                return Err("Move cannot target one Repeat play. Press m for Copy, or move from the parent (Backspace).".into());
+            }
+            let content = match (&edited, &proposal.source) {
+                (Some(slice), _) => OccurrenceContent::Edited(slice),
+                (
+                    None,
+                    Source::Original {
+                        asset,
+                        qualification,
+                        ordinals,
+                    },
+                ) => {
+                    let source = workspace
+                        .sources
+                        .get(asset)
+                        .ok_or("Copied Original is no longer registered")?;
+                    if source.receipt.id() != qualification || source.video_index.is_none() {
+                        return Err(
+                            "Copied Original qualification has changed; select and copy again"
+                                .into(),
+                        );
+                    }
+                    OccurrenceContent::Original {
+                        asset,
+                        ordinals: ordinals.clone(),
+                        label: &source.label,
+                    }
+                }
+                (None, Source::Edited { .. }) => return Err("Copied Edit was not prepared".into()),
+            };
+            let (request, cursor, result) = Request::occurrence(
+                workspace,
+                &proposal.parent,
+                &proposal.destination,
+                occurrence,
+                content,
+            )?;
+            return self.prepare_splice_request(proposal, request, cursor, Some(result), token);
+        }
         let view = proposal.scope.resolve(workspace)?;
         if view.owner != &proposal.parent {
             return Err("Slice destination is outside the captured Sequence scope".into());
@@ -117,12 +161,57 @@ impl Service {
                     &slice,
                 )?,
             };
+            return self.prepare_splice_request(proposal, request, cursor, None, token);
+        }
+        let Source::Original {
+            asset,
+            qualification,
+            ordinals,
+        } = &proposal.source
+        else {
+            return Err("Copied Edit was not prepared".into());
+        };
+        if ordinals.start >= ordinals.end {
+            return Err("Select a nonempty Original slice".into());
+        }
+        let source = workspace
+            .sources
+            .get(asset)
+            .cloned()
+            .ok_or("Copied Original is no longer registered")?;
+        if source.receipt.id() != qualification || source.video_index.is_none() {
+            return Err("Copied Original qualification has changed; select and copy again".into());
+        }
+        let (request, cursor) = Request::capture(
+            workspace,
+            &proposal.parent,
+            &proposal.destination,
+            asset,
+            ordinals.clone(),
+            &source.label,
+        )?;
+        self.prepare_splice_request(proposal, request, cursor, None, token)
+    }
+
+    /// Preview one built request: edited content now, an Original after its
+    /// source is prepared off the writer.
+    fn prepare_splice_request(
+        &mut self,
+        proposal: Proposal,
+        request: Request,
+        cursor: ProjectFrame,
+        occurrence: Option<OccurrenceResult>,
+        mut token: Option<PreparedSourceRegistration>,
+    ) -> Result<()> {
+        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        if request.edited_command().is_some() {
             let draft = Draft {
                 proposal,
                 request,
                 cursor,
                 source: None,
                 prepared: None,
+                occurrence,
             };
             let store = self.store.as_ref().ok_or("Open a project first")?;
             let command = draft
@@ -153,33 +242,14 @@ impl Service {
             });
             return Ok(());
         }
-        let Source::Original {
-            asset,
-            qualification,
-            ordinals,
-        } = &proposal.source
-        else {
+        let Source::Original { asset, .. } = &proposal.source else {
             return Err("Copied Edit was not prepared".into());
         };
-        if ordinals.start >= ordinals.end {
-            return Err("Select a nonempty Original slice".into());
-        }
         let source = workspace
             .sources
             .get(asset)
             .cloned()
             .ok_or("Copied Original is no longer registered")?;
-        if source.receipt.id() != qualification || source.video_index.is_none() {
-            return Err("Copied Original qualification has changed; select and copy again".into());
-        }
-        let (request, cursor) = Request::capture(
-            workspace,
-            &proposal.parent,
-            &proposal.destination,
-            asset,
-            ordinals.clone(),
-            &source.label,
-        )?;
         let id = proposal.id.clone();
         let asset = asset.clone();
         let scope = proposal.scope.clone();
@@ -189,6 +259,7 @@ impl Service {
             cursor,
             source: None,
             prepared: None,
+            occurrence,
         });
         if token.is_none()
             && self
@@ -333,6 +404,41 @@ impl Service {
             .checked_add(duration.frames())
             .ok_or("Slice range overflow")?;
         let range = FrameRange::new(draft.cursor, ProjectFrame(end)).map_err(display)?;
+        if let (Some(result), Some(occurrence)) = (&draft.occurrence, &draft.proposal.occurrence) {
+            let node = draft
+                .request
+                .node()
+                .cloned()
+                .ok_or("Slice request has no inserted root")?;
+            // Isolation may have renamed the group; the placed root names it.
+            let parent = snapshot
+                .document
+                .nodes()
+                .keys()
+                .find(|id| snapshot.document.children(id).any(|child| child == &node))
+                .cloned()
+                .ok_or("One-play placement left its root outside a group")?;
+            let prepared = PreparedSplice {
+                base: workspace.clone(),
+                navigation_parent: draft.proposal.parent.clone(),
+                snapshot,
+                media,
+                plan,
+                node,
+                parent,
+                result_slot: None,
+                range,
+                empty_slot: None,
+                removed: draft.request.removed(),
+                movement: None,
+                continuation_scope: draft.proposal.scope.clone(),
+                continuation_node: occurrence.target.root.clone(),
+                object: None,
+                occurrence: Some(result.clone()),
+            };
+            prepared.validate_result()?;
+            return Ok(Arc::new(prepared));
+        }
         let result_slot = object.as_ref().map(|object| object.slot);
         let empty_slot = if duration == deadpan_core::FrameDuration::ZERO {
             match &draft.proposal.destination {
@@ -395,6 +501,7 @@ impl Service {
                 }
                 _ => None,
             },
+            occurrence: None,
         };
         prepared.validate_result()?;
         Ok(Arc::new(prepared))
@@ -515,11 +622,23 @@ impl Service {
         self.cache_splice_source(draft.request.asset(), source);
         let commit = outcome.map_err(display)?;
         self.capture_preparation_notices(&commit.generation_preparation_notices);
+        let scoped = match (&draft.proposal.occurrence, &prepared.occurrence) {
+            (Some(occurrence), Some((target, presentation))) => {
+                Some(crate::project::scoped::Commit {
+                    before: occurrence.target.clone(),
+                    revision: commit.revision_id.clone(),
+                    target: target.clone(),
+                    presentation: Some(presentation.clone()),
+                    also: None,
+                })
+            }
+            _ => None,
+        };
         Ok(CommittedEdit {
-            scoped: None,
+            preserve_cursor: scoped.is_some(),
+            scoped,
             revision: commit.revision_id,
             selected_node: Some(prepared.continuation_node.clone()),
-            preserve_cursor: false,
             cursor: Some(draft.cursor),
             scope: prepared.continuation_scope.clone(),
             sound: None,

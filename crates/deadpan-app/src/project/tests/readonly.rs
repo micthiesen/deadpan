@@ -452,6 +452,7 @@ fn readonly_pending_channels_preserve_captured_identities_and_all_package_bytes(
             scope: SequenceScope::default(),
             parent: workspace.document.root().clone(),
             destination: splice::Destination::Slot(0),
+            occurrence: None,
         }),
     );
     let reply = update.splice.unwrap();

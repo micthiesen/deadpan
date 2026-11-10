@@ -60,6 +60,7 @@ fn move_proposal(
         scope: destination_scope,
         parent,
         destination,
+        occurrence: None,
     }
 }
 
