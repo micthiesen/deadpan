@@ -73,6 +73,44 @@ impl<K: Clone, V: Clone> IntoIterator for SharedMap<K, V> {
     }
 }
 
+impl<K, V> SharedMap<K, V> {
+    /// An immutable handle to the current map; later writes through this
+    /// map copy it rather than changing the handle.
+    pub(crate) fn snapshot(&self) -> SharedSnapshot<K, V> {
+        SharedSnapshot(Arc::clone(&self.0))
+    }
+}
+
+/// An immutable, reference-counted view of one revision's shared map. Two
+/// handles from documents that never wrote the map in between are the same
+/// allocation, which `same_allocation` reports without comparing contents.
+pub struct SharedSnapshot<K, V>(Arc<BTreeMap<K, V>>);
+
+impl<K, V> SharedSnapshot<K, V> {
+    pub fn same_allocation(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl<K, V> Clone for SharedSnapshot<K, V> {
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
+
+impl<K, V> Deref for SharedSnapshot<K, V> {
+    type Target = BTreeMap<K, V>;
+    fn deref(&self) -> &BTreeMap<K, V> {
+        &self.0
+    }
+}
+
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for SharedSnapshot<K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 /// For `skip_serializing_if`.
 pub(crate) fn is_empty<K, V>(map: &SharedMap<K, V>) -> bool {
     map.0.is_empty()

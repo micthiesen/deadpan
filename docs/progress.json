@@ -2963,7 +2963,7 @@
               "docs/ARCHITECTURE.md:209",
               "docs/REQUIREMENTS.md DP-03 and Gate B"
             ],
-            "remaining": "Indexed plans exist; render-plan fragment reuse is explicitly open. Store timing/history incremental improvements do not prove incremental RenderPlan fragments.",
+            "remaining": "Node fragments are reused from the previous plan with ancestor-only recompilation (Sequences above a resized child re-derive prefix entries), equal to a full compile under the test oracle (docs/qualification/incremental-plan-2026-11-10.md); 10,000-beat refresh 4.0 to 2.4 ms p50. Open: whole-plan passes (parents, definition index, sound-clock caches, plan-wide flags) still recompile in full; reuse is against one previous plan by identity and value equality, not a content-hash cache across revisions; attachment and root-sound fragments, per-node audio caches and non-workspace hosts (store generation, macros) still compile from scratch.",
             "confidence": "high"
           },
           {

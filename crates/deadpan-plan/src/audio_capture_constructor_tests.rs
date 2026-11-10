@@ -543,7 +543,9 @@ fn capture_stage_preserves_semantic_failure_before_allocation_and_late_arithmeti
     // compiled selection. No public descriptor or validation bypass is added.
     let mut plan = stage_plan(PitchPolicy::Preserve);
     let node = stage_index(&plan);
-    if let crate::plan::CompiledKind::Retime { start, .. } = &mut plan.nodes[node].kind {
+    if let crate::plan::CompiledKind::Retime { start, .. } =
+        &mut std::sync::Arc::make_mut(&mut plan.nodes[node]).kind
+    {
         *start = ExactRatio::new(i128::MAX, 1).unwrap();
     }
     assert!(matches!(

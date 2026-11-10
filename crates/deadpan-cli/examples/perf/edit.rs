@@ -49,6 +49,11 @@ struct Samples {
     /// Due keyframes written after the edit's refresh (`write_due_keyframe`),
     /// as a host does once idle; not part of `total`.
     keyframes: Vec<f64>,
+    /// The new head's plan compiled from scratch and from the previous
+    /// head's plan (fragment reuse), on the same document, after `total`.
+    full_compile: Vec<f64>,
+    incremental_compile: Vec<f64>,
+    reused_fragments: Vec<f64>,
     refusals: Vec<String>,
 }
 
@@ -60,6 +65,9 @@ impl Samples {
             "workspace_refresh_ms": summary(&self.refresh),
             "total_ms": summary(&self.total),
             "deferred_keyframe_ms": summary(&self.keyframes),
+            "plan_full_compile_ms": summary(&self.full_compile),
+            "plan_incremental_compile_ms": summary(&self.incremental_compile),
+            "plan_reused_fragments": summary(&self.reused_fragments),
             "committed": self.total.len(),
             "refused": self.refusals.len(),
             // Cost drifts as history accumulates; report it in order.
@@ -188,10 +196,12 @@ pub fn run(options: &Options) -> Result<Value> {
             let committed = Instant::now();
             store.undo(&expected, next)?;
             undo.commit.push(ms(committed));
+            let previous = plan.clone();
             let refreshed = Instant::now();
             refresh(&store, &mut document, &mut plan)?;
             undo.refresh.push(ms(refreshed));
             undo.total.push(ms(started));
+            compare_compiles(&document, &previous, &mut undo)?;
             write_due_keyframe(&mut store, &mut undo)?;
         }
         json_bytes.push(document.to_json()?.len() as f64);
@@ -265,12 +275,46 @@ fn measure(
         return Ok(false);
     }
     samples.commit.push(ms(committed));
+    let previous = plan.clone();
     let refreshed = Instant::now();
     refresh(store, document, plan)?;
     samples.refresh.push(ms(refreshed));
     samples.total.push(ms(started));
+    compare_compiles(document, &previous, samples)?;
     write_due_keyframe(store, samples)?;
     Ok(true)
+}
+
+/// Outside the measured edit: compile the new head both ways, in its
+/// retained validation scope as the refresh does, alternating which runs
+/// first so neither always sees a warmer cache.
+fn compare_compiles(
+    document: &ValidatedDocument,
+    previous: &RenderPlan,
+    samples: &mut Samples,
+) -> Result<()> {
+    let full = |samples: &mut Samples| -> Result<()> {
+        let started = Instant::now();
+        std::hint::black_box(document.scope(|| RenderPlan::compile(document))?);
+        samples.full_compile.push(ms(started));
+        Ok(())
+    };
+    let incremental = |samples: &mut Samples| -> Result<()> {
+        let started = Instant::now();
+        let plan = document.scope(|| RenderPlan::compile_from(previous, document))?;
+        samples.incremental_compile.push(ms(started));
+        samples
+            .reused_fragments
+            .push(plan.reused_fragments() as f64);
+        Ok(())
+    };
+    if samples.full_compile.len().is_multiple_of(2) {
+        full(samples)?;
+        incremental(samples)
+    } else {
+        incremental(samples)?;
+        full(samples)
+    }
 }
 
 /// After the edit is visible, write a keyframe the commit left due, in its
@@ -291,7 +335,7 @@ fn refresh(
     plan: &mut RenderPlan,
 ) -> Result<()> {
     *document = store.snapshot_validated()?;
-    *plan = document.scope(|| RenderPlan::compile(document))?;
+    *plan = document.scope(|| RenderPlan::compile_from(plan, document))?;
     drop(ProjectDocument::clone(document));
     Ok(())
 }

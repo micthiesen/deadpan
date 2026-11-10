@@ -1,5 +1,5 @@
 //! Compile retained raw audio without inventing a picture-bearing document.
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, sync::Arc};
 
 use deadpan_core::{
     ColorPolicy, FrozenAudioContext, FrozenAudioInput, FrozenAudioKind, FrozenAudioLayout,
@@ -197,7 +197,7 @@ impl RenderPlan {
                     NodeType::Retime,
                 ),
             };
-            nodes.push(PlanNode {
+            nodes.push(Arc::new(PlanNode {
                 extent: ExactRatio::integer(node.duration.frames()),
                 preserve_input: None,
                 inspection: NodeInspection {
@@ -213,7 +213,7 @@ impl RenderPlan {
                 framing: None,
                 cutaways: Vec::new(),
                 captions: Vec::new(),
-            });
+            }));
         }
 
         let mut parents = vec![None; nodes.len()];
@@ -247,6 +247,8 @@ impl RenderPlan {
                 storage,
             },
             nodes,
+            fragments: None,
+            reused_fragments: Default::default(),
             root: by_id[layout.root()],
             by_id,
             audio_assets,
@@ -414,7 +416,7 @@ impl RenderPlan {
                     NodeType::Retime,
                 ),
             };
-            nodes.push(PlanNode {
+            nodes.push(Arc::new(PlanNode {
                 extent: ExactRatio::integer(node.duration.frames()),
                 preserve_input: None,
                 inspection: NodeInspection {
@@ -434,7 +436,7 @@ impl RenderPlan {
                 framing: None,
                 cutaways: Vec::new(),
                 captions: Vec::new(),
-            });
+            }));
         }
         Ok(Self {
             sounds: BTreeMap::new(),
@@ -458,6 +460,8 @@ impl RenderPlan {
                 storage,
             },
             nodes,
+            fragments: None,
+            reused_fragments: Default::default(),
             root: by_id[layout.root()],
             by_id,
             audio_assets: context.assets().clone(),

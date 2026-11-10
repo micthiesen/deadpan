@@ -844,6 +844,11 @@ impl ProjectDocument {
     pub fn nodes(&self) -> &BTreeMap<NodeId, BeatNode> {
         &self.nodes
     }
+    /// A reference-counted handle to this revision's node map, so a consumer
+    /// can retain it and compare a later revision without copying nodes.
+    pub fn shared_nodes(&self) -> crate::SharedSnapshot<NodeId, BeatNode> {
+        self.nodes.snapshot()
+    }
     pub fn assets(&self) -> &BTreeMap<AssetId, AssetRecord> {
         &self.assets
     }

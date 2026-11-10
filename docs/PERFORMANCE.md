@@ -195,6 +195,15 @@ cargo xtask perf --output /tmp/deadpan-perf-NEW \
   keyframes](TIMING_STORAGE.md#deferred-keyframes)) after the edit's refresh,
   as an idle host does, and reports it as `deferred_keyframe_ms`, outside the
   edit's `total_ms`.
+- `perf edit` refreshes with `RenderPlan::compile_from` the previous head's
+  plan, as the native workspace does ([incremental
+  plans](qualification/incremental-plan-2026-11-10.md)). After each edit's
+  `total_ms` it also compiles the new head both from scratch and from the
+  previous plan, in the head's validation scope and in alternating order, and
+  reports `plan_full_compile_ms`, `plan_incremental_compile_ms` and
+  `plan_reused_fragments`. `perf scale` adds `split_full_compile_ms` and
+  `split_incremental_compile_ms` for one interior Split of the middle root
+  beat.
 - `perf edit PACKAGE --kinds split,pause,wrap` measures only the named edit
   kinds (Undo follows each wrap), for attributing one path under a sampling
   profiler such as `sample`. `perf seek PACKAGE --admissions progressive`
@@ -435,7 +444,7 @@ No percentile, memory ceiling/retention result or latency target closes.
 
 | Section 25.3 counter | Where | State |
 | --- | --- | --- |
-| Render-plan compile time | `deadpan-cli doctor --project PACKAGE` (`single_sample_ms.plan_compile`, with snapshot load, validation and anchor index; one cold sample each); `perf scale` | Implemented. |
+| Render-plan compile time | `deadpan-cli doctor --project PACKAGE` (`single_sample_ms.plan_compile`, with snapshot load, validation and anchor index; one cold sample each); `perf scale`; `perf edit` `plan_full_compile_ms` against `plan_incremental_compile_ms` per edit kind | Implemented. Workspace refreshes reuse unchanged node fragments ([incremental plans](qualification/incremental-plan-2026-11-10.md)). |
 | History validation on open | `ProjectStore::open_validation()` and `validate_report`; `doctor --project` `history_validation`; `perf edit` `reopen_validation`: revisions, those proved by the [history receipt](TIMING_STORAGE.md#verified-history-receipts) and those recomputed | Implemented. `project validate` recomputes all; `--quick` reports what opening checks. |
 | Audio underruns and device faults | `deadpan_playback::Engine::diagnostics()`: activated generations, device reports, starved reports, faults, silent padding frames and maximum callback render cost; the native `:diagnostics` panel (PLAYBACK) | Implemented as cumulative atomics; observations only. |
 | Dropped video frames | `perf playback` (pictures skipped while following the heard clock); `deadpan_diagnostics::PLAYBACK_PICTURES` in the native app: playback pictures requested and frames skipped by the transport, pictures served exact or from the proxy, repositions started and reached; `:diagnostics` (PLAYBACK) | Cumulative per process. A loop wrap is not counted as a drop. |

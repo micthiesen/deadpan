@@ -260,7 +260,7 @@ fn fractional_allocations_keep_root_rounding_point_grids_and_owner_windows() {
 fn changed_preserve_allocation_cannot_resize_its_intrinsic_operand() {
     let mut plan = extent_plan();
     let node = plan.by_id[&id("last")];
-    let CompiledKind::Retime { pitch, .. } = &mut plan.nodes[node].kind else {
+    let CompiledKind::Retime { pitch, .. } = &mut Arc::make_mut(&mut plan.nodes[node]).kind else {
         unreachable!()
     };
     *pitch = PitchPolicy::Preserve;

@@ -103,7 +103,7 @@ pub use plan::{
     ProviderLeafKind, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextObservation,
     ScopedHoldContextRequest,
 };
-pub use plan::{follow_pose, follow_pose_in_context};
+pub use plan::{follow_pose, follow_pose_in_context, with_full_compile_oracle};
 
 use deadpan_core::{
     AssetId, DocumentError, ExactRatio, FrameDuration, NodeId, ProjectFrame, SourceFrameId,

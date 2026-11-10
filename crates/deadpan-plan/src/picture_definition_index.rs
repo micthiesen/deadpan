@@ -37,7 +37,7 @@ pub(super) struct DefinitionIndex {
 impl DefinitionIndex {
     pub(super) fn compile(
         document: &ProjectDocument,
-        nodes: &[PlanNode],
+        nodes: &[Arc<PlanNode>],
         by_id: &BTreeMap<NodeId, usize>,
         parents: &[Option<usize>],
         root: usize,
@@ -46,7 +46,13 @@ impl DefinitionIndex {
         let mut branches = vec![None; nodes.len()];
         let mut holds = Vec::new();
         let mut fallbacks = BTreeMap::new();
-        for (index, node) in nodes.iter().enumerate() {
+        if nodes.len() != document.nodes().len() {
+            return Err(PlanError::InvalidPlan(
+                "definition nodes do not describe the document",
+            ));
+        }
+        // Compiled nodes are in the document's identity order.
+        for (index, (node, beat)) in nodes.iter().zip(document.nodes().values()).enumerate() {
             match &node.kind {
                 CompiledKind::Sequence { entries } => {
                     for entry in entries {
@@ -76,7 +82,7 @@ impl DefinitionIndex {
                 }
                 CompiledKind::Hold { .. } => {
                     holds.push(index);
-                    if let NodeKind::Hold { recipe } = &document.nodes()[&node.inspection.id].kind
+                    if let NodeKind::Hold { recipe } = &beat.kind
                         && let HoldVideo::Generated { accepted } = &recipe.video
                     {
                         let fallback = match &accepted.fallback {
@@ -154,7 +160,7 @@ impl DefinitionIndex {
     pub(super) fn target(
         &self,
         node: usize,
-        nodes: &[PlanNode],
+        nodes: &[Arc<PlanNode>],
         budget: &mut super::picture_definition::PictureBudget,
     ) -> Result<ScopedNodeTarget, PlanError> {
         budget.visit()?;

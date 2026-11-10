@@ -17,6 +17,10 @@ use crate::{Picture, PictureFraming, PictureSample, PlanError};
 #[path = "follow_context.rs"]
 mod follow_context;
 
+#[path = "plan_fragments.rs"]
+mod fragments;
+pub use fragments::with_full_compile_oracle;
+
 #[cfg(test)]
 #[path = "prefixes/tests.rs"]
 mod prefix_tests;
@@ -173,7 +177,8 @@ pub struct PlanInspection {
 #[derive(Debug, Clone)]
 pub struct RenderPlan {
     metadata: PlanMetadata,
-    nodes: Vec<PlanNode>,
+    // Shared so an unchanged fragment is reused by a later revision's plan.
+    nodes: Vec<Arc<PlanNode>>,
     by_id: BTreeMap<NodeId, usize>,
     root: usize,
     // Catalog-only sounds are retained alongside structural dependencies.
@@ -207,6 +212,10 @@ pub struct RenderPlan {
     /// Checked source-voice recipes, which the audio reader asks for per
     /// sample block; see [`RecipeCache`].
     source_recipes: RecipeCache,
+    /// This revision's fragment inputs, for [`RenderPlan::compile_from`].
+    /// Plans built from frozen layouts carry none and are never reused.
+    fragments: Option<Arc<fragments::FragmentInputs>>,
+    reused_fragments: fragments::ReuseCount,
 }
 
 /// Results of `checked_recipe` and of a recipe's selection, pure functions of
@@ -593,6 +602,32 @@ struct PlanNode {
     captions: Vec<deadpan_core::Caption>,
 }
 
+impl PlanNode {
+    /// This fragment with another compiled kind and size, without copying
+    /// the old kind.
+    fn with_kind(
+        &self,
+        kind: CompiledKind,
+        (duration, extent): (FrameDuration, ExactRatio),
+    ) -> Self {
+        Self {
+            inspection: NodeInspection {
+                duration,
+                ..self.inspection.clone()
+            },
+            extent,
+            preserve_input: self.preserve_input.clone(),
+            kind,
+            audio_edges: self.audio_edges,
+            audio_editorial_edges: self.audio_editorial_edges,
+            audio_treatments: self.audio_treatments.clone(),
+            framing: self.framing.clone(),
+            cutaways: self.cutaways.clone(),
+            captions: self.captions.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct CompiledPreserveInput {
     input: deadpan_core::PreserveInputProjection,
@@ -884,6 +919,39 @@ impl CompiledHold {
 
 impl RenderPlan {
     pub fn compile(document: &ProjectDocument) -> Result<Self, PlanError> {
+        Self::compile_with(document, None)
+    }
+
+    /// Compile `document`, reusing each node fragment of `previous` whose
+    /// inputs are unchanged (see the `plan_fragments` module). The result is
+    /// identical to [`RenderPlan::compile`]; [`with_full_compile_oracle`]
+    /// checks that against a full compilation. `previous` may be any plan,
+    /// of any project or revision: reuse rests only on equal inputs.
+    pub fn compile_from(previous: &Self, document: &ProjectDocument) -> Result<Self, PlanError> {
+        let plan = Self::compile_with(document, Some(previous))?;
+        if fragments::oracle() {
+            let full = Self::compile(document)?;
+            assert_eq!(
+                format!("{full:?}"),
+                format!("{plan:?}"),
+                "fragment reuse diverged from a full compilation"
+            );
+        }
+        Ok(plan)
+    }
+
+    /// The number of node fragments reused from `previous` by the last
+    /// [`RenderPlan::compile_from`] that produced this plan (zero for a full
+    /// compilation). A Sequence whose prefix entries were re-derived from
+    /// changed child extents is not counted. Diagnostic only.
+    pub fn reused_fragments(&self) -> usize {
+        self.reused_fragments.0
+    }
+
+    fn compile_with(
+        document: &ProjectDocument,
+        previous: Option<&Self>,
+    ) -> Result<Self, PlanError> {
         let durations = document.recipe_durations_shared()?;
         let extents = if document.derived_clocks().is_empty() {
             None
@@ -921,214 +989,32 @@ impl RenderPlan {
             ..StorageStats::default()
         };
         let mut nodes = Vec::with_capacity(by_id.len());
-        for (id, node) in document.nodes() {
-            let duration = index[id].1;
-            let preserve_input = document
-                .derived_clocks()
-                .get(id)
-                .and_then(|clock| clock.preserve_input.as_ref())
-                .map(|input| {
-                    let NodeKind::Retime {
-                        duration, mapping, ..
-                    } = &node.kind
-                    else {
-                        return Err(PlanError::InvalidPlan(
-                            "owned Preserve input is not on a Retime",
-                        ));
-                    };
-                    Ok(Arc::new(CompiledPreserveInput {
-                        input: input.clone(),
-                        selection: ExactRatio::integer(mapping.start().0)
-                            ..ExactRatio::integer(mapping.end().0),
-                        rate: ExactRatio::new(
-                            i128::from(mapping.duration().frames()),
-                            i128::from(duration.frames()),
-                        )?,
-                    }))
-                })
-                .transpose()?;
-            let (kind, node_type) = match &node.kind {
-                NodeKind::Source { source } => (
-                    CompiledKind::Source {
-                        video: source.video.clone(),
-                        start: source.video_mapping.start_frames(),
-                        duration: source.video_mapping.duration_frames(source.duration)?,
-                        endpoints: source.video_mapping.endpoints(),
-                        selection: match &source.video {
-                            SourceVideo::Stream { span, .. } => {
-                                let selected = source
-                                    .video_mapping
-                                    .selection_in_source(*span, source.duration)?;
-                                Some((selected.start().ticks, selected.end().ticks))
-                            }
-                            SourceVideo::Still { .. } | SourceVideo::Blank => None,
-                        },
-                        audio: source
-                            .audio
-                            .as_ref()
-                            .map(|audio| {
-                                Ok::<_, TimeError>(CompiledSourceAudio {
-                                    source: audio.clone(),
-                                    start: source.audio_mapping.start_frames_with_offset(
-                                        source.audio_offset,
-                                        document.presentation_basis().frame_rate,
-                                    )?,
-                                    duration: source
-                                        .audio_mapping
-                                        .duration_frames(source.duration)?,
-                                    selection: source.audio_mapping.selection_frames_with_offset(
-                                        source.duration,
-                                        source.audio_offset,
-                                        document.presentation_basis().frame_rate,
-                                    )?,
-                                    selected: matches!(
-                                        source.audio_mapping,
-                                        deadpan_core::SourceAudioMapping::SelectedPlacement { .. }
-                                    ),
-                                })
-                            })
-                            .transpose()?,
-                    },
-                    NodeType::Source,
-                ),
-                NodeKind::Sequence { children } => {
-                    let mut end = ExactRatio::ZERO;
-                    let mut entries = Vec::with_capacity(children.len());
-                    for child in children {
-                        let start = end;
-                        end = end.checked_add(extent(child))?;
-                        let child = position(child);
-                        entries.push(SequenceEntry { child, start, end });
-                    }
-                    storage.sequence_prefix_entries += entries.len();
-                    (CompiledKind::Sequence { entries }, NodeType::Sequence)
-                }
-                NodeKind::Hold { recipe } => (
-                    CompiledKind::Hold {
-                        video: CompiledHold::compile(recipe, document)?,
-                        picture_context: recipe
-                            .picture_context
-                            .as_ref()
-                            .map(|context| Arc::new(context.clone())),
-                        audio: recipe.audio.clone(),
-                    },
-                    NodeType::Hold,
-                ),
-                NodeKind::Repeat {
-                    child,
-                    iterations,
-                    gap,
-                    escalation,
-                } => {
-                    let overrides = document.overrides().get(id);
-                    let gap_overrides = document.gap_overrides().get(id);
-                    let layout: deadpan_core::ExactRepeatLayout = if let Some(extents) = &extents {
-                        deadpan_core::ExactRepeatLayout::compile_with_gap_overrides(
-                            iterations,
-                            child,
-                            overrides,
-                            gap.as_ref().map_or(ExactRatio::ZERO, |recipe| {
-                                ExactRatio::integer(recipe.duration.frames())
-                            }),
-                            gap_overrides,
-                            extents,
-                        )?
-                    } else {
-                        RepeatLayout::compile_with_gap_overrides(
-                            iterations,
-                            child,
-                            overrides,
-                            gap.as_ref()
-                                .map_or(FrameDuration::ZERO, |recipe| recipe.duration),
-                            gap_overrides,
-                            &durations,
-                        )?
-                        .into()
-                    };
-                    storage.iteration_run_entries += iterations.segment_count();
-                    storage.repeat_segment_entries += layout.segment_count();
-                    storage.sparse_override_entries += overrides.map_or(0, |entries| entries.len())
-                        + gap_overrides.map_or(0, |entries| entries.len());
-                    storage.referenced_plays += u64::from(iterations.len());
-                    (
-                        CompiledKind::Repeat {
-                            default_child: position(child),
-                            layout,
-                            gap_audio: gap.as_ref().map(|recipe| recipe.audio.clone()),
-                            gap_duration: gap
-                                .as_ref()
-                                .map_or(FrameDuration::ZERO, |recipe| recipe.duration),
-                            gap_picture_context: gap
-                                .as_ref()
-                                .and_then(|recipe| recipe.picture_context.as_ref())
-                                .map(|context| Arc::new(context.clone())),
-                            gap: gap
-                                .as_ref()
-                                .map(|recipe| CompiledHold::compile(recipe, document))
-                                .transpose()?,
-                            escalation: escalation.clone(),
-                        },
-                        NodeType::Repeat,
-                    )
-                }
-                NodeKind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                    purpose,
-                } => {
-                    let ordinary = deadpan_core::DerivedRetimeClock {
-                        extent: ExactRatio::integer(duration.frames()),
-                        child_start: ExactRatio::integer(mapping.start().0),
-                        child_end: ExactRatio::integer(mapping.end().0),
-                        preserve_input: None,
-                    };
-                    let clock = document.derived_clocks().get(id).unwrap_or(&ordinary);
-                    (
-                        CompiledKind::Retime {
-                            child: position(child),
-                            pitch: *pitch,
-                            purpose: *purpose,
-                            start: clock.child_start,
-                            scale: clock
-                                .child_end
-                                .checked_sub(clock.child_start)?
-                                .checked_div(clock.extent)?,
-                        },
-                        NodeType::Retime,
-                    )
-                }
+        let mut reuse = previous.and_then(|previous| {
+            fragments::Reuse::new(previous, document, &durations, extents.as_ref())
+        });
+        for (new, (id, node)) in document.nodes().iter().enumerate() {
+            let fragment = match reuse.as_mut() {
+                Some(reuse) => reuse.fragment(document, new, id, node)?,
+                None => None,
             };
-            nodes.push(PlanNode {
-                extent: extent(id),
-                preserve_input,
-                inspection: NodeInspection {
-                    id: id.clone(),
-                    label: node.label.clone(),
-                    kind: node_type,
-                    duration,
-                },
-                kind,
-                audio_edges: node.audio_edges,
-                audio_editorial_edges: node.audio_editorial_edges,
-                audio_treatments: node.audio_treatments.clone(),
-                framing: node.framing.clone(),
-                cutaways: node
-                    .cutaways
-                    .iter()
-                    .map(|cutaway| {
-                        document
-                            .assets()
-                            .get(&cutaway.asset)
-                            .and_then(|asset| asset.video)
-                            .map(|span| (cutaway.clone(), span))
-                            .ok_or(PlanError::InvalidPlan("cutaway asset has no video"))
-                    })
-                    .collect::<Result<_, _>>()?,
-                captions: node.captions.clone(),
-            });
+            let fragment = match fragment {
+                Some(fragment) => fragment,
+                None => Arc::new(Self::compile_node(
+                    document,
+                    id,
+                    node,
+                    index[id].1,
+                    extent(id),
+                    &durations,
+                    extents.as_ref(),
+                    &position,
+                    &extent,
+                )?),
+            };
+            count_storage(&mut storage, document, id, node, &fragment);
+            nodes.push(fragment);
         }
+        let reused_fragments = reuse.map_or(0, |reuse| reuse.reused);
         let root = position(document.root());
         let mut parents = vec![None; nodes.len()];
         for (parent, (id, node)) in document.nodes().iter().enumerate() {
@@ -1167,6 +1053,11 @@ impl RenderPlan {
             parents,
             definition_index,
             source_recipes: RecipeCache::default(),
+            fragments: Some(Arc::new(fragments::FragmentInputs::capture(
+                document,
+                extents.is_some(),
+            ))),
+            reused_fragments: fragments::ReuseCount(reused_fragments),
             audio_bindings: document.audio_bindings().clone(),
             sound_clock_layout: if document.audio_bindings().sound_clocks().is_empty() {
                 None
@@ -1234,6 +1125,219 @@ impl RenderPlan {
         plan.sound_delivery_forests = sound_delivery_forest::compile(&plan, remaining)?;
         plan.compiled_sounds = plan.compile_root_sounds()?;
         Ok(plan)
+    }
+
+    /// Compile one node from the document. Its only structural inputs are the
+    /// durations and extents of its direct children and override roots.
+    #[allow(clippy::too_many_arguments)]
+    fn compile_node(
+        document: &ProjectDocument,
+        id: &NodeId,
+        node: &deadpan_core::BeatNode,
+        duration: FrameDuration,
+        own_extent: ExactRatio,
+        durations: &BTreeMap<NodeId, FrameDuration>,
+        extents: Option<&BTreeMap<NodeId, ExactRatio>>,
+        position: &impl Fn(&NodeId) -> usize,
+        extent: &impl Fn(&NodeId) -> ExactRatio,
+    ) -> Result<PlanNode, PlanError> {
+        let preserve_input = document
+            .derived_clocks()
+            .get(id)
+            .and_then(|clock| clock.preserve_input.as_ref())
+            .map(|input| {
+                let NodeKind::Retime {
+                    duration, mapping, ..
+                } = &node.kind
+                else {
+                    return Err(PlanError::InvalidPlan(
+                        "owned Preserve input is not on a Retime",
+                    ));
+                };
+                Ok(Arc::new(CompiledPreserveInput {
+                    input: input.clone(),
+                    selection: ExactRatio::integer(mapping.start().0)
+                        ..ExactRatio::integer(mapping.end().0),
+                    rate: ExactRatio::new(
+                        i128::from(mapping.duration().frames()),
+                        i128::from(duration.frames()),
+                    )?,
+                }))
+            })
+            .transpose()?;
+        let (kind, node_type) = match &node.kind {
+            NodeKind::Source { source } => (
+                CompiledKind::Source {
+                    video: source.video.clone(),
+                    start: source.video_mapping.start_frames(),
+                    duration: source.video_mapping.duration_frames(source.duration)?,
+                    endpoints: source.video_mapping.endpoints(),
+                    selection: match &source.video {
+                        SourceVideo::Stream { span, .. } => {
+                            let selected = source
+                                .video_mapping
+                                .selection_in_source(*span, source.duration)?;
+                            Some((selected.start().ticks, selected.end().ticks))
+                        }
+                        SourceVideo::Still { .. } | SourceVideo::Blank => None,
+                    },
+                    audio: source
+                        .audio
+                        .as_ref()
+                        .map(|audio| {
+                            Ok::<_, TimeError>(CompiledSourceAudio {
+                                source: audio.clone(),
+                                start: source.audio_mapping.start_frames_with_offset(
+                                    source.audio_offset,
+                                    document.presentation_basis().frame_rate,
+                                )?,
+                                duration: source.audio_mapping.duration_frames(source.duration)?,
+                                selection: source.audio_mapping.selection_frames_with_offset(
+                                    source.duration,
+                                    source.audio_offset,
+                                    document.presentation_basis().frame_rate,
+                                )?,
+                                selected: matches!(
+                                    source.audio_mapping,
+                                    deadpan_core::SourceAudioMapping::SelectedPlacement { .. }
+                                ),
+                            })
+                        })
+                        .transpose()?,
+                },
+                NodeType::Source,
+            ),
+            NodeKind::Sequence { children } => {
+                let mut end = ExactRatio::ZERO;
+                let mut entries = Vec::with_capacity(children.len());
+                for child in children {
+                    let start = end;
+                    end = end.checked_add(extent(child))?;
+                    let child = position(child);
+                    entries.push(SequenceEntry { child, start, end });
+                }
+                (CompiledKind::Sequence { entries }, NodeType::Sequence)
+            }
+            NodeKind::Hold { recipe } => (
+                CompiledKind::Hold {
+                    video: CompiledHold::compile(recipe, document)?,
+                    picture_context: recipe
+                        .picture_context
+                        .as_ref()
+                        .map(|context| Arc::new(context.clone())),
+                    audio: recipe.audio.clone(),
+                },
+                NodeType::Hold,
+            ),
+            NodeKind::Repeat {
+                child,
+                iterations,
+                gap,
+                escalation,
+            } => {
+                let overrides = document.overrides().get(id);
+                let gap_overrides = document.gap_overrides().get(id);
+                let layout: deadpan_core::ExactRepeatLayout = if let Some(extents) = extents {
+                    deadpan_core::ExactRepeatLayout::compile_with_gap_overrides(
+                        iterations,
+                        child,
+                        overrides,
+                        gap.as_ref().map_or(ExactRatio::ZERO, |recipe| {
+                            ExactRatio::integer(recipe.duration.frames())
+                        }),
+                        gap_overrides,
+                        extents,
+                    )?
+                } else {
+                    RepeatLayout::compile_with_gap_overrides(
+                        iterations,
+                        child,
+                        overrides,
+                        gap.as_ref()
+                            .map_or(FrameDuration::ZERO, |recipe| recipe.duration),
+                        gap_overrides,
+                        durations,
+                    )?
+                    .into()
+                };
+                (
+                    CompiledKind::Repeat {
+                        default_child: position(child),
+                        layout,
+                        gap_audio: gap.as_ref().map(|recipe| recipe.audio.clone()),
+                        gap_duration: gap
+                            .as_ref()
+                            .map_or(FrameDuration::ZERO, |recipe| recipe.duration),
+                        gap_picture_context: gap
+                            .as_ref()
+                            .and_then(|recipe| recipe.picture_context.as_ref())
+                            .map(|context| Arc::new(context.clone())),
+                        gap: gap
+                            .as_ref()
+                            .map(|recipe| CompiledHold::compile(recipe, document))
+                            .transpose()?,
+                        escalation: escalation.clone(),
+                    },
+                    NodeType::Repeat,
+                )
+            }
+            NodeKind::Retime {
+                child,
+                duration,
+                mapping,
+                pitch,
+                purpose,
+            } => {
+                let ordinary = deadpan_core::DerivedRetimeClock {
+                    extent: ExactRatio::integer(duration.frames()),
+                    child_start: ExactRatio::integer(mapping.start().0),
+                    child_end: ExactRatio::integer(mapping.end().0),
+                    preserve_input: None,
+                };
+                let clock = document.derived_clocks().get(id).unwrap_or(&ordinary);
+                (
+                    CompiledKind::Retime {
+                        child: position(child),
+                        pitch: *pitch,
+                        purpose: *purpose,
+                        start: clock.child_start,
+                        scale: clock
+                            .child_end
+                            .checked_sub(clock.child_start)?
+                            .checked_div(clock.extent)?,
+                    },
+                    NodeType::Retime,
+                )
+            }
+        };
+        Ok(PlanNode {
+            extent: own_extent,
+            preserve_input,
+            inspection: NodeInspection {
+                id: id.clone(),
+                label: node.label.clone(),
+                kind: node_type,
+                duration,
+            },
+            kind,
+            audio_edges: node.audio_edges,
+            audio_editorial_edges: node.audio_editorial_edges,
+            audio_treatments: node.audio_treatments.clone(),
+            framing: node.framing.clone(),
+            cutaways: node
+                .cutaways
+                .iter()
+                .map(|cutaway| {
+                    document
+                        .assets()
+                        .get(&cutaway.asset)
+                        .and_then(|asset| asset.video)
+                        .map(|span| (cutaway.clone(), span))
+                        .ok_or(PlanError::InvalidPlan("cutaway asset has no video"))
+                })
+                .collect::<Result<_, _>>()?,
+            captions: node.captions.clone(),
+        })
     }
 
     pub fn metadata(&self) -> &PlanMetadata {
@@ -2057,4 +2161,32 @@ fn upper_bound(
         }
     }
     Ok(left)
+}
+
+/// Storage statistics of one compiled fragment, identical whether it was
+/// compiled or reused.
+fn count_storage(
+    storage: &mut StorageStats,
+    document: &ProjectDocument,
+    id: &NodeId,
+    node: &deadpan_core::BeatNode,
+    fragment: &PlanNode,
+) {
+    match (&node.kind, &fragment.kind) {
+        (_, CompiledKind::Sequence { entries }) => storage.sequence_prefix_entries += entries.len(),
+        (NodeKind::Repeat { iterations, .. }, CompiledKind::Repeat { layout, .. }) => {
+            storage.iteration_run_entries += iterations.segment_count();
+            storage.repeat_segment_entries += layout.segment_count();
+            storage.sparse_override_entries += document
+                .overrides()
+                .get(id)
+                .map_or(0, |entries| entries.len())
+                + document
+                    .gap_overrides()
+                    .get(id)
+                    .map_or(0, |entries| entries.len());
+            storage.referenced_plays += u64::from(iterations.len());
+        }
+        _ => {}
+    }
 }

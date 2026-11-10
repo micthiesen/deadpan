@@ -83,8 +83,32 @@ fn measure(document: &ProjectDocument) -> Result<Value> {
     let (serialize, json) = repeat(3, || Ok(document.to_json()?))?;
     let (parse, _) = repeat(3, || Ok(ProjectDocument::from_json(&json)?))?;
     let (clone, _) = repeat(5, || Ok(document.clone()))?;
+    // One interior Split of the middle root beat, compiled from scratch and
+    // from this plan (fragment reuse), alternating which runs first.
+    let mut ids = crate::edit::Ids(0);
+    let split = crate::edit::split_command(document, i64::try_from(frames / 2 + 1)?, &mut ids)?
+        .ok_or("no splittable middle beat")?;
+    let edited = transact(document, split, "perf-scale-split")?;
+    let mut after_full = Vec::new();
+    let mut after_incremental = Vec::new();
+    let mut reused = 0;
+    for round in 0..10 {
+        for incremental in [round % 2 == 0, round % 2 != 0] {
+            let started = Instant::now();
+            if incremental {
+                reused = RenderPlan::compile_from(&plan, &edited)?.reused_fragments();
+                after_incremental.push(ms(started));
+            } else {
+                std::hint::black_box(RenderPlan::compile(&edited)?);
+                after_full.push(ms(started));
+            }
+        }
+    }
     let inspection = plan.inspect();
     Ok(json!({
+        "split_full_compile_ms": summary(&after_full),
+        "split_incremental_compile_ms": summary(&after_incremental),
+        "split_reused_fragments": reused,
         "nodes": document.nodes().len(),
         "frames": frames,
         "validate_durations_ms": summary(&validate),

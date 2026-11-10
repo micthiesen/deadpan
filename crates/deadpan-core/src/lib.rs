@@ -76,6 +76,7 @@ mod repeat_selection;
 mod scoped_edit;
 mod semantic;
 mod shared_map;
+pub use shared_map::SharedSnapshot;
 mod sound_allowance;
 mod sound_clock;
 mod sound_events;

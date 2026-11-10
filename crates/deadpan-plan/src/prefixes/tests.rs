@@ -176,7 +176,9 @@ fn exact_and_integer_repeat_storage_agree_through_production_walkers() {
         else {
             continue;
         };
-        let CompiledKind::Repeat { layout, .. } = &mut exact.nodes[exact.by_id[id]].kind else {
+        let CompiledKind::Repeat { layout, .. } =
+            &mut Arc::make_mut(&mut exact.nodes[exact.by_id[id]]).kind
+        else {
             unreachable!()
         };
         *layout = ExactRepeatLayout::compile_with_gap_overrides(
@@ -288,7 +290,8 @@ fn exact_occurrence_query_keeps_fractional_offsets_and_reports_arithmetic_failur
             .is_none()
     );
     let tail = plan.by_id[&id("tail")];
-    let CompiledKind::Sequence { entries } = &mut plan.nodes[plan.root].kind else {
+    let CompiledKind::Sequence { entries } = &mut Arc::make_mut(&mut plan.nodes[plan.root]).kind
+    else {
         unreachable!()
     };
     // Inject a derived prefix at the compiled-index boundary. This qualifies
@@ -305,7 +308,8 @@ fn exact_occurrence_query_keeps_fractional_offsets_and_reports_arithmetic_failur
     assert_eq!(range.start, ExactRatio::new(27, 2).unwrap());
     assert_eq!(range.end, ExactRatio::new(31, 2).unwrap());
     assert!(plan.single_occurrence_range(&id("last")).is_none());
-    let CompiledKind::Sequence { entries } = &mut plan.nodes[plan.root].kind else {
+    let CompiledKind::Sequence { entries } = &mut Arc::make_mut(&mut plan.nodes[plan.root]).kind
+    else {
         unreachable!()
     };
     entries

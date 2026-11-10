@@ -2325,6 +2325,17 @@ impl Service {
 #[path = "service/derived_clock_tests.rs"]
 mod derived_clock_tests;
 
+/// Tests check every workspace refresh against a full compilation.
+fn compile_from_previous(
+    previous: &RenderPlan,
+    document: &ProjectDocument,
+) -> std::result::Result<RenderPlan, deadpan_plan::PlanError> {
+    #[cfg(test)]
+    return deadpan_plan::with_full_compile_oracle(|| RenderPlan::compile_from(previous, document));
+    #[cfg(not(test))]
+    RenderPlan::compile_from(previous, document)
+}
+
 fn snapshot(
     store: &ProjectStore,
     session: u64,
@@ -2334,8 +2345,13 @@ fn snapshot(
     // The store retains the head's validation, so compiling inside its scope
     // does not validate the whole document again after every commit.
     let validated = store.snapshot_validated().map_err(display)?;
+    // The previous workspace's fragments are reused where their inputs are
+    // unchanged; the result equals a full compilation.
     let plan = validated
-        .scope(|| RenderPlan::compile(&validated))
+        .scope(|| match previous {
+            Some(previous) => compile_from_previous(&previous.plan, &validated),
+            None => RenderPlan::compile(&validated),
+        })
         .map_err(display)?;
     let document = ProjectDocument::clone(&validated);
     let rate = document.presentation_basis().frame_rate;
