@@ -162,22 +162,37 @@ pub(super) fn strip(
                 egui::vec2(layout.card_width - 8.0, layout.card_height),
             );
             let sounds = markers.sounds.get(&beat.id).copied().unwrap_or(0);
+            // Badges sit side by side on the title row, right-aligned, and
+            // the title truncates before them instead of running underneath.
+            let badge_font = egui::FontId::proportional(10.5);
+            let ai_text = markers.ai.get(&beat.id).map(|state| {
+                ui.painter()
+                    .layout_no_wrap(state.clone(), badge_font.clone(), style::TEXT)
+            });
+            let sound_width = markers.sounds.get(&beat.id).map(|count| {
+                ui.painter()
+                    .layout_no_wrap(format!("♫ {count}"), badge_font.clone(), style::TEXT)
+                    .size()
+                    .x
+                    + 8.0
+            });
+            let reserve = ai_text
+                .as_ref()
+                .map_or(0.0, |text| text.size().x + 8.0 + 6.0)
+                + sound_width.map_or(0.0, |width| width + 6.0);
             let response = beat_card(
                 ui,
                 rect,
                 (beat, index, sounds),
                 selected == Some(&beat.id),
+                reserve,
                 thumbnail,
             );
             paint_analysis(ui, rect, beat, &markers);
-            let mut badge_top = rect.top() + 6.0;
-            if let Some(state) = markers.ai.get(&beat.id) {
-                let font = egui::FontId::proportional(10.5);
-                let text = ui
-                    .painter()
-                    .layout_no_wrap(state.clone(), font, style::TEXT);
+            let mut badge_right = rect.right() - 6.0;
+            if let (Some(state), Some(text)) = (markers.ai.get(&beat.id), ai_text) {
                 let badge = egui::Rect::from_min_size(
-                    egui::pos2(rect.right() - text.size().x - 14.0, rect.top() + 6.0),
+                    egui::pos2(badge_right - text.size().x - 8.0, rect.top() + 6.0),
                     text.size() + egui::vec2(8.0, 4.0),
                 );
                 ui.painter().rect_filled(badge, 4.0, style::SELECTED);
@@ -198,10 +213,10 @@ pub(super) fn strip(
                 response.widget_info(|| {
                     egui::WidgetInfo::labeled(egui::WidgetType::Label, true, &label)
                 });
-                badge_top = badge.bottom() + 4.0;
+                badge_right = badge.left() - 6.0;
             }
             if let Some(&count) = markers.sounds.get(&beat.id) {
-                sound_badge(ui, rect, badge_top, beat, count);
+                sound_badge(ui, badge_right, rect.top() + 6.0, beat, count);
             }
             if let Some(starts) = markers.repeats.get(&beat.id)
                 && beat.frames > 0
@@ -306,14 +321,14 @@ pub(super) fn strip(
 /// `♫ N` in the card's top-right corner (below an AI badge): N attached
 /// sounds play in this beat. The card's spoken label carries the count; the
 /// inspector lists them.
-fn sound_badge(ui: &egui::Ui, rect: egui::Rect, top: f32, beat: &BeatRow, count: usize) {
+fn sound_badge(ui: &egui::Ui, right: f32, top: f32, beat: &BeatRow, count: usize) {
     let text = ui.painter().layout_no_wrap(
         format!("♫ {count}"),
         egui::FontId::proportional(10.5),
         style::TEXT,
     );
     let badge = egui::Rect::from_min_size(
-        egui::pos2(rect.right() - text.size().x - 14.0, top),
+        egui::pos2(right - text.size().x - 8.0, top),
         text.size() + egui::vec2(8.0, 4.0),
     );
     ui.painter().rect_filled(badge, 4.0, style::SELECTED);
@@ -523,6 +538,7 @@ fn beat_card(
     rect: egui::Rect,
     card: (&BeatRow, usize, usize),
     selected: bool,
+    title_reserve: f32,
     thumbnail: &mut dyn FnMut(&BeatRow) -> Option<Painted>,
 ) -> egui::Response {
     let (beat, index, sounds) = card;
@@ -559,18 +575,26 @@ fn beat_card(
             .max_rect(inner),
     );
     content.spacing_mut().item_spacing.y = if compact { 2.0 } else { 6.0 };
-    content.add(
-        egui::Label::new(
-            egui::RichText::new(format!("{}. {}", index + 1, beat.label))
-                .size(14.0)
-                .color(if selected {
-                    style::LAVENDER
-                } else {
-                    style::TEXT
-                }),
-        )
-        .truncate()
-        .selectable(false),
+    let title_width = (content.available_width() - title_reserve).max(24.0);
+    content.allocate_ui_with_layout(
+        egui::vec2(title_width, 0.0),
+        egui::Layout::left_to_right(egui::Align::Center),
+        |ui| {
+            ui.set_max_width(title_width);
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(format!("{}. {}", index + 1, beat.label))
+                        .size(14.0)
+                        .color(if selected {
+                            style::LAVENDER
+                        } else {
+                            style::TEXT
+                        }),
+                )
+                .truncate()
+                .selectable(false),
+            );
+        },
     );
     // Duration leads its line so a long kind truncates first; the half-open
     // boundaries have a line of their own.
