@@ -90,6 +90,7 @@ impl Resolution {
                 format!("pitch {semitones:+} semitones")
             }
             deadpan_core::PitchPolicy::TapeRamp { .. } => "tape ramp".to_owned(),
+            deadpan_core::PitchPolicy::PreserveRamp { .. } => "preserve ramp".to_owned(),
         };
         format!(
             "{} to {} f · {}/{}× · {pitch} · {}",

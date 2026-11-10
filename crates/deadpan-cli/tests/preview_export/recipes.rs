@@ -1165,14 +1165,25 @@ pub fn ramp(dir: &Path) -> Result<Fixture> {
 /// follows from Original 36 at Edit 18. Its sound is one variable-rate tape
 /// stage that export must reproduce sample for sample.
 pub fn continuous_ramp(dir: &Path) -> Result<Fixture> {
-    let mut project = Project::create(dir, "continuous-ramp")?;
+    ramp_with_pitch(dir, "continuous-ramp", "follow_speed")
+}
+
+/// `:ramp 1 3 pitch=preserve` on the same beat: the identical exact pictures,
+/// with pitch-preserving sound from the canonical stretcher driven block by
+/// block along the same quadratic clock.
+pub fn continuous_preserve_ramp(dir: &Path) -> Result<Fixture> {
+    ramp_with_pitch(dir, "continuous-preserve-ramp", "preserve")
+}
+
+fn ramp_with_pitch(dir: &Path, name: &'static str, pitch: &str) -> Result<Fixture> {
+    let mut project = Project::create(dir, name)?;
     project.shorten()?;
     project.split_root(12)?;
     let document = project.split_root(24)?;
     let target = root_child_at(&document, 12)?.0;
     let ratio = |numerator: &str| json!({"numerator": numerator, "denominator": "1"});
     let saved = project.run_semantic(
-        json!([{"type":"ramp","from":ratio("1"),"to":ratio("3"),"pitch":"follow_speed"}]),
+        json!([{"type":"ramp","from":ratio("1"),"to":ratio("3"),"pitch":pitch}]),
         12,
         Some(&target),
     )?;
@@ -1194,10 +1205,13 @@ pub fn continuous_ramp(dir: &Path) -> Result<Fixture> {
     project.finish(
         vec!["Stretch / pitch", "Retime"],
         expectations,
-        vec![
+        vec![if pitch == "preserve" {
+            "continuous variable rate: one pitch-preserving stretch stage whose block schedule is the exact quadratic"
+                .to_owned()
+        } else {
             "continuous variable rate: one tape-pitch stage at exact per-sample positions"
-                .to_owned(),
-        ],
+                .to_owned()
+        }],
     )
 }
 
@@ -4173,10 +4187,11 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 52] = [
+    let builders: [(&str, Builder); 53] = [
         ("audio-shift", audio_shift),
         ("ramp", ramp),
         ("continuous-ramp", continuous_ramp),
+        ("continuous-preserve-ramp", continuous_preserve_ramp),
         ("speed-step", speed_step),
         ("role-repeat-across", role_repeat_across),
         ("video-repeat-across", video_repeat_across),

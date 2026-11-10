@@ -234,7 +234,7 @@ length at the mean speed) is rounded half-even once; the stored speeds are
 the rate's shape, so the realised endpoint speeds are the authored ones times
 `2L/(D·(FROM + TO))`, and the inspector shows them (`Ramp 0.988× to 1.975×`
 for `:ramp 1 2` on 40 frames). Both realised endpoints stay within 1/16x to
-16x. The ramp stores only its shape, the reduced weights `A:B` (each at most
+16x (1/8x to 8x with `pitch=preserve`, below). The ramp stores only its shape, the reduced weights `A:B` (each at most
 65,535, so `:ramp 2 6` and `:ramp 1 3` store the same `{"start":1,"end":3}` and
 differ only in duration); two `u16`s keep `PitchPolicy` six bytes, so every
 plan and audio structure that embeds it keeps its measured layout, and the
@@ -294,13 +294,62 @@ and macros carry it as ordinary Retime intent (tested). Repeat wrapping,
 Explode and occurrence isolation copy it as Retime intent like any other
 processing stage; they have no ramp-specific test yet.
 
-`pitch=preserve` without steps refuses ("a continuous ramp keeps tape pitch;
-for pitch=preserve use :ramp FROM TO steps=N"). Signalsmith Stretch itself
-accepts a different input/output ratio on each `process` call, but Deadpan's
-canonical schedule (`CanonicalRecipe`/`StreamRecipe`, native `canonical.hpp`)
-pins one exact rate per stage and its qualification covers only that; a
-variable-rate schedule with a documented deviation bound is the remaining
-work for pitch-preserving continuous ramps.
+#### Pitch-preserving continuous ramps
+
+`:ramp FROM TO pitch=preserve` (since 2026-11-10) authors
+`PitchPolicy::PreserveRamp { ramp }`: the same Retime, duration, exact
+quadratic clock, picture sampling, validation and scope rules as `TapeRamp`,
+but with sound from the canonical stretcher, so a steady tone keeps its pitch
+while its timing follows the ramp. Its realised endpoint speeds must stay
+within the stretcher's 1/8x to 8x (`MAX_PRESERVE_RAMP_SPEED`) rather than the
+tape resampler's 1/16x to 16x. A fixed shift has no ramp form (`pitch=+3st`
+refuses). `PitchPolicy::ramp` returns the ramp for both policies and
+`ramp_preserves_pitch` distinguishes them; neither counts as `preserves`, so
+no constant-rate preparation clock or historical Preserve capture applies.
+
+Schedule. Signalsmith Stretch accepts a different input length on every
+`process` call, and the canonical schedule already makes one call per
+256-sample output quantum. The ramp keeps that fixed call grid and changes
+only how much input each call consumes: the call emitting output samples
+`[k·256, (k + 1)·256)` consumes exactly the input between two rounded exact
+positions, `round_even(q(k·256 + O))` and `round_even(q((k + 1)·256 + O))`,
+where `q` is the same integer quotient `RampSampler` evaluates and `O` is the
+stretcher's fixed output latency (`deadpan_dsp::RampSchedule`, native
+`canonical.hpp`). The cumulative input fed therefore equals the exact mapping,
+to the nearest sample, at every quantum boundary; no float position is ever
+accumulated. Outside `[0, N]` the schedule extends linearly with its endpoint
+slopes, so the zero-extended priming before the start and the flush after the
+end keep a positive rate. Preparation owns this schedule: device, export and
+stage read sizes never change it (tested), and a seek replays it canonically
+from the stage start through the ordinary stage cache, as constant-rate
+Preserve does.
+
+Deviation bound. Inside one call the stretcher holds that call's mean rate,
+so its time position follows the chord of `q` instead of the curve. The chord
+of a parabola over `h = 256` samples departs from it by at most
+`|q''|·h²/8`, and rounding each boundary adds at most half a sample, so the
+schedule's time-position error is at most
+
+`|r₁ − r₀|·256²/(8N) + ½` input samples
+
+for realised endpoint rates `r₀`, `r₁` over `N` output samples
+(`RampSchedule::linearisation_bound`). A 1/2x to 2x ramp over one second is
+within 0.76 samples (16 µs) and 8x to 1/8x over one second within 1.84.
+The bound grows only for very short, steep ramps (one 24 fps frame from 1/8x
+to 8x: 33 samples).
+It covers the schedule only. The phase vocoder's own transient smearing is
+the same as at a constant rate: gated 1 kHz bursts through a 1/2x to 2x ramp
+land within 97 samples of their exact mapped onsets, inside the -104 to +476
+samples the same detector reads from constant 2x and 1/2x stretches.
+
+Provenance and caching. The native recipe is `StreamRecipe::ramp` with its own
+engine identity (`deadpan-canonical-stretch-ramp-1`); `rate()` reports the
+exact starting rate, which also sets priming. The stage's cache key is its
+descriptor, whose pitch policy carries both the ramp and its pitch choice, so
+it never shares an entry with a constant-rate stage or with the tape ramp of
+the same shape. Like the tape ramp it does not use the saved stage cache
+(persistent PCM files keyed by constant-rate recipes) and is not available to
+projected stage inputs.
 
 Evidence: `speed_ramp::tests` (exact endpoints, monotonic mapping, bounds),
 `a_continuous_ramp_is_one_retime_on_the_exact_quadratic_clock` (planner,
@@ -312,7 +361,21 @@ centers at 30000/1001 fps, ordinals 0 to 89, `Varying` coverage) and
 tone through 1/2x to 2x and 3x to 1/3x ramps within 5e-7 of the analytic
 `sin(ω·q(j))`; arbitrary block sizes bit-identical to one render, no seam
 curvature), the `continuous-ramp` release preview/export fixture and the
-`creative-dot` replay's continuous ramp, dot and refusal checks.
+`creative-dot` replay's continuous ramp, dot and refusal checks. For
+`pitch=preserve`: `deadpan-dsp`'s `ramp::tests` (boundaries equal the
+rounded exact quadratic, monotonic, ties to even, admission, the bound against
+every block chord) and `tests/ramp.rs` (every native call's input window
+matches the schedule under one fixed latency pair; a 441 Hz tone through
+1/2x to 2x stays within 0.5% of its pitch for exactly the mapped duration;
+arbitrary read sizes and replays are bit-identical; burst onsets),
+`the_stretch_schedule_meets_the_core_ramp_at_every_block_boundary` (the
+audio coefficients equal `SpeedRamp::input_offset` at 30000/1001 fps),
+`a_preserve_ramp_stage_is_the_exact_schedule_for_any_reads_and_seeks` (the
+stage equals an independently derived reference for any reads and cold
+seeks, and differs from the tape ramp), the planner test's `PreserveRamp`
+and 1/8x refusal, the `continuous-preserve-ramp` release preview/export
+fixture (24 exact pictures, zero-offset audio, block SNR at least 53.89 dB,
+focused run 2026-11-10) and the `creative-dot` replay's `:ramp 1 2 pitch=preserve` steps.
 
 ### Stepped ramps
 

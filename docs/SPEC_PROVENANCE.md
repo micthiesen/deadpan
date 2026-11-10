@@ -121,6 +121,16 @@ selection rule Trim and Slip already used, so "explicit link offset" means the
 sound is slipped against its picture within the same beat rather than leaving
 a silent hole at one end; Slip and Trim then carry the offset unchanged.
 
+Also on 2026-11-10, Section 10.5's variable rate gained its pitch-preserving
+form under the same delegated authority. The canonical stretcher keeps its
+fixed 256-sample call grid and each call consumes the input between the exact
+integral's rounded values at its two boundaries, so preview and export share
+one schedule and the only approximation is the linear rate inside one call,
+bounded by |r1 - r0|·256²/(8N) + 1/2 samples. Changing the rate per sample
+or per analysis hop instead would need changes inside the pinned upstream
+stretcher. Its speeds stay within the stretcher's 1/8x to 8x rather than the
+tape resampler's 1/16x to 16x.
+
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
 | [AGENT_HANDOFF.md](spec/archive/1.0/AGENT_HANDOFF.md) | 4,340 | `464f689e1eb5ad6b2905286e516259f07dc83fea8ebb2b0330663976b905ae6c` |

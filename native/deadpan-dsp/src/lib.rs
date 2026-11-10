@@ -16,8 +16,10 @@ mod causal_filter;
 mod ffi;
 mod finite_filter;
 mod finite_peak;
+mod ramp;
 mod streaming;
 
+pub use ramp::{RAMP_ENGINE_ID, RampSchedule};
 pub use streaming::{MAX_STREAM_WINDOW_FRAMES, StreamRecipe, StreamingStretch};
 
 pub use causal_filter::{

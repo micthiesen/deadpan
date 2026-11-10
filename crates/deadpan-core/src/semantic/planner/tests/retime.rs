@@ -844,15 +844,57 @@ fn a_continuous_ramp_is_one_retime_on_the_exact_quadratic_clock() {
         continuous((1, 1), (3, 1), PitchPolicy::FollowSpeed)
     );
 
-    // Pitch-preserving continuous ramps and unsupported contents refuse.
-    let error = plan(
+    // pitch=preserve plans the same clock with the stretcher's policy, and
+    // within its narrower 1/8..8 range; a fixed shift has no ramp form.
+    let preserved = plan(
         &document,
         selected("b", 3),
         vec![continuous((1, 1), (3, 1), PitchPolicy::Preserve)],
         &BTreeMap::new(),
     )
+    .unwrap();
+    let NodeKind::Retime {
+        duration: preserved_duration,
+        pitch: PitchPolicy::PreserveRamp {
+            ramp: preserved_ramp,
+        },
+        ..
+    } = &preserved.document.nodes()[&children[1]].kind
+    else {
+        panic!("pitch=preserve wraps the beat in one pitch-preserving ramp")
+    };
+    assert_eq!((preserved_duration.frames(), preserved_ramp), (6, ramp));
+    replays_and_reverts(&document, &preserved);
+    let error = plan(
+        &document,
+        selected("b", 3),
+        vec![continuous((1, 12), (1, 1), PitchPolicy::Preserve)],
+        &BTreeMap::new(),
+    )
     .unwrap_err();
-    assert!(error.message.contains("steps=N"), "{error:?}");
+    assert!(error.message.contains("1/8x to 8x"), "{error:?}");
+    assert!(
+        plan(
+            &document,
+            selected("b", 3),
+            vec![continuous((1, 12), (1, 1), PitchPolicy::FollowSpeed)],
+            &BTreeMap::new(),
+        )
+        .is_ok()
+    );
+    let error = plan(
+        &document,
+        selected("b", 3),
+        vec![continuous(
+            (1, 1),
+            (3, 1),
+            PitchPolicy::Shift { semitones: 3 },
+        )],
+        &BTreeMap::new(),
+    )
+    .unwrap_err();
+    assert!(error.message.contains("pitch=preserve"), "{error:?}");
+    // Unsupported contents refuse.
     let error = plan(
         &document,
         selected("a", 0),

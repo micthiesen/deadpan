@@ -36,6 +36,9 @@ struct Engine {
     Engine(std::uint32_t input, std::uint32_t output,
            deadpan_audio_probe::ExactRate rate, std::int32_t pitch)
         : renderer(source, input, output, rate, pitch) {}
+    Engine(std::uint32_t input, std::uint32_t output,
+           deadpan_audio_probe::QuadraticSchedule schedule)
+        : renderer(source, input, output, schedule) {}
     Engine(const Engine &) = delete;
     Engine &operator=(const Engine &) = delete;
 };
@@ -58,6 +61,29 @@ extern "C" std::int32_t dp_dsp_stream_create(std::uint32_t input,
         *handle = new Engine(input, output, {numerator, denominator}, pitch);
         return ok;
     } catch (const std::bad_alloc &) { return allocation_failed; }
+      catch (...) { return native_failed; }
+}
+
+namespace {
+__int128 join(std::int64_t high, std::uint64_t low) {
+    return __int128(high) * (__int128(1) << 64) + __int128(low);
+}
+} // namespace
+
+extern "C" std::int32_t dp_dsp_stream_create_ramp(std::uint32_t input,
+    std::uint32_t output, std::int64_t linear_high, std::uint64_t linear_low,
+    std::int64_t quadratic_high, std::uint64_t quadratic_low,
+    std::int64_t denominator_high, std::uint64_t denominator_low, void **handle) noexcept {
+    if (!handle) return invalid_argument;
+    *handle = nullptr;
+    deadpan_audio_probe::QuadraticSchedule schedule{join(linear_high, linear_low),
+        join(quadratic_high, quadratic_low), join(denominator_high, denominator_low)};
+    if (!input || !output || schedule.denominator <= 0) return invalid_argument;
+    try {
+        *handle = new Engine(input, output, schedule);
+        return ok;
+    } catch (const std::bad_alloc &) { return allocation_failed; }
+      catch (const std::invalid_argument &) { return invalid_argument; }
       catch (...) { return native_failed; }
 }
 

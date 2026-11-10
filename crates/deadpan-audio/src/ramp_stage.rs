@@ -1,9 +1,15 @@
-//! A continuous tape ramp is a processing stage like Preserve: its complete
-//! child input is read on the input point grid and resampled once, as a whole
-//! stage, at each output sample's exact quadratic position. Its cache key is
-//! the stage descriptor, whose pitch policy carries the ramp.
+//! A continuous ramp is a processing stage like Preserve: its complete child
+//! input is read on the input point grid and processed once, as a whole
+//! stage. Tape pitch resamples at each output sample's exact quadratic
+//! position. Preserved pitch drives the canonical stretcher with the same
+//! exact quadratic as its block schedule (`deadpan_dsp::RampSchedule`): every
+//! 256-sample call consumes the input between two rounded exact positions,
+//! independently of how this stage or its consumers size their reads. Its
+//! cache key is the stage descriptor, whose pitch policy carries the ramp and
+//! its pitch choice, so it never shares an entry with a constant-rate stage.
 use super::*;
 use crate::ramp_resample::RampSampler;
+use deadpan_dsp::RampSchedule;
 
 impl StageAudio {
     pub(super) fn prepare_ramp_stage(
@@ -40,6 +46,24 @@ impl StageAudio {
             output_count,
         )?;
         let reservation = self.reserve_stream(input_count, output_count, control)?;
+        if stage.descriptor().pitch.ramp_preserves_pitch() {
+            let (linear, quadratic, denominator) = sampler.coefficients();
+            let result = RampSchedule::new(linear, quadratic, denominator, output_count)
+                .and_then(|schedule| StreamRecipe::ramp(input_count, schedule))
+                .map_err(StageAudioError::from)
+                .and_then(|recipe| {
+                    self.build_preserve_ramp_stage(
+                        recipe,
+                        (&input_signal).into(),
+                        (&output_signal).into(),
+                        provider,
+                        control,
+                        depth,
+                    )
+                });
+            self.release_stream(reservation);
+            return self.publish(key, result?, control);
+        }
         let result = self.build_ramp_stage(
             &sampler,
             (&input_signal).into(),
@@ -115,6 +139,91 @@ impl StageAudio {
             self.suppress_stage_block(output, SignalSample(start), &mut block, control, None)?;
             samples.push(&block, control)?;
             at += frames;
+        }
+        Ok(PreparedBlock {
+            samples: samples.finish(control)?,
+            dependencies,
+            relative_depth,
+        })
+    }
+
+    /// The stretcher reports the exact input window of each read; the stage
+    /// reads it once, in order, and checks the windows stay contiguous.
+    fn build_preserve_ramp_stage(
+        &mut self,
+        recipe: StreamRecipe,
+        input: SignalInput<'_, '_>,
+        output: SignalInput<'_, '_>,
+        provider: &mut impl AudioSourceProvider,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<PreparedBlock, StageAudioError> {
+        let output_count = recipe.output_frames();
+        let mut samples = PcmWriter::new(output_count, self.limits.maximum_memory_stage_frames)?;
+        let mut dependencies = Dependencies::new();
+        let mut relative_depth = 0;
+        let mut input_end = 0;
+        let mut dsp = StreamingStretch::new(recipe)?;
+        let progress = self.preparation_monitor.as_ref().map(|monitor| {
+            monitor.enter(PreparationActivity::Stretching {
+                depth,
+                completed: 0,
+                total: output_count,
+            })
+        });
+        while dsp.position() < output_count {
+            control.check()?;
+            let at = dsp.position();
+            if let Some(progress) = &progress {
+                progress.report(PreparationActivity::Stretching {
+                    depth,
+                    completed: at,
+                    total: output_count,
+                });
+            }
+            let frames = (output_count - at).min(MAX_OUTPUT_FRAMES) as usize;
+            let range = dsp.required_input(frames)?;
+            if !range.is_empty() && range.start != input_end {
+                return Err(deadpan_dsp::DspError::NativeReport.into());
+            }
+            let block = self.read_stage_input(input, range.clone(), provider, control, depth)?;
+            if !range.is_empty() {
+                input_end = range.end;
+            }
+            dependencies.extend(block.dependencies);
+            relative_depth = relative_depth.max(block.relative_depth);
+            let (input_left, input_right): (Vec<_>, Vec<_>) = block
+                .samples
+                .into_iter()
+                .map(|frame| (frame[0], frame[1]))
+                .unzip();
+            let mut left = [0.0; MAX_OUTPUT_FRAMES as usize];
+            let mut right = [0.0; MAX_OUTPUT_FRAMES as usize];
+            let read = dsp.read(
+                range.start,
+                [&input_left, &input_right],
+                [&mut left[..frames], &mut right[..frames]],
+                control.cancelled,
+            )?;
+            if read != frames {
+                return Err(deadpan_dsp::DspError::NativeReport.into());
+            }
+            let mut block: Vec<[f32; 2]> = left[..read]
+                .iter()
+                .zip(&right[..read])
+                .map(|(&l, &r)| [l, r])
+                .collect();
+            #[cfg(not(test))]
+            self.suppress_stage_block(output, SignalSample(i64::from(at)), &mut block, control)?;
+            #[cfg(test)]
+            self.suppress_stage_block(
+                output,
+                SignalSample(i64::from(at)),
+                &mut block,
+                control,
+                None,
+            )?;
+            samples.push(&block, control)?;
         }
         Ok(PreparedBlock {
             samples: samples.finish(control)?,

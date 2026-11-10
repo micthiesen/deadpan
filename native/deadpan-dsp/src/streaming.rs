@@ -4,10 +4,14 @@
 use std::ops::Range;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::{DspError, EXACT_RATE_ENGINE_ID, MAX_INPUT_PEAK, QUANTUM, StretchRate, ffi};
+use crate::{
+    DspError, EXACT_RATE_ENGINE_ID, MAX_INPUT_PEAK, QUANTUM, RAMP_ENGINE_ID, RampSchedule,
+    StretchRate, ffi,
+};
 
 /// Conservative bound for Dense120_15 priming plus one output quantum at 8x.
-/// Later windows contain at most 2048 source frames, independent of duration.
+/// Later windows contain at most 2048 source frames, independent of duration
+/// (2,305 for a ramp, whose slope may reach 9 just past its exact end).
 pub const MAX_STREAM_WINDOW_FRAMES: usize = 65_536;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -16,6 +20,7 @@ pub struct StreamRecipe {
     output_frames: u32,
     rate: StretchRate,
     pitch_semitones: i32,
+    ramp: Option<RampSchedule>,
 }
 
 impl StreamRecipe {
@@ -41,6 +46,23 @@ impl StreamRecipe {
             output_frames,
             rate,
             pitch_semitones,
+            ramp: None,
+        })
+    }
+
+    /// A pitch-preserving speed ramp over `input_frames` retained input
+    /// samples, following `schedule` (unshifted pitch). [`Self::rate`] is its
+    /// exact starting rate, which also sets the priming latency.
+    pub fn ramp(input_frames: u32, schedule: RampSchedule) -> Result<Self, DspError> {
+        if input_frames == 0 {
+            return Err(DspError::InputLength);
+        }
+        Ok(Self {
+            input_frames,
+            output_frames: schedule.output_frames(),
+            rate: schedule.starting_rate()?,
+            pitch_semitones: 0,
+            ramp: Some(schedule),
         })
     }
     pub fn input_frames(self) -> u32 {
@@ -55,8 +77,16 @@ impl StreamRecipe {
     pub fn pitch_semitones(self) -> i32 {
         self.pitch_semitones
     }
+    /// The variable-rate schedule, for a ramp recipe.
+    pub fn ramp_schedule(self) -> Option<RampSchedule> {
+        self.ramp
+    }
     pub fn engine_id(self) -> &'static str {
-        EXACT_RATE_ENGINE_ID
+        if self.ramp.is_some() {
+            RAMP_ENGINE_ID
+        } else {
+            EXACT_RATE_ENGINE_ID
+        }
     }
 }
 

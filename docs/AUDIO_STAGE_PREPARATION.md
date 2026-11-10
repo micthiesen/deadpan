@@ -34,6 +34,17 @@ input phase survives. Preserve consumes this PCM with native boundary
 At 30000/1001 fps, three frames into two has exact speed 3/2; rounded buffer
 counts 4805/3203 must not redefine that speed.
 
+A continuous ramp (`PitchPolicy::TapeRamp` or `PreserveRamp`) is one stage
+over the same input grid whose output sample `j` reads the exact quadratic
+position `q(j)` instead of `s·j`. Tape pitch resamples each sample at `q(j)`.
+Preserved pitch consumes `K(m) = round_even(q(m))` per 256-sample quantum
+through `StreamRecipe::ramp`, so the input fed equals the exact mapping at
+every quantum boundary and only the rate inside one quantum is linearised
+(within `|r₁ − r₀|·256²/(8N) + ½` samples). Both are keyed by their stage
+descriptor, prepared whole like Preserve and replayed canonically from the
+stage start on a cold seek. See
+[continuous ramps](RETIME_EDITING.md#continuous-ramps).
+
 For ordinary derived placement `project_frame=O+T*local_frame`, project sample
 `n` requests stage sample coordinate `m=(n-C*O)/T`. The plan retains this in an
 explicit [sampling map](AUDIO_SAMPLING.md); root and signal stage recipes consume
@@ -171,6 +182,6 @@ stages to prepare while the device queue is full. It does not guarantee that
 an arbitrarily expensive stage finishes before its audible deadline.
 The [saved stretch cache](SAVED_AUDIO.md) reuses verified output after restart,
 with fresh source admission, exact keys, atomic publication and reader-safe cleanup.
-Fractional pitch, variable rates, remaining voice/group effects,
+Fractional pitch, variable rates beyond one ramped Original beat, remaining voice/group effects,
 full mastering, listening and the complete device/preview/export corpus remain
 open; this qualification does not close DP-09 or DP-16.

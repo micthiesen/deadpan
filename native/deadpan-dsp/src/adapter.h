@@ -35,6 +35,15 @@ void dp_dsp_destroy(void *engine) DP_DSP_NOEXCEPT;
 // lengths are positive u32 values and do not allocate whole input/output PCM.
 int32_t dp_dsp_stream_create(uint32_t input_frames, uint32_t output_frames,
     uint64_t numerator, uint64_t denominator, int32_t pitch, void **output) DP_DSP_NOEXCEPT;
+// Streaming pitch-preserving ramp. Each coefficient of the exact schedule
+// q(n) = (linear*n + quadratic*n^2)/denominator is a signed 128-bit integer
+// passed as its high signed and low unsigned 64-bit halves. The renderer
+// rejects a nonpositive denominator, a starting slope outside 1/8..8 or a
+// slope at output_frames outside 1/9..9, and fails a read on overflow.
+int32_t dp_dsp_stream_create_ramp(uint32_t input_frames, uint32_t output_frames,
+    int64_t linear_high, uint64_t linear_low, int64_t quadratic_high,
+    uint64_t quadratic_low, int64_t denominator_high, uint64_t denominator_low,
+    void **output) DP_DSP_NOEXCEPT;
 // Reports a half-open source range of at most 65536 frames. No DSP is advanced.
 int32_t dp_dsp_stream_required(void *engine, uint32_t requested,
     uint32_t *start, uint32_t *frames) DP_DSP_NOEXCEPT;

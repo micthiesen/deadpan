@@ -14,6 +14,18 @@ unsafe extern "C" {
         pitch: i32,
         handle: *mut *mut c_void,
     ) -> i32;
+    #[allow(clippy::too_many_arguments)]
+    fn dp_dsp_stream_create_ramp(
+        input: u32,
+        output: u32,
+        linear_high: i64,
+        linear_low: u64,
+        quadratic_high: i64,
+        quadratic_low: u64,
+        denominator_high: i64,
+        denominator_low: u64,
+        handle: *mut *mut c_void,
+    ) -> i32;
     fn dp_dsp_stream_required(
         handle: *mut c_void,
         requested: u32,
@@ -43,15 +55,37 @@ impl StreamEngine {
         let mut handle = std::ptr::null_mut();
         // SAFETY: validated scalar recipe, live report pointer. Native catches
         // exceptions and returns only a fully constructed uniquely owned handle.
-        status(unsafe {
-            dp_dsp_stream_create(
-                recipe.input_frames(),
-                recipe.output_frames(),
-                recipe.rate().numerator(),
-                recipe.rate().denominator(),
-                recipe.pitch_semitones(),
-                &mut handle,
-            )
+        status(match recipe.ramp_schedule() {
+            None => unsafe {
+                dp_dsp_stream_create(
+                    recipe.input_frames(),
+                    recipe.output_frames(),
+                    recipe.rate().numerator(),
+                    recipe.rate().denominator(),
+                    recipe.pitch_semitones(),
+                    &mut handle,
+                )
+            },
+            Some(schedule) => {
+                let (linear, quadratic, denominator) = schedule.coefficients();
+                let split = |value: i128| ((value >> 64) as i64, value as u64);
+                let (linear, quadratic, denominator) =
+                    (split(linear), split(quadratic), split(denominator));
+                // SAFETY: as above; the six halves are plain scalars.
+                unsafe {
+                    dp_dsp_stream_create_ramp(
+                        recipe.input_frames(),
+                        recipe.output_frames(),
+                        linear.0,
+                        linear.1,
+                        quadratic.0,
+                        quadratic.1,
+                        denominator.0,
+                        denominator.1,
+                        &mut handle,
+                    )
+                }
+            }
         })?;
         Ok(Self {
             handle: NonNull::new(handle).ok_or(DspError::NativeReport)?,

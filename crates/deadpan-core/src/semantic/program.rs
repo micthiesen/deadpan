@@ -412,7 +412,8 @@ pub enum SemanticInstruction {
     /// `extend` holds the last picture for exactly the shift.
     /// `:ramp FROM TO`: a speed ramp from `from` to `to`, in one Undo.
     /// Without `steps` it is continuous: one Retime whose rate changes
-    /// linearly across its output (`PitchPolicy::TapeRamp`, tape pitch only).
+    /// linearly across its output (`PitchPolicy::TapeRamp` for tape pitch,
+    /// `PitchPolicy::PreserveRamp` for preserved pitch).
     /// With `steps` the selected direct child splits into that many equal
     /// parts at exact frame boundaries, and each part becomes its own speed
     /// change at the rate interpolated at its middle.

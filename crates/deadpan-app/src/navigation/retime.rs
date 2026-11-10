@@ -58,7 +58,7 @@ pub struct RampInput {
     pub pitch: PitchPolicy,
 }
 
-pub const RAMP_USAGE: &str = "Use :ramp 1 0.25 for a continuous tape-pitch speed ramp of the selected beat, or :ramp 1 0.25 steps=8 pitch=preserve|tape (2 to 32 steps) for one speed change per part.";
+pub const RAMP_USAGE: &str = "Use :ramp 1 0.25 for a continuous tape-pitch speed ramp of the selected beat (pitch=preserve keeps its pitch), or :ramp 1 0.25 steps=8 pitch=preserve|tape (2 to 32 steps) for one speed change per part.";
 
 pub fn parse_ramp<'a>(words: impl Iterator<Item = &'a str>) -> Result<RampInput, String> {
     let invalid = || RAMP_USAGE.to_owned();
@@ -86,8 +86,8 @@ pub fn parse_ramp<'a>(words: impl Iterator<Item = &'a str>) -> Result<RampInput,
         (Some(steps), Some(pitch)) if (2..=deadpan_core::MAX_RAMP_STEPS).contains(&steps) => pitch,
         // A stepped ramp still chooses its pitch explicitly.
         (Some(_), _) => return Err(invalid()),
-        // A continuous ramp is tape pitch; the planner explains why
-        // pitch=preserve needs steps.
+        // A continuous ramp is tape pitch unless pitch=preserve asks the
+        // stretcher to follow it; the planner refuses a shift.
         (None, pitch) => pitch.unwrap_or(PitchPolicy::FollowSpeed),
     };
     Ok(RampInput {
@@ -114,9 +114,10 @@ pub fn pitch_name(pitch: PitchPolicy) -> String {
         PitchPolicy::Preserve => "preserve".into(),
         PitchPolicy::FollowSpeed => "tape".into(),
         PitchPolicy::Shift { semitones } => format!("{semitones:+}st"),
-        // A ramp's audio is tape pitch; `pitch=tape` on a constant speed
-        // replaces the ramp explicitly.
+        // A ramp's audio keeps its own pitch policy; `pitch=...` on a
+        // constant speed replaces the ramp explicitly.
         PitchPolicy::TapeRamp { .. } => "tape".into(),
+        PitchPolicy::PreserveRamp { .. } => "preserve".into(),
     }
 }
 

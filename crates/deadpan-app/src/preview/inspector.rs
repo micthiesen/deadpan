@@ -318,6 +318,7 @@ impl Inspector {
                             format!("Shifted {semitones:+} semitones")
                         }
                         PitchPolicy::TapeRamp { .. } => "Tape (follows the ramp)".into(),
+                        PitchPolicy::PreserveRamp { .. } => "Preserve (along the ramp)".into(),
                     },
                 ));
                 (

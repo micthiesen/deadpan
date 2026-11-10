@@ -16,7 +16,9 @@ pub use audio_binding_lifecycle::capture_unbound_audio_bindings;
 pub use audio_binding_lifecycle::with_reference_timing_representation;
 mod audio_context;
 mod speed_ramp;
-pub use speed_ramp::{MAX_RAMP_SPEED, MAX_RAMP_WEIGHT, SpeedRamp, retime_child_position};
+pub use speed_ramp::{
+    MAX_PRESERVE_RAMP_SPEED, MAX_RAMP_SPEED, MAX_RAMP_WEIGHT, SpeedRamp, retime_child_position,
+};
 mod audio_edges;
 mod audio_gain;
 mod audio_lineage;

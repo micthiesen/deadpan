@@ -307,20 +307,55 @@ fn ramp(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"duration":27,"frames":94}),
         json!({"ramp":format!("{repeated:?}"),"frames":d.app().sequence_length(),"error":d.app().error}),
     )?;
+    // pitch=preserve ramps the third beat on the same exact clock with the
+    // stretcher following it block by block: the same 27 frames.
     at(d, 60)?;
-    d.command("ramp 1 2 pitch=preserve")?;
+    edit(d, "ramp 1 2 pitch=preserve")?;
+    let third = selected(d)?;
+    let preserved = match document(d)?.nodes().get(&third).map(|node| &node.kind) {
+        Some(NodeKind::Retime {
+            duration,
+            mapping,
+            pitch: PitchPolicy::PreserveRamp { ramp },
+            ..
+        }) => Some((
+            duration.frames(),
+            mapping.duration().frames(),
+            ramp.weights().ok(),
+        )),
+        _ => None,
+    };
+    let fields = d
+        .app()
+        .inspector_description()
+        .map(|inspector| inspector.fields);
+    d.check(
+        ":ramp 1 2 pitch=preserve makes one pitch-preserving 27-frame ramp",
+        preserved == Some((27, 40, Some((1, 2))))
+            && d.app().sequence_length() == 81
+            && fields.as_ref().is_some_and(|fields| {
+                fields.contains(&("Pitch", "Preserve (along the ramp)".into()))
+            }),
+        json!({"duration":27,"input":40,"frames":81,"Pitch":"Preserve (along the ramp)"}),
+        json!({"ramp":format!("{preserved:?}"),"frames":d.app().sequence_length(),"fields":fields,"error":d.app().error}),
+    )?;
+    d.capture("Continuous pitch-preserving ramp")?;
+    undo(d, 1)?;
+    // The stretcher's range is 1/8x to 8x; a faster preserved ramp refuses.
+    at(d, 60)?;
+    d.command("ramp 1 12 pitch=preserve")?;
     d.wait_for("The refusal arrives", |app| {
         !app.macros.is_pending() && !app.service.is_busy()
     })?;
     d.settled()?;
     d.check(
-        "A continuous pitch-preserving ramp refuses and names the stepped form",
+        "A pitch-preserving ramp beyond 8x refuses and names the range",
         d.app().sequence_length() == 94
             && d.app()
                 .error
                 .as_deref()
-                .is_some_and(|error| error.contains("steps=N")),
-        json!({"frames":94,"error":"... steps=N"}),
+                .is_some_and(|error| error.contains("1/8x to 8x")),
+        json!({"frames":94,"error":"... 1/8x to 8x"}),
         json!({"frames":d.app().sequence_length(),"error":d.app().error}),
     )?;
     undo(d, 2)?;

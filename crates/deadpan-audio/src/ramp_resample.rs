@@ -68,6 +68,12 @@ impl RampSampler {
         Ok(sampler)
     }
 
+    /// `q(j) = (linear·j + quadratic·j²) / denominator`, the exact mapping
+    /// a pitch-preserving ramp's stretch schedule follows too.
+    pub(crate) fn coefficients(&self) -> (i128, i128, i128) {
+        (self.linear, self.quadratic, self.denominator)
+    }
+
     fn numerator(&self, j: i64) -> Result<i128, TimeError> {
         let j = i128::from(j);
         self.linear
@@ -258,6 +264,58 @@ mod tests {
             assert_eq!(i128::from(floor), x.floor());
             let exact = x.numerator().rem_euclid(x.denominator()) as f64 / x.denominator() as f64;
             assert!((fraction - exact).abs() < 1e-12, "{j}: {fraction} {exact}");
+        }
+    }
+
+    /// A pitch-preserving ramp's stretch schedule is built from the same
+    /// coefficients: at every 256-sample block boundary its input position is
+    /// the core ramp's exact integral, rounded half-even, and the positions
+    /// never decrease.
+    #[test]
+    fn the_stretch_schedule_meets_the_core_ramp_at_every_block_boundary() {
+        let rate = FrameRate::new(30_000, 1_001).unwrap();
+        let s = ExactRatio::new(30_000, 48_000 * 1_001).unwrap();
+        for (from, to, input_frames, output_frames) in
+            [((1, 2), (2, 1), 90_i64, 72_i64), ((8, 1), (1, 8), 650, 160)]
+        {
+            let ramp = ramp(from, to);
+            let (input_count, output_count) = counts(input_frames, output_frames, rate);
+            let sampler = RampSampler::new(
+                ramp,
+                input_frames,
+                output_frames,
+                rate,
+                input_count,
+                output_count,
+            )
+            .unwrap();
+            let (linear, quadratic, denominator) = sampler.coefficients();
+            let schedule =
+                deadpan_dsp::RampSchedule::new(linear, quadratic, denominator, output_count)
+                    .unwrap();
+            let mut previous = i64::MIN;
+            for j in (0..=i64::from(output_count)).step_by(256) {
+                let t = ExactRatio::integer(j).checked_mul(s).unwrap();
+                let exact = ramp
+                    .input_offset(
+                        t,
+                        ExactRatio::integer(output_frames),
+                        ExactRatio::integer(input_frames),
+                    )
+                    .unwrap()
+                    .checked_div(s)
+                    .unwrap()
+                    .round_even()
+                    .unwrap();
+                let boundary = schedule.boundary(j).unwrap();
+                assert_eq!(i128::from(boundary), exact, "{from:?}->{to:?} at {j}");
+                assert!(boundary >= previous);
+                previous = boundary;
+            }
+            eprintln!(
+                "{from:?}->{to:?}: linearisation bound {} samples",
+                schedule.linearisation_bound()
+            );
         }
     }
 

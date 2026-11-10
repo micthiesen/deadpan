@@ -381,7 +381,9 @@ fn wrapping_a_split_partition_retains_child_processing_history_for_both_policies
                     restarted_inner[usize::try_from(at).unwrap()]
                 }),
             ),
-            PitchPolicy::Shift { .. } | PitchPolicy::TapeRamp { .. } => {
+            PitchPolicy::Shift { .. }
+            | PitchPolicy::TapeRamp { .. }
+            | PitchPolicy::PreserveRamp { .. } => {
                 unreachable!("only the two speed policies wrap here")
             }
         };

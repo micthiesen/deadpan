@@ -446,6 +446,12 @@ pub enum PitchPolicy {
     TapeRamp {
         ramp: crate::SpeedRamp,
     },
+    /// The same continuous ramp with pitch-preserving audio: the canonical
+    /// stretcher follows the exact quadratic block by block (one 256-sample
+    /// quantum per call), so speeds stay within its 1/8x to 8x range.
+    PreserveRamp {
+        ramp: crate::SpeedRamp,
+    },
 }
 
 /// The fixed pitch shift range of the canonical time/pitch processor.
@@ -461,25 +467,43 @@ impl PitchPolicy {
     pub const fn semitones(self) -> i8 {
         match self {
             Self::Shift { semitones } => semitones,
-            Self::Preserve | Self::FollowSpeed | Self::TapeRamp { .. } => 0,
+            Self::Preserve
+            | Self::FollowSpeed
+            | Self::TapeRamp { .. }
+            | Self::PreserveRamp { .. } => 0,
         }
     }
 
     /// The continuous speed ramp, when this Retime has one.
     pub const fn ramp(self) -> Option<crate::SpeedRamp> {
         match self {
-            Self::TapeRamp { ramp } => Some(ramp),
+            Self::TapeRamp { ramp } | Self::PreserveRamp { ramp } => Some(ramp),
             Self::Preserve | Self::FollowSpeed | Self::Shift { .. } => None,
+        }
+    }
+
+    /// A continuous ramp whose audio keeps its pitch.
+    pub const fn ramp_preserves_pitch(self) -> bool {
+        matches!(self, Self::PreserveRamp { .. })
+    }
+
+    /// The fastest realised endpoint speed (and the reciprocal of the
+    /// slowest) a continuous ramp with this policy admits: the tape
+    /// resampler's 16x, or the stretcher's 8x when pitch is preserved.
+    pub const fn max_ramp_speed(self) -> i64 {
+        match self {
+            Self::PreserveRamp { .. } => crate::MAX_PRESERVE_RAMP_SPEED,
+            _ => crate::MAX_RAMP_SPEED,
         }
     }
 
     /// Whether a Retime with this policy is an audio processing stage:
     /// pitch-preserving with a nonunity rate or a nonzero shift, or a
-    /// continuous tape ramp (its own variable-rate resampler). Every other
-    /// Retime maps samples transparently or as tape speed.
+    /// continuous ramp (its own variable-rate stage). Every other Retime maps
+    /// samples transparently or as tape speed. A ramp is not [`Self::preserves`]:
+    /// it owns no constant-rate preparation clock.
     pub const fn processes(self, unity_rate: bool) -> bool {
-        matches!(self, Self::TapeRamp { .. })
-            || (self.preserves() && (!unity_rate || self.semitones() != 0))
+        self.ramp().is_some() || (self.preserves() && (!unity_rate || self.semitones() != 0))
     }
 
     /// A shift of `semitones` on pitch-preserving processing; zero is plain
@@ -1674,15 +1698,17 @@ impl ProjectDocument {
                     if let Some(ramp) = pitch.ramp() {
                         ramp.validate()?;
                         if *purpose != RetimePurpose::Edit
-                            || !ramp.speeds_in_range(
+                            || !ramp.speeds_within(
                                 crate::ExactRatio::integer(duration.frames()),
                                 crate::ExactRatio::integer(mapping.duration().frames()),
+                                pitch.max_ramp_speed(),
                             )
                         {
+                            let max = pitch.max_ramp_speed();
                             return Err(DocumentError::new(
                                 DocumentErrorCode::InvalidTree,
                                 format!(
-                                    "speed ramp {id} must be an ordinary Retime whose speeds stay within 1/16x to 16x"
+                                    "speed ramp {id} must be an ordinary Retime whose speeds stay within 1/{max}x to {max}x"
                                 ),
                             ));
                         }

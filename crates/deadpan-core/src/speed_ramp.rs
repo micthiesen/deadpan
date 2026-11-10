@@ -29,6 +29,9 @@ pub const MAX_RAMP_WEIGHT: u16 = u16::MAX;
 /// Realised endpoint speeds stay within the tape resampler's 1/16..16 range.
 pub const MAX_RAMP_SPEED: i64 = 16;
 
+/// A pitch-preserving ramp stays within the canonical stretcher's 1/8..8.
+pub const MAX_PRESERVE_RAMP_SPEED: i64 = 8;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SpeedRamp {
@@ -134,13 +137,18 @@ impl SpeedRamp {
 
     /// Whether both realised endpoint speeds lie in 1/16..16.
     pub fn speeds_in_range(&self, output: ExactRatio, input: ExactRatio) -> bool {
+        self.speeds_within(output, input, MAX_RAMP_SPEED)
+    }
+
+    /// Whether both realised endpoint speeds lie in `1/max..max`.
+    pub fn speeds_within(&self, output: ExactRatio, input: ExactRatio, max: i64) -> bool {
         let Ok((first, last)) = self.endpoint_rates(output, input) else {
             return false;
         };
         [first, last].into_iter().all(|rate| {
-            rate.compare_integer(MAX_RAMP_SPEED).is_le()
+            rate.compare_integer(max).is_le()
                 && rate
-                    .checked_mul(ExactRatio::integer(MAX_RAMP_SPEED))
+                    .checked_mul(ExactRatio::integer(max))
                     .is_ok_and(|scaled| scaled.compare_integer(1).is_ge())
         })
     }

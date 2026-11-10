@@ -76,6 +76,9 @@ mod progress;
 #[path = "stages/general_split_sound.rs"]
 mod general_split_sound;
 
+#[path = "stages/preserve_ramp.rs"]
+mod preserve_ramp;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

@@ -1419,7 +1419,11 @@ integral (`SpeedRamp::input_offset`, `retime_child_position`, the plan's
 `retime_local`, audio `RampSampler`) at every frame center and sample; never
 use a Retime's mean `scale` for them. Validation keeps exactly one Original
 beat inside; interior positions have no rational inverse, so inverse
-mappings refuse. See [continuous ramps](docs/RETIME_EDITING.md#continuous-ramps).
+mappings refuse. `PitchPolicy::PreserveRamp` drives the canonical stretcher
+with `StreamRecipe::ramp`: keep the fixed 256-sample call grid and feed each
+call exactly the input between two rounded exact quadratic positions
+(`RampSchedule`); never vary the rate inside a call or accumulate positions.
+See [continuous ramps](docs/RETIME_EDITING.md#continuous-ramps).
 
 Transparent Retime partitions are unity output selections over retained child
 domains, not ordinary authored trims. Keep allocation, source sampling support

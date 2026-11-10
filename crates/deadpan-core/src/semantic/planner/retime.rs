@@ -190,16 +190,19 @@ where
         to: ExactRatio,
         pitch: PitchPolicy,
     ) -> Result<(), EditError> {
-        if pitch != PitchPolicy::FollowSpeed {
-            // The canonical stretcher schedules one fixed rate per stage; a
-            // pitch-preserving continuous ramp would need a qualified
-            // variable-rate schedule that does not exist yet.
-            return Err(invalid(
-                "a continuous ramp keeps tape pitch; for pitch=preserve use :ramp FROM TO steps=N",
-            ));
-        }
+        // Tape pitch resamples at each sample's exact position; preserved
+        // pitch drives the canonical stretcher block by block along the same
+        // quadratic. A fixed shift has no ramp form.
+        let policy = |ramp| match pitch {
+            PitchPolicy::FollowSpeed => Ok(PitchPolicy::TapeRamp { ramp }),
+            PitchPolicy::Preserve => Ok(PitchPolicy::PreserveRamp { ramp }),
+            _ => Err(invalid(
+                "a continuous ramp keeps tape pitch or preserves it; use pitch=tape or pitch=preserve",
+            )),
+        };
         let (selected, start, end) = self.selected_direct_child("speed ramp")?;
         let ramp = crate::SpeedRamp::new(from, to).map_err(|error| invalid(&error.message))?;
+        let policy = policy(ramp)?;
         let input = ExactRatio::integer(end.0 - start.0);
         if input == ExactRatio::ZERO {
             return Err(invalid("an empty beat cannot be ramped"));
@@ -219,10 +222,13 @@ where
             ));
         }
         let duration = FrameDuration::new(frames).map_err(crate::DocumentError::from)?;
-        if !ramp.speeds_in_range(ExactRatio::integer(frames), input) {
-            return Err(invalid(
-                "a continuous ramp's speeds must stay within 1/16x to 16x",
-            ));
+        let max = policy.max_ramp_speed();
+        if !ramp.speeds_within(ExactRatio::integer(frames), input, max) {
+            return Err(invalid(&if policy.ramp_preserves_pitch() {
+                format!("a pitch-preserving ramp's speeds must stay within 1/{max}x to {max}x")
+            } else {
+                format!("a continuous ramp's speeds must stay within 1/{max}x to {max}x")
+            }));
         }
         self.apply_retime(
             trace_index,
@@ -232,7 +238,7 @@ where
                 duration,
                 update: false,
             },
-            PitchPolicy::TapeRamp { ramp },
+            policy,
         )
     }
 
@@ -243,7 +249,7 @@ where
             NodeKind::Retime { pitch, .. } if pitch.ramp().is_some())
         {
             return Err(invalid(
-                "a continuous ramp keeps tape pitch; :retime SPEED pitch=... replaces it with one speed",
+                "a continuous ramp has no pitch shift; :retime SPEED pitch=... replaces it with one speed",
             ));
         }
         let speed = match &self.current.nodes()[&selected].kind {

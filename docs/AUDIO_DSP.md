@@ -57,6 +57,29 @@ reference hashes when their exact rates equal the historical count ratios.
 Prepared-cache identity will also need original byte identity, selection,
 source interpretation and complete recipe; the engine ID alone is insufficient.
 
+`StreamRecipe::ramp` (since 2026-11-10, `RAMP_ENGINE_ID`,
+`deadpan-canonical-stretch-ramp-1`) drives the same streaming renderer with a
+`RampSchedule`: the exact quadratic `q(n) = (linear·n + quadratic·n²) /
+denominator` in input samples per output sample `n`, three reduced signed
+128-bit coefficients passed across the ABI as high/low 64-bit halves. Native
+`canonical.hpp` keeps the fixed 256-sample call grid and feeds each call the
+input between `I + round_even(q(c + O))` at its two quantum boundaries `c`,
+where `I` and `O` are the pinned analysis's input and output latencies, so
+output sample `n` is synthesised from input near `q(n)`. Outside `[0, N]` the
+schedule extends linearly with its endpoint slopes. Admission requires a
+positive denominator, a starting slope in 1/8..8 (it also sets priming
+latency, reported as the recipe's `rate()`), a slope at `N` in 1/9..9 (the
+part of one sample past the exact end may overshoot an authored 8x) and
+overflow-free evaluation 131,072 samples beyond both ends; native arithmetic is
+checked and fails the read rather than wrapping. Ramp windows stay within the
+65,536-frame priming bound and 2,305 frames afterwards. The schedule's time
+position deviates from the exact quadratic only inside a call, by at most
+`|r₁ − r₀|·256²/(8N) + ½` samples (`RampSchedule::linearisation_bound`); see
+[pitch-preserving ramps](RETIME_EDITING.md#pitch-preserving-continuous-ramps).
+The constant-rate paths are unchanged: `feed` reduces to their original
+`lookahead + boundary` arithmetic, and all 50 historical hashes still match.
+The owned `CanonicalStretch` has no ramp mode.
+
 `CanonicalStretch` retains the input through native destruction. It is neither
 Send nor Sync; transfer owned PCM to a preparation worker and construct the
 renderer there. Reads accept equal caller-owned buffers of at most 256 frames.

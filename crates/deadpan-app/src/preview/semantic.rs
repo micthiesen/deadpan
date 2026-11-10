@@ -524,6 +524,7 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
                     format!("pitch {semitones:+} semitones")
                 }
                 deadpan_core::PitchPolicy::TapeRamp { .. } => "tape ramp".to_owned(),
+                deadpan_core::PitchPolicy::PreserveRamp { .. } => "preserve ramp".to_owned(),
             };
             let wrap = if *wrap { " · new Retime" } else { "" };
             return Some(format!("Speed {}× · {pitch}{wrap}", speed_text(*speed)));
