@@ -1024,7 +1024,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             };
         }
         "sound-place" | "sounds" | "sound-at" | "sound-gain" | "sound-edges" | "sound-delete"
-        | "sound-allow" | "sound-silence" | "sound-cut" | "sound-attach" => {
+        | "sound-allow" | "sound-silence" | "sound-cut" | "sound-attach" | "sound-detach" => {
             return super::sound::parse(&verb, argument)
                 .map(|sound| Entry::Action(Action::Sound(sound)));
         }

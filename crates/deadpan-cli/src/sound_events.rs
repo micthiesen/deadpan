@@ -490,6 +490,12 @@ pub enum SoundEdit {
     Allowance { id: SoundId, at: i64, allowed: bool },
     /// `:sound-delete`.
     Delete { id: SoundId },
+    /// `:sound-detach`: remove one sound attached to beat `owner` (a
+    /// reversible `DeleteBeatSound`).
+    Detach {
+        owner: deadpan_core::NodeId,
+        id: SoundId,
+    },
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -655,7 +661,173 @@ pub fn command(
             }
             (Command::DeleteSound { id: id.clone() }, id.clone())
         }
+        SoundEdit::Detach { owner, id } => {
+            (detach(document, owner, id).map_err(refused)?, id.clone())
+        }
     })
+}
+
+/// The reversible removal of one attached sound, after checking it exists.
+pub fn detach(
+    document: &ProjectDocument,
+    owner: &deadpan_core::NodeId,
+    id: &SoundId,
+) -> Result<deadpan_core::Command, String> {
+    if !document
+        .beat_sounds()
+        .get(owner)
+        .is_some_and(|events| events.contains_key(id))
+    {
+        return Err("This attached sound no longer exists; no edit was made.".into());
+    }
+    Ok(deadpan_core::Command::DeleteBeatSound {
+        owner: owner.clone(),
+        id: id.clone(),
+    })
+}
+
+/// One sound attached to a beat as the beat shows it: owned by the beat
+/// itself, or by the complete owner behind its fragment (Partition) crops,
+/// Repeat definition or speed change. Times are exact beat-local frames.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AttachedSound {
+    pub owner: deadpan_core::NodeId,
+    pub id: SoundId,
+    pub label: String,
+    /// The sound's audible selection relative to the beat's start, exact.
+    pub start: ExactRatio,
+    pub end: ExactRatio,
+    /// The part inside the beat's own visible window (Split crops hide the
+    /// rest), or None when this copy is entirely cut away here.
+    pub audible: Option<(ExactRatio, ExactRatio)>,
+    /// Total plays of the nearest enclosing Repeat inside the beat; the sound
+    /// then sounds in every play that uses the default definition.
+    pub plays: Option<u32>,
+}
+
+/// Every sound attached to `beat` or to a complete owner beneath its
+/// fragment crops, Repeat definitions and speed changes, in owner order. A
+/// nested Sequence is a group of its own and is not descended.
+pub fn attached_sounds(
+    document: &ProjectDocument,
+    beat: &deadpan_core::NodeId,
+) -> Vec<AttachedSound> {
+    let Ok(durations) = document.durations_shared() else {
+        return Vec::new();
+    };
+    let rate = document.presentation_basis().frame_rate;
+    let frames = |id: &deadpan_core::NodeId| {
+        durations
+            .get(id)
+            .map(|duration| ExactRatio::integer(duration.frames()))
+    };
+    let Some(extent) = frames(beat) else {
+        return Vec::new();
+    };
+    let mut found = Vec::new();
+    // Origin of the node's local zero and its scale, both in beat frames,
+    // the visible window, and the enclosing play count.
+    let mut node = beat.clone();
+    let (mut origin, mut scale) = (ExactRatio::ZERO, ExactRatio::integer(1));
+    let mut window = (ExactRatio::ZERO, extent);
+    let mut plays = None;
+    for _ in 0..=deadpan_core::MAX_DOCUMENT_DEPTH {
+        let Some(current) = document.nodes().get(&node) else {
+            break;
+        };
+        let to_beat =
+            |local: ExactRatio| local.checked_mul(scale).and_then(|v| v.checked_add(origin));
+        if let Some(events) = document.beat_sounds().get(&node) {
+            for (id, event) in events {
+                let Some(duration) = durations.get(&node) else {
+                    continue;
+                };
+                let Ok(selected) =
+                    event
+                        .mapping
+                        .selection_frames_with_offset(*duration, event.offset, rate)
+                else {
+                    continue;
+                };
+                let (Ok(start), Ok(end)) = (to_beat(selected.start), to_beat(selected.end)) else {
+                    continue;
+                };
+                let low = if start.compare(window.0).is_lt() {
+                    window.0
+                } else {
+                    start
+                };
+                let high = if end.compare(window.1).is_gt() {
+                    window.1
+                } else {
+                    end
+                };
+                found.push(AttachedSound {
+                    owner: node.clone(),
+                    id: id.clone(),
+                    label: event.label.clone(),
+                    start,
+                    end,
+                    audible: low.compare(high).is_lt().then_some((low, high)),
+                    plays,
+                });
+            }
+        }
+        let (child, next_origin, next_scale) = match &current.kind {
+            deadpan_core::NodeKind::Retime {
+                child,
+                duration,
+                mapping,
+                purpose: deadpan_core::RetimePurpose::Partition,
+                ..
+            } if mapping.duration() == *duration => {
+                let Ok(shift) = ExactRatio::integer(mapping.start().0).checked_mul(scale) else {
+                    break;
+                };
+                let Ok(origin) = origin.checked_sub(shift) else {
+                    break;
+                };
+                (child.clone(), origin, scale)
+            }
+            deadpan_core::NodeKind::Retime {
+                child, duration, ..
+            } => {
+                let Some(input) = frames(child).filter(|input| input.compare_integer(0).is_gt())
+                else {
+                    break;
+                };
+                let Ok(scale) = ExactRatio::integer(duration.frames())
+                    .checked_div(input)
+                    .and_then(|ratio| ratio.checked_mul(scale))
+                else {
+                    break;
+                };
+                (child.clone(), origin, scale)
+            }
+            deadpan_core::NodeKind::Repeat {
+                child, iterations, ..
+            } => {
+                // The first play shows the definition; its window is that play.
+                let Some(Ok(end)) = frames(child).map(|length| {
+                    length
+                        .checked_mul(scale)
+                        .and_then(|length| length.checked_add(origin))
+                }) else {
+                    break;
+                };
+                if end.compare(window.1).is_lt() {
+                    window.1 = end;
+                }
+                plays = Some(iterations.len());
+                (child.clone(), origin, scale)
+            }
+            _ => break,
+        };
+        node = child;
+        origin = next_origin;
+        scale = next_scale;
+    }
+    found
 }
 
 /// `sound <project> --json <request> [--dry-run]`: derive the event the GUI

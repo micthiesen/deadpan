@@ -207,13 +207,18 @@ impl SequenceRelations<'_, '_> {
                     return Err(invalid("sound clock Split pieces are not adjacent"));
                 }
                 let old = &self.historical.nodes[historical_child];
+                // A refined Partition hands its child to the pieces. A
+                // fragment that owns sounds itself is instead the complete
+                // owner of both pieces, like any other split beat.
+                let refined = split.pieces[0].full_owner != *historical_child;
                 let (full, range) = match &old.kind {
                     FrozenAudioKind::Retime {
                         child,
                         mapping,
                         pitch,
                         purpose: RetimePurpose::Partition,
-                    } if old.duration == mapping.duration()
+                    } if refined
+                        && old.duration == mapping.duration()
                         && !pitch.processes(true)
                         && !self
                             .historical

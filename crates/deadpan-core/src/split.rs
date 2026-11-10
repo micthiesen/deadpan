@@ -69,16 +69,28 @@ pub(crate) fn refuse_treated_sound_in_processor(
     Ok(())
 }
 
-/// Whether splitting `node` refines an existing neutral Partition, which
+/// Whether splitting `id` refines an existing neutral Partition, which
 /// keeps the left identity and consumes the right Partition ID first.
-pub(crate) fn refines(node: &BeatNode) -> bool {
-    matches!(
-        node.kind,
-        NodeKind::Retime {
-            purpose: RetimePurpose::Partition,
-            ..
-        }
-    ) && node.framing.is_none()
+///
+/// A fragment that carries attached sounds itself is split like any other
+/// beat instead: the fragment becomes the complete owner behind two new
+/// delivery Partitions, so each side keeps the complete recipe and phase on
+/// its retained clock and the mixed PCM is unchanged (refinement would have to
+/// move the owner's clock onto one narrowed side).
+pub(crate) fn refines(document: &ProjectDocument, id: &NodeId) -> bool {
+    refines_owner(&document.nodes[id], document.beat_sounds.contains_key(id))
+}
+
+fn refines_owner(node: &BeatNode, owns_sounds: bool) -> bool {
+    !owns_sounds
+        && matches!(
+            node.kind,
+            NodeKind::Retime {
+                purpose: RetimePurpose::Partition,
+                ..
+            }
+        )
+        && node.framing.is_none()
         && node.audio_treatments.is_empty()
         && node.audio_editorial_edges.is_empty()
 }
@@ -148,7 +160,19 @@ pub(crate) fn apply_validated(
     let container = parent
         .is_some_and(|parent| !matches!(document.nodes[parent].kind, NodeKind::Sequence { .. }));
     let refinement = match &original.kind {
-        NodeKind::Retime { child, mapping, .. } if refines(original) => Some((child, *mapping)),
+        NodeKind::Retime { child, mapping, .. }
+            if refines_owner(
+                original,
+                // The transport detaches sounds around the reducer.
+                document.beat_sounds.contains_key(target)
+                    || edit_context
+                        .sound_clocks
+                        .as_ref()
+                        .is_some_and(|sounds| sounds.owns_events(target)),
+            ) =>
+        {
+            Some((child, *mapping))
+        }
         _ => None,
     };
     let context = refinement.map_or(target, |(child, _)| child);

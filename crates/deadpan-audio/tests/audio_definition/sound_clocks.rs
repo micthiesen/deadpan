@@ -34,6 +34,9 @@ mod neutral_ungroup;
 #[path = "sound_clocks/moved_owner.rs"]
 mod moved_owner;
 
+#[path = "sound_clocks/fragment_split.rs"]
+mod fragment_split;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

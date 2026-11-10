@@ -1,4 +1,5 @@
-//! A sting attached to a beat with `:sound-attach`, then Repeat, Undo and a
+//! A sting attached to a beat with `:sound-attach`: its card badge and inspector
+//! entry, `:sound-gain` on it, Split of its fragment, `:sound-detach`, then Repeat, Undo and a
 //! whole-beat delete through the real keys: the sound follows its beat.
 
 use super::*;
@@ -68,10 +69,10 @@ pub(super) fn run(d: &mut Driver<'_>, catalog_label: &str) -> Result<(), String>
         json!({"beat_sounds":attached}),
     )?;
     d.capture("A sting attached to the selected beat")?;
+    inspect_split_and_detach(d, &target, start, &attached, &nodes)?;
+    go_to(d, start)?;
 
-    // Earlier pauses cut the Original into Partition fragments; refining a
-    // fragment that carries a sting still refuses (core tests cover Split of
-    // whole beats). Repeat the whole beat: its sting sounds in every play.
+    // Repeat the whole beat: its sting sounds in every play.
     let before = d.revision();
     d.chord(&[Key::R, Key::R])?;
     d.changed(&before)?;
@@ -122,6 +123,173 @@ pub(super) fn run(d: &mut Driver<'_>, catalog_label: &str) -> Result<(), String>
         json!(attached),
         json!(document(d)?.beat_sounds()),
     )
+}
+
+/// `gg`, then a counted `l` to Edit frame `frame`.
+fn go_to(d: &mut Driver<'_>, frame: i64) -> Result<(), String> {
+    d.chord(&[Key::G, Key::G])?;
+    for digit in frame.to_string().chars() {
+        d.key(digit_key(digit)?)?;
+    }
+    if frame > 0 {
+        d.key(Key::L)?;
+    }
+    d.settled()
+}
+
+/// The one visible accessible label starting with `prefix`.
+fn label_with(d: &Driver<'_>, prefix: &str) -> Option<String> {
+    let labels: Vec<String> = d
+        .harness
+        .root()
+        .children_recursive()
+        .filter_map(|node| node.accesskit_node().label())
+        .filter(|label| label.starts_with(prefix))
+        .collect();
+    match labels.as_slice() {
+        [only] => Some(only.clone()),
+        _ => None,
+    }
+}
+
+/// The card badge and inspector list show the sting; selecting it lets
+/// `:sound-gain` apply; `s` splits the fragment that carries it (both pieces
+/// keep the complete recipe); `:sound-detach` removes one piece's copy; Undo
+/// restores each step back to the plain attachment.
+fn inspect_split_and_detach(
+    d: &mut Driver<'_>,
+    target: &deadpan_core::NodeId,
+    start: i64,
+    attached: &std::collections::BTreeMap<
+        deadpan_core::NodeId,
+        std::collections::BTreeMap<SoundId, deadpan_core::BeatSound>,
+    >,
+    nodes: &std::collections::BTreeMap<deadpan_core::NodeId, deadpan_core::BeatNode>,
+) -> Result<(), String> {
+    let fragment = matches!(
+        document(d)?.nodes()[target].kind,
+        deadpan_core::NodeKind::Retime {
+            purpose: deadpan_core::RetimePurpose::Partition,
+            ..
+        }
+    );
+    let (index, beat_label) = d
+        .app()
+        .beat_rows
+        .iter()
+        .enumerate()
+        .find(|(_, beat)| &beat.id == target)
+        .map(|(index, beat)| (index, beat.label.clone()))
+        .ok_or("The sting's beat has no card")?;
+    let spoken = label_with(d, &format!("Beat {}: {beat_label}, Fragment,", index + 1));
+    d.check(
+        "The fragment's card speaks its attached-sound count beside the painted badge",
+        spoken
+            .as_deref()
+            .is_some_and(|label| label.ends_with(", 1 attached sound"))
+            && fragment,
+        json!({"label":"Beat N: …, 1 attached sound","fragment":true}),
+        json!({"label":spoken,"fragment":fragment}),
+    )?;
+    let entry = label_with(d, "Attached sound 1 of 1: ");
+    d.check(
+        "The beat inspector lists the attached sound with its start and length",
+        entry
+            .as_ref()
+            .is_some_and(|label| label.contains("Starts 0 f into the beat")),
+        json!("Attached sound 1 of 1: … Starts 0 f into the beat …"),
+        json!(entry),
+    )?;
+    d.click(&entry.ok_or("No inspector entry")?)?;
+    d.settled()?;
+    let id = attached[target]
+        .keys()
+        .next()
+        .ok_or("The sting has no identity")?
+        .clone();
+    d.check(
+        "Selecting the entry selects that attached sound",
+        d.app().selected_attached == Some((target.clone(), id.clone())),
+        json!([target, id]),
+        json!(d.app().selected_attached),
+    )?;
+    d.capture("The beat inspector lists and selects the attached sound")?;
+    commit(d, "sound-gain -6")?;
+    let louder = document(d)?.beat_sounds()[target][&id].clone();
+    d.check(
+        ":sound-gain applies to the selected attached sound in place",
+        louder.treatments.trim().millidecibels() == -6000
+            && louder.mapping == attached[target][&id].mapping
+            && document(d)?.nodes() == nodes,
+        json!({"gain_mdb":-6000,"mapping":attached[target][&id].mapping}),
+        json!(louder),
+    )?;
+
+    d.check(
+        "An attached-sound edit keeps the inspector focused, not Placed sounds",
+        d.app().pane == Pane::Inspector,
+        json!("Inspector"),
+        json!(format!("{:?}", d.app().pane)),
+    )?;
+    // Split the fragment inside the beat, after the sting's start.
+    d.command("sequence")?;
+    go_to(d, start + 6)?;
+    let before = d.revision();
+    d.key(Key::S)?;
+    d.changed(&before)?;
+    let split = document(d)?.beat_sounds().clone();
+    d.check(
+        "Splitting a fragment that carries a sting keeps the complete sting on both pieces",
+        split.len() == 2
+            && split.contains_key(target)
+            && split
+                .values()
+                .all(|events| events.len() == 1 && events.get(&id) == Some(&louder)),
+        json!({"owners":2,"event":louder}),
+        json!(split),
+    )?;
+    d.capture("The split fragment keeps its sting")?;
+    // The cursor sits on the right piece; one frame back is the left piece,
+    // where the sting starts. Its only attached sound detaches.
+    d.key(Key::H)?;
+    d.settled()?;
+    let before = d.revision();
+    d.command("sound-detach")?;
+    d.changed(&before)?;
+    let remaining = document(d)?.beat_sounds().clone();
+    d.check(
+        ":sound-detach removes the left piece's sound only, as one edit",
+        remaining.len() == 1 && !remaining.contains_key(target),
+        json!({"owners":1,"removed":target}),
+        json!(remaining),
+    )?;
+    d.capture("The sound detached from the left piece")?;
+    let louder_only = {
+        let mut map = attached.clone();
+        map.insert(target.clone(), [(id.clone(), louder.clone())].into());
+        map
+    };
+    for (label, expected, same_picture) in [
+        ("Undo restores the detached sound", &split, false),
+        (
+            "Undo restores the unsplit fragment and its louder sting",
+            &louder_only,
+            true,
+        ),
+        ("Undo restores the sting's gain", attached, true),
+    ] {
+        let before = d.revision();
+        d.key(Key::U)?;
+        d.changed(&before)?;
+        d.check(
+            label,
+            document(d)?.beat_sounds() == expected
+                && (!same_picture || document(d)?.nodes() == nodes),
+            json!(expected),
+            json!(document(d)?.beat_sounds()),
+        )?;
+    }
+    Ok(())
 }
 
 fn digit_key(digit: char) -> Result<Key, String> {

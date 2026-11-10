@@ -218,6 +218,11 @@ impl SoundClockEditCapture {
         }))
     }
 
+    /// Whether `node` owns attached sounds in the document being edited.
+    pub(crate) fn owns_events(&self, node: &NodeId) -> bool {
+        self.owners.contains_key(node)
+    }
+
     /// Split retains complete contexts behind disjoint delivery Partitions.
     /// Record both aliases while the structural reducer has sounds detached.
     pub(crate) fn split(
@@ -234,18 +239,17 @@ impl SoundClockEditCapture {
         // edit may remove, separate or wrap pieces before restore.
         let eligible = self.plain_split
             && target != document.root()
-            && match &document.nodes[target].kind {
-                NodeKind::Retime {
-                    child,
-                    duration,
-                    mapping,
-                    pitch,
-                    purpose: crate::RetimePurpose::Partition,
-                } => {
-                    child == full_owner && *duration == mapping.duration() && !pitch.processes(true)
-                }
-                _ => target == full_owner,
-            };
+            && (target == full_owner
+                || matches!(&document.nodes[target].kind,
+                    NodeKind::Retime {
+                        child,
+                        duration,
+                        mapping,
+                        pitch,
+                        purpose: crate::RetimePurpose::Partition,
+                    } if child == full_owner
+                        && *duration == mapping.duration()
+                        && !pitch.processes(true)));
         if eligible {
             let right_owner = mapping
                 .get(full_owner)

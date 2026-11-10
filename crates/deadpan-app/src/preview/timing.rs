@@ -223,6 +223,7 @@ pub(super) fn attachments(
             }
         }
     }
+    found.extend(stings(document, beats));
     let rate = document.presentation_basis().frame_rate;
     for event in document.sounds().values() {
         if let Ok(selected) = event.mapping.selection_frames_with_offset(
@@ -239,6 +240,132 @@ pub(super) fn attachments(
     }
     found.retain(|attachment| attachment.frames.0 < attachment.frames.1);
     found.sort_by(|a, b| a.frames.0.total_cmp(&b.frames.0));
+    found
+}
+
+/// Sounds attached to beats (`:sound-attach`), at their exact Edit frames:
+/// in every play of an enclosing Repeat that uses the owner (an override
+/// branch without it, as `rib` leaves later plays, carries none), scaled by
+/// speed changes and clipped to fragment (Partition) windows, so a sting cut
+/// away by a Split draws only where it sounds.
+fn stings(document: &deadpan_core::ProjectDocument, beats: &[BeatRow]) -> Vec<Attachment> {
+    let Ok(durations) = document.durations_shared() else {
+        return Vec::new();
+    };
+    let rate = document.presentation_basis().frame_rate;
+    let frames = |id: &deadpan_core::NodeId| {
+        durations
+            .get(id)
+            .map_or(0.0, |duration| duration.frames() as f64)
+    };
+    // Node, Edit frame of its local zero, Edit frames per local frame and
+    // the visible window it may sound in.
+    let mut visit: Vec<(deadpan_core::NodeId, f64, f64, (f64, f64))> = beats
+        .iter()
+        .map(|beat| {
+            let start = beat.start as f64;
+            (
+                beat.id.clone(),
+                start,
+                1.0,
+                (start, start + beat.frames as f64),
+            )
+        })
+        .collect();
+    let mut found = Vec::new();
+    let mut index = 0;
+    while index < visit.len() && visit.len() <= MAX_VISITED {
+        let (id, origin, scale, window) = visit[index].clone();
+        index += 1;
+        let Some(node) = document.nodes().get(&id) else {
+            continue;
+        };
+        if let (Some(events), Some(extent)) = (document.beat_sounds().get(&id), durations.get(&id))
+        {
+            for event in events.values() {
+                let Ok(selected) =
+                    event
+                        .mapping
+                        .selection_frames_with_offset(*extent, event.offset, rate)
+                else {
+                    continue;
+                };
+                let start = (origin + ratio(selected.start) * scale).max(window.0);
+                let end = (origin + ratio(selected.end) * scale).min(window.1);
+                found.push(Attachment {
+                    frames: (start, end),
+                    kind: "sting",
+                    label: format!("{} · attached", event.label),
+                });
+            }
+        }
+        let clip = |start: f64, end: f64| (start.max(window.0), end.min(window.1));
+        match &node.kind {
+            deadpan_core::NodeKind::Sequence { children } => {
+                let mut at = origin;
+                for child in children {
+                    let length = frames(child) * scale;
+                    visit.push((child.clone(), at, scale, clip(at, at + length)));
+                    at += length;
+                }
+            }
+            deadpan_core::NodeKind::Retime {
+                child,
+                duration,
+                mapping,
+                purpose: deadpan_core::RetimePurpose::Partition,
+                ..
+            } if mapping.duration() == *duration => {
+                visit.push((
+                    child.clone(),
+                    origin - mapping.start().0 as f64 * scale,
+                    scale,
+                    window,
+                ));
+            }
+            deadpan_core::NodeKind::Retime { child, .. } => {
+                let input = frames(child);
+                if input > 0.0 {
+                    visit.push((child.clone(), origin, scale * frames(&id) / input, window));
+                }
+            }
+            deadpan_core::NodeKind::Repeat {
+                child,
+                iterations,
+                gap,
+                ..
+            } => {
+                let Ok(layout) = deadpan_core::RepeatLayout::compile_with_gap_overrides(
+                    iterations,
+                    child,
+                    document.overrides().get(&id),
+                    gap.as_ref()
+                        .map_or(deadpan_core::FrameDuration::ZERO, |recipe| recipe.duration),
+                    document.gap_overrides().get(&id),
+                    &durations,
+                ) else {
+                    continue;
+                };
+                for play in
+                    (0..iterations.len().min(MAX_PLAY_TICKS)).filter_map(|n| iterations.at(n))
+                {
+                    let Some(placed) = layout.play(&play) else {
+                        continue;
+                    };
+                    let root = document
+                        .overrides()
+                        .get(&id)
+                        .and_then(|plays| plays.get(&play))
+                        .unwrap_or(child)
+                        .clone();
+                    let at = origin + placed.start as f64 * scale;
+                    let end = at + frames(&root) * scale;
+                    visit.push((root, at, scale, clip(at, end)));
+                }
+            }
+            _ => {}
+        }
+    }
     found
 }
 
@@ -468,6 +595,7 @@ impl DeadpanApp {
                 "cutaway" => egui::Color32::from_rgb(0x2f, 0x5d, 0x7c),
                 "removed" => egui::Color32::from_rgb(0x44, 0x44, 0x44),
                 "caption" => egui::Color32::from_rgb(0x6b, 0x5b, 0x2e),
+                "sting" => egui::Color32::from_rgb(0x3c, 0x6e, 0x6a),
                 _ => egui::Color32::from_rgb(0x2f, 0x6b, 0x4f),
             };
             painter.rect_filled(bar, 2.0, color);
@@ -594,7 +722,25 @@ impl DeadpanApp {
             frames.end,
             beats.len(),
             if detail {
-                format!(" · {} attachments", attached.len())
+                let stings: Vec<_> = attached
+                    .iter()
+                    .filter(|attachment| attachment.kind == "sting")
+                    .map(|sting| {
+                        format!(
+                            "{} at frames {:.1}–{:.1}",
+                            sting.label, sting.frames.0, sting.frames.1
+                        )
+                    })
+                    .collect();
+                format!(
+                    " · {} attachments{}",
+                    attached.len(),
+                    if stings.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" · {}", stings.join(", "))
+                    }
+                )
             } else {
                 String::new()
             },

@@ -24,10 +24,24 @@ preview/export verifies `routed-bed-drop` (12 audio blocks) and
 passes 299 checks, adding a routed `:sound-cut` with Undo and `:sound-attach`,
 `rr` and `dd` with Undo through real keys. Still refused: legacy whole-node
 commands, root-owned stings, Ungroup of a sound-owning Sequence, timing
-changes inside the sting's beat, refining a Partition fragment that carries
-a sting, edits inside another beat of an unclocked sting's top-level group,
-and moving a routed bed. The beat card and inspector do not yet show
-attached sounds. DP-09 stays partial; no requirement or gate is newly complete.
+changes inside the sting's beat, edits inside another beat of an unclocked
+sting's top-level group, and moving a routed bed. DP-09 stays partial; no
+requirement or gate is newly complete.
+
+Second pass: attached sounds are visible and removable. A card shows a spoken
+`♫ N` badge, the beat inspector lists each attached sound (start within the
+beat, length, every play or crop), selecting one lets `:sound-gain`,
+`:sound-edges` and `:sound-delete` apply, and Detach or the new
+`:sound-detach` (headless `sound` `detach`) removes it with one Undo;
+`:timeline detail` draws stings at their exact frames in every play. Splitting
+a fragment that carries a sting now works: it splits like any other beat (two
+new delivery Partitions over complete copies), so both pieces keep the
+complete recipe on one exact retained clock and the mixed PCM is unchanged
+([splitting a sting fragment](SOUND_EVENTS.md#splitting-a-sting-fragment)).
+Evidence: core fragment Split tests (before, after and across the cut, at
+30000/1001, exact journals and Undo), decoded PCM unchanged (untreated and
+EQ), service and headless list/detach tests, and the `sound-placement`
+replay's badge, inspector entry, fragment Split, `:sound-detach` and Undo.
 
 ## Command-line Tab completion and complete argument schemas, 2026-11-10
 

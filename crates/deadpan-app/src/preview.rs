@@ -32,6 +32,7 @@ mod moments;
 mod takes;
 #[cfg(test)]
 pub(crate) use camera::dispatch_debug as camera_dispatch_debug;
+mod attached;
 mod camera_fields;
 mod captions;
 mod cards;
@@ -189,6 +190,8 @@ pub struct DeadpanApp {
     selected_source: Option<AssetId>,
     selected_sound: Option<AssetId>,
     selected_event: Option<deadpan_core::SoundId>,
+    /// A sound attached to the selected beat, chosen in its inspector list.
+    selected_attached: Option<(NodeId, deadpan_core::SoundId)>,
     sound_inspection: Option<sound_events::Inspection>,
     reveal_event: bool,
     sound_command_target: Option<sound_events::CommandTarget>,
@@ -419,6 +422,7 @@ impl DeadpanApp {
             selected_source: None,
             selected_sound: None,
             selected_event: None,
+            selected_attached: None,
             sound_inspection: None,
             reveal_event: false,
             sound_command_target: None,
@@ -1156,7 +1160,11 @@ impl DeadpanApp {
                 if let Some(sound) = commit.sound {
                     self.selected_event = sound.selected;
                     self.reveal_event = true;
-                    self.pane = Pane::Sounds;
+                    self.pane = if sound.attached {
+                        Pane::Inspector
+                    } else {
+                        Pane::Sounds
+                    };
                 } else {
                     self.selected_event = None;
                     self.pane = Pane::Sequence;
@@ -3203,6 +3211,7 @@ impl DeadpanApp {
                 navigation::SoundAction::Place
                     | navigation::SoundAction::Focus
                     | navigation::SoundAction::Attach
+                    | navigation::SoundAction::Detach
             )
         {
             match sound_target {
@@ -4323,6 +4332,10 @@ impl DeadpanApp {
                                 }
                             }
                         }
+                        // The selected beat's attached sounds (its ♫ badge).
+                        if self.attached_target().is_some() || self.only_attached().is_some() {
+                            hints.push((":sound-detach".into(), "detach its sound".into()));
+                        }
                         hints.tier(key_labels::Tier::Core);
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if selection == navigation::EditSelection::Object { if self.edit_range.active { "retain object" } else { "select time" } } else if self.edit_range.active { "finish range" } else { "select range" });
                         self.add_editor_hint(&mut hints, EditorKey::Repeat, if selection == navigation::EditSelection::None { "repeat beat" } else if selection == navigation::EditSelection::Object { "repeat object" } else { "repeat range" });
@@ -4764,7 +4777,7 @@ impl DeadpanApp {
                 None
             };
             let analysis = self.edit_analysis_marks();
-            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), ranges: self.selected_range_set().ok().flatten().map_or_else(Vec::new, |set|set.ranges), analysis, repeats: self.workspace.as_ref().map(|workspace| beats.iter().filter_map(|beat| Some((beat.id.clone(), timing::repeat_play_starts(&workspace.document, &beat.id)?))).collect()).unwrap_or_default(), ai: self.ai_badges() };
+            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), ranges: self.selected_range_set().ok().flatten().map_or_else(Vec::new, |set|set.ranges), analysis, repeats: self.workspace.as_ref().map(|workspace| beats.iter().filter_map(|beat| Some((beat.id.clone(), timing::repeat_play_starts(&workspace.document, &beat.id)?))).collect()).unwrap_or_default(), ai: self.ai_badges(), sounds: self.attached_badges(&beats) };
             if self.timing.mode != timing::TimelineMode::Story {
                 let range = markers.range.clone();
                 if let Some(frame) =
@@ -5256,6 +5269,9 @@ impl DeadpanApp {
                                 .size(12.0)
                                 .weak(),
                         );
+                        // The beat's own sounds first: they are what the
+                        // card's badge points at.
+                        self.attached_inspector(ui, ready);
                         if data.kind == "Hold" {
                             self.ai_inspector(ui, ready);
                         }

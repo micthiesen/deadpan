@@ -974,6 +974,12 @@ impl Service {
     ) -> Result<()> {
         self.check_context(expected_session, &expected_revision)?;
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        let attached = matches!(
+            edit,
+            ProjectSoundEdit::Attach { .. }
+                | ProjectSoundEdit::SetAttached { .. }
+                | ProjectSoundEdit::Detach { .. }
+        );
         let (command, selected, message) = match edit {
             ProjectSoundEdit::Place { asset, at } => {
                 let event = super::sound::placement(workspace, &asset, at)?;
@@ -1152,6 +1158,34 @@ impl Service {
                     "Sound attached to the beat and saved",
                 )
             }
+            ProjectSoundEdit::SetAttached { owner, id, event } => {
+                let current = workspace
+                    .document
+                    .beat_sounds()
+                    .get(&owner)
+                    .and_then(|events| events.get(&id))
+                    .ok_or("This attached sound no longer exists; no edit was made.")?;
+                if current.source != event.source
+                    || current.mapping != event.mapping
+                    || current.offset != event.offset
+                {
+                    return Err("An attached sound keeps its place on the beat; only gain, edges and treatments change.".into());
+                }
+                (
+                    Command::SetBeatSound {
+                        owner,
+                        id,
+                        event: *event,
+                    },
+                    None,
+                    "Attached sound updated and saved",
+                )
+            }
+            ProjectSoundEdit::Detach { owner, id } => (
+                deadpan_cli::sound_events::detach(&workspace.document, &owner, &id)?,
+                None,
+                "Sound detached from the beat and saved",
+            ),
         };
         let request = CommandRequest {
             project_id: workspace.document.project_id().clone(),
@@ -1170,7 +1204,7 @@ impl Service {
             preserve_cursor: true,
             cursor: None,
             scope: SequenceScope::default(),
-            sound: Some(SoundCommit { selected }),
+            sound: Some(SoundCommit { selected, attached }),
             range_selection: None,
         });
         self.refresh_saved(message)?;

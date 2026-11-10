@@ -900,6 +900,9 @@ pub struct CommittedRangeSelection {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SoundCommit {
     pub selected: Option<SoundId>,
+    /// A sound attached to a beat changed: the beat (and its inspector)
+    /// stays the focus instead of the Placed sounds list.
+    pub attached: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -958,6 +961,18 @@ pub enum ProjectSoundEdit {
         parent: deadpan_core::NodeId,
         owner: deadpan_core::NodeId,
         at: ProjectFrame,
+    },
+    /// Replace an attached sound's gain, edges or treatments; its owner,
+    /// source and placement stay (the beat's clock carries it).
+    SetAttached {
+        owner: deadpan_core::NodeId,
+        id: SoundId,
+        event: Box<deadpan_core::BeatSound>,
+    },
+    /// Remove one attached sound (`DeleteBeatSound`, one Undo).
+    Detach {
+        owner: deadpan_core::NodeId,
+        id: SoundId,
     },
 }
 

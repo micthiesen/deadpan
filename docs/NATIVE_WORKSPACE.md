@@ -201,6 +201,11 @@ under the Edit frame. Command entry also captures that frame and issuer; it
 cannot acquire a later target. Enabling requires retained sound selection in
 that frame's pause samples, including subframe sounds. Revocation remains
 available after the selection moves away. Route gaps never acquire media.
+A beat's attached sounds (`:sound-attach` stings) show as a `♫ N` card badge
+and an Attached sounds list in the beat inspector, with each sound's start
+within the beat and length; choosing one lets `:sound-gain`, `:sound-edges`
+and `:sound-delete` apply to it, and Detach or `:sound-detach` removes it in
+one undoable edit ([attached sounds](SOUND_EVENTS.md#seeing-and-detaching-attached-sounds)).
 Nested owners, Repeat/Retime sound transforms, send/tail allowances, effects
 and export remain open. See the
 [native sound placement qualification record](qualification/native-sound-placement-2026-09-27.md)
@@ -434,7 +439,9 @@ measurement follows the shown window and revision. Trim and the room-tone sheet
 share the engine's one Edit-waveform slot and take precedence while open.
 `:timeline detail` adds a lane between the beats and the waveform with each
 beat's attachments at their exact frames: cutaways (and video-only removals),
-captions, gain envelopes, mute ranges, and every placed root sound, stacked in
+captions, gain envelopes, mute ranges, every placed root sound and every
+attached sting (in each Repeat play using its owner, clipped to fragment
+windows), stacked in
 up to three rows. Beats nested in ordinary groups contribute theirs at their
 own starts. Inside a Repeat, each play (up to 256) draws its own contents, the
 shared definition or that play's override, at the play's exact start, and a

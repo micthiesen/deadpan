@@ -23,6 +23,8 @@ pub(super) struct CommandTarget {
     session: u64,
     revision: RevisionId,
     event: SoundId,
+    /// The beat owning `event` when it is an attached sound.
+    owner: Option<NodeId>,
     initial_command: String,
     cursor: u64,
     pause: Result<PauseTarget, String>,
@@ -250,14 +252,24 @@ impl DeadpanApp {
     }
 
     pub(super) fn capture_sound_command(&self, command: &str) -> Option<CommandTarget> {
-        if !self.event_focused() {
-            return None;
-        }
         let workspace = self.workspace.as_ref()?;
+        if !self.event_focused() {
+            let (owner, event) = self.attached_target()?;
+            return Some(CommandTarget {
+                session: workspace.session,
+                revision: workspace.document.revision_id().clone(),
+                event,
+                owner: Some(owner),
+                initial_command: command.into(),
+                cursor: self.sequence_cursor,
+                pause: Err("Pause permissions apply to placed sounds; an attached sound follows its beat's pauses.".into()),
+            });
+        }
         Some(CommandTarget {
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
             event: self.selected_event.clone()?,
+            owner: None,
             initial_command: command.into(),
             cursor: self.sequence_cursor,
             pause: cursor_pause(
@@ -273,6 +285,16 @@ impl DeadpanApp {
     }
 
     pub(super) fn check_sound_command(&self, target: &CommandTarget) -> Result<(), String> {
+        if let Some(owner) = &target.owner {
+            if self.workspace.as_ref().is_none_or(|workspace| {
+                workspace.session != target.session
+                    || workspace.document.revision_id() != &target.revision
+            }) || self.attached_target() != Some((owner.clone(), target.event.clone()))
+            {
+                return Err("The attached sound or project changed while entering this command. Select it again; no edit was made.".into());
+            }
+            return Ok(());
+        }
         if !self.event_focused()
             || self.workspace.as_ref().is_none_or(|workspace| {
                 workspace.session != target.session
@@ -444,6 +466,18 @@ impl DeadpanApp {
                 at,
             }));
         }
+        if !self.event_focused()
+            && let Some((owner, id)) = self.attached_target().or_else(|| {
+                (action == SoundAction::Detach)
+                    .then(|| self.only_attached())
+                    .flatten()
+            })
+        {
+            return attached_edit(workspace, action, owner, id).map(Some);
+        }
+        if action == SoundAction::Detach {
+            return Err("Select one of this beat's attached sounds in the inspector's Attached sounds list first.".into());
+        }
         if !self.event_focused() {
             return Err(
                 "Select a placed sound first. Use :sounds or the Placed sounds pane.".into(),
@@ -508,7 +542,7 @@ impl DeadpanApp {
                 event.end_edge,
             ),
             SoundAction::Edges(edge) => (event.treatments.trim().millidecibels(), edge, edge),
-            SoundAction::Place | SoundAction::Focus | SoundAction::Attach => {
+            SoundAction::Place | SoundAction::Focus | SoundAction::Attach | SoundAction::Detach => {
                 unreachable!("handled above")
             }
         };
@@ -807,6 +841,69 @@ impl DeadpanApp {
     }
 }
 
+/// The existing sound commands that apply to an attached sound: gain, edges,
+/// treatments and removal. Its place belongs to the beat.
+fn attached_edit(
+    workspace: &Workspace,
+    action: SoundAction,
+    owner: NodeId,
+    id: SoundId,
+) -> Result<ProjectSoundEdit, String> {
+    let mut event = workspace
+        .document
+        .beat_sounds()
+        .get(&owner)
+        .and_then(|events| events.get(&id))
+        .cloned()
+        .ok_or("This attached sound no longer exists.")?;
+    let trim = |event: &mut deadpan_core::BeatSound, value: i32| -> Result<(), String> {
+        let gain = deadpan_core::GainDb::new(value).map_err(|error| error.to_string())?;
+        event.treatments = event
+            .treatments
+            .with_trim(gain)
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    };
+    match action {
+        SoundAction::Delete | SoundAction::Detach => {
+            return Ok(ProjectSoundEdit::Detach { owner, id });
+        }
+        SoundAction::Gain(value) => trim(&mut event, value)?,
+        SoundAction::GainStep(delta) => {
+            let value = event
+                .treatments
+                .trim()
+                .millidecibels()
+                .checked_add(delta)
+                .ok_or("Sound gain exceeds the supported range.")?;
+            trim(&mut event, value)?;
+        }
+        SoundAction::Edges(edge) => {
+            event.start_edge = edge;
+            event.end_edge = edge;
+        }
+        SoundAction::Treatment(_) | SoundAction::Envelope { .. } | SoundAction::ClearEnvelopes => {
+            event.treatments = action
+                .treatments(&event.treatments)?
+                .ok_or("Sound treatment is absent.")?;
+        }
+        SoundAction::Move(_) | SoundAction::Cut => {
+            return Err("An attached sound keeps its place on its beat: move or split the beat instead, or detach it and attach it again at the Edit cursor.".into());
+        }
+        SoundAction::Allowance(_) | SoundAction::TailSend { .. } | SoundAction::WetSend { .. } => {
+            return Err("Pause permissions and sends apply to placed sounds; an attached sound takes its beat's pauses.".into());
+        }
+        SoundAction::Place | SoundAction::Focus | SoundAction::Attach => {
+            unreachable!("handled before attached sounds")
+        }
+    }
+    Ok(ProjectSoundEdit::SetAttached {
+        owner,
+        id,
+        event: Box::new(event),
+    })
+}
+
 pub(super) fn command_hint(command: &str) -> Option<&'static str> {
     let command = command.trim();
     let verb = command
@@ -825,6 +922,7 @@ pub(super) fn command_hint(command: &str) -> Option<&'static str> {
         }
         "sound-edges" => Some("Edges: soft or hard · retained timing stays intact"),
         "sound-delete" => Some("Remove selected sound · picture time stays intact"),
+        "sound-detach" => Some("Remove the beat's selected attached sound · one Undo restores it"),
         "sound-cut" => {
             Some("End selected sound at the Edit cursor · hard edge · onset and phase kept")
         }

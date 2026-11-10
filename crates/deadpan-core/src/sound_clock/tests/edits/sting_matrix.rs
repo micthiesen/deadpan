@@ -227,9 +227,9 @@ fn timing_changes_inside_a_sting_beat_refuse_readably() {
 
 /// After a pause cuts a beat, its pieces are Partition fragments. A sting
 /// attached to one fragment follows it through move, deletion, Repeat and
-/// grouping; refining that fragment with another Split still refuses.
+/// grouping (its Split is covered by `fragment_split_*` below).
 #[test]
-fn a_sting_on_a_fragment_follows_whole_beat_edits_and_its_split_refuses() {
+fn a_sting_on_a_fragment_follows_whole_beat_edits() {
     let mut before = fixture();
     let events = before.beat_sounds.remove(&node("owner")).unwrap();
     let count = before
@@ -328,19 +328,171 @@ fn a_sting_on_a_fragment_follows_whole_beat_edits_and_its_split_refuses() {
         },
     );
     assert_eq!(grouped.beat_sounds[&fragment], events);
-    let message = refusal(
-        &attached,
-        "split",
-        Command::Split {
-            node: fragment,
-            at: frames(1),
-            identities: SplitIdentities { nodes: ids("s", 4) },
+}
+
+/// A fragment `p-0` (sibling frames 5..8, cut by a pause at 8) carrying a
+/// sting placed at `start` frames inside it.
+fn attached_fragment(start: ExactRatio) -> (ProjectDocument, BTreeMap<SoundId, BeatSound>) {
+    let mut before = fixture();
+    let mut events = before.beat_sounds.remove(&node("owner")).unwrap();
+    let count = before
+        .insert_time_target(ProjectFrame(8))
+        .unwrap()
+        .split
+        .map_or(0, |split| split.required_ids);
+    let paused = edit(
+        &before,
+        "paused",
+        Command::InsertTime {
+            at: ProjectFrame(8),
+            hold: HoldRecipe {
+                duration: frames(1),
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            },
+            id: node("pause"),
+            identities: SplitIdentities {
+                nodes: ids("p", count),
+            },
+            timing: timing("paused"),
         },
     );
-    assert!(
-        message.starts_with(
-            "this edit changes the timing inside a beat that carries an attached sound"
-        ),
-        "{message}"
-    );
+    let event = events.get_mut(&sound("effect")).unwrap();
+    let length = event.mapping.duration_frames(FrameDuration::ZERO).unwrap();
+    event.mapping = SourceAudioMapping::Placement {
+        start,
+        frames: length,
+    };
+    event.offset = AudioSample(0);
+    let mut attached = paused;
+    attached.beat_sounds.insert(node("p-0"), events.clone());
+    attached.validate().unwrap();
+    assert_eq!(attached.durations().unwrap()[&node("p-0")], frames(3));
+    (attached, events)
+}
+
+/// Splitting a fragment that carries a sting splits it like any other beat:
+/// the fragment becomes the complete owner behind two new delivery
+/// Partitions, both pieces keep the complete recipe on one retained clock
+/// (the pre-split layout, with the exact Split forest), and the side that does
+/// not contain the sound crops it away. Before, after and across the cut give
+/// the same exact journal; only the audible piece differs.
+#[test]
+fn fragment_split_keeps_the_sting_complete_on_its_retained_clock() {
+    // The sound lasts 1000/1601.6 of a frame at 30000/1001.
+    for (case, start) in [
+        ("before", ExactRatio::ZERO),
+        ("after", ExactRatio::integer(2)),
+        ("spanning", ExactRatio::new(3, 2).unwrap()),
+    ] {
+        let (attached, events) = attached_fragment(start);
+        let split = edit(
+            &attached,
+            "split",
+            Command::Split {
+                node: node("p-0"),
+                at: frames(2),
+                identities: SplitIdentities { nodes: ids("s", 5) },
+            },
+        );
+        // s-0 and s-1 are the new delivery pieces; s-2 copies the fragment
+        // (and s-3 its child) as the right piece's complete owner.
+        let NodeKind::Sequence { children } = &split.nodes[&node("top")].kind else {
+            panic!("{case}: top is a Sequence");
+        };
+        assert_eq!(
+            children,
+            &[
+                node("owner"),
+                node("s-0"),
+                node("s-1"),
+                node("pause"),
+                node("p-1")
+            ],
+            "{case}"
+        );
+        let piece = |id: &str| match &split.nodes[&node(id)].kind {
+            NodeKind::Retime {
+                child,
+                mapping,
+                purpose: RetimePurpose::Partition,
+                ..
+            } => (child.clone(), *mapping),
+            kind => panic!("{case}: {id} is {kind:?}"),
+        };
+        assert_eq!(piece("s-0"), (node("p-0"), range(0, 2)), "{case}");
+        assert_eq!(piece("s-1"), (node("s-2"), range(2, 3)), "{case}");
+        assert_eq!(
+            split.beat_sounds,
+            BTreeMap::from([(node("p-0"), events.clone()), (node("s-2"), events.clone())]),
+            "{case}"
+        );
+        let journal = |owner: &str| {
+            let journal = &split.audio_bindings.sound_clocks[&node(owner)][&sound("effect")];
+            assert_eq!(journal.scope(), &node("top"), "{case}");
+            let [reference] = journal.clocks() else {
+                panic!("{case}: one retained clock");
+            };
+            assert_eq!(reference.timing(), &timing("split"), "{case}");
+            assert_eq!(reference.scope(), &node("top"), "{case}");
+            assert_eq!(reference.owner(), &node("p-0"), "{case}");
+            assert_eq!(
+                reference.introduced_splits(),
+                &[SoundClockSplit::new(
+                    node("p-0"),
+                    vec![
+                        SoundClockSplitPiece {
+                            partition: node("s-0"),
+                            full_owner: node("p-0"),
+                        },
+                        SoundClockSplitPiece {
+                            partition: node("s-1"),
+                            full_owner: node("s-2"),
+                        },
+                    ],
+                )
+                .unwrap()],
+                "{case}"
+            );
+        };
+        journal("p-0");
+        journal("s-2");
+        assert_eq!(
+            split.audio_bindings.timings[&timing("split")],
+            FrozenAudioLayout::capture(&attached).unwrap(),
+            "{case}"
+        );
+        split.validate().unwrap();
+
+        // The new left piece is an ordinary fragment again: splitting it
+        // refines that Partition around the complete owner, appending one
+        // more exact clock to both of its copies; the right piece's owner
+        // is untouched.
+        let refined = edit(
+            &split,
+            "refined",
+            Command::Split {
+                node: node("s-0"),
+                at: frames(1),
+                identities: SplitIdentities { nodes: ids("r", 4) },
+            },
+        );
+        assert_eq!(refined.beat_sounds.len(), 3, "{case}");
+        assert!(refined.beat_sounds.values().all(|owned| *owned == events));
+        for (owner, owned) in &refined.audio_bindings.sound_clocks {
+            let clocks: Vec<_> = owned[&sound("effect")]
+                .clocks()
+                .iter()
+                .map(|reference| reference.timing().clone())
+                .collect();
+            let expected = if owner == &node("s-2") {
+                vec![timing("split")]
+            } else {
+                vec![timing("split"), timing("refined")]
+            };
+            assert_eq!(clocks, expected, "{case} {owner:?}");
+        }
+        refined.validate().unwrap();
+    }
 }

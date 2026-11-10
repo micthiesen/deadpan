@@ -431,12 +431,26 @@ fn attached_sting_derives_the_native_beat_sound() -> Result {
     assert_eq!(document.beat_sounds()[&owner][&sting], expected);
     assert_eq!(document.nodes(), before.nodes());
     assert!(document.sounds().is_empty());
+    // The beat inspector's Attached sounds list reads the same derivation.
+    let listed = deadpan_cli::sound_events::attached_sounds(&document, &owner);
+    assert_eq!(listed.len(), 1);
+    assert_eq!((&listed[0].owner, &listed[0].id), (&owner, &sting));
+    assert_eq!(listed[0].start, deadpan_core::ExactRatio::integer(2));
     drop(store);
     // The same identity again, and a cursor outside the beat, are refused.
     let again = parsed(&sound(scratch.path(), &package, attach(2), false));
     assert_eq!(again["error"]["code"], "SoundEditRefused", "{again}");
     let outside = parsed(&sound(scratch.path(), &package, attach(500), false));
     assert_eq!(outside["error"]["code"], "SoundEditRefused", "{outside}");
+    // `:sound-detach`: the same reversible removal the native inspector commits.
+    let detach = json!({"type":"detach","owner":owner,"id":"sting"});
+    let detached = parsed(&sound(scratch.path(), &package, detach.clone(), false));
+    assert_eq!(detached["committed"], true, "{detached}");
+    let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    assert!(document.beat_sounds().is_empty());
+    assert_eq!(document.nodes(), before.nodes());
+    let again = parsed(&sound(scratch.path(), &package, detach, false));
+    assert_eq!(again["error"]["code"], "SoundEditRefused", "{again}");
     Ok(())
 }
 

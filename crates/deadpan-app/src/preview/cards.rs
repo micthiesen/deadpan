@@ -74,6 +74,8 @@ pub(super) struct Markers {
     pub repeats: std::collections::BTreeMap<NodeId, Vec<i64>>,
     /// AI candidate state of a shown pause, apart from its committed provider.
     pub ai: std::collections::BTreeMap<NodeId, String>,
+    /// Attached sounds audible in each shown beat (`:sound-attach` stings).
+    pub sounds: std::collections::BTreeMap<NodeId, usize>,
 }
 
 pub(super) fn original(
@@ -159,8 +161,16 @@ pub(super) fn strip(
                 origin + egui::vec2(index as f32 * layout.card_width, 0.0),
                 egui::vec2(layout.card_width - 8.0, layout.card_height),
             );
-            let response = beat_card(ui, rect, beat, index, selected == Some(&beat.id), thumbnail);
+            let sounds = markers.sounds.get(&beat.id).copied().unwrap_or(0);
+            let response = beat_card(
+                ui,
+                rect,
+                (beat, index, sounds),
+                selected == Some(&beat.id),
+                thumbnail,
+            );
             paint_analysis(ui, rect, beat, &markers);
+            let mut badge_top = rect.top() + 6.0;
             if let Some(state) = markers.ai.get(&beat.id) {
                 let font = egui::FontId::proportional(10.5);
                 let text = ui
@@ -188,6 +198,10 @@ pub(super) fn strip(
                 response.widget_info(|| {
                     egui::WidgetInfo::labeled(egui::WidgetType::Label, true, &label)
                 });
+                badge_top = badge.bottom() + 4.0;
+            }
+            if let Some(&count) = markers.sounds.get(&beat.id) {
+                sound_badge(ui, rect, badge_top, beat, count);
             }
             if let Some(starts) = markers.repeats.get(&beat.id)
                 && beat.frames > 0
@@ -287,6 +301,45 @@ pub(super) fn strip(
         edges(ui, canvas, origin.y, layout, beats.len(), viewport, badge);
     });
     clicked
+}
+
+/// `♫ N` in the card's top-right corner (below an AI badge): N attached
+/// sounds play in this beat. The card's spoken label carries the count; the
+/// inspector lists them.
+fn sound_badge(ui: &egui::Ui, rect: egui::Rect, top: f32, beat: &BeatRow, count: usize) {
+    let text = ui.painter().layout_no_wrap(
+        format!("♫ {count}"),
+        egui::FontId::proportional(10.5),
+        style::TEXT,
+    );
+    let badge = egui::Rect::from_min_size(
+        egui::pos2(rect.right() - text.size().x - 14.0, top),
+        text.size() + egui::vec2(8.0, 4.0),
+    );
+    ui.painter().rect_filled(badge, 4.0, style::SELECTED);
+    ui.painter().rect_stroke(
+        badge,
+        4.0,
+        egui::Stroke::new(1.0, style::LAVENDER),
+        egui::StrokeKind::Inside,
+    );
+    ui.painter()
+        .galley(badge.min + egui::vec2(4.0, 2.0), text, style::TEXT);
+    if ui.rect_contains_pointer(badge) {
+        egui::Tooltip::always_open(
+            ui.ctx().clone(),
+            ui.layer_id(),
+            ui.make_persistent_id(("sound-badge", &beat.id)),
+            badge,
+        )
+        .show(|ui| {
+            ui.label(format!(
+                "{count} attached sound{} on {}",
+                if count == 1 { "" } else { "s" },
+                beat.label
+            ))
+        });
+    }
 }
 
 /// Beats wholly outside the strip's viewport on each side. Card `i`
@@ -463,27 +516,34 @@ fn paint_analysis(ui: &egui::Ui, rect: egui::Rect, beat: &BeatRow, markers: &Mar
     }
 }
 
+/// `card` is the beat, its strip index and its audible attached-sound count,
+/// which the card's spoken label includes (the `♫ N` badge is paint only).
 fn beat_card(
     ui: &mut egui::Ui,
     rect: egui::Rect,
-    beat: &BeatRow,
-    index: usize,
+    card: (&BeatRow, usize, usize),
     selected: bool,
     thumbnail: &mut dyn FnMut(&BeatRow) -> Option<Painted>,
 ) -> egui::Response {
+    let (beat, index, sounds) = card;
     let response = workspace_card(
         ui,
         rect,
         ui.make_persistent_id(("beat-card", &beat.id)),
         selected,
         &format!(
-            "Beat {}: {}, {}, {} frames, half-open frame boundaries {} to {}",
+            "Beat {}: {}, {}, {} frames, half-open frame boundaries {} to {}{}",
             index + 1,
             beat.label,
             beat.kind,
             beat.frames,
             beat.start,
             beat.start + beat.frames,
+            match sounds {
+                0 => String::new(),
+                1 => ", 1 attached sound".into(),
+                count => format!(", {count} attached sounds"),
+            },
         ),
     );
     let compact = rect.height() <= 64.0;
@@ -918,7 +978,7 @@ mod tests {
                     egui::pos2(10.0 + index as f32 * 220.0, 10.0),
                     egui::vec2(210.0, 92.0),
                 );
-                let response = beat_card(ui, rect, &beat, index, true, &mut |_| None);
+                let response = beat_card(ui, rect, (&beat, index, 0), true, &mut |_| None);
                 assert_eq!(response.rect, rect);
                 if index == 0 {
                     id = Some(response.id);

@@ -136,7 +136,7 @@ impl ProjectDocument {
         };
         let node = match edit {
             OccurrenceEdit::Split { identities, .. } => {
-                let index = usize::from(!crate::split::refines(&self.nodes()[&instance.node]));
+                let index = usize::from(!crate::split::refines(self, &instance.node));
                 identities
                     .nodes
                     .get(index)

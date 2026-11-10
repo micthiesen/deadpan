@@ -1447,6 +1447,20 @@ pub static SPECS: &[Spec] = &[
         help: "Attach the complete selected catalog sound to the selected beat, starting at the Edit cursor inside it. The sound belongs to the beat: it moves, splits, groups, repeats in every play and is deleted with it; one Undo. It must end inside the beat.",
     },
     Spec {
+        id: "sound.detach",
+        name: "Detach a sound from the beat",
+        section: Section::Sounds,
+        keys: &[],
+        commands: &[verb(
+            "sound-detach",
+            ":sound-detach  remove the beat's sound",
+        )],
+        contexts: C::EDIT,
+        replay: Replay::NotRecorded,
+        headless: eq("sound <p> --json detach", SOUNDS),
+        help: "Remove the attached sound selected in the beat inspector's Attached sounds list, or the beat's only attached sound. Picture time and the beat stay; one Undo restores it. :sound-gain, :sound-edges and :sound-delete also apply to the selected attached sound.",
+    },
+    Spec {
         id: "sound.delete",
         name: "Remove a placed sound",
         section: Section::Sounds,

@@ -221,7 +221,7 @@ anchors (specification Section 5.4):
 | Ripple delete (`dd`, Visual `d`, `:delete`) inside or across the bed / of the beat | The deleted part of the bed goes with the picture; the bed continues across the join on its own clock without restarting its source. Deleting all of its support deletes it. | Deleting the beat deletes its sting; Undo restores both. Deleting a range across the beat keeps the surviving part's sting behind a delivery crop. |
 | Pause or splice inserted inside | Inserted time is silent in the bed; the rest resumes on its prior phase. | Inserted before or after the beat: the sting moves with the beat. Inside the beat: the beat is split and both fragments keep the sting behind delivery crops. |
 | `:splice` move of a range | The bed stays on the edit clock; it does not follow the moved picture. | The sting moves with its beat, inside or out of its group, on its retained clock. |
-| `s` Split | Non-root Split leaves the bed unchanged. | Both fragments keep the complete recipe and phase; the mixed PCM is unchanged. Splitting a Partition fragment that itself carries the sting (a beat already cut by an earlier pause or Split) still refuses. |
+| `s` Split | Non-root Split leaves the bed unchanged. | Both fragments keep the complete recipe and phase; the mixed PCM is unchanged. This includes a fragment (a Partition left by an earlier pause or Split) that carries the sting itself: see [splitting a sting fragment](#splitting-a-sting-fragment). |
 | Group / Ungroup | Unchanged. | Unchanged. Ungroup of a Sequence that owns a sound itself refuses, as do Group and Ungroup inside a sting's retained clock scope. |
 | `rr`, `r` + motion, `:repeat N` wrap | The bed is routed through the repeated plays. | The sting sounds in every play; `rib` keeps it on the first play only. |
 | `:sound-cut` | Ends at the cursor through the retained route (above). | Not applicable. |
@@ -237,14 +237,21 @@ difference of the old and new absolute sample boundaries.
 Still refused, readably and atomically: legacy whole-node `WrapRepeat`,
 `Move` and `Insert` (historical replay grammar only), a sting owned by the
 project root, Ungroup of a sound-owning Sequence, timing changes inside the
-sting's beat (Hold length, Trim of that Source, speed change), refining a
-Partition fragment that carries the sting, and a timing edit inside another
+sting's beat (Hold length, Trim of that Source, speed change), and a timing edit inside another
 beat of the sting's top-level group before the sting has a retained clock
 (its first capture covers the whole top-level group; a whole-beat move
 narrows it to the sting's own beat). Moving or re-onsetting a routed bed
 (`:sound-at`, `h`/`l`) refuses because a new onset has no single meaning
 across retained cuts; speed changes and Hold length changes refuse while
 root sounds exist.
+
+Evidence (2026-11-10, second pass): the fragment Split and attached-sound
+display above; the `sound-placement` replay adds the badge and inspector
+entry, `:sound-gain` on the selected attached sound, `s` on the sting's
+fragment, `:sound-detach` and three Undos through real keys and pointer;
+`attached_sounds_list_change_detach_and_undo_through_the_service` and the
+headless `attached_sting_derives_the_native_beat_sound` cover the list and
+detach.
 
 Evidence (2026-11-10): core `sting_matrix` tests at 30000/1001 (move inside
 and out of a group with exact retained layouts, Split, Group/Ungroup, Repeat
@@ -256,6 +263,50 @@ decoded PCM in `a_moved_sting_beat_plays_its_complete_sound_at_the_new_boundary`
 `attached_sting_derives_the_native_beat_sound`; and the `sound-placement`
 replay's routed `:sound-cut` with Undo plus `:sound-attach`, `rr`, `dd` and
 Undo through real keys.
+
+### Splitting a sting fragment
+
+Splitting a fragment normally refines its Partition: the left piece keeps the
+fragment's identity with a narrower window and the right piece gets a new
+Partition over a copy of the same complete child. A fragment that owns an
+attached sound itself is split like any other beat instead (`split::refines`
+excludes it): the fragment becomes the complete owner behind two new delivery
+Partitions, the right piece's owner is a copy of the fragment and its child,
+and both copies keep the complete recipe. Each sounds only inside its own
+piece's window, so a sting before the cut plays from the left piece, one after
+it from the right, and one spanning the cut plays on across it on its own
+clock, half from each piece. The cost is one extra Partition level on that
+beat; later Splits of either piece refine those new Partitions as usual.
+
+Each copy's journal gains one retained clock: the pre-split layout, with the
+exact Split forest (historical fragment to the two new Partitions, each with
+its complete owner). The correspondence proof treats a Partition whose first
+piece keeps it as the complete owner as a whole-node Split, not a refinement.
+Undo restores the fragment, its single owner and journal exactly. Core
+`fragment_split_keeps_the_sting_complete_on_its_retained_clock` checks the
+three positions at 30000/1001, the exact journals and a further refining Split;
+decoded PCM in `splitting_a_sting_fragment_leaves_its_samples_unchanged`
+(untreated sample-exact and EQ-treated) shows the split changes no sample.
+
+### Seeing and detaching attached sounds
+
+A card whose beat carries an audible attached sound shows a `♫ N` badge in its
+top-right corner (below an AI badge), spoken as "N attached sounds on beat".
+The beat inspector's Attached sounds section lists each sound owned by the
+beat or by the complete owner behind its fragment crops, Repeat definition or
+speed change (shared `deadpan_cli::sound_events::attached_sounds`): its label,
+start within the beat in frames, length in seconds, and "in every play" under
+a Repeat, "plays a-b here" when a Split crops it, or "cut away in this beat"
+for a copy the window hides. Each row is a button spoken with its position in
+the list. Choosing one selects it: `:sound-gain`, `:sound-edges`, treatments
+and `:sound-delete` then apply to it (`SetBeatSound`, keeping its source and
+placement), while moving, cutting, sends and pause permissions refuse because
+its place belongs to the beat. Detach (the row's button or `:sound-detach`)
+removes the selected attached sound, or the beat's only one, with
+`DeleteBeatSound`; one Undo restores it. Headless: `sound` `detach`.
+`:timeline detail` draws each sting in its own colour at its exact Edit frames,
+in every Repeat play that uses its owner, scaled by speed changes and clipped
+to fragment windows; the lane's spoken summary names each sting and its frames.
 
 ## Persisted root sounds
 

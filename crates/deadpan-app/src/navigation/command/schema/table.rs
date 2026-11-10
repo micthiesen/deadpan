@@ -1814,6 +1814,7 @@ pub static SCHEMAS: &[(&str, &ArgSchema)] = &[
     ("sounds", &ArgSchema::none(S::View)),
     ("sound-cut", &ArgSchema::none(S::Sound)),
     ("sound-attach", &ArgSchema::none(S::Cursor)),
+    ("sound-detach", &ArgSchema::none(S::Beat)),
     ("sound-delete", &ArgSchema::none(S::Sound)),
     ("sound-allow", &ArgSchema::none(S::Sound)),
     ("sound-silence", &ArgSchema::none(S::Sound)),
