@@ -55,8 +55,9 @@ the reference cases, independent numerical review and repository checks.
 Split retains complete effect owners behind transparent partitions. Re-splitting
 a framed partition must retain that meaningful wrapper instead of discarding its
 framing. Copies and occurrence isolation copy owned numeric curves independently.
-Ungroup rejects a framed Sequence until equivalent effect distribution and group
-clipping are implemented. It must never silently remove an authored camera path.
+Ungroup distributes a framed Sequence's path to its children, windowed in the
+group clock, and wraps a child that has its own framing so the group's
+intermediate clip is retained. It never silently removes an authored camera path.
 
 ## Shared picture geometry
 
@@ -556,7 +557,8 @@ pillarboxed canvas for targets that record their display aspect
 escalation is in [Repeat escalation](REPEAT_ESCALATION.md). Ungroup moves a group's camera path onto its unframed
 children, each windowed to its own interval of the same path (`FramingClock::RetainedOutput`), so every picture keeps
 its pose (`ungrouping_a_framed_group_moves_its_camera_path_onto_its_children_unchanged`); a child with its own framing
-still refuses. Target-centered escalation, nested native selection, arbitrary temporal envelopes, captions, cutaways, and the remaining
+keeps it inside a new single-child Sequence carrying the group's windowed path
+(`ungrouping_a_framed_group_wraps_children_that_have_their_own_framing`). Target-centered escalation, nested native selection, arbitrary temporal envelopes, captions, cutaways, and the remaining
 Section 8 picture operations remain required. [Captured framing](CAPTURED_FRAMING.md)
 retains the cropped composition for native Source/Freeze pause insertion, separately
 from the exact source PTS and new Hold framing. Root framing remains inherited

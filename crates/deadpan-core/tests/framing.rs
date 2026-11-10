@@ -495,7 +495,13 @@ fn occurrence_copy_is_independent_and_framed_ungroup_moves_framing_onto_its_chil
         },
     );
     // Ungroup moves the group's framing onto its unframed child.
-    let ungrouped = edit(&framed, Command::Ungroup { node: id("group") });
+    let ungrouped = edit(
+        &framed,
+        Command::Ungroup {
+            node: id("group"),
+            wrappers: Vec::new(),
+        },
+    );
     let moved = ungrouped.nodes()[&id("hold")].framing.as_ref().unwrap();
     assert_eq!(moved.value, creep(FramingCurve::Linear).value);
     // A child with its own framing would need two composed layers: refused.
@@ -509,7 +515,13 @@ fn occurrence_copy_is_independent_and_framed_ungroup_moves_framing_onto_its_chil
     assert!(
         apply(
             &both,
-            &request(&both, Command::Ungroup { node: id("group") })
+            &request(
+                &both,
+                Command::Ungroup {
+                    node: id("group"),
+                    wrappers: Vec::new()
+                }
+            )
         )
         .is_err()
     );

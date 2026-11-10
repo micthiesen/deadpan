@@ -744,8 +744,9 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                 },
             },
         },
-        SemanticAllocationRequest::Ungroup { .. } => SemanticAllocation::Ungroup {
+        SemanticAllocationRequest::Ungroup { wrappers, .. } => SemanticAllocation::Ungroup {
             new_revision: crate::new_revision()?,
+            wrappers: nodes(wrappers)?,
         },
         SemanticAllocationRequest::SetRepeatPlays { .. } => SemanticAllocation::SetRepeatPlays {
             new_revision: crate::new_revision()?,

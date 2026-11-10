@@ -415,7 +415,13 @@ fn ungroup_cannot_silently_drop_an_explicit_edge_exception() {
     assert_eq!(
         apply(
             &hard,
-            &request(&hard, Command::Ungroup { node: id("group") })
+            &request(
+                &hard,
+                Command::Ungroup {
+                    node: id("group"),
+                    wrappers: Vec::new()
+                }
+            )
         )
         .unwrap_err()
         .code,
@@ -429,6 +435,12 @@ fn ungroup_cannot_silently_drop_an_explicit_edge_exception() {
             policy: AudioEdgePolicy::Automatic,
         },
     );
-    let ungrouped = edit(&automatic, Command::Ungroup { node: id("group") });
+    let ungrouped = edit(
+        &automatic,
+        Command::Ungroup {
+            node: id("group"),
+            wrappers: Vec::new(),
+        },
+    );
     assert_eq!(ungrouped.nodes(), empty().nodes());
 }

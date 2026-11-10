@@ -182,6 +182,7 @@ fn transcript_search_admission_follows_literal_ranges_cut_capture_and_paste_cont
         "search-control-ungroup",
         Command::Ungroup {
             node: node("search-control-set-group"),
+            wrappers: Vec::new(),
         },
     );
     assert_eq!(check_oracle(&flat, &before, &ranges).len(), 3);

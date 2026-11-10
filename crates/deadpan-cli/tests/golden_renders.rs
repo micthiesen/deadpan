@@ -628,3 +628,109 @@ fn exploded_repeats_render_exactly_like_their_repeat_goldens() -> Result {
     assert!(failures.is_empty(), "{}", failures.join("\n"));
     Ok(())
 }
+
+/// Ungroup moves a group's animated camera path, ranged gain and Hard start
+/// onto its children (wrapping the ones that cannot absorb them). Every
+/// exported picture and PCM block of the ungrouped revision must hash
+/// exactly like the grouped one it replaces.
+#[test]
+fn ungrouping_a_framed_gained_group_renders_exactly_like_the_group() -> Result {
+    use deadpan_core::{
+        AudioBoundaryKind, AudioEdgePolicy, FramingCurve, GainClock, GainCurve, GainEnvelope,
+        GainRange, GainSegment,
+    };
+    let scratch = tempfile::tempdir()?;
+    let mut builder = Builder::create(scratch.path(), "ungroup-effects")?;
+    builder.shorten()?;
+    for at in [8, 16, 24] {
+        builder.split_root(at)?;
+    }
+    let group = NodeId::new("ungroup-group")?;
+    builder.apply(|_, document, _| {
+        Ok(Command::Group {
+            parent: document.root().clone(),
+            start: 1,
+            end: 3,
+            id: group.clone(),
+            label: "Group".into(),
+        })
+    })?;
+    let children: Vec<_> = builder.document()?.children(&group).cloned().collect();
+    let half = ExactRatio::new(1, 2)?;
+    let zoom = Framing::static_pose(FramingPose::new(
+        half,
+        ExactRatio::new(2, 5)?,
+        ExactRatio::new(3, 2)?,
+    )?)?;
+    let creep = Framing::creep(
+        FramingPose::default(),
+        FramingPose::new(ExactRatio::new(3, 5)?, half, ExactRatio::new(7, 5)?)?,
+        FramingCurve::Linear,
+    )?;
+    let envelope = GainEnvelope::new(
+        GainClock::OwnerOutput,
+        GainRange::new(ExactRatio::integer(2), ExactRatio::integer(12))?,
+        GainDb::new(-9_000)?,
+        vec![GainSegment::new(
+            ExactRatio::integer(12),
+            GainDb::new(4_000)?,
+            GainCurve::Linear,
+        )?],
+    )?;
+    let commands = [
+        Command::SetFraming {
+            node: children[1].clone(),
+            framing: Some(zoom),
+        },
+        Command::SetAudioTreatments {
+            node: children[0].clone(),
+            treatments: AudioTreatments::from_clip_gain(
+                ClipGain::default().with_trim(GainDb::new(2_000)?),
+            ),
+        },
+        Command::SetFraming {
+            node: group.clone(),
+            framing: Some(creep),
+        },
+        Command::SetAudioTreatments {
+            node: group.clone(),
+            treatments: AudioTreatments::from_clip_gain(ClipGain::new(
+                GainDb::new(-3_000)?,
+                false,
+                vec![envelope],
+                Vec::new(),
+            )?),
+        },
+        Command::SetAudioEdge {
+            node: group.clone(),
+            edge: AudioBoundaryKind::NodeStart,
+            policy: AudioEdgePolicy::Hard,
+        },
+    ];
+    for command in commands {
+        builder.apply(|_, _, _| Ok(command))?;
+    }
+    let grouped = builder.revision()?;
+    let required = builder.document()?.ungroup_requirements(&group)?;
+    assert!(required >= 1, "the zoomed child needs a wrapper");
+    let ungrouped = builder.apply(|builder, _, _| {
+        Ok(Command::Ungroup {
+            node: group.clone(),
+            wrappers: builder.fresh(required)?,
+        })
+    })?;
+    assert!(!ungrouped.nodes().contains_key(&group));
+    let before = render("ungroup-effects", &builder.package, &grouped)?;
+    let after = render("ungroup-effects", &builder.package, &builder.revision()?)?;
+    for key in ["frames", "pictures", "audio"] {
+        assert_eq!(after[key], before[key], "ungrouped {key} differs");
+    }
+    let (base_package, base_revision) = base(&scratch.path().join("plain"))?;
+    let plain = render("base", &base_package, &base_revision)?;
+    assert_ne!(
+        plain["pictures"], before["pictures"],
+        "the framing is visible"
+    );
+    assert_ne!(plain["audio"], before["audio"], "the gain is audible");
+    Ok(())
+}

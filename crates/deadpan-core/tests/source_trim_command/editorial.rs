@@ -216,18 +216,32 @@ fn retrim_keeps_one_sided_choices_and_split_retains_the_marked_owner_context() {
 }
 
 #[test]
-fn marked_sequence_cannot_be_ungrouped_and_discard_its_editorial_edge() {
+fn ungrouping_a_marked_sequence_moves_its_editorial_edge_to_the_child() {
     let before = modify(&fixture(None, 0), |wire| {
         wire["nodes"]["group"] =
             serde_json::to_value(BeatNode::sequence("Group", vec![id("source")])).unwrap();
         wire["nodes"]["group"]["audio_editorial_edges"] = json!({"start":true,"end":false});
         wire["nodes"]["root"]["kind"]["children"] = json!(["group"]);
     });
-    let error = apply(
+    let tx = apply(
         &before,
-        &request(&before, Command::Ungroup { node: id("group") }),
+        &request(
+            &before,
+            Command::Ungroup {
+                node: id("group"),
+                wrappers: Vec::new(),
+            },
+        ),
     )
-    .unwrap_err();
-    assert_eq!(error.code, EditErrorCode::InvalidCommand);
-    assert!(error.message.contains("editorial audio edges"));
+    .unwrap();
+    let after = tx.forward.apply(&before).unwrap();
+    assert!(!after.nodes().contains_key(&id("group")));
+    assert_eq!(
+        after.nodes()[&id("source")].audio_editorial_edges,
+        deadpan_core::AudioEditorialEdges {
+            start: true,
+            end: false
+        }
+    );
+    assert_eq!(tx.inverse.apply(&after).unwrap(), before);
 }

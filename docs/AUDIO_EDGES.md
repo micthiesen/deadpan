@@ -16,9 +16,10 @@ revision-checked reversible transaction. The `SetAudioEdge` occurrence operation
 isolates repeated ancestors in the same transaction, copying existing edge
 intent with the owned nodes. A direct node edit affects all its occurrences.
 Repeat gap settings apply to every gap of that authored Repeat. They do not
-claim individual-gap editing. Ungroup refuses a Sequence with explicit edge
-exceptions until they are reset, so removing the wrapper cannot silently lose
-them. Deletion removes the deleted node's choices with its other authored state.
+claim individual-gap editing. Ungroup moves a Sequence's explicit edge
+exceptions onto its first and last positive-duration children, whose boundaries
+coincide exactly, and refuses for an empty Sequence, whose choice acts on its
+neighbors' seam. Deletion removes the deleted node's choices with its other authored state.
 
 The current Trim increment adds separate `audio_editorial_edges` intent to a
 beat: `start` and `end` identify newly authored allocation edges. The object is
@@ -27,8 +28,9 @@ Each side uses the owner's existing `node_start` or `node_end` policy. This
 intent is separate from raw sampling support, so a retained Partition can carry
 a new creative fade while preserving its full filtering context. A Split of a
 marked owner retains that context and does not add fades at the split itself.
-Ungroup refuses a Sequence carrying this intent because removing its owner
-would lose the edge. Transferring or clearing that intent is not yet exposed.
+Ungroup transfers a Sequence's intent to its outer children, wrapping a fragment
+that cannot carry a Hard side unmarked ([effect distribution](GROUP_EDITING.md#effect-distribution)).
+Clearing that intent is not yet exposed.
 The [Source Trim contract](SOURCE_TRIM.md) and
 [qualification](qualification/source-trim-2026-10-01.md) record the implementation
 and indexed-picture, decoded-PCM and persistence checks.

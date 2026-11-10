@@ -294,6 +294,7 @@ fn fixture(path: &Path) -> Result<(), String> {
             new_revision: revision("ungrouped")?,
             command: Command::Ungroup {
                 node: node("group")?,
+                wrappers: Vec::new(),
             },
         })
         .map_err(|e| e.to_string())?;

@@ -330,6 +330,7 @@ fn group_allocations_are_exact_fresh_and_late_failure_is_atomic() {
                 Ok(match mode {
                     0 => SemanticAllocation::Ungroup {
                         new_revision: revision("wrong"),
+                        wrappers: Vec::new(),
                     },
                     _ => SemanticAllocation::Group {
                         new_revision: revision(if mode == 1 {

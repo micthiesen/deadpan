@@ -71,8 +71,11 @@ and half-open mute ranges. Adjusting trim preserves all curves and mute choices.
 is finite gain, never a mute sentinel. Overlapping envelopes add dB without
 normalization or clamping; mute remains a separate exact boolean.
 
-Every envelope declares `GainClock::OwnerOutput` and exact nonnegative
-owner-local project-frame coordinates. Rational coordinates can represent a
+Every envelope declares `GainClock::OwnerOutput` and exact owner-local
+project-frame coordinates. Coordinates may be negative: Ungroup translates a
+group's keys into a later child's clock, where a key that began in an earlier
+child precedes local zero, and evaluation shifts by whole frames onto the
+unsigned exact path, so the curve's shape is unchanged. Rational coordinates can represent a
 measured source/sample-derived boundary without first rounding to a project
 frame. The range is half-open. Outside it an envelope contributes exactly zero
 dB. Keys are right-continuous; the final endpoint is excluded with the range.
@@ -149,8 +152,10 @@ Content-following emphasis needs the appropriate Source owner or explicit
 content anchors, not an incidental shift of smoothstep/cubic endpoints. Shortening
 an owner clips evaluation but retains hidden keys; re-extension reveals them.
 Whole-owner trim follows the complete current allocation. Split/refinement
-retains treated partitions. Ungroup explicitly rejects a treated Sequence until
-an equivalent distribution of its owner clock and contribution scope exists.
+retains treated partitions. Ungroup moves a Sequence's clip gain into each
+child's clock (keys before a child's start keep negative local times) and
+refuses saturation, EQ, balance and sends, which act on the mixed children
+together; see [effect distribution](GROUP_EDITING.md#effect-distribution).
 
 Node treatments, reversible setters, occurrence isolation and duration edits
 use core 33/database 39 with frozen schema-32 history replay. Legacy wires

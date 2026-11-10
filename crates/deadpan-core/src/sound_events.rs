@@ -387,7 +387,7 @@ fn validate_group_ownership(
             document.group_selection(parent, selection)?;
             parent
         }
-        Command::Ungroup { node } => {
+        Command::Ungroup { node, .. } => {
             if document.beat_sounds.contains_key(node) {
                 return Err(EditError::new(
                     EditErrorCode::InvalidCommand,

@@ -122,5 +122,5 @@ Tab cycling and ripple/overwrite controls are not connected by this backend
 increment. Audio-only picture lead/tail, broader nested or treated targets and
 Repeat occurrence isolation remain open. The retained qualification does not
 establish native Trim interaction, device playback, export or release acceptance.
-Ungroup also refuses a Sequence carrying an editorial edge until an explicit
-transfer or clear operation can preserve its intent.
+Ungroup transfers a Sequence's editorial edge to its outer children
+([effect distribution](GROUP_EDITING.md#effect-distribution)).

@@ -53,6 +53,19 @@ pub(super) fn progress(
     start: ExactRatio,
     end: ExactRatio,
 ) -> Result<u64, GainError> {
+    // Progress is translation invariant. Keys before owner zero (a group's
+    // envelope moved into a later child by Ungroup) shift by a whole number
+    // of frames onto the unsigned path; nonnegative keys are unchanged.
+    let (local, start, end) = if start.numerator() < 0 {
+        let shift = ExactRatio::new(-start.floor(), 1)?;
+        (
+            local.checked_add(shift)?,
+            start.checked_add(shift)?,
+            end.checked_add(shift)?,
+        )
+    } else {
+        (local, start, end)
+    };
     // local=n/d, start=a/A, end=b/B:
     // (local-start)/(end-start) = ((n*A-a*d)*B)/((b*A-a*B)*d).
     let positive = |v| u128::try_from(v).map_err(|_| GainError::Overflow);

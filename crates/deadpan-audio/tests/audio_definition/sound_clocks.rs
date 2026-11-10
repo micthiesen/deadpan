@@ -910,6 +910,7 @@ fn neutral_groups_outside_retained_sound_scopes_preserve_pcm_and_allow_later_tim
         "neutral-ungroup",
         Command::Ungroup {
             node: id("clock-wrapper"),
+            wrappers: Vec::new(),
         },
     );
     assert_eq!(ungrouped.beat_sounds(), &original_sounds);

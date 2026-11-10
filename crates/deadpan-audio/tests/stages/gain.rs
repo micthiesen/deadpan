@@ -1346,3 +1346,131 @@ fn odd_sample_insert_keeps_source_envelope_origin_and_current_sequence_keys() {
         actual
     );
 }
+
+fn curve(start: i64, end: i64, from: i32, to: i32, curve: GainCurve) -> GainEnvelope {
+    GainEnvelope::new(
+        GainClock::OwnerOutput,
+        range(start, end),
+        GainDb::new(from).unwrap(),
+        vec![GainSegment::new(ExactRatio::integer(end), GainDb::new(to).unwrap(), curve).unwrap()],
+    )
+    .unwrap()
+}
+
+/// Ungroup moves a group's clip gain into each child's clock (merging with a
+/// child's own gain, or wrapping a child whose own recipe adds saturation)
+/// and its edge choices onto the outer children. The authored bus is
+/// bit-identical before and after, for whole and shuffled reads, with and
+/// without the plan-wide shared-stage contribution path.
+#[test]
+fn ungrouping_a_treated_group_keeps_the_authored_bus_bit_identical() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    for (saturated, fragment) in [(false, false), (true, false), (false, true)] {
+        let mut group = BeatNode::sequence("Group", vec![id("a"), id("b"), id("c")]);
+        group.audio_treatments = treatment(
+            -2_500,
+            false,
+            vec![
+                curve(100, 700, -6_000, 3_000, GainCurve::Linear),
+                curve(350, 1_250, 2_000, -9_000, GainCurve::Smoothstep),
+            ],
+            vec![range(1_000, 1_100)],
+        );
+        group.audio_edges.node_start = AudioEdgePolicy::Hard;
+        group.audio_editorial_edges.end = true;
+        let mut b = source(rate, 500, 2_000..2_500);
+        b.audio_treatments = treatment(1_500, false, vec![], vec![range(10, 20)]);
+        // `c` and `tail` are the two sides of a pure Split, which has no fade
+        // until the group's editorial end marks it.
+        let mut c = partition("whole-c", 0..400);
+        c.audio_treatments = treatment(-1_000, false, vec![], vec![]);
+        if saturated {
+            c.audio_treatments = c
+                .audio_treatments
+                .with_saturation(Some(Saturation::new(GainDb::new(6_000).unwrap()).unwrap()))
+                .unwrap();
+        }
+        let before = document_with_asset(
+            rate,
+            &["lead", "group", "tail"],
+            [
+                ("lead", source(rate, 300, 0..300)),
+                ("group", group),
+                // A fragment cannot carry a Hard start without marking it, so
+                // the group's Hard start moves onto a wrapper.
+                (
+                    "a",
+                    if fragment {
+                        partition("whole-a", 0..400)
+                    } else {
+                        source(rate, 400, 1_000..1_400)
+                    },
+                ),
+                ("b", b),
+                ("c", c),
+                ("whole-c", source(rate, 700, 3_000..3_700)),
+                ("whole-tail", source(rate, 700, 3_000..3_700)),
+                ("tail", partition("whole-tail", 400..700)),
+            ]
+            .into_iter()
+            .chain(fragment.then(|| ("whole-a", source(rate, 500, 1_000..1_500)))),
+            BTreeMap::new(),
+            audio(0, 8197).span,
+        );
+        let required = before.ungroup_requirements(&id("group")).unwrap();
+        assert_eq!(required, usize::from(saturated) + usize::from(fragment));
+        let transaction = apply(
+            &before,
+            &CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: RevisionId::new("ungrouped").unwrap(),
+                command: Command::Ungroup {
+                    node: id("group"),
+                    wrappers: (0..required).map(|n| id(&format!("wrapper-{n}"))).collect(),
+                },
+            },
+        )
+        .unwrap();
+        let after = transaction.forward.apply(&before).unwrap();
+        assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
+        assert!(!after.nodes().contains_key(&id("group")));
+        let first = if fragment { "wrapper-0" } else { "a" };
+        assert_eq!(
+            after.nodes()[&id(first)].audio_edges.node_start,
+            AudioEdgePolicy::Hard
+        );
+        let last = if saturated { "wrapper-0" } else { "c" };
+        assert!(after.nodes()[&id(last)].audio_editorial_edges.end);
+        let mut provider = FixtureProvider::new();
+        let expected = authored_all(&before, &mut provider, &[1_900]);
+        let unity = authored_all(
+            &changed(&before, &[("group", AudioTreatments::default())]),
+            &mut provider,
+            &[1_900],
+        );
+        assert_ne!(expected, unity, "the group's gain is audible");
+        let mut wire = serde_json::to_value(&before).unwrap();
+        let edges = wire["nodes"]["group"].as_object_mut().unwrap();
+        edges.remove("audio_edges");
+        edges.remove("audio_editorial_edges");
+        let automatic = ProjectDocument::from_json(&wire.to_string()).unwrap();
+        let automatic = authored_all(&automatic, &mut provider, &[1_900]);
+        assert_ne!(
+            automatic[290..310],
+            expected[290..310],
+            "Hard start is audible"
+        );
+        assert_ne!(
+            automatic[1590..1610],
+            expected[1590..1610],
+            "the end fade is audible"
+        );
+        assert_eq!(authored_all(&after, &mut provider, &[1_900]), expected);
+        assert_eq!(
+            authored_all(&after, &mut provider, &[1, 7, 53, 2, 389]),
+            expected,
+            "saturated={saturated}"
+        );
+    }
+}

@@ -272,7 +272,10 @@ fn create_fixture(path: &Path) -> Result<(), Box<dyn Error>> {
         project_id: inserted.project_id().clone(),
         expected_revision: inserted.revision_id().clone(),
         new_revision: RevisionId::new("large-ungrouped")?,
-        command: Command::Ungroup { node: group },
+        command: Command::Ungroup {
+            node: group,
+            wrappers: Vec::new(),
+        },
     })?;
     Ok(())
 }

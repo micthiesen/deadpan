@@ -416,10 +416,11 @@ fn closed_wire_and_typed_ingress_share_validation() {
         );
     }
     assert!(AudioTreatments::new(vec![], Some(ClipGain::default())).is_err());
-    assert!(GainRange::new(ratio(-1, 1), ExactRatio::ONE).is_err());
+    // Negative owner-local keys are valid: Ungroup translates a group's
+    // envelope into a later child's clock without reshaping it.
+    assert!(GainRange::new(ratio(-1, 1), ExactRatio::ONE).is_ok());
     assert!(GainRange::new(ExactRatio::ONE, ExactRatio::ONE).is_err());
     assert!(GainRange::new(ExactRatio::ONE, ExactRatio::ZERO).is_err());
-    assert!(GainSegment::new(ExactRatio::ZERO, gain(0), GainCurve::Step).is_err());
     assert!(
         GainEnvelope::new(
             GainClock::OwnerOutput,

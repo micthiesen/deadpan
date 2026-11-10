@@ -239,7 +239,10 @@ impl OccurrenceEdit {
                 id: id.clone(),
                 label: label.clone(),
             },
-            Self::Ungroup => Command::Ungroup { node },
+            Self::Ungroup => Command::Ungroup {
+                node,
+                wrappers: Vec::new(),
+            },
             Self::WrapRepeat {
                 id,
                 plays,

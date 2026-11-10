@@ -297,7 +297,10 @@ fn initial(seed: u64, variant: Variant) -> ValidatedDocument {
             project_id: document.project_id().clone(),
             expected_revision: document.revision_id().clone(),
             new_revision: RevisionId::new("r2").unwrap(),
-            command: Command::Ungroup { node: id("beats") },
+            command: Command::Ungroup {
+                node: id("beats"),
+                wrappers: Vec::new(),
+            },
         },
     )
     .unwrap();
@@ -459,7 +462,10 @@ fn random_command(
                 .map(|(id, _)| id.clone())
                 .collect();
             if repeats.is_empty() {
-                return Command::Ungroup { node: pick(random) };
+                return Command::Ungroup {
+                    node: pick(random),
+                    wrappers: Vec::new(),
+                };
             }
             Command::SetRepeatPlays {
                 node: repeats[random.below(repeats.len())].clone(),
@@ -495,6 +501,7 @@ fn random_command(
                     } else {
                         groups[random.below(groups.len())].clone()
                     },
+                    wrappers: Vec::new(),
                 }
             }
         }

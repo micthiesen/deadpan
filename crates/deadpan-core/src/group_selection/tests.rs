@@ -147,6 +147,7 @@ fn exact_forest_groups_empty_endpoints_including_an_all_empty_span() {
             &after,
             Command::Ungroup {
                 node: node("grouped"),
+                wrappers: Vec::new(),
             },
         );
         assert_eq!(ungrouped.nodes(), before.nodes());
@@ -182,6 +183,7 @@ fn exact_child_and_range_include_empty_structure_only_when_selected() {
         &grouped,
         Command::Ungroup {
             node: node("grouped"),
+            wrappers: Vec::new(),
         },
     );
     assert_eq!(restored.nodes(), before.nodes());
@@ -404,6 +406,7 @@ fn partial_composite_group_retains_picture_owner_clocks_and_sample_boundaries() 
         &grouped,
         Command::Ungroup {
             node: node("grouped"),
+            wrappers: Vec::new(),
         },
     );
     assert_eq!(ungrouped.audio_bindings(), grouped.audio_bindings());
@@ -513,6 +516,7 @@ fn root_sound_routes_and_permissions_survive_whole_and_partial_grouping() {
             &grouped,
             Command::Ungroup {
                 node: node("grouped"),
+                wrappers: Vec::new(),
             },
         );
         assert_eq!(ungrouped.sounds(), before.sounds());
@@ -534,6 +538,7 @@ fn root_sound_routes_and_permissions_survive_whole_and_partial_grouping() {
         &grouped,
         Command::Ungroup {
             node: node("legacy"),
+            wrappers: Vec::new(),
         },
     );
     assert_eq!(after.nodes(), before.nodes());
@@ -630,6 +635,7 @@ fn partial_group_preserves_logical_mark_fragments_at_the_same_root_boundary() {
         &after,
         Command::Ungroup {
             node: node("grouped"),
+            wrappers: Vec::new(),
         },
     );
     assert_eq!(ungrouped.marks(), after.marks());
@@ -687,7 +693,7 @@ fn added_depth_and_retained_identity_reuse_are_rejected_atomically() {
 }
 
 #[test]
-fn ungroup_reports_removed_mark_host_and_refuses_non_neutral_owners() {
+fn ungroup_reports_removed_mark_host_and_moves_group_owned_effects() {
     let before = tree(&["a"], vec![("a", hold(4))]);
     let grouped = edit(&before, command(&before, "root", child("a")));
     let marked = edit(
@@ -710,6 +716,7 @@ fn ungroup_reports_removed_mark_host_and_refuses_non_neutral_owners() {
         &marked,
         Command::Ungroup {
             node: node("grouped"),
+            wrappers: Vec::new(),
         },
     );
     assert_eq!(
@@ -724,32 +731,84 @@ fn ungroup_reports_removed_mark_host_and_refuses_non_neutral_owners() {
             NodeKind::Sequence { children } => children[0].clone(),
             _ => unreachable!("grouped is a Sequence"),
         };
-        // Group framing alone moves to the children; a child's own framing
-        // cannot be combined with it.
+        // Group framing combined with a child's own framing needs a fresh
+        // wrapper identity; the other non-neutral owners move without one.
         refused.nodes.get_mut(&first).unwrap().framing =
             (variation == 0).then(|| Framing::static_pose(FramingPose::default()).unwrap());
         let beat = refused.nodes.get_mut(&node("grouped")).unwrap();
         match variation {
             0 => beat.framing = Some(Framing::static_pose(FramingPose::default()).unwrap()),
             1 => beat.audio_edges.node_start = AudioEdgePolicy::Hard,
-            2 => beat.audio_treatments = AudioTreatments::from_clip_gain(ClipGain::default()),
+            2 => {
+                beat.audio_treatments = AudioTreatments::from_clip_gain(
+                    ClipGain::default().with_trim(crate::GainDb::new(-3000).unwrap()),
+                )
+            }
             _ => beat.audio_editorial_edges.start = true,
         }
         refused.validate().unwrap();
-        let snapshot = refused.clone();
-        assert!(
+        let ungroup = |wrappers: Vec<NodeId>| {
             crate::apply(
                 &refused,
                 &request(
                     &refused,
                     Command::Ungroup {
-                        node: node("grouped")
-                    }
-                )
+                        node: node("grouped"),
+                        wrappers,
+                    },
+                ),
             )
-            .is_err()
+        };
+        assert_eq!(
+            refused.ungroup_requirements(&node("grouped")).unwrap(),
+            usize::from(variation == 0)
         );
-        assert_eq!(refused, snapshot);
+        if variation == 0 {
+            assert_eq!(
+                ungroup(Vec::new()).unwrap_err().code,
+                EditErrorCode::IdentityConflict
+            );
+            // A mark inside the wrapped child keeps its exact record.
+            let marked = edit(
+                &refused,
+                Command::SetMark {
+                    id: MarkId::new("child-mark").unwrap(),
+                    owner: node("root"),
+                    label: "Child mark".into(),
+                    boundary: BoundaryAnchor {
+                        coordinate: Anchor::Local {
+                            node: first.clone(),
+                            position: ExactRatio::ONE,
+                        },
+                        bias: InsertionBias::Right,
+                    },
+                    loss_policy: AnchorLossPolicy::KeepUnresolved,
+                },
+            );
+            let wrapped = edit(
+                &marked,
+                Command::Ungroup {
+                    node: node("grouped"),
+                    wrappers: vec![node("wrapper")],
+                },
+            );
+            let mark = MarkId::new("child-mark").unwrap();
+            assert_eq!(wrapped.marks()[&mark], marked.marks()[&mark]);
+            assert_eq!(wrapped.nodes[&first].framing, marked.nodes[&first].framing);
+            assert!(wrapped.nodes[&node("wrapper")].framing.is_some());
+        } else {
+            let after = ungroup(Vec::new())
+                .unwrap()
+                .forward
+                .apply(&refused)
+                .unwrap();
+            let child = &after.nodes[&first];
+            match variation {
+                1 => assert_eq!(child.audio_edges.node_start, AudioEdgePolicy::Hard),
+                2 => assert_eq!(child.audio_treatments.trim().millidecibels(), -3000),
+                _ => assert!(child.audio_editorial_edges.start),
+            }
+        }
     }
 }
 

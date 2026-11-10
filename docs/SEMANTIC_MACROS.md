@@ -70,7 +70,8 @@ refuse unsupported pitch processing atomically. An unchanged effective speed
 still refuses without a revision or bank change. See
 [speed changes after a pause](RETIME_EDITING.md#speed-changes-after-an-exact-pause).
 [Named grouping](GROUP_EDITING.md) retains the exact name and selector. Ungroup
-requires a selected neutral Sequence with no Visual selection. Both preserve the
+requires a selected Sequence with no Visual selection and allocates any wrapper
+identities its effect distribution needs. Both preserve the
 copy bank and pending register choice, and use one atomic history entry per run.
 `Explode` converts the selected direct-child Repeat and refuses every Visual
 selection; `Duplicate { selector }` copies the selected beat or Visual range

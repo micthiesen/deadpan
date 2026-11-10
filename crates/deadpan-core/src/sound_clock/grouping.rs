@@ -43,7 +43,7 @@ pub(crate) fn prepare(
     document: &ProjectDocument,
     request: &CommandRequest,
 ) -> Result<Option<PreparedSoundGrouping>, EditError> {
-    if let Command::Ungroup { node } = &request.command {
+    if let Command::Ungroup { node, .. } = &request.command {
         return ungroup::prepare(document, request, node);
     }
     let Command::GroupSelection {

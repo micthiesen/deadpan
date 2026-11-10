@@ -276,7 +276,12 @@ fn adversarial_long_project_stays_within_time_and_memory_budgets() {
             },
         })
         .unwrap();
-    session.commit(Command::Ungroup { node: group }).unwrap();
+    session
+        .commit(Command::Ungroup {
+            node: group,
+            wrappers: Vec::new(),
+        })
+        .unwrap();
     check("create", started.elapsed(), &mut timings);
 
     // Edit: hundreds of revisions through the ordinary command path.

@@ -2523,7 +2523,10 @@ fn ungrouping_a_framed_group_moves_its_camera_path_onto_its_children_unchanged()
             project_id: before.project_id().clone(),
             expected_revision: before.revision_id().clone(),
             new_revision: revision("ungrouped"),
-            command: Command::Ungroup { node: id("group") },
+            command: Command::Ungroup {
+                node: id("group"),
+                wrappers: Vec::new(),
+            },
         },
     )
     .unwrap();
@@ -2545,4 +2548,79 @@ fn ungrouping_a_framed_group_moves_its_camera_path_onto_its_children_unchanged()
     }
     // The path still moves across the former group.
     assert_ne!(poses(&new, 2), poses(&new, 9));
+}
+
+#[test]
+fn ungrouping_a_framed_group_wraps_children_that_have_their_own_framing() {
+    let pose = |x: i128, scale: i128| {
+        FramingPose::new(
+            ExactRatio::new(x, 8).unwrap(),
+            ExactRatio::new(1, 2).unwrap(),
+            ExactRatio::new(scale, 4).unwrap(),
+        )
+        .unwrap()
+    };
+    let path = |from, to| Framing {
+        clock: Default::default(),
+        value: FramingValue::Envelope {
+            envelope: FramingEnvelope {
+                initial: from,
+                segments: vec![FramingSegment {
+                    end: ExactRatio::ONE,
+                    pose: to,
+                    curve: FramingCurve::Smoothstep,
+                }],
+            },
+        },
+    };
+    let mut group = BeatNode::sequence("Group", vec![id("a"), id("b")]);
+    group.framing = Some(path(pose(3, 4), pose(5, 6)));
+    let mut a = source(3, 5005, 8008);
+    a.framing = Some(path(pose(4, 5), pose(2, 7)));
+    let before = document(
+        &["lead", "group"],
+        vec![
+            ("lead", source(2, 0, 2002)),
+            ("group", group),
+            ("a", a),
+            ("b", source(5, 10010, 15015)),
+        ],
+    );
+    assert_eq!(before.ungroup_requirements(&id("group")).unwrap(), 1);
+    let request = |wrappers| CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: revision("ungrouped"),
+        command: Command::Ungroup {
+            node: id("group"),
+            wrappers,
+        },
+    };
+    assert!(apply(&before, &request(Vec::new())).is_err());
+    let edit = apply(&before, &request(vec![id("wrapper")])).unwrap();
+    let after = edit.forward.apply(&before).unwrap();
+    assert_eq!(edit.inverse.apply(&after).unwrap(), before);
+    // `a` keeps its own path inside a wrapper carrying the group's; `b`
+    // absorbs the group's path directly.
+    assert_eq!(
+        after.nodes()[&id("a")].framing,
+        before.nodes()[&id("a")].framing
+    );
+    assert!(after.nodes()[&id("wrapper")].framing.is_some());
+    assert!(after.nodes()[&id("b")].framing.is_some());
+    let old = RenderPlan::compile(&before).unwrap();
+    let new = RenderPlan::compile(&after).unwrap();
+    let picture = |plan: &RenderPlan, frame| {
+        let sample = plan.picture(ProjectFrame(frame)).unwrap();
+        let poses: Vec<_> = sample
+            .framing
+            .iter()
+            .filter_map(|layer| layer.pose)
+            .collect();
+        (sample.picture, poses)
+    };
+    for frame in 0..10 {
+        assert_eq!(picture(&new, frame), picture(&old, frame), "frame {frame}");
+    }
+    assert_eq!(picture(&new, 3).1.len(), 2);
 }

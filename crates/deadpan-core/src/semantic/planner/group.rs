@@ -86,18 +86,33 @@ where
                 "ungroup requires a Sequence",
             ));
         }
+        let required = self.current.ungroup_requirements(&selected)?;
         self.charge_step(false)?;
         let allocation = (self.allocate)(SemanticAllocationRequest::Ungroup {
             step_index: self.steps.len(),
+            wrappers: required,
         })?;
-        let SemanticAllocation::Ungroup { new_revision } = allocation else {
+        let SemanticAllocation::Ungroup {
+            new_revision,
+            wrappers,
+        } = allocation
+        else {
             return Err(invalid("macro ungrouping requires an Ungroup allocation"));
         };
+        if wrappers.len() != required {
+            return Err(invalid(
+                "macro Ungroup requires its exact wrapper identities",
+            ));
+        }
         self.reserve_revision(&new_revision)?;
+        for node in &wrappers {
+            self.reserve_node(node)?;
+        }
         let edit = LeafEdit::new(
             new_revision,
             Command::Ungroup {
                 node: selected.clone(),
+                wrappers,
             },
         )?;
         self.apply_group_step(edit)?;

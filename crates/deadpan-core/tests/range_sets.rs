@@ -233,6 +233,7 @@ fn reverse_cuts_capture_entry_snapshot_and_one_compound_undo_restores_every_fram
         "range-ungroup",
         Command::Ungroup {
             node: node("range-union-group"),
+            wrappers: Vec::new(),
         },
     );
     check_oracle(

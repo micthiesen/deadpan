@@ -983,6 +983,7 @@ fn fixture(source: &Path, path: &Path) -> Result<(), String> {
             new_revision: rev("audio-fixture-ungroup")?,
             command: Command::Ungroup {
                 node: id("audio-group")?,
+                wrappers: Vec::new(),
             },
         })
         .map_err(|e| e.to_string())?;

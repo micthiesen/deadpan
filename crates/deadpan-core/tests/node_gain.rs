@@ -373,22 +373,123 @@ fn duration_changes_and_internal_insertions_retain_fixed_keys_and_hidden_suffix(
     )
     .0;
     assert_eq!(inserted.nodes()[&id("group")].audio_treatments, recipe);
-    for doc in [&grouped, &inserted] {
-        assert!(
-            apply(doc, &request(doc, Command::Ungroup { node: id("group") }))
-                .unwrap_err()
-                .message
-                .contains("audio treatments")
-        );
+    // Ungroup moves the group's gain into each child's clock. The smoothstep
+    // envelope crosses the inserted child's end, so the second child's copy
+    // starts before its local zero; a child's own gain sums with it exactly.
+    let both = set(&inserted, "hold", treatment(GainCurve::Linear));
+    for doc in [&grouped, &inserted, &both] {
+        assert_eq!(doc.ungroup_requirements(&id("group")).unwrap(), 0);
+        let ungrouped = edit(
+            doc,
+            Command::Ungroup {
+                node: id("group"),
+                wrappers: Vec::new(),
+            },
+        )
+        .0;
+        assert!(!ungrouped.nodes().contains_key(&id("group")));
+        for step in 0..=70 {
+            let at = ratio(step, 7);
+            assert_eq!(
+                evaluated(&ungrouped, ungrouped.root(), at),
+                evaluated(doc, doc.root(), at),
+                "{step}/7"
+            );
+        }
+    }
+    let moved = edit(
+        &inserted,
+        Command::Ungroup {
+            node: id("group"),
+            wrappers: Vec::new(),
+        },
+    )
+    .0;
+    let envelope = &moved.nodes()[&id("hold")]
+        .audio_treatments
+        .clip_gain()
+        .unwrap()
+        .envelopes()[0];
+    assert_eq!(envelope.range().start(), ratio(-5, 3));
+    // A child that adds a saturation stage keeps its own order under a
+    // wrapper carrying the group's gain.
+    let saturated = set(
+        &inserted,
+        "hold",
+        treatment(GainCurve::Linear)
+            .with_saturation(Some(Saturation::new(gain(6_000)).unwrap()))
+            .unwrap(),
+    );
+    assert_eq!(saturated.ungroup_requirements(&id("group")).unwrap(), 1);
+    let wrapped = edit(
+        &saturated,
+        Command::Ungroup {
+            node: id("group"),
+            wrappers: vec![id("wrapper")],
+        },
+    )
+    .0;
+    assert_eq!(
+        wrapped.nodes()[&id("hold")].audio_treatments,
+        saturated.nodes()[&id("hold")].audio_treatments
+    );
+    let NodeKind::Sequence { children } = &wrapped.nodes()[&id("wrapper")].kind else {
+        panic!("the wrapper is a Sequence");
+    };
+    assert_eq!(children, &vec![id("hold")]);
+    // Stages that act on the group's mixed children refuse readably.
+    let group_saturation = set(
+        &inserted,
+        "group",
+        recipe
+            .with_saturation(Some(Saturation::new(gain(6_000)).unwrap()))
+            .unwrap(),
+    );
+    let balanced = set(
+        &inserted,
+        "group",
+        recipe
+            .with_balance(Some(StereoBalance::new(40).unwrap()))
+            .unwrap(),
+    );
+    let equalized = set(
+        &inserted,
+        "group",
+        recipe
+            .with_equalizer(Some(
+                EqualizerRecipe::new([gain(3_000), gain(0), gain(-2_000)], None, None).unwrap(),
+            ))
+            .unwrap(),
+    );
+    for (doc, phrase) in [
+        (&group_saturation, "saturation"),
+        (&balanced, "balance"),
+        (&equalized, "EQ"),
+    ] {
+        let error = apply(
+            doc,
+            &request(
+                doc,
+                Command::Ungroup {
+                    node: id("group"),
+                    wrappers: Vec::new(),
+                },
+            ),
+        )
+        .unwrap_err();
+        assert_eq!(error.code, EditErrorCode::InvalidCommand);
+        assert!(error.message.contains(phrase), "{}", error.message);
     }
     let unity_group = set(&grouped, "group", unity());
-    assert!(
-        apply(
-            &unity_group,
-            &request(&unity_group, Command::Ungroup { node: id("group") })
-        )
-        .is_err()
-    );
+    let ungrouped = edit(
+        &unity_group,
+        Command::Ungroup {
+            node: id("group"),
+            wrappers: Vec::new(),
+        },
+    )
+    .0;
+    assert!(ungrouped.nodes()[&id("hold")].audio_treatments.is_empty());
 }
 
 #[test]

@@ -360,7 +360,13 @@ fn picture_labels_edges_and_transparent_grouping_preserve_audio_families() {
         assert!(tx.forward.audio_lineage.is_empty());
         current = next;
     }
-    let (after, tx) = edit(&current, Command::Ungroup { node: id("group") });
+    let (after, tx) = edit(
+        &current,
+        Command::Ungroup {
+            node: id("group"),
+            wrappers: Vec::new(),
+        },
+    );
     assert_eq!(after.audio_lineage(), before.audio_lineage());
     assert!(tx.forward.audio_lineage.is_empty());
 }

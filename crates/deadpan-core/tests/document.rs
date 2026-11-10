@@ -529,7 +529,14 @@ fn structural_operations_preserve_identity_and_atomic_inverse() {
     );
     assert_eq!(moved.nodes()[&id("inner")], grouped.nodes()[&id("inner")]);
     assert_eq!(moved.duration().unwrap(), original.duration().unwrap());
-    let (ungrouped, _) = edited(&moved, Command::Ungroup { node: id("inner") }, "ungrouped");
+    let (ungrouped, _) = edited(
+        &moved,
+        Command::Ungroup {
+            node: id("inner"),
+            wrappers: Vec::new(),
+        },
+        "ungrouped",
+    );
     assert_eq!(ungrouped.duration().unwrap(), original.duration().unwrap());
     assert!(
         matches!(&ungrouped.nodes()[&id("group")].kind, NodeKind::Sequence { children } if children == &vec![id("hold-2"),id("hold-0"),id("hold-1")])

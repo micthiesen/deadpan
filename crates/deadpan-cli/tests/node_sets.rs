@@ -480,7 +480,10 @@ fn ranges_cli_normalizes_relative_union_and_round_trips_one_cut_paste_transactio
             &package,
             &input,
             &format!("ungroup-{id}"),
-            Command::Ungroup { node: node(id) },
+            Command::Ungroup {
+                node: node(id),
+                wrappers: Vec::new(),
+            },
         )?;
     }
     let before = snapshot(&package)?;

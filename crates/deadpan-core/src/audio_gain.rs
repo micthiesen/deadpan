@@ -57,7 +57,7 @@ impl fmt::Display for GainError {
             Self::BalanceRange => {
                 "stereo balance must be an integer percent between -100 (left) and 100 (right)"
             }
-            Self::TimeRange => "gain ranges require nonnegative increasing exact owner times",
+            Self::TimeRange => "gain ranges require increasing exact owner times",
             Self::Segments => "gain segments must increase from the range start to its exact end",
             Self::StageOrder => {
                 "treatment order must list each present stage exactly once, with StereoBalance last"
@@ -133,8 +133,11 @@ pub struct GainRange {
 }
 
 impl GainRange {
+    /// Coordinates may be negative: an Ungroup translates a group's ranges
+    /// into each promoted child's clock, where a range that began in an earlier
+    /// child starts before local zero but must keep its exact shape.
     pub fn new(start: ExactRatio, end: ExactRatio) -> Result<Self, GainError> {
-        if start.compare_integer(0).is_lt() || !numeric::compare(start, end).is_lt() {
+        if !numeric::compare(start, end).is_lt() {
             return Err(GainError::TimeRange);
         }
         Ok(Self { start, end })
@@ -172,10 +175,8 @@ pub struct GainSegment {
 }
 
 impl GainSegment {
+    /// The enclosing envelope orders segment ends after its range start.
     pub fn new(end: ExactRatio, value: GainDb, curve: GainCurve) -> Result<Self, GainError> {
-        if !end.compare_integer(0).is_gt() {
-            return Err(GainError::TimeRange);
-        }
         Ok(Self { end, value, curve })
     }
     pub const fn end(&self) -> ExactRatio {
@@ -407,6 +408,73 @@ impl ClipGain {
                         .all(|segment| segment.value == envelope.initial)
             })
             .map(|envelope| envelope.initial)
+    }
+
+    /// This owner's recipe moved into a contained child's clock, where
+    /// `child_local = local - offset` for a child of exact `duration`. Curves
+    /// keep their exact shape because every key translates by the same amount.
+    /// Keys wholly outside the child, with one frame of margin for retained
+    /// support that crosses its edges, are omitted; whole-owner trim and mute
+    /// apply to the child's complete allocation unchanged.
+    pub fn windowed(&self, offset: ExactRatio, duration: ExactRatio) -> Result<Self, GainError> {
+        let low = ExactRatio::integer(-1);
+        let high = duration.checked_add(ExactRatio::ONE)?;
+        let shift = |range: GainRange| -> Result<Option<GainRange>, GainError> {
+            let range = GainRange::new(
+                range.start.checked_sub(offset)?,
+                range.end.checked_sub(offset)?,
+            )?;
+            Ok((numeric::compare(range.start, high).is_lt()
+                && numeric::compare(low, range.end).is_lt())
+            .then_some(range))
+        };
+        let mut envelopes = Vec::new();
+        for envelope in &self.envelopes {
+            let Some(range) = shift(envelope.range)? else {
+                continue;
+            };
+            let segments = envelope
+                .segments
+                .iter()
+                .map(|segment| {
+                    Ok(GainSegment {
+                        end: segment.end.checked_sub(offset)?,
+                        ..segment.clone()
+                    })
+                })
+                .collect::<Result<Vec<_>, GainError>>()?;
+            envelopes.push(GainEnvelope::new(
+                envelope.clock,
+                range,
+                envelope.initial,
+                segments,
+            )?);
+        }
+        let mut mute_ranges = Vec::new();
+        for range in &self.mute_ranges {
+            mute_ranges.extend(shift(*range)?);
+        }
+        Self::new(self.trim, self.muted, envelopes, mute_ranges)
+    }
+
+    /// One recipe evaluating to exactly `self` followed by `outer` on the
+    /// same clock: trims and envelopes add in the shared Q32 dB sum and mutes
+    /// combine. `None` when the sum leaves a declared limit.
+    pub fn followed_by(&self, outer: &Self) -> Option<Self> {
+        let trim = self.trim.adjusted(outer.trim.millidecibels()).ok()?;
+        let envelopes = self
+            .envelopes
+            .iter()
+            .chain(&outer.envelopes)
+            .cloned()
+            .collect();
+        let mute_ranges = self
+            .mute_ranges
+            .iter()
+            .chain(&outer.mute_ranges)
+            .copied()
+            .collect();
+        Self::new(trim, self.muted || outer.muted, envelopes, mute_ranges).ok()
     }
 
     /// The caller establishes the owner's allocation. Whole-owner trim/mute

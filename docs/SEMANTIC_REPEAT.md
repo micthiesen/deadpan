@@ -15,7 +15,7 @@ setter preserves pending register choices. See [Repeat selections](REPEAT_SELECT
 
 [Group](GROUP_EDITING.md) retains its exact name and selector, with a current
 Visual range taking precedence. A saved Visual selector needs a new nonempty
-range. Ungroup resolves a newly selected neutral Sequence and refuses every
+range. Ungroup resolves a newly selected Sequence and refuses every
 Visual state. Both operations preserve the copy bank and pending register choice.
 
 Creative parameter edits supply `RepeatableEdit::Parameter` intent: the exact

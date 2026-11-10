@@ -102,6 +102,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
             ..
         } => nodes.extend(left_wrapper.iter().chain(right_wrapper)),
         Command::TrimSource { wrapper, .. } => nodes.extend(wrapper),
+        Command::Ungroup { wrappers, .. } => nodes.extend(wrappers),
         Command::InsertTime { id, identities, .. }
         | Command::InsertAiTime { id, identities, .. }
         | Command::SpliceSourceAt { id, identities, .. }
@@ -231,7 +232,6 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         | Command::DeleteRipple { .. }
         | Command::DeleteChildren { .. }
         | Command::Move { .. }
-        | Command::Ungroup { .. }
         | Command::SetRepeat { .. }
         | Command::SetRepeatPlays { .. }
         | Command::SetRetime { .. }

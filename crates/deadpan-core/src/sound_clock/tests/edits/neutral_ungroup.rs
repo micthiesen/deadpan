@@ -143,6 +143,7 @@ fn neutral_ungroup_source_and_room_tone_preserves_history_after_unrelated_edits(
             "ungrouped",
             Command::Ungroup {
                 node: node("group"),
+                wrappers: Vec::new(),
             },
         );
         assert_only_marker_removed(&before, &after);
@@ -164,6 +165,7 @@ fn neutral_ungroup_source_and_room_tone_preserves_history_after_unrelated_edits(
                 "ungrouped",
                 Command::Ungroup {
                     node: node("group"),
+                    wrappers: Vec::new(),
                 },
             ),
         )
@@ -205,6 +207,7 @@ fn neutral_ungroup_refuses_owned_sounds_treatments_edges_and_framing_atomically(
             "nonneutral",
             Command::Ungroup {
                 node: node("group"),
+                wrappers: Vec::new(),
             },
         );
     }
@@ -260,6 +263,7 @@ fn neutral_ungroup_refuses_a_genuine_later_group_pair_and_captured_copy() {
         "paired-refused",
         Command::Ungroup {
             node: node("group"),
+            wrappers: Vec::new(),
         },
     );
 
@@ -313,7 +317,10 @@ fn neutral_ungroup_refuses_a_genuine_later_group_pair_and_captured_copy() {
     refuses(
         &pasted,
         "captured-group-refused",
-        Command::Ungroup { node: copied_group },
+        Command::Ungroup {
+            node: copied_group,
+            wrappers: Vec::new(),
+        },
     );
 }
 
@@ -322,6 +329,7 @@ fn neutral_ungroup_prepared_admission_is_bound_to_project_revision_and_command()
     let grouped = group(&retained(true));
     let command = Command::Ungroup {
         node: node("group"),
+        wrappers: Vec::new(),
     };
     let prepared = crate::sound_clock::grouping::prepare(
         &grouped,
@@ -330,7 +338,13 @@ fn neutral_ungroup_prepared_admission_is_bound_to_project_revision_and_command()
     .unwrap()
     .expect("neutral ungroup needs a prepared historical correspondence");
     assert!(prepared.matches(&grouped, &command));
-    assert!(!prepared.matches(&grouped, &Command::Ungroup { node: node("top") }));
+    assert!(!prepared.matches(
+        &grouped,
+        &Command::Ungroup {
+            node: node("top"),
+            wrappers: Vec::new()
+        }
+    ));
     let mut other = grouped.clone();
     other.revision_id = revision("another-revision");
     assert!(!prepared.matches(&other, &command));
@@ -366,6 +380,7 @@ fn neutral_ungroup_preserves_other_explicit_introduced_groups() {
         "one-ungrouped",
         Command::Ungroup {
             node: node("group"),
+            wrappers: Vec::new(),
         },
     );
     assert_only_marker_removed(&both, &after);
@@ -465,6 +480,7 @@ fn unpaired_group_history_under_repeat_or_retime_is_rejected_at_ingress() {
             },
             Command::Ungroup {
                 node: node("group"),
+                wrappers: Vec::new(),
             },
         );
     }
@@ -495,6 +511,7 @@ fn neutral_ungroup_proof_budget_exhaustion_does_not_publish_partial_relations() 
         "budget-refused",
         Command::Ungroup {
             node: node("group"),
+            wrappers: Vec::new(),
         },
     );
     let prepared_error = crate::sound_clock::grouping::prepare(&document, &command)

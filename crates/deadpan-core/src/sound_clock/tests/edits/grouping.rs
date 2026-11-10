@@ -68,6 +68,7 @@ fn sound_clocks_survive_direct_and_selected_groups_without_a_new_clock() {
             "ungrouped",
             Command::Ungroup {
                 node: node("group"),
+                wrappers: Vec::new(),
             },
         );
         assert_eq!(ungrouped.nodes, before.nodes);
@@ -90,6 +91,7 @@ fn sound_clocks_survive_direct_and_selected_groups_without_a_new_clock() {
             "unwrapped-move",
             Command::Ungroup {
                 node: node("group"),
+                wrappers: Vec::new(),
             },
         );
         assert_eq!(restored.audio_bindings, moved.audio_bindings);
@@ -109,7 +111,10 @@ fn sound_clock_scope_interiors_and_removal_refuse_atomically() {
             id: node("group"),
             label: "Inside scope".into(),
         },
-        Command::Ungroup { node: node("top") },
+        Command::Ungroup {
+            node: node("top"),
+            wrappers: Vec::new(),
+        },
     ] {
         let error = apply(&before, &request(&before, "grouped", command)).unwrap_err();
         assert!(
@@ -163,7 +168,14 @@ fn ungroup_never_discards_a_sequences_own_sounds_with_or_without_clocks() {
         let snapshot = before.to_json().unwrap();
         let error = apply(
             &before,
-            &request(&before, "ungrouped", Command::Ungroup { node: node("top") }),
+            &request(
+                &before,
+                "ungrouped",
+                Command::Ungroup {
+                    node: node("top"),
+                    wrappers: Vec::new(),
+                },
+            ),
         )
         .unwrap_err();
         assert!(
@@ -256,6 +268,7 @@ fn unrelated_and_empty_selected_groups_preserve_existing_sound_clocks() {
             "ungrouped",
             Command::Ungroup {
                 node: node("group"),
+                wrappers: Vec::new(),
             },
         );
         assert_eq!(ungrouped.nodes, before.nodes);

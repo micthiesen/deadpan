@@ -14,6 +14,7 @@ fn ungroup(document: &ProjectDocument) -> CommandRequest {
         "neutral-ungroup",
         Command::Ungroup {
             node: node("new-g"),
+            wrappers: Vec::new(),
         },
     )
 }

@@ -149,7 +149,10 @@ fn insert_children(
     )?;
     transact(
         &inserted,
-        Command::Ungroup { node: group },
+        Command::Ungroup {
+            node: group,
+            wrappers: Vec::new(),
+        },
         "perf-scale-ungrouped",
     )
 }

@@ -50,6 +50,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     recorded(d, &baseline)?;
     refusals(d, &baseline)?;
     empty_child(d, &baseline)?;
+    treated(d, &baseline)?;
     objects::run(d, &baseline)?;
     beat_objects::run(d, &baseline)?;
     d.report.skipped.push("Keyboard and IME events are synthetic production event batches. Physical delivery and OS composition remain separate qualification. Composed pixel comparisons run only in visual mode; canonical PCM equivalence is covered by the separate core/audio tests.".into());
@@ -611,6 +612,118 @@ fn empty_child(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), Str
     undo(d, baseline)
 }
 
+/// `:ungroup` on a group with an animated creep and ranged gain, holding two
+/// fragments of which the right one has its own zoom: the left fragment
+/// absorbs the group's path and gain, the right one keeps its zoom under a
+/// wrapper carrying them, and composed pictures stay identical.
+fn treated(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
+    let mut history = vec![baseline.clone()];
+    let step = |d: &mut Driver<'_>, history: &mut Vec<ProjectDocument>, text: &str| {
+        let before = d.revision();
+        d.command(text)?;
+        d.changed(&before)?;
+        idle(d)?;
+        history.push(document(d)?.clone());
+        Ok::<_, String>(())
+    };
+    at(d, 23)?;
+    let before = d.revision();
+    d.key(Key::S)?;
+    d.changed(&before)?;
+    idle(d)?;
+    history.push(document(d)?.clone());
+    at(d, 20)?;
+    visual(d, 7, false)?;
+    step(d, &mut history, "group name=\"treated\"")?;
+    let group = grouped(d, "treated", 20, 7)?;
+    // Inside the group, the right fragment gets its own zoom.
+    d.key(Key::Enter)?;
+    d.settled()?;
+    motion(d, 3)?;
+    d.settled()?;
+    step(d, &mut history, "zoom 1.5 target=center")?;
+    d.key(Key::Backspace)?;
+    d.settled()?;
+    d.check(
+        "Backspace returns to the selected treated group",
+        d.app().selected_beat.as_ref() == Some(&group),
+        json!(group),
+        state(d),
+    )?;
+    for text in [
+        "creep from=1 to=1.4 target=center curve=linear",
+        "gain -3dB",
+        "gain +3dB range=1-5",
+    ] {
+        step(d, &mut history, text)?;
+    }
+    let treated = document(d)?.clone();
+    let owner = &treated.nodes()[&group];
+    let children: Vec<_> = treated.children(&group).cloned().collect();
+    let required = treated
+        .ungroup_requirements(&group)
+        .map_err(|error| error.to_string())?;
+    d.check(
+        "The group owns an animated path and ranged gain over two fragments, one already zoomed",
+        owner.framing.is_some()
+            && owner.audio_treatments.clip_gain().is_some_and(|gain| {
+                gain.trim().millidecibels() == -3_000 && gain.envelopes().len() == 1
+            })
+            && children.len() == 2
+            && treated.nodes()[&children[1]].framing.is_some()
+            && required == 1,
+        json!({"children":2,"wrappers":1}),
+        json!({"group":owner,"children":children,"wrappers":required}),
+    )?;
+    let pixels = pictures(d)?;
+    at(d, 20)?;
+    d.check(
+        "Navigation selects the treated group for Ungroup",
+        d.app().selected_beat.as_ref() == Some(&group),
+        json!(group),
+        state(d),
+    )?;
+    let before = d.revision();
+    d.command("ungroup")?;
+    d.changed(&before)?;
+    idle(d)?;
+    let after = document(d)?.clone();
+    let added: Vec<_> = after
+        .nodes()
+        .keys()
+        .filter(|id| !treated.nodes().contains_key(*id))
+        .cloned()
+        .collect();
+    let left = &after.nodes()[&children[0]];
+    let wrapper = added.first().map(|id| &after.nodes()[id]);
+    d.check(
+        "Ungroup moves the path and gain onto the left fragment and wraps the zoomed one",
+        !after.nodes().contains_key(&group)
+            && d.app().sequence_length() == 120
+            && left.framing.is_some()
+            && left.audio_treatments.clip_gain().is_some()
+            && after.nodes()[&children[1]] == treated.nodes()[&children[1]]
+            && added.len() == 1
+            && wrapper.is_some_and(|node| {
+                node.framing.is_some()
+                    && node.audio_treatments.clip_gain().is_some()
+                    && node.kind.children() == std::slice::from_ref(&children[1])
+            }),
+        json!({"removed":group,"wrappers":1}),
+        json!({"added":added,"left":left,"wrapper":wrapper}),
+    )?;
+    compare_pictures(
+        d,
+        &pixels,
+        "Ungrouping a framed, gained group preserves composed pictures",
+    )?;
+    // One Undo restores the treated group; each earlier step then undoes once.
+    for expected in history.iter().rev() {
+        undo(d, expected)?;
+    }
+    Ok(())
+}
+
 fn grouped(d: &mut Driver<'_>, label: &str, start: u64, frames: i64) -> Result<NodeId, String> {
     idle(d)?;
     let selected = d
@@ -887,7 +1000,7 @@ fn painted(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
 fn help(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::Questionmark)?;
     d.key(Key::Home)?;
-    for needle in [":group name=", "custom audio edges"] {
+    for needle in [":group name=", "single-child group"] {
         for _ in 0..32 {
             let paint = scenarios::text_paint_visibility(d, needle);
             if paint.iter().any(|part| part["fully_visible"] == true) {

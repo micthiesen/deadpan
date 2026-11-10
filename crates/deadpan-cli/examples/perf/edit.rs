@@ -479,7 +479,10 @@ pub fn make_large(options: &Options) -> Result<Value> {
         project_id: inserted.project_id().clone(),
         expected_revision: inserted.revision_id().clone(),
         new_revision: RevisionId::new("large-ungrouped")?,
-        command: Command::Ungroup { node: group },
+        command: Command::Ungroup {
+            node: group,
+            wrappers: Vec::new(),
+        },
     })?;
     Ok(json!({"package": path, "beats": beats, "creation_ms": crate::round(ms(started))}))
 }

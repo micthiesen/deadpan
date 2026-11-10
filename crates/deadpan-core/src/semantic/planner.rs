@@ -195,8 +195,11 @@ pub enum SemanticAllocationRequest {
         step_index: usize,
         required_split_ids: usize,
     },
+    /// `wrappers` fresh single-child Sequences for children that cannot
+    /// absorb the group's framing, gain or edges exactly.
     Ungroup {
         step_index: usize,
+        wrappers: usize,
     },
     SetRepeatPlays {
         step_index: usize,
@@ -305,6 +308,7 @@ pub enum SemanticAllocation {
     },
     Ungroup {
         new_revision: RevisionId,
+        wrappers: Vec<NodeId>,
     },
     SetRepeatPlays {
         new_revision: RevisionId,

@@ -89,6 +89,7 @@ fn repeated_same_source_capsules_need_two_distinct_destination_bindings_of_one_l
         "range-shared-ungroup",
         Command::Ungroup {
             node: node("range-shared-union-group"),
+            wrappers: Vec::new(),
         },
     );
     let owners = check_oracle(&pasted, &before, &ranges);

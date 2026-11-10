@@ -319,6 +319,7 @@ fn witness(source_owner: bool) {
         "aligned-ungroup",
         Command::Ungroup {
             node: node("aligned-group"),
+            wrappers: Vec::new(),
         },
     );
     assert_eq!(ungrouped.nodes(), before.nodes());

@@ -348,8 +348,14 @@ define_commands! {
         identities: crate::GroupSelectionIdentities,
         timing: crate::AudioTimingId,
     },
+    /// Promote a Sequence's children, moving its framing, clip gain and edge
+    /// choices onto them. `wrappers` are the exact fresh identities of the
+    /// single-child Sequences a child needs when it cannot absorb them
+    /// (`ProjectDocument::ungroup_requirements`).
     Ungroup {
         node: NodeId,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        wrappers: Vec<NodeId>,
     },
     WrapRepeat {
         node: NodeId,
@@ -2421,78 +2427,8 @@ pub(crate) fn reduce(
                 .nodes
                 .insert(id.clone(), BeatNode::sequence(label, children));
         }
-        Command::Ungroup { node } => {
-            let parent = sequence_parent(document, node)?;
-            let beat = document.nodes.get(node).ok_or_else(|| missing(node))?;
-            if !beat.audio_editorial_edges.is_empty() {
-                return Err(EditError::new(
-                    EditErrorCode::InvalidCommand,
-                    "ungroup cannot yet preserve this Sequence's editorial audio edges; retain the group",
-                ));
-            }
-            let children = match &beat.kind {
-                NodeKind::Sequence { children } => children.clone(),
-                _ => {
-                    return Err(EditError::new(
-                        EditErrorCode::WrongNodeKind,
-                        "ungroup requires a Sequence",
-                    ));
-                }
-            };
-            if beat.audio_edges != crate::AudioEdgePolicies::default() {
-                return Err(EditError::new(
-                    EditErrorCode::InvalidCommand,
-                    "reset this Sequence's explicit audio edge choices before ungrouping",
-                ));
-            }
-            // The group's camera path moves to each child, windowed to that
-            // child's own interval of the same path, so it renders unchanged.
-            let mut pushed = Vec::new();
-            if let Some(framing) = beat.framing.clone() {
-                if children.iter().any(|child| {
-                    document
-                        .nodes
-                        .get(child)
-                        .is_some_and(|node| node.framing.is_some())
-                }) {
-                    return Err(EditError::new(
-                        EditErrorCode::InvalidCommand,
-                        "ungroup cannot combine this Sequence's framing with a child's own framing; retain the group or clear one of them",
-                    ));
-                }
-                let extents = document.exact_durations()?;
-                let (mut offset, duration) = match framing.clock {
-                    crate::FramingClock::OwnerOutput => (crate::ExactRatio::ZERO, extents[node]),
-                    crate::FramingClock::RetainedOutput { offset, duration } => (offset, duration),
-                };
-                for child in &children {
-                    let mut moved = framing.clone();
-                    moved.clock = crate::FramingClock::RetainedOutput { offset, duration };
-                    moved.validate().map_err(|error| {
-                        EditError::new(EditErrorCode::InvalidCommand, error.to_string())
-                    })?;
-                    pushed.push((child.clone(), moved));
-                    offset = offset
-                        .checked_add(extents[child])
-                        .map_err(DocumentError::from)?;
-                }
-            }
-            if !beat.audio_treatments.is_empty() {
-                return Err(EditError::new(
-                    EditErrorCode::InvalidCommand,
-                    "ungroup cannot yet preserve this Sequence's audio treatments; retain the group or explicitly clear its treatments",
-                ));
-            }
-            let siblings = children_mut(document, &parent)?;
-            let position = siblings
-                .iter()
-                .position(|id| id == node)
-                .ok_or_else(|| missing(node))?;
-            siblings.splice(position..=position, children);
-            document.nodes.remove(node);
-            for (child, framing) in pushed {
-                node_mut(document, &child)?.framing = Some(framing);
-            }
+        Command::Ungroup { node, wrappers } => {
+            crate::ungroup::apply(document, node, wrappers)?;
         }
         Command::WrapRepeat {
             node,

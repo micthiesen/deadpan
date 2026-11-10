@@ -778,7 +778,11 @@ impl Runner {
                     &self.kind_children(|kind| matches!(kind, NodeKind::Sequence { .. })),
                     *p,
                 )?;
-                Command::Ungroup { node }.with(0)
+                Command::Ungroup {
+                    node,
+                    wrappers: Vec::new(),
+                }
+                .with(0)
             }
             Op::RepeatChild { pick: p, plays } => {
                 let selection = SliceCaptureSelection::Child {

@@ -512,6 +512,7 @@ fn exercise(carrier: Carrier, change: Intervening) {
         new_revision: RevisionId::new("neutral-ungroup").unwrap(),
         command: Command::Ungroup {
             node: id("neutral-g"),
+            wrappers: Vec::new(),
         },
     };
     let transaction = apply(&before, &request).unwrap_or_else(|error| {
@@ -626,6 +627,7 @@ fn neutral_ungroup_still_refuses_a_genuine_later_group_capture() {
             new_revision: RevisionId::new("neutral-g-refused").unwrap(),
             command: Command::Ungroup {
                 node: group.clone(),
+                wrappers: Vec::new(),
             },
         },
     )

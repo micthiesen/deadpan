@@ -603,6 +603,7 @@ fn grouping_preserves_content_but_removed_host_has_explicit_loss() {
         &grouped,
         Command::Ungroup {
             node: node("nested"),
+            wrappers: Vec::new(),
         },
     )
     .0;

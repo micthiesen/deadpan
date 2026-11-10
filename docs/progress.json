@@ -1772,9 +1772,10 @@
             "evidence": [
               "docs/STRUCTURAL_SELECTIONS.md",
               "docs/AUDIO_GAIN.md owner clocks",
-              "docs/REQUIREMENTS.md DP-08 remainder"
+              "docs/REQUIREMENTS.md DP-08 remainder",
+              "docs/GROUP_EDITING.md effect distribution"
             ],
-            "remaining": "Ungroup of treated/framed groups with independently treated/framed children and some sound-bearing structural combinations still refuse.",
+            "remaining": "Ungroup now distributes group framing, clip gain and edge choices exactly (wrapping children with their own framing or treatments); groups with saturation, EQ, balance or sends, treated groups inside retained independent sound scopes, scoped (in-occurrence) Ungroup needing wrappers and some other sound-bearing structural combinations still refuse.",
             "normative": "5.1,5.4,6.3"
           },
           {

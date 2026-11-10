@@ -352,7 +352,10 @@ fn raw_group_follow_transition_survives_ungroup_and_retains_each_child_clock() {
             project_id: before.project_id().clone(),
             expected_revision: before.revision_id().clone(),
             new_revision: RevisionId::new("ungroup-follow").unwrap(),
-            command: Command::Ungroup { node: id("g") },
+            command: Command::Ungroup {
+                node: id("g"),
+                wrappers: Vec::new(),
+            },
         },
     )
     .unwrap();

@@ -46,7 +46,14 @@ fn grouped(
 }
 
 fn ungrouped(before: &ProjectDocument, target: &str, name: &str) -> ProjectDocument {
-    let after = edit(before, name, Command::Ungroup { node: id(target) });
+    let after = edit(
+        before,
+        name,
+        Command::Ungroup {
+            node: id(target),
+            wrappers: Vec::new(),
+        },
+    );
     assert_eq!(after.duration().unwrap(), before.duration().unwrap());
     assert_eq!(after.audio_bindings(), before.audio_bindings());
     assert_eq!(after.sounds(), before.sounds());

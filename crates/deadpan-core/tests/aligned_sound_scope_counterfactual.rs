@@ -556,7 +556,10 @@ fn endpoint_splits_direct_group_and_ungroup_within_retained_scope_still_refuse_a
     refuse(
         &before,
         "ungroup-scope",
-        Command::Ungroup { node: node("top") },
+        Command::Ungroup {
+            node: node("top"),
+            wrappers: Vec::new(),
+        },
         RETAINED_REFUSAL,
     );
 }

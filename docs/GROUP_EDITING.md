@@ -7,8 +7,9 @@ Group a selected beat or Visual range with `,g`, then enter a JSON-quoted name:
 ```
 
 The result is an ordinary editable Sequence. Enter opens its children and
-Backspace returns to the parent. `:ungroup` promotes a selected neutral
-Sequence's children into its parent. Each operation has one Undo.
+Backspace returns to the parent. `:ungroup` promotes a selected Sequence's
+children into its parent, moving the group's own framing, gain and edge choices
+onto them. Each operation has one Undo.
 
 ## Selection and keyboard behavior
 
@@ -30,10 +31,9 @@ IME composition remain text after command entry opens. `group.create` and
 default key path; use `:ungroup`.
 
 Ungroup requires an explicitly selected direct-child Sequence with no Visual
-selection, including no empty Visual selection. A group's framing moves onto its
-children, each windowed to its own interval of the same camera path, so pictures
-keep their poses; it refuses when a child has its own framing, and for audio
-treatments or authored edge policy, rather than discarding that behavior.
+selection, including no empty Visual selection. The group's own behavior moves
+onto its promoted children so every picture and audio sample is unchanged (see
+[effect distribution](#effect-distribution)).
 After success, the first promoted child is selected, including an empty child.
 For an empty group, selection goes to the following sibling, then the previous
 sibling if there is no following one. The cursor remains at the old group start.
@@ -43,6 +43,54 @@ Group also accepts [Visual group objects](EDITED_SLICES.md#group-objects):
 Empty endpoint children remain selected; no-child contents refuse grouping.
 The [group-object qualification record](qualification/group-objects-2026-10-03.md)
 tracks that later keyboard, register, semantic and Place integration.
+
+## Effect distribution
+
+`Command::Ungroup { node, wrappers }` plans each promoted child once, in the
+group's exact clock, and applies everything in one reversible transaction.
+
+- **Framing.** Framing composes provider to root. A child without framing takes
+  the group's camera path with a `RetainedOutput` clock windowed to the child's
+  own interval of that path, so animated curves continue across child
+  boundaries unchanged. A child with its own framing cannot hold two composed
+  operations, so it keeps its framing inside a new single-child Sequence that
+  carries the group's windowed path.
+- **Clip gain.** Gain is applied per contribution as one exact Q32 dB sum over
+  the owner chain. The group's trim and mute move unchanged; its envelopes and
+  mute ranges translate into each child's clock (`ClipGain::windowed`), keeping
+  keys that begin in an earlier child at negative local times so curves keep
+  their exact shape. A child whose recipe is clip gain alone absorbs the sum
+  (`ClipGain::followed_by`); a child with saturation, EQ, balance or sends gets
+  a wrapper carrying the group's gain after its own stages.
+- **Edges.** Editorial edges and `node_start`/`node_end` policies belong to the
+  group's outer boundaries, so they move to the first and last children with
+  positive duration. Coincident owners produce one fade and any Hard suppresses
+  it, so a union is exact. A transparent fragment that could not carry a Hard
+  side without marking it gets a wrapper. An empty group's edge choices act on
+  the seam between its neighbors and refuse.
+- **Refusals.** Saturation shapes the children's mixed sound together, EQ
+  filters continuously across their cuts, balance applies to the mixed sum and
+  sends route the group's whole output; no per-child form is sample-identical,
+  so Ungroup refuses with a reason that names the stage. Cutaways and captions
+  on the group also refuse.
+
+`ProjectDocument::ungroup_requirements` reports how many fresh wrapper
+identities the command needs; the semantic planner allocates them, and a
+wrong count refuses before any change. Wrappers take the group's label. Marks,
+retained audio clocks, lineage and root sounds are unchanged: the move touches
+only node effects and Sequence structure. Inside a retained independent sound
+scope, a treated group still refuses as below. Evidence: core
+`ungroup_reports_removed_mark_host_and_moves_group_owned_effects`,
+`duration_changes_and_internal_insertions_retain_fixed_keys_and_hidden_suffix`
+(composed gain equality at 71 exact positions, merge, wrapper and refusals) and
+`ungrouping_a_marked_sequence_moves_its_editorial_edge_to_the_child`; plan
+`ungrouping_a_framed_group_wraps_children_that_have_their_own_framing`; audio
+`ungrouping_a_treated_group_keeps_the_authored_bus_bit_identical` (bit-identical
+authored bus through absorb, merge, saturated-child and fragment-wrapper paths);
+golden-render `ungrouping_a_framed_gained_group_renders_exactly_like_the_group`
+(every exported I420 frame and PCM block hashes identically); and the `groups`
+replay, which ungroups a creeping, gained group over a zoomed fragment with real
+keys and compares composed pictures.
 
 ## Exact structural edits
 
@@ -95,7 +143,8 @@ existing receipt without resurrecting an older action.
 ## Remaining scope
 
 This increment supports structural edits in ordinary Sequence scopes. It does
-not complete temporal edits inside Repeat/Retime occurrences, distribution of
-group framing or treatments during Ungroup, saved gag recipes, or the full
-visual slice placement workflow. Those requirements and all release gates
-remain open.
+not complete temporal edits inside Repeat/Retime occurrences (scoped Ungroup
+supplies no wrapper identities, so a group needing one refuses there), Ungroup
+of groups with saturation, EQ, balance or sends, treated groups inside retained
+independent sound scopes, saved gag recipes, or the full visual slice placement
+workflow. Those requirements and all release gates remain open.

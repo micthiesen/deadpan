@@ -182,8 +182,14 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
             new_revision: revision(&format!("leaf-{step_index}")),
             wrapper: needs_wrapper.then(|| node(&format!("wrapper-{step_index}"))),
         },
-        SemanticAllocationRequest::Ungroup { step_index } => SemanticAllocation::Ungroup {
+        SemanticAllocationRequest::Ungroup {
+            step_index,
+            wrappers,
+        } => SemanticAllocation::Ungroup {
             new_revision: revision(&format!("leaf-{step_index}")),
+            wrappers: (0..wrappers)
+                .map(|n| node(&format!("ungroup-{step_index}-{n}")))
+                .collect(),
         },
         SemanticAllocationRequest::Explode {
             step_index,
