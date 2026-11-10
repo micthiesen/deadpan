@@ -1002,7 +1002,7 @@ mod tests {
                     egui::pos2(10.0 + index as f32 * 220.0, 10.0),
                     egui::vec2(210.0, 92.0),
                 );
-                let response = beat_card(ui, rect, (&beat, index, 0), true, &mut |_| None);
+                let response = beat_card(ui, rect, (&beat, index, 0), true, 0.0, &mut |_| None);
                 assert_eq!(response.rect, rect);
                 if index == 0 {
                     id = Some(response.id);
