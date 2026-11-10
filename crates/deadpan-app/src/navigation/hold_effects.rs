@@ -76,9 +76,6 @@ pub fn parse_bleep(words: &[&str]) -> Result<(u32, i32), String> {
                     millidecibels
                 });
             }
-            Some(("freq" | "frequency", value)) if frequency.is_none() => {
-                frequency = Some(hertz(value)?);
-            }
             None if frequency.is_none() => frequency = Some(hertz(word)?),
             _ => return Err(BLEEP_USAGE.into()),
         }
@@ -284,11 +281,15 @@ mod tests {
     fn bleeps_default_to_one_kilohertz_at_minus_ten_decibels() {
         assert_eq!(parse_bleep(&[]), Ok((1_000, -10_000)));
         assert_eq!(parse_bleep(&["880Hz", "level=-6dB"]), Ok((880, -6_000)));
-        assert_eq!(
-            parse_bleep(&["level=-3.5dB", "freq=440"]),
-            Ok((440, -3_500))
-        );
-        for bad in [&["10Hz"][..], &["level=3dB"], &["loud"], &["440", "880"]] {
+        assert_eq!(parse_bleep(&["level=-3.5dB", "440"]), Ok((440, -3_500)));
+        // The frequency is positional, as its declared schema says.
+        for bad in [
+            &["10Hz"][..],
+            &["level=3dB"],
+            &["loud"],
+            &["440", "880"],
+            &["freq=440"],
+        ] {
             assert!(parse_bleep(bad).is_err(), "{bad:?}");
         }
     }
