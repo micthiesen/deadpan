@@ -151,12 +151,21 @@ pub(super) fn job_text(row: &JobRow, current: Option<u64>) -> String {
         duration(row.elapsed),
         if waiting { "waiting" } else { "elapsed" }
     ));
-    // Only from the job's own measured rate, never a guess.
+    // From the job's own measured rate, or before it has one, from enough
+    // earlier comparable runs, labelled as such; never a guess.
     if let Some(remaining) = row.remaining {
         text.push_str(&format!(
             " · about {} left in this stage",
             duration(remaining)
         ));
+    } else if let Some(historical) = row.historical {
+        let duration = duration(historical.duration);
+        let runs = historical.runs;
+        text.push_str(&if historical.left {
+            format!(" · about {duration} left, from {runs} earlier runs")
+        } else {
+            format!(" · usually takes about {duration}, from {runs} earlier runs")
+        });
     }
     if row.can_run_anyway {
         text.push_str(" · O runs it anyway");
@@ -709,9 +718,49 @@ mod tests {
             progress,
             elapsed: Duration::from_secs(75),
             remaining: None,
+            historical: None,
             cancellable: true,
             tag: Some(4),
         }
+    }
+
+    #[test]
+    fn earlier_runs_estimates_are_labelled_and_yield_to_the_measured_rate() {
+        use crate::jobs::Historical;
+        let earlier = |left| Historical {
+            duration: Duration::from_secs(130),
+            left,
+            runs: 4,
+        };
+        let running = JobRow {
+            historical: Some(earlier(true)),
+            ..row(RowState::Running, Progress::default())
+        };
+        assert_eq!(
+            job_text(&running, Some(2)),
+            "AI pause pictures · pause hold-1: Running · 1:15 elapsed · about 2:10 left, from 4 earlier runs"
+        );
+        let queued = JobRow {
+            historical: Some(earlier(false)),
+            ..row(
+                RowState::Queued {
+                    position: 1,
+                    waiting_for: "Transcription".into(),
+                },
+                Progress::default(),
+            )
+        };
+        assert_eq!(
+            job_text(&queued, Some(2)),
+            "AI pause pictures · pause hold-1: Queued #1, waiting for Transcription · 1:15 waiting · usually takes about 2:10, from 4 earlier runs"
+        );
+        let measured = JobRow {
+            remaining: Some(Duration::from_secs(80)),
+            ..running
+        };
+        let text = job_text(&measured, Some(2));
+        assert!(text.ends_with("about 1:20 left in this stage"));
+        assert!(!text.contains("earlier runs"));
     }
 
     #[test]

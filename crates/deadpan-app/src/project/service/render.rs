@@ -697,6 +697,9 @@ impl Service {
         }
         let session = self.session;
         let board = &self.shared.job_board;
+        if self.render_registration.is_none() {
+            self.render_work = None;
+        }
         let handle = self.render_registration.get_or_insert_with(|| {
             board.register(
                 crate::jobs::JobSpec::new(crate::jobs::JobKind::Render, Some(session))
@@ -710,6 +713,65 @@ impl Service {
         else {
             return;
         };
+        // Only the status of the attempt this registration is running: a
+        // retained status of an earlier render must not complete this one.
+        let current = self
+            .render
+            .as_ref()
+            .and_then(|render| render.workflow.status().identity.as_ref());
+        if let Some(identity) = status
+            .status
+            .identity
+            .as_ref()
+            .filter(|id| Some(*id) == current)
+        {
+            let first = self.render_work.is_none();
+            if self
+                .render_work
+                .as_ref()
+                .is_none_or(|(declared, _)| declared != identity)
+            {
+                // Earlier renders of the same raster and policy estimate this
+                // one. A retry resumes from a checkpoint, and a second
+                // attempt under one registration includes the first's time:
+                // neither is comparable.
+                let first_attempt = status
+                    .status
+                    .attempt
+                    .as_ref()
+                    .is_none_or(|attempt| attempt.ordinal <= 1);
+                let work = status
+                    .status
+                    .intent
+                    .as_ref()
+                    .zip(self.store.as_ref())
+                    .zip(self.render.as_ref())
+                    .filter(|_| first && first_attempt)
+                    .and_then(|((intent, store), render)| {
+                        let document = store.snapshot_at(&render.revision).ok()?;
+                        let basis = document.presentation_basis();
+                        let policy = if intent.policy.automatic().is_some() {
+                            "automatic"
+                        } else {
+                            "engineering"
+                        };
+                        crate::jobs::Work::new(
+                            crate::jobs::JobKind::Render,
+                            &format!("raster={}x{} policy={policy}", basis.width, basis.height),
+                            intent.range.duration().frames() as f64,
+                        )
+                    });
+                handle.set_work(work);
+                self.render_work = Some((identity.clone(), false));
+            }
+            if status.status.outcome
+                == Some(deadpan_cli::encoded_render::workflow::WorkflowOutcome::Published)
+                && let Some((_, recorded @ false)) = &mut self.render_work
+            {
+                *recorded = true;
+                handle.complete();
+            }
+        }
         use deadpan_cli::encoded_render::workflow::WorkflowProgress;
         let fraction = |done: u64, total: u64| (total > 0).then(|| done as f32 / total as f32);
         let (stage, fraction) = match &status.status.progress {

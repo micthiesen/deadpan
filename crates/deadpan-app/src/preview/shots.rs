@@ -201,6 +201,14 @@ fn scan(
         return Err("The Original interpretation changed before scanning started".into());
     }
     drop(store);
+    // Shot detection decodes every picture; its speed depends on the raster.
+    handle.set_work(crate::jobs::Work::new(
+        crate::jobs::JobKind::Shots,
+        &input.raster().map_or_else(String::new, |(width, height)| {
+            format!("raster={width}x{height}")
+        }),
+        input.pictures() as f64,
+    ));
     let mut reported = (0, false);
     let options = deadpan_cli::shots::incremental::ShotRangeOptions {
         cache_directory: deadpan_cli::storage::UserStorage::current()
@@ -236,6 +244,10 @@ fn scan(
         },
     )
     .map_err(|e| e.to_string())?;
+    // A scan that reused cached ranges decoded less than its declared work.
+    if scan.cached_ranges == 0 {
+        handle.complete();
+    }
     Ok((scan.key, scan.analysis))
 }
 

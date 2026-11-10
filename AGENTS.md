@@ -1242,7 +1242,11 @@ existing cancel request; a cancelled runner keeps its slot until it drains.
 Shutdown releases waiters before each job's own shutdown joins it. New job
 kinds get a fixed priority, resource and yield rule in `JobKind::rules`, a
 sleep policy through `jobs::RunCapture` (never a second sleep observer) and
-rows in [jobs](docs/JOBS.md#policy-per-kind).
+rows in [jobs](docs/JOBS.md#policy-per-kind). Jobs with a measurable size
+declare `Work` (kind plus speed-relevant parameters) and call
+`JobHandle::complete` only after an accepted, unpaused, whole run; the
+per-user `JobHistory` stays outside projects and replays use a private file
+([earlier-run estimates](docs/JOBS.md#estimates-from-earlier-runs)).
 
 Keyboard routing precedes widget drawing. Use persistent `egui::Popup` state for
 menu ownership; the current-pass `Context::any_popup_open` is empty at that point.

@@ -42,7 +42,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
+mod history;
 mod lifecycle;
+pub use history::{Earlier, JobHistory, Work};
 pub use lifecycle::{Lifecycle, RunCapture, Stop};
 
 /// How often a waiting job rechecks its own cancel flag. Coordinator events
@@ -320,6 +322,23 @@ impl JobKind {
         }
     }
 
+    /// The stable name of the kind in the per-user job history file.
+    pub const fn history_key(self) -> &'static str {
+        match self {
+            Self::Render => "render",
+            Self::Tracking => "tracking",
+            Self::PictureProposals => "picture-proposals",
+            Self::Transcription => "transcription",
+            Self::AiPause => "ai-pause",
+            Self::SpeechActivity => "speech-activity",
+            Self::Shots => "shots",
+            Self::Proxy => "proxy",
+            Self::YoutubeImport => "youtube-import",
+            Self::ModelPack => "model-pack",
+            Self::PortableCopy => "portable-copy",
+        }
+    }
+
     pub const fn label(self) -> &'static str {
         match self {
             Self::Render => "Render",
@@ -386,6 +405,9 @@ pub struct JobSpec {
     /// The owner's own identity for this job (an AI job's ticket), so the
     /// panel can address the owner's request to exactly this job.
     pub tag: Option<u64>,
+    /// Its comparable work, for estimates from earlier runs and for
+    /// recording this one when it completes ([`JobHandle::complete`]).
+    pub work: Option<Work>,
 }
 
 impl JobSpec {
@@ -399,7 +421,16 @@ impl JobSpec {
             cancellable: true,
             deferred: false,
             tag: None,
+            work: None,
         }
+    }
+
+    /// Declare the run's comparable work at registration (see
+    /// [`Work::new`]). Owners that measure it later use [`JobHandle::set_work`].
+    #[cfg(any(test, feature = "ui-harness"))]
+    pub fn work(mut self, work: Option<Work>) -> Self {
+        self.work = work;
+        self
     }
 
     pub fn tag(mut self, tag: u64) -> Self {
@@ -493,10 +524,25 @@ pub struct JobRow {
     /// Remaining time, only from the job's own measured progress over
     /// enough time; `None` while indeterminate, paused or too early.
     pub remaining: Option<Duration>,
+    /// Only when `remaining` is `None`: what earlier comparable runs took
+    /// (see [`Historical`]).
+    pub historical: Option<Historical>,
     pub cancellable: bool,
     pub tag: Option<u64>,
     /// Whether a current soft admission condition can be overridden.
     pub can_run_anyway: bool,
+}
+
+/// An estimate from earlier completed runs of comparable work, shown before
+/// the job has measured its own rate.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Historical {
+    /// Running: the time left. Waiting: the whole expected running time.
+    pub duration: Duration,
+    /// Whether `duration` is the time left of a running job.
+    pub left: bool,
+    /// How many earlier runs it is based on.
+    pub runs: usize,
 }
 
 /// What a job that is not yet admitted waits for.
@@ -586,6 +632,54 @@ struct Entry {
     /// The person chose to run it despite its admission conditions.
     forced: bool,
     tag: Option<u64>,
+    work: Option<Work>,
+    /// Earlier runs' estimate for `work`, fixed at registration.
+    earlier: Option<Earlier>,
+    /// When it was first admitted with its resource: its running time
+    /// starts here.
+    run_started: Option<Instant>,
+    /// Time since `run_started` spent queued again for its resource.
+    requeued: Duration,
+    /// It paused, or was asked to pause, at a yield: its running time is
+    /// not comparable and is neither estimated from nor recorded.
+    interfered: bool,
+}
+
+impl Entry {
+    /// Running time so far: wall time since its first admission, less time
+    /// queued again.
+    fn running(&self, now: Instant) -> Option<Duration> {
+        let started = self.run_started?;
+        Some(
+            now.saturating_duration_since(started)
+                .saturating_sub(self.requeued),
+        )
+    }
+
+    /// The estimate from earlier runs, when its own measured rate is not
+    /// available.
+    fn historical(&self, state: &RowState, now: Instant) -> Option<Historical> {
+        let earlier = self.earlier?;
+        match state {
+            RowState::Queued { .. } | RowState::Held(_) => Some(Historical {
+                duration: earlier.total,
+                left: false,
+                runs: earlier.runs,
+            }),
+            RowState::Running if !self.interfered => {
+                // A deferred job that has not claimed its resource yet has
+                // not started its comparable run.
+                let running = self.running(now).unwrap_or_default();
+                // Never invent one once the job has outlasted it.
+                (running < earlier.total).then(|| Historical {
+                    duration: earlier.total - running,
+                    left: true,
+                    runs: earlier.runs,
+                })
+            }
+            _ => None,
+        }
+    }
 }
 
 impl Entry {
@@ -671,7 +765,16 @@ impl Board {
             let fits = resource.is_none_or(|resource| self.running(resource) < resource.capacity());
             if fits {
                 let entry = self.entries.get_mut(&id).expect("waiting entry");
-                entry.admitted = Some(Instant::now());
+                let now = Instant::now();
+                entry.admitted = Some(now);
+                if entry.claims {
+                    match entry.run_started {
+                        None => entry.run_started = Some(now),
+                        Some(_) => {
+                            entry.requeued += now.saturating_duration_since(entry.queued_at);
+                        }
+                    }
+                }
                 #[cfg(test)]
                 self.admissions.push(id);
                 changed = true;
@@ -819,6 +922,8 @@ struct Inner {
     board: Mutex<Board>,
     changed: Condvar,
     probe: Mutex<Option<Probe>>,
+    /// Never locked while holding `board`'s lock across file I/O.
+    history: Mutex<JobHistory>,
 }
 
 /// The shared coordinator. Cloning shares it.
@@ -843,7 +948,22 @@ impl Jobs {
             board: Mutex::new(Board::default()),
             changed: Condvar::new(),
             probe: Mutex::new(None),
+            history: Mutex::new(JobHistory::default()),
         }))
+    }
+
+    /// Use `history` for estimates and completed runs (the native app:
+    /// [`JobHistory::user`]; replays: a private file). Without it, the
+    /// history is kept in memory only.
+    pub fn use_history(&self, history: JobHistory) {
+        *self.history() = history;
+    }
+
+    fn history(&self) -> MutexGuard<'_, JobHistory> {
+        self.0
+            .history
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
     }
 
     fn lock(&self) -> MutexGuard<'_, Board> {
@@ -862,6 +982,10 @@ impl Jobs {
     /// Register a job. It is admitted at once when its resource has room,
     /// otherwise queued. After [`Jobs::shutdown`] the handle is stopped.
     pub fn register(&self, spec: JobSpec) -> JobHandle {
+        let earlier = spec
+            .work
+            .as_ref()
+            .and_then(|work| self.history().estimate(work));
         let mut board = self.lock();
         board.next += 1;
         let id = JobId(board.next);
@@ -889,6 +1013,11 @@ impl Jobs {
                 measured: None,
                 forced: false,
                 tag: spec.tag,
+                work: spec.work,
+                earlier,
+                run_started: None,
+                requeued: Duration::ZERO,
+                interfered: false,
             },
         );
         board.admit();
@@ -1104,6 +1233,11 @@ impl Jobs {
                 let remaining = (state == RowState::Running)
                     .then(|| entry.measured.as_ref()?.remaining(now))
                     .flatten();
+                // The run's own measured rate, once reliable, is preferred.
+                let historical = remaining
+                    .is_none()
+                    .then(|| entry.historical(&state, now))
+                    .flatten();
                 JobRow {
                     id: *id,
                     can_run_anyway: matches!(state, RowState::Held(_))
@@ -1119,6 +1253,7 @@ impl Jobs {
                         entry.queued_at.elapsed()
                     },
                     remaining,
+                    historical,
                     cancellable: entry.cancellable,
                     tag: entry.tag,
                 }
@@ -1185,6 +1320,25 @@ impl Jobs {
             .max_by_key(|row| row.id)
     }
 
+    /// The work the newest job of `kind` declared.
+    #[cfg(test)]
+    pub fn declared_work(&self, kind: JobKind) -> Option<Work> {
+        let board = self.lock();
+        board
+            .entries
+            .values()
+            .rev()
+            .find(|entry| entry.kind == kind)?
+            .work
+            .clone()
+    }
+
+    /// Record a completed run directly, as if an earlier one had finished.
+    #[cfg(test)]
+    pub fn record_earlier_run(&self, work: &Work, running: Duration) {
+        self.history().record(work, running);
+    }
+
     #[cfg(test)]
     pub fn is_empty(&self) -> bool {
         self.lock().entries.is_empty()
@@ -1212,6 +1366,7 @@ impl JobHandle {
             entry.pause_requested.clone_from(&reason);
             if reason.is_some() {
                 entry.measured = None;
+                entry.interfered = true;
             }
         }
         reason.is_some()
@@ -1312,6 +1467,7 @@ impl JobHandle {
             if reason.is_some() {
                 // Paused time is not progress: restart the measured rate.
                 entry.measured = None;
+                entry.interfered = true;
             }
             if reason.is_none() {
                 return Ok(());
@@ -1336,6 +1492,7 @@ impl JobHandle {
             entry.paused.clone_from(&reason);
             if reason.is_some() {
                 entry.measured = None;
+                entry.interfered = true;
             }
         }
         reason
@@ -1390,6 +1547,54 @@ impl JobHandle {
         }
         drop(board);
         self.jobs.notify();
+    }
+
+    /// Declare the run's comparable work once the job has measured it (for
+    /// example after reading the Original). The estimate from earlier runs
+    /// follows it.
+    pub fn set_work(&self, work: Option<Work>) {
+        let earlier = work
+            .as_ref()
+            .and_then(|work| self.jobs.history().estimate(work));
+        let mut board = self.jobs.lock();
+        if let Some(entry) = board.entries.get_mut(&self.id) {
+            entry.work = work;
+            entry.earlier = earlier;
+        }
+    }
+
+    /// The job finished successfully. Its running time is recorded in the
+    /// job history for later estimates only when the run was comparable:
+    /// it declared its work, ran with its resource, never paused at a
+    /// yield, was not cancelled and did not cross system sleep. Call it
+    /// only after the job's own result is accepted; dropping the handle
+    /// without it records nothing (failure, cancellation, interruption).
+    pub fn complete(&self) {
+        self.complete_at(Instant::now());
+    }
+
+    fn complete_at(&self, now: Instant) {
+        let sample = {
+            let board = self.jobs.lock();
+            board.entries.get(&self.id).and_then(|entry| {
+                let comparable = !board.closed
+                    && !entry.cancelling
+                    && !entry.interfered
+                    && entry.admitted.is_some()
+                    && !board.lifecycle.interrupted_since(entry.lifecycle_epoch)
+                    && !entry
+                        .cancel
+                        .as_ref()
+                        .is_some_and(|cancel| cancel.load(Ordering::Acquire));
+                comparable
+                    .then(|| Some((entry.work.clone()?, entry.running(now)?)))
+                    .flatten()
+            })
+        };
+        // File I/O outside the board lock: it never delays admission.
+        if let Some((work, running)) = sample {
+            self.jobs.history().record(&work, running);
+        }
     }
 
     pub fn set_progress(&self, stage: impl Into<String>, fraction: Option<f32>) {
@@ -2218,6 +2423,158 @@ mod tests {
             .find(|row| row.kind == JobKind::Shots)
             .expect("listed");
         assert_eq!(shots_row.remaining, None, "a pause restarts the baseline");
+    }
+
+    #[test]
+    fn earlier_comparable_runs_estimate_until_the_run_measures_its_own_rate() {
+        let jobs = Jobs::new();
+        let work = |units: f64| Work::new(JobKind::Render, "raster=1920x1080 codec=h264", units);
+        let render = || spec(JobKind::Render).work(work(100.0));
+        let row = |jobs: &Jobs, handle: &JobHandle| {
+            jobs.snapshot()
+                .into_iter()
+                .find(|row| row.id == handle.id())
+                .expect("registered")
+        };
+        let run = |jobs: &Jobs, spec: JobSpec| {
+            let job = jobs.register(spec);
+            job.complete_at(Instant::now() + Duration::from_secs(10));
+        };
+        // Runs that are not comparable are never recorded: cancelled,
+        // paused at a yield, crossing sleep, failed (dropped without
+        // completing), or of a different raster.
+        let cancel = Arc::new(AtomicBool::new(false));
+        let cancelled = jobs.register(render().cancel_flag(&cancel));
+        assert!(matches!(
+            jobs.cancel(cancelled.id()),
+            CancelOutcome::Signalled(..)
+        ));
+        cancelled.complete_at(Instant::now() + Duration::from_secs(10));
+        drop(cancelled);
+        let shots = jobs.register(spec(JobKind::Shots).work(Work::new(JobKind::Shots, "", 10.0)));
+        jobs.set_foreground(Foreground { playback: true });
+        assert!(shots.pause_reason().is_some());
+        jobs.set_foreground(Foreground::default());
+        shots.complete_at(Instant::now() + Duration::from_secs(10));
+        drop(shots);
+        let slept = jobs.register(render());
+        jobs.lifecycle().will_sleep();
+        jobs.lifecycle().did_wake();
+        slept.complete_at(Instant::now() + Duration::from_secs(10));
+        drop(slept);
+        drop(jobs.register(render()));
+        run(
+            &jobs,
+            spec(JobKind::Render).work(Work::new(JobKind::Render, "raster=3840x2160", 100.0)),
+        );
+        run(&jobs, render());
+        run(&jobs, render());
+        let second = jobs.register(render());
+        assert_eq!(
+            row(&jobs, &second).historical,
+            None,
+            "two runs are not enough"
+        );
+        assert_eq!(row(&jobs, &second).remaining, None);
+        drop(second);
+        let shots_again =
+            jobs.register(spec(JobKind::Shots).work(Work::new(JobKind::Shots, "", 10.0)));
+        assert_eq!(row(&jobs, &shots_again).historical, None);
+        drop(shots_again);
+
+        // The third comparable run makes an estimate: 0.1 s per frame.
+        run(&jobs, render());
+        let job = jobs.register(spec(JobKind::Render).work(work(200.0)));
+        let estimate = row(&jobs, &job).historical.expect("from earlier runs");
+        assert!(estimate.left);
+        assert_eq!(estimate.runs, 3);
+        // Each recorded run took 10 s and a few microseconds of real time.
+        assert!(
+            estimate.duration > Duration::from_millis(19_900)
+                && estimate.duration < Duration::from_millis(20_100),
+            "{estimate:?}"
+        );
+        // Waiting jobs show the whole expected running time.
+        for _ in 0..3 {
+            run(
+                &jobs,
+                spec(JobKind::Transcription).work(Work::new(
+                    JobKind::Transcription,
+                    "model=base.en",
+                    60.0,
+                )),
+            );
+        }
+        let model = jobs.register(spec(JobKind::AiPause));
+        let queued = jobs.register(spec(JobKind::Transcription).work(Work::new(
+            JobKind::Transcription,
+            "model=base.en",
+            120.0,
+        )));
+        assert!(matches!(row(&jobs, &queued).state, RowState::Queued { .. }));
+        let waiting = row(&jobs, &queued).historical.expect("from earlier runs");
+        assert!(!waiting.left && waiting.runs == 3);
+        assert!(waiting.duration.abs_diff(Duration::from_secs(20)) < Duration::from_millis(100));
+        drop(model);
+        assert!(row(&jobs, &queued).historical.is_some_and(|h| h.left));
+        // Once the run's own rate is measured, it is preferred.
+        let start = Instant::now();
+        job.set_progress_at("Encoding", Some(0.0), start);
+        job.set_progress_at("Encoding", Some(0.5), start + Duration::from_secs(6));
+        let measured = row(&jobs, &job);
+        assert!(measured.remaining.is_some());
+        assert_eq!(measured.historical, None);
+        // A pause makes its elapsed time incomparable: no estimate after it.
+        for _ in 0..3 {
+            run(
+                &jobs,
+                spec(JobKind::Proxy).work(Work::new(JobKind::Proxy, "", 1.0)),
+            );
+        }
+        // The render above would pause proxies; let it finish first.
+        drop(job);
+        drop(queued);
+        let proxy = jobs.register(spec(JobKind::Proxy).work(Work::new(JobKind::Proxy, "", 1.0)));
+        assert!(row(&jobs, &proxy).historical.is_some());
+        jobs.set_foreground(Foreground { playback: true });
+        assert!(proxy.pause_reason().is_some());
+        jobs.set_foreground(Foreground::default());
+        assert_eq!(row(&jobs, &proxy).historical, None);
+    }
+
+    #[test]
+    fn a_requeued_deferred_job_records_only_its_running_time() {
+        let jobs = Jobs::new();
+        let ai = || {
+            spec(JobKind::AiPause)
+                .deferred()
+                .work(Work::new(JobKind::AiPause, "frames=49", 1.0))
+        };
+        for _ in 0..3 {
+            let job = jobs.register(ai());
+            job.claim();
+            assert!(job.admitted());
+            // It gives the model back, then waits for it behind another.
+            job.release();
+            let other = jobs.register(spec(JobKind::Transcription));
+            job.claim();
+            assert!(!job.admitted());
+            std::thread::sleep(Duration::from_millis(60));
+            drop(other);
+            assert!(job.admitted());
+            job.complete_at(Instant::now() + Duration::from_secs(5));
+        }
+        let next = jobs.register(ai());
+        let estimate = jobs
+            .snapshot()
+            .into_iter()
+            .find(|row| row.id == next.id())
+            .and_then(|row| row.historical)
+            .expect("three runs");
+        assert!(
+            estimate.duration < Duration::from_millis(5_030),
+            "the second wait is not running time: {estimate:?}"
+        );
     }
 
     #[test]

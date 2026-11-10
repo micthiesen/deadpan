@@ -401,6 +401,13 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                         app.feedback.original_fixture = Some(fixture.to_owned());
                         app.gag_presets =
                             crate::gag_presets::GagPresets::at(replay_root.join("gag-presets.json"));
+                        // Never the user's file; scenarios script their own.
+                        if name == "jobs" {
+                            jobs::seed_history(&replay_root.join("job-history.json"))?;
+                        }
+                        app.use_job_history(crate::jobs::JobHistory::at(
+                            replay_root.join("job-history.json"),
+                        ));
                         app.bundled_sounds = Some(replay_root.join("Sounds"));
                         app.use_proxy_locations(
                             Some(

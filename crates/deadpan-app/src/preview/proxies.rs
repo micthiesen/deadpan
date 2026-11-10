@@ -485,7 +485,16 @@ fn build(
     let Some(worker) = worker else {
         return ProxyState::Unavailable("the media worker is not installed beside the app".into());
     };
+    // Every picture is encoded once; the speed depends on the raster.
+    let info = video.interpretation();
+    handle.set_work(crate::jobs::Work::new(
+        crate::jobs::JobKind::Proxy,
+        &format!("raster={}x{}", info.width, info.height),
+        video.index().index().frames().len() as f64,
+    ));
     let pause = AtomicBool::new(false);
+    // Any pause (coordinator, busy UI or power) makes its time incomparable.
+    let ever_paused = AtomicBool::new(false);
     // Milliseconds paused so far; the build's overall deadline moves by it.
     let paused = std::sync::atomic::AtomicU64::new(0);
     let done = AtomicBool::new(false);
@@ -519,6 +528,9 @@ fn build(
                     })
                     .or_else(|| power.as_ref().and_then(|(_, reason)| reason.clone()));
                 pause.store(reason.is_some(), Ordering::Release);
+                if reason.is_some() {
+                    ever_paused.store(true, Ordering::Release);
+                }
                 let counts = progress.snapshot();
                 if counts.pictures > 0 {
                     handle.set_progress(
@@ -569,7 +581,13 @@ fn build(
         );
         done.store(true, Ordering::Release);
         match result {
-            Ok(ProxyStatus::Ready(_)) => ProxyState::Ready,
+            Ok(ProxyStatus::Ready(_)) => {
+                // Only a whole, unpaused build is comparable with others.
+                if !ever_paused.load(Ordering::Acquire) && progress.snapshot().reused_ranges == 0 {
+                    handle.complete();
+                }
+                ProxyState::Ready
+            }
             Ok(ProxyStatus::Failed(message)) => ProxyState::Failed(message),
             Ok(ProxyStatus::Ineligible(reason)) => {
                 ProxyState::Ineligible(ineligible_reason(&reason))

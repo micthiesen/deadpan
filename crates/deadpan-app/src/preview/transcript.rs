@@ -1232,6 +1232,14 @@ fn run_transcription(
 ) -> Result<(TranscriptKey, Transcript), String> {
     let deadline = std::time::Instant::now() + Duration::from_secs(6 * 60 * 60);
     handle.set_progress("Reading the Original's sound", None);
+    // Comparable runs use the same model files; the size is the Original's
+    // analysis samples, known with the first completed range.
+    let parameters = format!(
+        "model={} vad={}",
+        &model.sha256.as_str()[..12],
+        vad.map_or("none", |vad| &vad.sha256.as_str()[..12])
+    );
+    let mut declared = false;
     let result = (|| {
         let store = deadpan_store::ProjectStore::open(package, deadpan_store::AccessMode::ReadOnly)
             .map_err(|error| error.to_string())?;
@@ -1267,6 +1275,14 @@ fn run_transcription(
                 // The worker has exited. Let queued selected-word refinement
                 // claim inference before this background job's next range.
                 handle.release();
+                if !declared {
+                    declared = true;
+                    handle.set_work(crate::jobs::Work::new(
+                        crate::jobs::JobKind::Transcription,
+                        &parameters,
+                        update.total_samples as f64,
+                    ));
+                }
                 let percent = (update.completed_samples * 100 / update.total_samples.max(1)) as u8;
                 handle.set_progress(
                     "Transcribing source ranges",
@@ -1281,6 +1297,10 @@ fn run_transcription(
     })();
     match result {
         Ok(result) => {
+            // A run that reused cached ranges did less than its declared work.
+            if result.cached_ranges == 0 {
+                handle.complete();
+            }
             if let Some(activity) = result.activity {
                 detected(Ok(activity));
             }

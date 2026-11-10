@@ -132,6 +132,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 app.follow_system_display();
                 // Model jobs wait on battery, heat and memory pressure.
                 app.follow_system_conditions();
+                // Earlier runs' durations estimate jobs before they measure.
+                app.use_job_history(jobs::JobHistory::user());
                 // Offer the project an earlier launch left open, unless one
                 // was named explicitly on the command line.
                 match recovery::LaunchJournal::user() {

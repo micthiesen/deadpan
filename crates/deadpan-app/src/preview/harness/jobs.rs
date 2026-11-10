@@ -9,6 +9,11 @@
 //! panel lists that interrupted attempt after reopening, R retries it as a
 //! new variant, and D discards another copy's entry durably.
 //!
+//! The queued Transcription declares work that a scripted job history in
+//! the replay's private root has seen four times, so its row reads "usually
+//! takes about 3:00, from 4 earlier runs" while queued and counts down once
+//! admitted (DP-18.6). The user's own history file is never read.
+//!
 //! Then, on battery power (an injected observation; replays never read the
 //! Mac's power state), `,a` and `:generate` on a second pause leave two AI
 //! jobs waiting with the reason and Run anyway. O starts the first, the second then waits its
@@ -31,6 +36,20 @@ pub(super) fn backend() -> Backend {
         step_interval: std::time::Duration::from_millis(20),
         ending: ScriptEnding::WaitForCancel,
     }])))
+}
+
+/// The private job history the replay starts with: four earlier runs of the
+/// scripted Transcription's bucket at 0.05 s per unit (3:00 for its 3,600).
+pub(super) fn seed_history(path: &std::path::Path) -> Result<(), String> {
+    let sample = r#"{"units":1800.0,"seconds":90.0}"#;
+    let history = format!(
+        r#"{{"version":1,"buckets":{{"transcription/scripted replay":{{"used":1,"samples":[{sample},{sample},{sample},{sample}]}}}}}}"#
+    );
+    std::fs::write(path, history).map_err(|error| format!("job history: {error}"))
+}
+
+fn scripted_work() -> Option<crate::jobs::Work> {
+    crate::jobs::Work::new(JobKind::Transcription, "scripted replay", 3600.0)
 }
 
 fn widget_text(d: &Driver<'_>) -> String {
@@ -87,11 +106,11 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.chord(&[Key::Comma, Key::A])?;
     d.wait_for("Scripted generation reaches its last step", generating)?;
     let session = session(d);
-    let queued = d
-        .app()
-        .service
-        .jobs()
-        .register(JobSpec::new(JobKind::Transcription, session).detail("scripted replay job"));
+    let queued = d.app().service.jobs().register(
+        JobSpec::new(JobKind::Transcription, session)
+            .detail("scripted replay job")
+            .work(scripted_work()),
+    );
     let path = d.app().workspace.as_ref().ok_or("No project")?.path.clone();
     let parent = path.parent().ok_or("Replay project has no parent")?;
     let (retry_copy, discard_copy) = (
@@ -111,8 +130,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             && widgets.contains(": Running · Generating pictures 100%")
             && widgets.contains(
                 "Transcription · scripted replay job: Queued #1, waiting for AI pause pictures",
-            ),
-        json!({"running":"AI pause pictures · Pause: Running","queued":"Transcription: Queued #1, waiting for AI pause pictures"}),
+            )
+            && widgets.contains("usually takes about 3:00, from 4 earlier runs"),
+        json!({"running":"AI pause pictures · Pause: Running","queued":"Transcription: Queued #1, waiting for AI pause pictures · usually takes about 3:00, from 4 earlier runs"}),
         json!({"open":d.app().jobs.open,"rows":format!("{:?}", d.app().job_rows())}),
     )?;
     d.capture("Running and queued jobs")?;
@@ -164,9 +184,11 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.step("After cancel", true)?;
     let widgets = widget_text(d);
     d.check(
-        "Cancelling the model job admits the queued one, and the panel says so",
-        queued.admitted() && widgets.contains("Transcription · scripted replay job: Running"),
-        json!({"admitted":true}),
+        "Cancelling the model job admits the queued one, and the panel says so with its earlier-runs estimate",
+        queued.admitted()
+            && widgets.contains("Transcription · scripted replay job: Running")
+            && widgets.contains("left, from 4 earlier runs"),
+        json!({"admitted":true,"estimate":"about 3:00 left, from 4 earlier runs"}),
         json!({"admitted":queued.admitted(),"rows":format!("{:?}", d.app().job_rows())}),
     )?;
     d.capture("Queued job admitted after cancel")?;

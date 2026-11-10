@@ -1076,6 +1076,7 @@ impl Service {
                         allocation: receive_allocation,
                     },
                     handle,
+                    u64::from(variants),
                 );
             })
             .map_err(|error| format!("Could not start the AI pause job: {error}"))?;
@@ -2527,6 +2528,7 @@ fn job_thread(
     cancelled: Arc<AtomicBool>,
     channels: Channels,
     handle: crate::jobs::JobHandle,
+    variants: u64,
 ) {
     let JobInput {
         package,
@@ -2594,7 +2596,30 @@ fn job_thread(
     // releases the model before the writer publishes it.
     // One attempt per allocation; the writer drops the sender when no
     // further variant follows.
+    // Every variant must succeed for the job's time to be comparable.
+    let mut all_qualified = true;
+    let mut declared = false;
     while let Ok(Ok(allocated)) = allocation.recv() {
+        if !declared {
+            declared = true;
+            // Comparable jobs use the same model pack and native picture
+            // plan; the size is the native pictures of every variant.
+            let provider = &allocated.request.provider;
+            handle.set_work(allocated.request.bridge_plan().and_then(|plan| {
+                let native = plan.native_dimensions();
+                crate::jobs::Work::new(
+                    crate::jobs::JobKind::AiPause,
+                    &format!(
+                        "pack={}@{} native={}x{}",
+                        provider.pack_id.as_str(),
+                        provider.pack_version.as_str(),
+                        native.width(),
+                        native.height()
+                    ),
+                    (u64::from(plan.native_frame_count()) * variants) as f64,
+                )
+            }));
+        }
         // Claim the model; tell the writer only when it must wait.
         handle.claim();
         if !handle.admitted() {
@@ -2651,6 +2676,7 @@ fn job_thread(
                 ),
             },
         };
+        all_qualified &= matches!(run.result, RunResult::Qualified(_));
         // The worker has exited: the next waiter may load its model while the
         // writer publishes this run.
         handle.release();
@@ -2659,6 +2685,9 @@ fn job_thread(
         if finished.send(run).is_err() {
             return;
         }
+    }
+    if declared && all_qualified {
+        handle.complete();
     }
 }
 

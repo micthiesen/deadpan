@@ -3185,11 +3185,11 @@
             "deliverable": "Actual stages, elapsed time, historical estimates and indeterminate/queued feedback",
             "score": 0.5,
             "evidence": [
-              "docs/JOBS.md:256-300",
-              "docs/JOBS.md:444-470",
+              "docs/JOBS.md:292-385",
+              "crates/deadpan-app/src/jobs/history.rs",
               "docs/REQUIREMENTS.md DP-18"
             ],
-            "remaining": "Jobs UI and current-rate remaining estimates exist; sufficient-data historical estimates are explicitly absent.",
+            "remaining": "Jobs UI, current-rate estimates and per-user earlier-run estimates (three comparable runs, median rate) exist; their accuracy on real model, render and proxy runs on this Mac is unmeasured.",
             "confidence": "high"
           },
           {

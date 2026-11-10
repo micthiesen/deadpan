@@ -531,6 +531,66 @@ fn generation_queues_for_the_model_and_cancels_durably_while_queued() {
     until("the coordinator to empty", || board.is_empty());
 }
 
+/// A later AI pause run shows the estimate from earlier comparable runs
+/// before it reports progress, then its own measured rate once reliable.
+/// The cancelled runs here record nothing.
+#[test]
+fn later_generation_estimates_from_earlier_runs_then_from_its_own_rate() {
+    let slow = || AiScript {
+        unavailable: None,
+        steps: 40,
+        step_interval: Duration::from_millis(250),
+        ending: AiEnding::WaitForCancel,
+    };
+    let fixture = project(vec![slow(), slow()], vec![]);
+    let board = fixture.service.jobs().clone();
+    let row = || {
+        board
+            .snapshot()
+            .into_iter()
+            .find(|row| row.kind == JobKind::AiPause)
+    };
+    let cancel = |ticket: u64| {
+        board.cancel(row().unwrap().id);
+        let concluded = wait(&fixture.service, |update| {
+            ai_job(update).is_some_and(|job| job.ticket == ticket && !job.running())
+        });
+        assert_eq!(
+            ai_job(&concluded).unwrap().outcome,
+            Some(AiOutcome::Cancelled)
+        );
+        until("the coordinator to empty", || board.is_empty());
+    };
+    // The first run has no earlier runs: it stays indeterminate until its
+    // own progress is measured.
+    start_ai(&fixture, &fixture.workspace, 2);
+    until("the run to declare its work", || {
+        board.declared_work(JobKind::AiPause).is_some()
+    });
+    let work = board.declared_work(JobKind::AiPause).unwrap();
+    assert!(row().unwrap().historical.is_none());
+    cancel(2);
+    // Three earlier comparable runs of 2:00 each.
+    for _ in 0..3 {
+        board.record_earlier_run(&work, Duration::from_secs(120));
+    }
+    start_ai(&fixture, &fixture.workspace, 3);
+    until("the earlier runs' estimate", || {
+        row().is_some_and(|row| row.state == RowState::Running && row.historical.is_some())
+    });
+    let shown = row().unwrap();
+    let historical = shown.historical.unwrap();
+    assert!(historical.left && historical.runs == 3, "{historical:?}");
+    assert!(historical.duration <= Duration::from_secs(120));
+    assert!(shown.remaining.is_none());
+    // Its own measured rate replaces the earlier runs' estimate.
+    until("the measured rate", || {
+        row().is_some_and(|row| row.remaining.is_some())
+    });
+    assert!(row().unwrap().historical.is_none());
+    cancel(3);
+}
+
 /// An attempt interrupted by a crash is offered after reopening; Discard
 /// removes it durably and a retry supersedes it.
 #[test]

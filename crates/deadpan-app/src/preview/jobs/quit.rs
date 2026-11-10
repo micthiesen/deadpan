@@ -55,6 +55,12 @@ impl DeadpanApp {
     /// Native launches: sample battery, Low Power Mode, thermal and memory
     /// conditions for the coordinator. Only explicitly opted-in real-model
     /// qualification replays use this production probe.
+    /// Estimate from, and record into, `history` (the native app: the
+    /// per-user file; replays: a private file).
+    pub fn use_job_history(&self, history: crate::jobs::JobHistory) {
+        self.service.jobs().use_history(history);
+    }
+
     pub fn follow_system_conditions(&self) {
         self.service
             .jobs()

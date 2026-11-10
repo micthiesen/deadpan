@@ -136,6 +136,12 @@ struct Service {
     render: Option<render::NativeRender>,
     /// The render's Jobs-panel registration while it owns the render slot.
     render_registration: Option<crate::jobs::JobHandle>,
+    /// The render attempt that registration declared its work for, and
+    /// whether its run was recorded in the job history.
+    render_work: Option<(
+        deadpan_cli::encoded_render::workflow::WorkflowIdentity,
+        bool,
+    )>,
     render_update: Option<super::ProjectRenderUpdate>,
     render_history: Option<super::render_history::Update>,
     takes: Option<super::takes::Update>,
@@ -242,6 +248,7 @@ pub(super) fn run(
         library,
         render: None,
         render_registration: None,
+        render_work: None,
         render_update: None,
         render_history: None,
         takes: None,

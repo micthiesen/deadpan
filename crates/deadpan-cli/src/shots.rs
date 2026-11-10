@@ -63,6 +63,14 @@ impl ShotInput {
             .video()
             .map_or(0, |video| video.index().index().frames().len())
     }
+
+    /// The Original's decoded picture size, `(width, height)`.
+    pub fn raster(&self) -> Option<(u32, u32)> {
+        self.receipt.snapshot().video().map(|video| {
+            let info = video.interpretation();
+            (info.width, info.height)
+        })
+    }
 }
 
 #[derive(Debug, Clone)]

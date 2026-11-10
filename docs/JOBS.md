@@ -328,8 +328,57 @@ indeterminate (stage only).
 first fraction reported in the current stage to the latest one. It needs at
 least 5% progress over at least five seconds, and hides while the progress
 is indeterminate, paused, requeued, complete, in a new stage, or once the job
-has outlasted its own projection. Nothing is estimated from history or from
-other jobs.
+has outlasted its own projection. Nothing is estimated from other jobs.
+
+### Estimates from earlier runs
+
+Before a job has measured its own rate, its row can show what earlier
+comparable runs took, for example `Transcription · the Original: Running ·
+0:12 elapsed · about 2:10 left, from 4 earlier runs`, or while it waits,
+`usually takes about 3:00, from 4 earlier runs`. The words "from N earlier
+runs" are part of the row's spoken sentence. Once the run's own measured rate
+is available (above), it replaces the earlier-runs estimate.
+
+- **Where.** `crate::jobs::JobHistory`, one per-user file at
+  `Application Support/Deadpan/job-history.json`. It is never part of a
+  project, authored state, history or any database. Tests, smoke runs and
+  the CLI keep it in memory; replays use a file in their private root
+  (the `jobs` replay scripts one) and never read the user's file.
+- **What.** Each sample is one run's work size and its running time. The
+  bucket is the kind plus the parameters that change its speed:
+
+  | Kind | Size | Parameters |
+  | --- | --- | --- |
+  | AI pause pictures | native pictures × variants | model pack and version, native raster |
+  | Transcription | analysis samples of the Original | recognition and detection model files |
+  | Shot detection | Original pictures | Original raster |
+  | Seek proxy | Original pictures | Original raster |
+  | Render | output frames | canvas raster, automatic or engineering policy |
+
+  Other kinds declare no work and show no estimate.
+- **Enough data.** At least three samples in the same bucket. The estimate
+  is the median seconds per unit times this run's size, so one slow run does
+  not move it. Running rows show the expected total less the running time,
+  and hide the estimate once the run outlasts it. A deferred job that has
+  not yet claimed its resource shows the whole expected time.
+- **Running time.** From the job's first admission with its resource to
+  `JobHandle::complete`, less time spent queued again for the resource.
+- **Recorded only when comparable.** The owner calls
+  `JobHandle::complete` only after a successful run. Nothing is recorded
+  for a failed, cancelled or shutting-down run, a run that crossed system
+  sleep, or a run that paused at a yield (or, for proxies, for the busy UI
+  or power). Scans and proxies that reused cached ranges did less than their
+  declared work and are not recorded; neither are render retries, which
+  resume from a checkpoint. A run that paused also shows no earlier-runs
+  estimate afterwards, since its elapsed time no longer compares.
+- **Bounds and damage.** At most 16 newest samples per bucket and 64
+  buckets (the least recently recorded is dropped), samples between 0.5
+  seconds and a week, and a 256 KiB file. Versioned (`version: 1`). An
+  unreadable, oversized or invalid file is ignored with a diagnostic on
+  standard error and replaced on the next record; invalid samples are
+  dropped one by one. A newer version is left unchanged and the history
+  stays in memory. Writes replace the file atomically outside the
+  coordinator's lock.
 
 The AI cancel of a row addresses exactly that job (its ticket is the row's
 tag), so several queued generations are cancelled one at a time.
@@ -398,6 +447,21 @@ The list survives acknowledging the recovery report.
   - the waiter's own cancel flag
   - shutdown wakeups
   - earlier-session cancellation
+  - estimates from earlier runs: the minimum of three comparable runs,
+    buckets per kind and parameters, waiting and running presentation, the
+    measured rate taking over, a pause hiding the estimate, and no record
+    for cancelled, paused, slept or failed runs or for queue time
+    (`earlier_comparable_runs_estimate_until_the_run_measures_its_own_rate`,
+    `a_requeued_deferred_job_records_only_its_running_time`)
+- **Job history unit tests** (`jobs::history::tests`): median and minimum
+  sample rule, bucket separation, bounds per bucket and in total,
+  persistence, corrupt and oversized files ignored with a diagnostic and
+  replaced, and a newer version left unchanged.
+- **Service test**
+  `project::tests::jobs::later_generation_estimates_from_earlier_runs_then_from_its_own_rate`:
+  a real scripted AI pause run declares its work and shows no estimate; with
+  three earlier runs recorded, the next run shows "from 3 earlier runs"
+  before progress and switches to its own measured rate.
   - uncancellable rows
   - progress clamping and row order
   - power, thermal and Low Power holds for models only, Run anyway still
@@ -485,7 +549,10 @@ The list survives acknowledging the recovery report.
 - **Replay `jobs`** (`cargo xtask replays --scenario jobs`) drives the panel
   through real keys:
   - the running and queued rows
-  - X cancels generation and admits the queued job
+  - the queued row reads "usually takes about 3:00, from 4 earlier runs"
+    from a scripted history file in the replay's private root
+  - X cancels generation and admits the queued job, which then shows
+    "left, from 4 earlier runs"
   - Escape closes the panel
   - a crash copy reopens with its interrupted attempt
   - R retries it as a new attempt of the same request
@@ -512,8 +579,11 @@ These are not implemented or not qualified:
   unqualified.
 - **Sleep.** Every registered job kind has the policy above. Physical
   sleep/wake and native notification delivery remain owner checks.
-- **Historical estimates.** Remaining time uses only the current run's
-  measured rate.
+- **Earlier-run estimates on real work.** The history and its
+  presentation are tested with recorded samples and scripted jobs; the
+  accuracy of estimates for real model, render and proxy runs on this Mac
+  is not measured. Transcription declares its size with its first completed
+  range, so its estimate starts then.
 - **Physical quit paths.** ⌘Q and Dock Quit through the native guard are
   not exercised by replays (they push a window close).
 - **App-wide coordinator.** A coordinator shared across several app
