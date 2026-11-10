@@ -8,6 +8,11 @@
 //! (multiplicative). The first play is always unchanged. Values are exact; the
 //! scale is quantized once to the framing grid. Changing the play count keeps
 //! the steps, so a fourth play continues the same progression.
+//!
+//! A speed step is different: speed changes timing, so the plan never derives
+//! it. It is the recipe of each later play's own Retime override, recorded so
+//! the semantic planner can extend, change or remove those overrides while
+//! leaving plays edited by hand alone.
 
 use serde::{Deserialize, Serialize};
 
@@ -56,6 +61,102 @@ pub struct RepeatEscalation {
     /// Centered picture scale progression.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub zoom: Option<ZoomStep>,
+    /// The recipe that made each later play's own Retime override. Pictures
+    /// and sound read those overrides, never this value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub speed: Option<SpeedStep>,
+}
+
+/// `:repeat … speed-step=`: 0-based play `k` runs at `1 + k·step`, or
+/// `(1 + step)^k` multiplied, as its own sparse Retime override, so each play
+/// stays an ordinary editable occurrence. Each play's duration rounds once,
+/// ties to even, from its input length and exact rate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpeedStep {
+    pub step: ExactRatio,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub multiply: bool,
+    /// Keep pitch while the speed changes; pitch follows speed (tape) otherwise.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub preserve_pitch: bool,
+}
+
+impl SpeedStep {
+    /// Exact speed of 0-based play `play`; the first play is always 1.
+    pub fn rate(&self, play: u32) -> Result<ExactRatio, EscalationError> {
+        if play == 0 {
+            return Ok(ExactRatio::ONE);
+        }
+        let rate = if self.multiply {
+            ExactRatio::ONE
+                .checked_add(self.step)
+                .and_then(|factor| power(factor, play))
+        } else {
+            ExactRatio::integer(i64::from(play))
+                .checked_mul(self.step)
+                .and_then(|delta| ExactRatio::ONE.checked_add(delta))
+        }
+        .map_err(|_| EscalationError::SpeedRange)?;
+        if rate.compare(ExactRatio::ZERO).is_gt() {
+            Ok(rate)
+        } else {
+            Err(EscalationError::SpeedRange)
+        }
+    }
+
+    /// Output length of play `play` whose content lasts `input` frames.
+    pub fn duration(
+        &self,
+        play: u32,
+        input: crate::FrameDuration,
+    ) -> Result<crate::FrameDuration, EscalationError> {
+        output_duration(self.rate(play)?, input)
+    }
+
+    pub fn pitch(&self) -> crate::PitchPolicy {
+        if self.preserve_pitch {
+            crate::PitchPolicy::Preserve
+        } else {
+            crate::PitchPolicy::FollowSpeed
+        }
+    }
+
+    fn validate(&self, plays: u32) -> Result<(), EscalationError> {
+        if self.step == ExactRatio::ZERO {
+            return Err(EscalationError::SpeedUnchanged);
+        }
+        // Speed is monotonic in the play index, so the last play bounds every
+        // play, and the largest duration ratio comes from it or the first.
+        let last = self.rate(plays.saturating_sub(1))?;
+        if last
+            .compare(ExactRatio::new(1, MAX_SPEED_RATIO).expect("positive"))
+            .is_lt()
+            || last.compare_integer(MAX_SPEED_RATIO as i64).is_gt()
+        {
+            return Err(EscalationError::SpeedRange);
+        }
+        Ok(())
+    }
+}
+
+/// Plays may run between 1/64 and 64 times normal speed, like zoom scale.
+const MAX_SPEED_RATIO: i128 = 64;
+
+/// `input / rate` frames, rounded once (ties to even), and at least one frame.
+pub fn output_duration(
+    rate: ExactRatio,
+    input: crate::FrameDuration,
+) -> Result<crate::FrameDuration, EscalationError> {
+    let frames = ExactRatio::integer(input.frames())
+        .checked_div(rate)
+        .and_then(ExactRatio::round_even)
+        .map_err(|_| EscalationError::SpeedRange)?
+        .max(1);
+    i64::try_from(frames)
+        .ok()
+        .and_then(|frames| crate::FrameDuration::new(frames).ok())
+        .ok_or(EscalationError::SpeedRange)
 }
 
 fn is_unity(gain: &GainDb) -> bool {
@@ -70,12 +171,14 @@ pub enum EscalationError {
     ZoomFactor,
     ZoomUnchanged,
     ScaleRange,
+    SpeedUnchanged,
+    SpeedRange,
 }
 
 impl std::fmt::Display for EscalationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Empty => "an escalation must change gain or scale",
+            Self::Empty => "an escalation must change gain, scale or speed",
             Self::GainRange => {
                 "the last play's gain would leave -96 dB..=+24 dB; lower the gain step or the play count"
             }
@@ -84,6 +187,10 @@ impl std::fmt::Display for EscalationError {
             Self::ZoomUnchanged => "a zoom step must change the scale (not +0 or ×1)",
             Self::ScaleRange => {
                 "the last play's scale would leave 1/64..=64; lower the zoom step or the play count"
+            }
+            Self::SpeedUnchanged => "a speed step must change the speed (not 0)",
+            Self::SpeedRange => {
+                "the last play's speed would leave 1/64..=64 times normal; change the speed step or the play count"
             }
         })
     }
@@ -94,8 +201,11 @@ impl std::error::Error for EscalationError {}
 impl RepeatEscalation {
     /// Check the step and every play of a Repeat with `plays` total plays.
     pub fn validate(&self, plays: u32) -> Result<(), EscalationError> {
-        if self.gain_step == GainDb::UNITY && self.zoom.is_none() {
+        if self.gain_step == GainDb::UNITY && self.zoom.is_none() && self.speed.is_none() {
             return Err(EscalationError::Empty);
+        }
+        if let Some(speed) = &self.speed {
+            speed.validate(plays)?;
         }
         let last = plays.saturating_sub(1);
         let gain = self.gain_millidecibels(last);
@@ -123,6 +233,12 @@ impl RepeatEscalation {
             self.pose(last).map_err(|_| EscalationError::ScaleRange)?;
         }
         Ok(())
+    }
+
+    /// Whether pictures or sound derive anything from this escalation; a
+    /// speed recipe alone lives in the plays' own overrides.
+    pub fn derives_plays(&self) -> bool {
+        self.gain_step != GainDb::UNITY || self.zoom.is_some()
     }
 
     /// Exact gain of 0-based play `play`, in millidecibels.
@@ -209,6 +325,7 @@ mod tests {
                 progression,
                 target: None,
             }),
+            speed: None,
         }
     }
 

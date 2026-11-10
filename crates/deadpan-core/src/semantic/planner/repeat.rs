@@ -98,6 +98,11 @@ where
         escalation: Option<crate::RepeatEscalation>,
     ) -> Result<(), EditError> {
         if let Some(escalation) = &escalation {
+            if escalation.speed.is_some() {
+                return Err(invalid(
+                    "a speed step needs the Repeat's plays; give it with :repeat N speed-step=",
+                ));
+            }
             escalation
                 .validate(plays)
                 .map_err(|error| invalid(&error.to_string()))?;
@@ -276,8 +281,13 @@ where
         Ok(())
     }
 
-    /// Replace the selected Repeat's escalation; a step-free value removes it.
+    /// Replace the selected Repeat's gain and zoom steps; a step-free value
+    /// removes them. The speed recipe belongs to [`Self::speed_plays`] and is
+    /// kept.
     fn set_escalation(&mut self, escalation: crate::RepeatEscalation) -> Result<(), EditError> {
+        if escalation.speed.is_some() {
+            return Err(invalid("a speed step is set with speed-step="));
+        }
         let selected = self
             .context
             .selected_child
@@ -294,12 +304,33 @@ where
                 "escalation requires a Repeat",
             ));
         };
-        let escalation = (escalation.gain_step != crate::GainDb::UNITY
-            || escalation.zoom.is_some())
-        .then_some(escalation);
+        let escalation = crate::RepeatEscalation {
+            speed: current.as_ref().and_then(|current| current.speed),
+            ..escalation
+        };
+        self.replace_escalation(&selected, iterations.len(), escalation)
+    }
+
+    /// Author `escalation` on `repeat` unless it is already current; an
+    /// escalation with no step is removed.
+    fn replace_escalation(
+        &mut self,
+        repeat: &NodeId,
+        plays: u32,
+        escalation: crate::RepeatEscalation,
+    ) -> Result<(), EditError> {
+        let NodeKind::Repeat {
+            escalation: current,
+            ..
+        } = &self.current.nodes()[repeat].kind
+        else {
+            return Err(invalid("escalation requires a Repeat"));
+        };
+        let escalation =
+            (escalation.derives_plays() || escalation.speed.is_some()).then_some(escalation);
         if let Some(escalation) = &escalation {
             escalation
-                .validate(iterations.len())
+                .validate(plays)
                 .map_err(|error| invalid(&error.to_string()))?;
         }
         if escalation == *current {
@@ -317,7 +348,7 @@ where
         let edit = LeafEdit::new(
             new_revision,
             Command::SetRepeatEscalation {
-                node: selected,
+                node: repeat.clone(),
                 escalation,
             },
         )?;
@@ -505,11 +536,21 @@ where
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
     /// Give each later play of the selected Repeat its own speed change, as a
-    /// sparse one-play Retime override, so every play stays editable.
+    /// sparse one-play Retime override, so every play stays editable, and
+    /// record the recipe on the Repeat. A zero step removes the recipe and
+    /// returns its plays to normal speed.
+    ///
+    /// A play belongs to the previous recipe (normal speed when there is
+    /// none) when it has no override, or when its override's outermost node is
+    /// an Edit Retime at that recipe's rate and pitch for its own input; only
+    /// that Retime's duration and pitch change, so edits inside the play
+    /// survive. Any other play has been changed by hand: it refuses a new
+    /// recipe, and `continuing` (after a count change) leaves it alone.
     pub(super) fn speed_plays(
         &mut self,
         trace_index: usize,
-        speed: crate::SpeedStep,
+        speed: Option<crate::SpeedStep>,
+        continuing: bool,
     ) -> Result<(), EditError> {
         let repeat = self
             .context
@@ -527,7 +568,10 @@ where
             ancestor = self.current.parent_of(&node);
         }
         let NodeKind::Repeat {
-            child, iterations, ..
+            child,
+            iterations,
+            escalation,
+            ..
         } = &self.current.nodes()[&repeat].kind
         else {
             return Err(EditError::new(
@@ -536,103 +580,118 @@ where
             ));
         };
         let (child, plays) = (child.clone(), iterations.len());
-        if plays < 2 {
+        let escalation = escalation.clone().unwrap_or_default();
+        let old = escalation.speed;
+        let speed = speed.filter(|speed| speed.step != crate::ExactRatio::ZERO);
+        if speed.is_some() && plays < 2 {
             return Err(invalid("one play has no later plays to speed up"));
         }
-        let length = crate::ExactRatio::integer(self.current.durations_shared()?[&child].frames());
+        if speed.is_none() && old.is_none() {
+            return Err(invalid("the Repeat's plays have no speed step to remove"));
+        }
+        // Record the recipe first so its validation names every play.
+        self.replace_escalation(
+            &repeat,
+            plays,
+            crate::RepeatEscalation {
+                speed,
+                ..escalation
+            },
+        )?;
+        let rate = |step: Option<crate::SpeedStep>, play: u32| {
+            step.map_or(Ok(crate::ExactRatio::ONE), |step| step.rate(play))
+                .map_err(|error| invalid(&error.to_string()))
+        };
+        let pitch = |step: Option<crate::SpeedStep>| {
+            step.map_or(crate::PitchPolicy::FollowSpeed, |step| step.pitch())
+        };
+        let default_input = self.current.durations_shared()?[&child];
         let mut subtree = 0usize;
         let mut pending = vec![child.clone()];
         while let Some(node) = pending.pop() {
             subtree += 1;
             pending.extend(self.current.children(&node).cloned());
         }
-        let factor = crate::ExactRatio::ONE
-            .checked_add(speed.step)
-            .map_err(crate::DocumentError::from)?;
-        let mut rate = crate::ExactRatio::ONE;
         for ordinal in 1..plays {
-            rate = if speed.multiply {
-                rate.checked_mul(factor)
-            } else {
-                rate.checked_add(speed.step)
-            }
-            .map_err(crate::DocumentError::from)?;
-            if !rate.compare(crate::ExactRatio::ZERO).is_gt() {
-                return Err(invalid(&format!(
-                    "play {} would run at zero or negative speed",
-                    ordinal + 1
-                )));
-            }
-            let frames = length
-                .checked_div(rate)
-                .and_then(crate::ExactRatio::round_even)
-                .map_err(crate::DocumentError::from)?
-                .max(1);
-            let duration = crate::FrameDuration::new(
-                i64::try_from(frames).map_err(|_| invalid("a play's length overflows"))?,
-            )
-            .map_err(crate::DocumentError::from)?;
             let NodeKind::Repeat { iterations, .. } = &self.current.nodes()[&repeat].kind else {
                 return Err(invalid("the Repeat changed while its plays were sped up"));
             };
             let iteration = iterations
                 .at(ordinal)
                 .ok_or_else(|| invalid("a play disappeared while its speed was set"))?;
-            if self
+            let root = self
                 .current
                 .overrides()
                 .get(&repeat)
-                .is_some_and(|plays| plays.get(&iteration).is_some())
-            {
-                return Err(invalid(&format!(
-                    "play {} already has its own content; open it with :scope play {} to change it",
+                .and_then(|plays| plays.get(&iteration))
+                .cloned();
+            let Some(root) = root else {
+                let Some(step) = speed else {
+                    continue;
+                };
+                let duration = step
+                    .duration(ordinal, default_input)
+                    .map_err(|error| invalid(&error.to_string()))?;
+                self.wrap_play(&repeat, &child, iteration, subtree, duration, step.pitch())?;
+                continue;
+            };
+            let refused = || {
+                invalid(&format!(
+                    "play {} has been changed by hand; open it with :scope play {} to change its speed",
                     ordinal + 1,
                     ordinal + 1
-                )));
+                ))
+            };
+            let matching = match &self.current.nodes()[&root].kind {
+                NodeKind::Retime {
+                    duration,
+                    mapping,
+                    pitch: current_pitch,
+                    purpose,
+                    ..
+                } if purpose.is_edit() => {
+                    let previous = crate::output_duration(rate(old, ordinal)?, mapping.duration())
+                        .map_err(|error| invalid(&error.to_string()))?;
+                    // Pitch is inaudible at normal speed, so a unity play
+                    // matches either policy.
+                    (*duration == previous && (old.is_none() || *current_pitch == pitch(old)))
+                        .then_some((*duration, mapping.duration(), *current_pitch))
+                }
+                _ => None,
+            };
+            let Some((duration, input, current_pitch)) = matching else {
+                if continuing {
+                    continue;
+                }
+                return Err(refused());
+            };
+            let wanted = crate::output_duration(rate(speed, ordinal)?, input)
+                .map_err(|error| invalid(&error.to_string()))?;
+            let wanted_pitch = if speed.is_some() {
+                pitch(speed)
+            } else {
+                current_pitch
+            };
+            if wanted == duration && wanted_pitch == current_pitch {
+                continue;
             }
             self.charge_step(false)?;
-            let SemanticAllocation::Isolation {
-                new_revision,
-                identities,
-            } = (self.allocate)(SemanticAllocationRequest::Isolation {
-                step_index: self.steps.len(),
-                nodes: subtree + 1,
-                marks: 0,
-            })?
+            let SemanticAllocation::ParameterEdit { new_revision } =
+                (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                    step_index: self.steps.len(),
+                })?
             else {
-                return Err(invalid("a per-play speed requires an Isolation allocation"));
+                return Err(invalid(
+                    "a play's speed change requires a parameter allocation",
+                ));
             };
             self.reserve_revision(&new_revision)?;
-            for node in &identities.nodes {
-                self.reserve_node(node)?;
-            }
-            let mut nodes = identities.nodes;
-            let wrapper = nodes
-                .pop()
-                .ok_or_else(|| invalid("a per-play speed needs its wrapper identity"))?;
             self.commit_leaf(LeafEdit::new(
                 new_revision,
-                Command::EditOccurrence {
-                    instance: crate::InstancePath {
-                        node: child.clone(),
-                        repeats: vec![crate::RepeatInstance {
-                            node: repeat.clone(),
-                            iteration,
-                        }],
-                    },
-                    edit: crate::OccurrenceEdit::WrapRetime {
-                        id: wrapper,
-                        duration,
-                        pitch: if speed.preserve_pitch {
-                            crate::PitchPolicy::Preserve
-                        } else {
-                            crate::PitchPolicy::FollowSpeed
-                        },
-                    },
-                    identities: crate::OccurrenceIdentities {
-                        nodes,
-                        marks: identities.marks,
-                    },
+                Command::SetRetime {
+                    node: root,
+                    duration: wanted,
+                    pitch: wanted_pitch,
                 },
             )?)?;
         }
@@ -645,5 +704,78 @@ where
             FrameRange::new(start, self.child_ends[slot].1).map_err(crate::DocumentError::from)?,
         );
         Ok(())
+    }
+
+    /// Continue the selected Repeat's recorded speed recipe onto plays that
+    /// have none yet, after its play count changed.
+    pub(super) fn continue_speed_plays(&mut self, trace_index: usize) -> Result<(), EditError> {
+        let Some(repeat) = self.context.selected_child.clone() else {
+            return Ok(());
+        };
+        let Some(NodeKind::Repeat {
+            escalation:
+                Some(crate::RepeatEscalation {
+                    speed: Some(speed), ..
+                }),
+            ..
+        }) = self.current.nodes().get(&repeat).map(|node| &node.kind)
+        else {
+            return Ok(());
+        };
+        let speed = *speed;
+        self.speed_plays(trace_index, Some(speed), true)
+    }
+
+    /// One play's own Retime override, through occurrence isolation.
+    fn wrap_play(
+        &mut self,
+        repeat: &NodeId,
+        child: &NodeId,
+        iteration: crate::IterationId,
+        subtree: usize,
+        duration: crate::FrameDuration,
+        pitch: crate::PitchPolicy,
+    ) -> Result<(), EditError> {
+        self.charge_step(false)?;
+        let SemanticAllocation::Isolation {
+            new_revision,
+            identities,
+        } = (self.allocate)(SemanticAllocationRequest::Isolation {
+            step_index: self.steps.len(),
+            nodes: subtree + 1,
+            marks: 0,
+        })?
+        else {
+            return Err(invalid("a per-play speed requires an Isolation allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        for node in &identities.nodes {
+            self.reserve_node(node)?;
+        }
+        let mut nodes = identities.nodes;
+        let wrapper = nodes
+            .pop()
+            .ok_or_else(|| invalid("a per-play speed needs its wrapper identity"))?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::EditOccurrence {
+                instance: crate::InstancePath {
+                    node: child.clone(),
+                    repeats: vec![crate::RepeatInstance {
+                        node: repeat.clone(),
+                        iteration,
+                    }],
+                },
+                edit: crate::OccurrenceEdit::WrapRetime {
+                    id: wrapper,
+                    duration,
+                    pitch,
+                },
+                identities: crate::OccurrenceIdentities {
+                    nodes,
+                    marks: identities.marks,
+                },
+            },
+        )?)
     }
 }

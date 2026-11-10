@@ -189,6 +189,81 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "One undo removes the wrap, gaps and escalation",
     )?;
 
+    // :repeat speed-step=50% gives each later play its own kept-pitch speed
+    // change: speeds 1, 1.5 and 2 over the 12-frame beat last 12, 8 and 6.
+    select_split_beat(d)?;
+    let before = d.revision();
+    d.command("repeat 3 speed-step=50%")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let repeat = d.app().selected_beat.clone().ok_or("No Repeat")?;
+    let plays = |d: &Driver<'_>| -> Result<(Vec<i64>, Option<deadpan_core::SpeedStep>), String> {
+        let workspace = d.app().workspace.clone().ok_or("No project")?;
+        let document = &workspace.document;
+        let NodeKind::Repeat {
+            child,
+            iterations,
+            escalation,
+            ..
+        } = &document.nodes()[&repeat].kind
+        else {
+            return Err("No Repeat".into());
+        };
+        let durations = document.durations().map_err(|error| error.to_string())?;
+        let lengths = (0..iterations.len())
+            .map(|index| {
+                let root = iterations
+                    .at(index)
+                    .and_then(|play| document.overrides().get(&repeat)?.get(&play).cloned())
+                    .unwrap_or_else(|| child.clone());
+                durations[&root].frames()
+            })
+            .collect();
+        Ok((
+            lengths,
+            escalation.as_ref().and_then(|escalation| escalation.speed),
+        ))
+    };
+    let (lengths, speed) = plays(d)?;
+    d.check(
+        ":repeat 3 speed-step=50% plays each later play faster, keeping pitch",
+        lengths == [12, 8, 6]
+            && speed.is_some_and(|speed| speed.preserve_pitch && !speed.multiply)
+            && d.app().sequence_length() == duration + 14,
+        json!({"plays":[12,8,6],"preserve_pitch":true,"frames":duration + 14}),
+        json!({"plays":lengths,"speed":format!("{speed:?}"),"frames":d.app().sequence_length(),"message":d.app().message,"error":d.app().error}),
+    )?;
+    let row = scenarios::text_paint_visibility(d, "+50%, pitch kept");
+    d.check(
+        "The inspector shows the speed added per play",
+        !row.is_empty() && row.iter().all(|paint| paint["fully_visible"] == true),
+        json!("+50%, pitch kept fully painted"),
+        json!(row),
+    )?;
+    d.capture("Repeat with a speed step")?;
+    // A larger count continues the progression; speed-step=0 returns every
+    // play to normal speed.
+    for (command, expected, frames) in [
+        ("repeat 4", vec![12, 8, 6, 5], duration + 19),
+        ("repeat speed-step=0", vec![12, 12, 12, 12], duration + 36),
+    ] {
+        let before = d.revision();
+        d.command(command)?;
+        d.changed(&before)?;
+        d.settled()?;
+        let (lengths, speed) = plays(d)?;
+        d.check(
+            &format!(":{command} keeps the plays on the speed recipe"),
+            lengths == expected && d.app().sequence_length() == frames,
+            json!({"plays":expected,"frames":frames}),
+            json!({"plays":lengths,"speed":format!("{speed:?}"),"frames":d.app().sequence_length(),"message":d.app().message,"error":d.app().error}),
+        )?;
+    }
+    for frames in [duration + 19, duration + 14] {
+        undo(d, frames, "Undo restores the previous speed plays exactly")?;
+    }
+    undo(d, duration, "One undo removes the wrap and its speed plays")?;
+
     // ,m toggles the beat's mute; with a Visual range it mutes that range.
     let beat = select_split_beat(d)?;
     let before = d.revision();

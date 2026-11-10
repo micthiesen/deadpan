@@ -1157,6 +1157,57 @@ pub fn ramp(dir: &Path) -> Result<Fixture> {
     )
 }
 
+/// `:repeat 3 speed-step=50%` on Edit [12, 24) (Original 24..36) through the
+/// headless semantic path, with the default kept pitch: plays at 1, 1.5 and 2
+/// times speed last 12, 8 and 6 frames, each later play its own Preserve
+/// Retime. Output frame n of a play at rate r shows input floor((n + 1/2)·r),
+/// so play 2 at Edit 24 shows Original 24, 26, …, 35 and play 3 at Edit 32
+/// shows Original 25, 27, …, 35; the rest follows from Original 36 at Edit 38.
+pub fn speed_step(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "speed-step")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let target = root_child_at(&document, 12)?.0;
+    let saved = project.run_semantic(
+        json!([{"type":"set_repeat","plays":3,
+            "speed":{"step":{"numerator":"1","denominator":"2"},"preserve_pitch":true}}]),
+        12,
+        Some(&target),
+    )?;
+    let (repeat, _) = root_child_at(&saved, 12)?;
+    let NodeKind::Repeat {
+        escalation: Some(RepeatEscalation {
+            speed: Some(speed), ..
+        }),
+        ..
+    } = &saved.nodes()[&repeat].kind
+    else {
+        return Err("the beat was wrapped with a speed recipe".into());
+    };
+    if !speed.preserve_pitch || saved.duration()?.frames() != BASE_FRAMES as i64 + 14 {
+        return Err(format!(
+            "unexpected speed step {speed:?}, {} frames",
+            saved.duration()?.frames()
+        )
+        .into());
+    }
+    let mut expectations = vec![
+        (0, base(0)),
+        (11, base(11)),
+        (12, original(24)),
+        (23, original(35)),
+    ];
+    expectations.extend([0u64, 1, 4, 7].map(|n| (24 + n, original(24 + (2 * n + 1) * 3 / 4))));
+    expectations.extend([0u64, 1, 5].map(|n| (32 + n, original(24 + n * 2 + 1))));
+    expectations.extend([(38, original(36)), (43, original(41))]);
+    project.finish(
+        vec!["Escalation", "Stretch / pitch"],
+        expectations,
+        vec!["speed progression: each later play is its own Preserve Retime".to_owned()],
+    )
+}
+
 /// One continuous four-minute Preserve stage, crossing the former output cap.
 /// Repeats stay inside the processor, so its state must not reset per play.
 pub fn disk_preserve(dir: &Path) -> Result<Fixture> {
@@ -1459,6 +1510,7 @@ pub fn escalating_repeat(dir: &Path) -> Result<Fixture> {
         Ok(Command::SetRepeatEscalation {
             node: node("escalator")?,
             escalation: Some(RepeatEscalation {
+                speed: None,
                 gain_step: GainDb::new(3_000)?,
                 zoom: Some(ZoomStep {
                     step: grid_step()?,
@@ -2098,6 +2150,7 @@ pub fn repeat_gaps_steps(dir: &Path) -> Result<Fixture> {
     let document = project.split_root(24)?;
     let beat = root_child_at(&document, 12)?.0;
     let escalation = serde_json::to_value(RepeatEscalation {
+        speed: None,
         gain_step: GainDb::new(3_000)?,
         zoom: Some(ZoomStep {
             step: grid_step()?,
@@ -3898,9 +3951,10 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 46] = [
+    let builders: [(&str, Builder); 47] = [
         ("audio-shift", audio_shift),
         ("ramp", ramp),
+        ("speed-step", speed_step),
         ("role-repeat-across", role_repeat_across),
         ("video-repeat-across", video_repeat_across),
         ("triumphant-sting", triumphant_sting),

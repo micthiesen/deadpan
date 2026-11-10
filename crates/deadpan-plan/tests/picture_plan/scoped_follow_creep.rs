@@ -111,6 +111,7 @@ fn fixture(point: bool, repeat_owner: bool) -> ProjectDocument {
             unreachable!()
         };
         *escalation = Some(RepeatEscalation {
+            speed: None,
             gain_step: GainDb::UNITY,
             zoom: Some(ZoomStep {
                 step: r(1, 8),

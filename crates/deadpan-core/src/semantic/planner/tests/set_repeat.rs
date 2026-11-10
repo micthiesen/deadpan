@@ -504,6 +504,7 @@ fn escalation_is_one_reversible_parameter_change_checked_against_play_count() {
         command,
     };
     let escalation = crate::RepeatEscalation {
+        speed: None,
         gain_step: crate::GainDb::new(8_000).unwrap(),
         zoom: None,
     };

@@ -49,6 +49,9 @@ mod retime_edits;
 #[path = "stages/gain.rs"]
 mod gain;
 
+#[path = "stages/speed_step.rs"]
+mod speed_step;
+
 #[path = "stages/wet_owners.rs"]
 mod wet_owners;
 

@@ -1184,6 +1184,7 @@ where
                         )?;
                     } else {
                         self.set_repeat_plays(index, plays.get())?;
+                        self.continue_speed_plays(index)?;
                     }
                 }
                 SemanticInstruction::SetAudio { change } => {
@@ -1234,8 +1235,10 @@ where
                     speed,
                 } => {
                     self.set_repeat(index, *plays, gaps.as_deref(), escalation.clone())?;
-                    if let Some(speed) = speed {
-                        self.speed_plays(index, *speed)?;
+                    match speed {
+                        Some(speed) => self.speed_plays(index, Some(*speed), false)?,
+                        None if plays.is_some() => self.continue_speed_plays(index)?,
+                        None => {}
                     }
                 }
                 SemanticInstruction::SetRoomTone { register } => {
@@ -1499,11 +1502,12 @@ where
                     plays,
                     gaps,
                     escalation,
-                    ..
+                    speed,
                 } => {
                     usize::from(plays.is_some())
                         + usize::from(gaps.is_some())
                         + usize::from(escalation.is_some())
+                        + usize::from(speed.is_some())
                 }
                 _ => usize::from(matches!(
                     instruction,

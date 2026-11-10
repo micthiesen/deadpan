@@ -180,7 +180,7 @@ impl Inspector {
                         "Plays, gaps or escalation…",
                         format!("repeat {}", iterations.len()),
                     )),
-                    "Set total plays, a held gap between plays with gap=120ms (gap-step=-40ms shortens each later gap), or escalate each play with gain-step=3dB zoom-step=0.08. Wrap repeat adds a new enclosing Repeat.",
+                    "Set total plays, a held gap between plays with gap=120ms (gap-step=-40ms shortens each later gap), or escalate each play with gain-step=3dB zoom-step=0.08 speed-step=10%. Wrap repeat adds a new enclosing Repeat.",
                 )
             }
             NodeKind::Source { source } => {

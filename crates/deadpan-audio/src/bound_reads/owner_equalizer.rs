@@ -483,6 +483,7 @@ fn ordered_eq_repeat_escalation_feeds_filter_once_across_play_boundaries() {
         iterations: IterationOrder::new(revision("plays"), 3).unwrap(),
         gap: None,
         escalation: Some(RepeatEscalation {
+            speed: None,
             gain_step: GainDb::new(3000).unwrap(),
             zoom: None,
         }),

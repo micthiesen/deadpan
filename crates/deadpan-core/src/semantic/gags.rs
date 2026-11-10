@@ -552,6 +552,7 @@ impl GagRecipe {
                 selector: content,
                 plays: *plays,
                 escalation: Some(RepeatEscalation {
+                    speed: None,
                     gain_step: *gain_step,
                     zoom: (*zoom_step != ExactRatio::ZERO).then_some(ZoomStep {
                         target: None,

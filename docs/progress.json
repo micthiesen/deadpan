@@ -2140,7 +2140,7 @@
               "docs/REPEAT_ESCALATION.md",
               "docs/REPEAT_GAP_BRANCHES.md"
             ],
-            "remaining": "Per-play speed progression remains absent; gain/zoom/gap progression implemented and export-verified.",
+            "remaining": "Gain, zoom, gap and per-play speed progression implemented and export-verified (speed as recipe-made per-play Retime overrides, 2026-11-09); naming one of several targets on a picture from :repeat remains.",
             "normative": "8.1"
           },
           {

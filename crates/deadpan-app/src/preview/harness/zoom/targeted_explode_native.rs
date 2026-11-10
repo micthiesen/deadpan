@@ -374,6 +374,7 @@ fn fixture(d: &mut Driver<'_>, source: &NodeId) -> Result<NodeId, String> {
             Command::SetRepeatEscalation {
                 node: repeat.clone(),
                 escalation: Some(RepeatEscalation {
+                    speed: None,
                     gain_step: GainDb::new(1000).map_err(string)?,
                     zoom: Some(ZoomStep {
                         step: ratio(1, 2),

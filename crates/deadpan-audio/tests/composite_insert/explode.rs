@@ -107,6 +107,7 @@ pub(super) fn escalated(mut node: BeatNode, gain: i32) -> BeatNode {
         unreachable!()
     };
     *escalation = Some(RepeatEscalation {
+        speed: None,
         gain_step: GainDb::new(gain).unwrap(),
         zoom: None,
     });
@@ -331,4 +332,72 @@ fn exploded_beat_sounds_and_root_sounds_keep_every_ntsc_sample() {
         "every play owns its own copy of the beat sound"
     );
     same_pcm(&rooted, &exploded);
+}
+
+#[test]
+fn exploded_speed_step_plays_keep_every_ntsc_sample() {
+    let original = document(
+        ntsc(),
+        &["lead", "repeat", "tail"],
+        vec![
+            ("lead", silence(1)),
+            ("a", source(ntsc(), 5)),
+            (
+                "repeat",
+                escalated(with_gap(repeat("a", 3), room(2, 100..321)), 3000),
+            ),
+            ("tail", source(ntsc(), 3)),
+        ],
+    );
+    for (name, preserve_pitch) in [("tape", false), ("preserve", true)] {
+        // `:repeat speed-step=0.5`: the recipe, then each later play's own
+        // Retime, as the semantic planner authors them.
+        let step = SpeedStep {
+            step: ExactRatio::new(1, 2).unwrap(),
+            multiply: false,
+            preserve_pitch,
+        };
+        let mut sped = edit(
+            &original,
+            &format!("{name}-recipe"),
+            Command::SetRepeatEscalation {
+                node: id("repeat"),
+                escalation: Some(RepeatEscalation {
+                    gain_step: GainDb::new(3000).unwrap(),
+                    zoom: None,
+                    speed: Some(step),
+                }),
+            },
+        );
+        for ordinal in 1..3 {
+            sped = edit(
+                &sped,
+                &format!("{name}-{ordinal}"),
+                Command::EditOccurrence {
+                    instance: InstancePath {
+                        node: id("a"),
+                        repeats: vec![RepeatInstance {
+                            node: id("repeat"),
+                            iteration: play(ordinal),
+                        }],
+                    },
+                    edit: OccurrenceEdit::WrapRetime {
+                        id: id(&format!("{name}-speed-{ordinal}")),
+                        duration: step
+                            .duration(ordinal, FrameDuration::new(5).unwrap())
+                            .unwrap(),
+                        pitch: step.pitch(),
+                    },
+                    identities: OccurrenceIdentities {
+                        nodes: vec![id(&format!("{name}-copy-{ordinal}"))],
+                        marks: Vec::new(),
+                    },
+                },
+            );
+        }
+        // Speeds 1, 1.5 and 2 over five frames: 5, 3 (3.33) and 2 (2.5, ties
+        // to even), each followed by the room-tone gap but the last.
+        assert_eq!(sped.duration().unwrap().frames(), 1 + 5 + 2 + 3 + 2 + 2 + 3);
+        same_pcm(&sped, &explode(&sped, "repeat", &format!("{name}-explode")));
+    }
 }

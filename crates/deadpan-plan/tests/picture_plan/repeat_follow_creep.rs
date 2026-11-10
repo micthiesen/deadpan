@@ -181,6 +181,7 @@ fn fixture(
     .unwrap();
     if escalation != Escalation::None {
         wire["nodes"]["repeat"]["kind"]["escalation"] = serde_json::to_value(RepeatEscalation {
+            speed: None,
             gain_step: GainDb::new(1000).unwrap(),
             zoom: Some(ZoomStep {
                 step: r(1, 1),
@@ -427,6 +428,7 @@ fn repeat_follow_creep_cannot_restore_a_child_clipped_target_by_later_escalation
             .unwrap();
             wire["nodes"]["repeat"]["kind"]["escalation"] =
                 serde_json::to_value(RepeatEscalation {
+                    speed: None,
                     gain_step: GainDb::UNITY,
                     zoom: Some(ZoomStep {
                         step: r(1, 2),

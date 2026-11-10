@@ -211,6 +211,7 @@ fn an_escalating_zoom_moves_toward_its_target_and_keeps_the_view_inside_the_pict
         unreachable!()
     };
     *escalation = Some(RepeatEscalation {
+        speed: None,
         gain_step: GainDb::UNITY,
         zoom: Some(ZoomStep {
             step: ExactRatio::ONE,

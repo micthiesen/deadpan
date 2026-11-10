@@ -16,6 +16,7 @@ stores two steps and every consumer derives each play's values from them.
 | `zoom.step` | Centered picture scale per play after the first, on the 2⁻³² framing grid. |
 | `zoom.progression` | `add` (default): play `k` has scale `1 + k · step`. `multiply`: `step^k`. |
 | `zoom.target` | Optional saved attention target the zoom moves toward; absent means the picture center. |
+| `speed` | The recipe of each later play's own Retime override ([speed progression](#speed-progression)); pictures and sound read the overrides, never this field. |
 
 Play `k` is the 0-based position in the Repeat's current play order, so the
 first play is always unchanged and reordering plays reorders the progression.
@@ -106,18 +107,53 @@ are one Undo, macros record it and dot-repeat reapplies it.
 
 ## Speed progression
 
-`:repeat 3 speed-step=0.25` plays each later play faster: play k runs at
-1 + 0.25·(k−1), or, with `progression=multiply`, (1 + 0.25)^(k−1). Unlike gain
-and zoom, speed changes timing, so it is not a live escalation value: each
-later play becomes its own sparse Repeat override wrapped in a Retime
-(`SpeedStep` in `SetRepeat`, `speed_plays` in
-[repeat.rs](../crates/deadpan-core/src/semantic/planner/repeat.rs)), like
-`gap-step` authoring independent gap Holds. Every play therefore stays an
-ordinary editable occurrence. Pitch follows speed (tape) unless
-`speed-pitch=preserve`. Each play's length rounds once from its exact rate; a
-step reaching zero or negative speed refuses, as does a play that already has
-its own content. Plays added later by a new count play at normal speed.
-Evidence: `a_speed_step_gives_each_later_play_its_own_speed_change`.
+`:repeat 3 speed-step=10%` plays each later play faster: 0-based play k runs
+at 1 + k·step (`-10%` slows; a plain `0.25` means 25%), or, with
+`progression=multiply`, (1 + step)^k. Pitch is kept by default, like
+`:retime`; `pitch=tape` lets it follow speed. Unlike gain and zoom, speed
+changes timing, so the picture plan and sound bus never derive it from the
+Repeat. Each later play is its own sparse Repeat override whose outermost
+node is an ordinary Edit Retime of that play's contents (`speed_plays` in
+[repeat.rs](../crates/deadpan-core/src/semantic/planner/repeat.rs)), so the
+Repeat layout reads exact per-play durations, every play stays an ordinary
+editable occurrence, and audio uses the canonical tape resampler or
+Preserve stretch at each play's exact rate.
+
+The Repeat records the recipe as `RepeatEscalation.speed`
+([`SpeedStep`](../crates/deadpan-core/src/repeat_escalation.rs)), which
+makes the overrides editable as one progression:
+
+- Each play's output is its input length divided by its exact rate, rounded
+  once (ties to even, at least one frame); durations are never accumulated, so
+  play starts and gaps are exact sums of whole-frame plays.
+- Validation checks the last play against every play count: speed must stay
+  within 1/64..=64 times normal, and a step reaching zero or a negative speed
+  refuses. Growing the count past that bound refuses with the escalation named.
+- A later count (`:repeat 5`, `SetRepeatPlays` or `SetRepeat` with plays)
+  gives the new plays their recipe speed.
+- A new step or pitch changes the Retime of every play the old recipe made,
+  in place (`SetRetime`), so edits inside a play survive. A play belongs to the
+  recipe when its override's outermost node is an Edit Retime at the old
+  rate and pitch for its own input. A play changed by hand refuses a new step
+  with its number; a count change leaves it alone.
+- `speed-step=0` returns the recipe's plays to normal speed (unity Retimes,
+  which process nothing) and drops the recipe; a later step takes them again.
+- Explode keeps each play's Retime and adds no wrapper for a speed-only
+  escalation. Every change is one Compound and one Undo.
+
+Evidence: `each_later_play_runs_at_its_own_exact_speed_with_exact_starts_and_gaps`,
+`the_recipe_changes_extends_and_removes_its_own_plays`,
+`hand_changed_plays_refuse_a_new_recipe_and_are_left_alone_by_a_count`,
+`speeds_outside_the_limits_refuse_naming_the_last_play` and
+`explode_keeps_each_play_at_its_speed_without_an_escalation_wrapper`
+([speed_step.rs](../crates/deadpan-core/src/semantic/planner/tests/speed_step.rs),
+30000/1001 fps); decoded PCM equal to independent tape and Preserve references
+for every play (`a_tape_speed_step_…`, `a_preserve_speed_step_…` in
+[speed_step.rs](../crates/deadpan-audio/tests/stages/speed_step.rs)); Explode
+equivalence at 30000/1001 through raw, edge-faded and limited PCM
+(`exploded_speed_step_plays_keep_every_ntsc_sample`); the `speed-step`
+preview/export fixture; the `recipes` replay types the command, checks the
+inspector row, a continued count, removal and each Undo.
 
 ## Remaining
 

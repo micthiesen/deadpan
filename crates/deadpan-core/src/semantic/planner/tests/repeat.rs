@@ -180,6 +180,7 @@ fn an_escalating_repeat_wraps_and_escalates_in_one_transaction() {
         ..context("root", 0)
     };
     let escalation = crate::RepeatEscalation {
+        speed: None,
         gain_step: crate::GainDb::new(3_000).unwrap(),
         zoom: None,
     };
@@ -207,6 +208,7 @@ fn an_escalating_repeat_wraps_and_escalates_in_one_transaction() {
             selector: SemanticSelector::SelectedBeat,
             plays: NonZeroU32::new(4).unwrap(),
             escalation: Some(crate::RepeatEscalation {
+                speed: None,
                 gain_step: crate::GainDb::new(12_000).unwrap(),
                 zoom: None,
             }),

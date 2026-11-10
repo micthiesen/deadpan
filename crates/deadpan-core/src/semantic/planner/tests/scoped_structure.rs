@@ -392,6 +392,7 @@ fn scoped_structure_refuses_without_explicit_play_and_for_unsupported_intent_ato
             selector: SemanticSelector::SelectedBeat,
             plays: plays(2),
             escalation: Some(crate::RepeatEscalation {
+                speed: None,
                 gain_step: crate::GainDb::new(-600).unwrap(),
                 zoom: None,
             }),

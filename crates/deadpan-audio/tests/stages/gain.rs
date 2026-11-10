@@ -534,6 +534,7 @@ fn repeat_escalation_adds_its_step_to_each_later_play_and_its_gap() {
     };
     let base = document(None);
     let escalated = document(Some(RepeatEscalation {
+        speed: None,
         gain_step: GainDb::new(3000).unwrap(),
         zoom: None,
     }));

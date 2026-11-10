@@ -407,6 +407,7 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
                 Command::SetRepeatEscalation {
                     node: node("repeat"),
                     escalation: Some(RepeatEscalation {
+                        speed: None,
                         gain_step: GainDb::new(500)?,
                         zoom: Some(ZoomStep {
                             step: ratio(1, 8),

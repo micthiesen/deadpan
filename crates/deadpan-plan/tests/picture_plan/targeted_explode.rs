@@ -137,6 +137,7 @@ fn fixture(
         });
     }
     let escalation = RepeatEscalation {
+        speed: None,
         gain_step: GainDb::new(1000).unwrap(),
         zoom: Some(ZoomStep {
             progression,

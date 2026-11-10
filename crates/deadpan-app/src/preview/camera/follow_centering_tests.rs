@@ -73,6 +73,7 @@ fn fixture(x: u32) -> ProjectDocument {
             iterations: IterationOrder::new(RevisionId::new(name).unwrap(), plays).unwrap(),
             gap: None,
             escalation: Some(RepeatEscalation {
+                speed: None,
                 gain_step: GainDb::UNITY,
                 zoom: Some(ZoomStep {
                     step: ExactRatio::ONE,

@@ -924,7 +924,7 @@ pub static SPECS: &[Spec] = &[
         keys: &[],
         commands: &[verb(
             "repeat",
-            ":repeat 3 [gap=6f gap-step=-2f] [speed-step=0.25] [speed-pitch=tape|preserve]",
+            ":repeat 3 [gap=6f gap-step=-2f] [speed-step=10%] [pitch=preserve|tape]",
         )],
         contexts: C::YOUR_EDIT,
         replay: Replay::RecordedAndDot,
@@ -932,7 +932,7 @@ pub static SPECS: &[Spec] = &[
             "set_repeat_plays / set_repeat / role_repeat instructions",
             REP,
         ),
-        help: "Set total plays on the selected Repeat, preserving its gaps and surviving plays, or wrap a plain beat, in one Undo. gap= sets every gap to a silent hold of the play's last picture (gap=0 removes them); gap-step=-40ms makes each later gap shorter; speed-step=0.25 plays each later play 0.25× faster as its own speed change (speed-pitch=preserve keeps pitch; progression=multiply compounds); gain-step=3dB and zoom-step=0.08 escalate each later play (progression=multiply compounds the scale; zoom-target=current zooms toward the saved target on the picture, keeping the view inside it, and zoom-target=center returns to the middle). Omitted parts keep their values. :repeat 3 role=audio|video repeats one role of a Visual range without adding time; the range may span beats and repeats over its last beat; overflow=trim cuts repeats at that beat's end, and for sound extend=hold holds its last picture for exactly the overflow. Clear Visual selection for a count change. Inside a Repeat's contents with This play chosen at every enclosing Repeat, :repeat N sets the selected Repeat's total plays, or wraps a plain beat, and :repeat [N] gap= [gap-step=] sets the selected Repeat's plays and gaps, in that play only; the other plays keep the shared definition, and gain-step, zoom-step and speed-step still need the parent.",
+        help: "Set total plays on the selected Repeat, preserving its gaps and surviving plays, or wrap a plain beat, in one Undo. gap= sets every gap to a silent hold of the play's last picture (gap=0 removes them); gap-step=-40ms makes each later gap shorter; speed-step=10% plays each later play 10% faster than normal per play (-10% slower; 0.25 is 25%) as its own speed change you can still edit in that play, keeping pitch unless pitch=tape; progression=multiply compounds; a later count continues it, a new step updates the plays it made and speed-step=0 returns them to normal speed; gain-step=3dB and zoom-step=0.08 escalate each later play (progression=multiply compounds the scale; zoom-target=current zooms toward the saved target on the picture, keeping the view inside it, and zoom-target=center returns to the middle). Omitted parts keep their values. :repeat 3 role=audio|video repeats one role of a Visual range without adding time; the range may span beats and repeats over its last beat; overflow=trim cuts repeats at that beat's end, and for sound extend=hold holds its last picture for exactly the overflow. Clear Visual selection for a count change. Inside a Repeat's contents with This play chosen at every enclosing Repeat, :repeat N sets the selected Repeat's total plays, or wraps a plain beat, and :repeat [N] gap= [gap-step=] sets the selected Repeat's plays and gaps, in that play only; the other plays keep the shared definition, and gain-step, zoom-step and speed-step still need the parent.",
     },
     Spec {
         id: "repeat.escalating",

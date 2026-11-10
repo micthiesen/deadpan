@@ -81,6 +81,7 @@ impl DeadpanApp {
         };
         let selector = target.repeat_selector();
         let escalation = deadpan_core::RepeatEscalation {
+            speed: None,
             gain_step: deadpan_core::GainDb::new(3_000).expect("constant gain"),
             zoom: Some(deadpan_core::ZoomStep {
                 step: deadpan_core::quantize_zoom_step(
@@ -454,13 +455,13 @@ impl DeadpanApp {
                     }
                 }
             };
+            let speed = input.speed(escalation_now.as_ref().and_then(|now| now.speed))?;
             let escalation = if input.changes_escalation() {
-                Some(input.apply_toward(escalation_now, toward)?.unwrap_or(
-                    deadpan_core::RepeatEscalation {
-                        gain_step: deadpan_core::GainDb::UNITY,
-                        zoom: None,
-                    },
-                ))
+                Some(
+                    input
+                        .apply_toward(escalation_now, toward)?
+                        .unwrap_or_default(),
+                )
             } else {
                 None
             };
@@ -468,11 +469,7 @@ impl DeadpanApp {
                 plays: input.plays.and_then(NonZeroU32::new),
                 gaps,
                 escalation,
-                speed: input.speed_step.map(|step| deadpan_core::SpeedStep {
-                    step,
-                    multiply: input.progression == Some(deadpan_core::ZoomProgression::Multiply),
-                    preserve_pitch: input.speed_preserves_pitch,
-                }),
+                speed,
             })
         })();
         self.apply_recorded_instruction(target, instruction);

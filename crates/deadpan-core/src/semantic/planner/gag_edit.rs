@@ -167,6 +167,7 @@ where
                 ..
             } => {
                 let escalation = crate::RepeatEscalation {
+                    speed: None,
                     gain_step: *gain_step,
                     zoom: (*zoom_step != crate::ExactRatio::ZERO).then_some(crate::ZoomStep {
                         target: None,
@@ -353,6 +354,7 @@ where
                     || zoom_step != old_zoom
                     || plays != old_plays)
                     .then(|| crate::RepeatEscalation {
+                        speed: None,
                         gain_step: *gain_step,
                         zoom: (*zoom_step != crate::ExactRatio::ZERO).then_some(crate::ZoomStep {
                             target: None,

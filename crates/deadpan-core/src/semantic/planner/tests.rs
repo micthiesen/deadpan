@@ -22,6 +22,7 @@ mod selectors;
 mod set_repeat;
 mod shared_hold_duration;
 mod speech;
+mod speed_step;
 mod split;
 mod visual;
 

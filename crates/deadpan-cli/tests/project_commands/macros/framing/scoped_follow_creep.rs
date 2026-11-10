@@ -252,6 +252,7 @@ fn scoped_follow_creep_all_five_owners_keep_nested_play_clocks_isolation_and_dur
                         audio: HoldAudio::Silence,
                     }),
                     escalation: Some(RepeatEscalation {
+                        speed: None,
                         gain_step: Default::default(),
                         zoom: Some(ZoomStep {
                             step: ratio(1, 8),

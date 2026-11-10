@@ -363,6 +363,7 @@ fn all_overridden_plays_drop_the_unused_definition_and_dormant_gap() {
 fn escalation_becomes_explicit_per_play_gain_and_scale() {
     let document = repeated(3, 1);
     let escalation = RepeatEscalation {
+        speed: None,
         gain_step: GainDb::new(2000).unwrap(),
         zoom: Some(ZoomStep {
             step: quantize_zoom_step(ExactRatio::new(1, 10).unwrap()).unwrap(),

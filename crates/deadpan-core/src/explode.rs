@@ -97,7 +97,10 @@ impl Plan {
             plays,
             keep_default,
             gap: gap.clone().filter(|gap| gap.duration.frames() > 0),
-            escalation: escalation.clone(),
+            // A speed recipe alone already lives in the plays' own overrides.
+            escalation: escalation
+                .clone()
+                .filter(crate::RepeatEscalation::derives_plays),
             definition,
             owned_marks,
         })

@@ -310,6 +310,7 @@ fn escalation_scales_each_later_play_and_its_gap_inside_the_repeat_framing() {
         unreachable!()
     };
     *escalation = Some(RepeatEscalation {
+        speed: None,
         gain_step: GainDb::UNITY,
         zoom: Some(ZoomStep {
             step: ExactRatio::new(1, 4).unwrap(),

@@ -135,7 +135,9 @@ impl DeadpanApp {
             // `:repeat [N] gap=…` changes gaps, and the count first; the
             // escalation and speed steps keep the parent refusal.
             Action::Edit(BeatEdit::Escalate(input))
-                if !input.changes_escalation() && input.speed_step.is_none() =>
+                if !input.changes_escalation()
+                    && input.speed_step.is_none()
+                    && input.speed_preserves_pitch.is_none() =>
             {
                 input.gap.map(|gap| ScopedStructure::SetGaps {
                     plays: input.plays,

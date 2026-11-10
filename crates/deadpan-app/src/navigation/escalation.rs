@@ -6,7 +6,7 @@ use deadpan_core::{ExactRatio, FrameRate, GainDb, PauseLength, ZoomProgression, 
 
 use super::duration::DurationInput;
 
-pub const USAGE: &str = "Use :repeat 3 gap=120ms gain-step=3dB zoom-step=0.08 speed-step=0.25 on a selected beat or Repeat. gap= sets every gap (gap=0 removes them all); gap-step=-40ms makes each later gap 40 ms shorter. progression=multiply compounds the zoom; zoom-target=current zooms toward the target on the picture and zoom-target=center back to the middle; gain-step=0dB or zoom-step=0 removes that step.";
+pub const USAGE: &str = "Use :repeat 3 gap=120ms gain-step=3dB zoom-step=0.08 speed-step=10% on a selected beat or Repeat. gap= sets every gap (gap=0 removes them all); gap-step=-40ms makes each later gap 40 ms shorter. speed-step=10% plays each later play 10% faster (-10% slower) and pitch=tape lets its pitch follow; progression=multiply compounds the named zoom or speed step; zoom-target=current zooms toward the target on the picture and zoom-target=center back to the middle; gain-step=0dB, zoom-step=0 or speed-step=0 removes that step.";
 
 /// The most gaps one `gap-step` ladder authors, matching the core bound.
 const MAX_GAPS: u32 = deadpan_core::MAX_SEMANTIC_REPEAT_GAPS as u32;
@@ -96,10 +96,11 @@ pub struct EscalationInput {
     pub progression: Option<ZoomProgression>,
     /// Where the zoom moves: toward a saved target or the picture center.
     pub zoom_target: Option<ZoomTarget>,
-    /// `speed-step=`: each later play as its own speed change.
+    /// `speed-step=`: each later play as its own speed change; zero removes
+    /// the progression.
     pub speed_step: Option<ExactRatio>,
-    /// `speed-pitch=preserve`; tape-style otherwise.
-    pub speed_preserves_pitch: bool,
+    /// `pitch=preserve` (`Some(true)`) or `pitch=tape` for the speed step.
+    pub speed_preserves_pitch: Option<bool>,
 }
 
 /// `zoom-target=`: the escalating zoom's direction.
@@ -116,8 +117,43 @@ impl EscalationInput {
     pub fn changes_escalation(&self) -> bool {
         self.gain_step.is_some()
             || self.zoom_step.is_some()
-            || self.progression.is_some()
+            || self.zoom_progression().is_some()
             || self.zoom_target.is_some()
+    }
+
+    /// `progression=` applies to the steps the command names, and to the
+    /// existing zoom when it names neither.
+    fn zoom_progression(&self) -> Option<ZoomProgression> {
+        self.progression
+            .filter(|_| self.zoom_step.is_some() || self.speed_step.is_none())
+    }
+
+    /// The Repeat's speed recipe after this command, from its `current` one:
+    /// `None` leaves it alone, and a zero step removes it. An omitted pitch
+    /// or progression keeps the current recipe's; a new recipe preserves
+    /// pitch, like `:retime`.
+    pub fn speed(
+        &self,
+        current: Option<deadpan_core::SpeedStep>,
+    ) -> Result<Option<deadpan_core::SpeedStep>, String> {
+        if self.speed_step.is_none() && self.speed_preserves_pitch.is_none() {
+            return Ok(None);
+        }
+        let step = self
+            .speed_step
+            .or(current.map(|current| current.step))
+            .ok_or("pitch= needs a speed-step; this Repeat has none.")?;
+        Ok(Some(deadpan_core::SpeedStep {
+            step,
+            multiply: match self.progression.filter(|_| self.speed_step.is_some()) {
+                Some(progression) => progression == ZoomProgression::Multiply,
+                None => current.is_some_and(|current| current.multiply),
+            },
+            preserve_pitch: self
+                .speed_preserves_pitch
+                .or(current.map(|current| current.preserve_pitch))
+                .unwrap_or(true),
+        }))
     }
 
     /// Merge into a Repeat's current escalation; `None` when nothing remains.
@@ -142,10 +178,10 @@ impl EscalationInput {
             None => current.zoom.as_ref().map(|zoom| zoom.step),
         };
         let progression = self
-            .progression
+            .zoom_progression()
             .or(current.zoom.as_ref().map(|zoom| zoom.progression))
             .unwrap_or_default();
-        let zoom = match (step, self.progression.is_some() || target.is_some()) {
+        let zoom = match (step, self.zoom_progression().is_some() || target.is_some()) {
             // A step change keeps the zoom's target unless one is named.
             (Some(step), _) => Some(ZoomStep {
                 step,
@@ -160,11 +196,13 @@ impl EscalationInput {
             }
             (None, false) => None,
         };
+        // The speed recipe changes only through `speed-step=`.
         let result = deadpan_core::RepeatEscalation {
             gain_step: self.gain_step.unwrap_or(current.gain_step),
             zoom,
+            speed: None,
         };
-        Ok((result.gain_step != GainDb::UNITY || result.zoom.is_some()).then_some(result))
+        Ok(result.derives_plays().then_some(result))
     }
 
     /// Inspector rows: the gain and zoom added per play, or no escalation.
@@ -199,6 +237,21 @@ impl EscalationInput {
                 zoom.target.as_ref().map_or_else(|| "Center".into(), label),
             ));
         }
+        if let Some(speed) = &escalation.speed {
+            let step = speed.step.numerator() as f64 / speed.step.denominator() as f64 * 100.0;
+            fields.push((
+                "Speed per play",
+                format!(
+                    "{}{step:+}%, pitch {}",
+                    if speed.multiply { "×" } else { "" },
+                    if speed.preserve_pitch {
+                        "kept"
+                    } else {
+                        "follows speed"
+                    }
+                ),
+            ));
+        }
         fields
     }
 }
@@ -228,9 +281,8 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
         progression: None,
         zoom_target: None,
         speed_step: None,
-        speed_preserves_pitch: false,
+        speed_preserves_pitch: None,
     };
-    let mut speed_pitch = None;
     let mut zoom_step = None;
     let mut progression = None;
     let mut gap = None;
@@ -261,17 +313,18 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
                 });
             }
             "speed-step" if input.speed_step.is_none() => {
-                let step = decimal(value)?;
-                if step == ExactRatio::ZERO {
-                    return Err("speed-step=0 changes no play's speed.".into());
-                }
-                input.speed_step = Some(step);
+                input.speed_step = Some(match value.strip_suffix('%') {
+                    Some(percent) => decimal(percent)?
+                        .checked_div(ExactRatio::integer(100))
+                        .map_err(|error| error.to_string())?,
+                    None => decimal(value)?,
+                });
             }
-            "speed-pitch" if speed_pitch.is_none() => {
-                speed_pitch = Some(match value {
+            "pitch" if input.speed_preserves_pitch.is_none() => {
+                input.speed_preserves_pitch = Some(match value {
                     "preserve" => true,
                     "tape" => false,
-                    _ => return Err("speed-pitch is preserve or tape.".into()),
+                    _ => return Err("pitch is preserve or tape.".into()),
                 });
             }
             "gap" if gap.is_none() => {
@@ -289,17 +342,13 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
                 gap_step = Some((shorter, DurationInput::parse(amount)?));
             }
             "gain-step" | "zoom-step" | "zoom-target" | "progression" | "gap" | "gap-step"
-            | "speed-step" | "speed-pitch" => {
+            | "speed-step" | "pitch" => {
                 return Err(format!("{key} is given twice."));
             }
             _ => return Err(format!("Unknown :repeat parameter {key}. {USAGE}")),
         }
     }
     input.progression = progression;
-    if speed_pitch.is_some() && input.speed_step.is_none() {
-        return Err("speed-pitch applies to speed-step=.".into());
-    }
-    input.speed_preserves_pitch = speed_pitch.unwrap_or(false);
     input.gap = match (gap, gap_step) {
         (Some(first), step) => Some(GapInput { first, step }),
         (None, Some(_)) => {
@@ -377,25 +426,48 @@ fn decimal(value: &str) -> Result<ExactRatio, String> {
 mod tests {
     #[test]
     fn a_speed_step_and_its_pitch_parse_with_the_other_steps() {
-        let input = super::parse(&[
-            "3",
-            "speed-step=0.25",
-            "speed-pitch=preserve",
-            "gain-step=3dB",
-        ])
-        .unwrap()
-        .unwrap();
-        assert_eq!(
-            input.speed_step,
-            Some(deadpan_core::ExactRatio::new(1, 4).unwrap())
-        );
-        assert!(input.speed_preserves_pitch);
+        use deadpan_core::{ExactRatio, SpeedStep};
+        let input = super::parse(&["3", "speed-step=0.25", "pitch=tape", "gain-step=3dB"])
+            .unwrap()
+            .unwrap();
+        assert_eq!(input.speed_step, Some(ExactRatio::new(1, 4).unwrap()));
+        assert_eq!(input.speed_preserves_pitch, Some(false));
         assert_eq!(input.plays, Some(3));
+        let percent = super::parse(&["speed-step=-10%", "progression=multiply"])
+            .unwrap()
+            .unwrap();
+        assert_eq!(percent.speed_step, Some(ExactRatio::new(-1, 10).unwrap()));
+        // A named speed step takes the progression; the zoom keeps its own.
+        assert!(!percent.changes_escalation());
+        // A new recipe preserves pitch like :retime.
+        let made = percent.speed(None).unwrap().unwrap();
+        assert_eq!(
+            made,
+            SpeedStep {
+                step: ExactRatio::new(-1, 10).unwrap(),
+                multiply: true,
+                preserve_pitch: true,
+            }
+        );
+        // An omitted step, progression or pitch keeps the current recipe's.
+        let pitch_only = super::parse(&["pitch=tape"]).unwrap().unwrap();
+        assert_eq!(
+            pitch_only.speed(Some(made)).unwrap(),
+            Some(SpeedStep {
+                preserve_pitch: false,
+                ..made
+            })
+        );
+        assert!(pitch_only.speed(None).is_err());
+        let removal = super::parse(&["speed-step=0"]).unwrap().unwrap();
+        assert_eq!(
+            removal.speed(Some(made)).unwrap().unwrap().step,
+            ExactRatio::ZERO
+        );
         for bad in [
-            &["3", "speed-step=0"][..],
-            &["3", "speed-pitch=preserve"],
-            &["3", "speed-step=0.25", "speed-step=0.5"],
-            &["3", "speed-step=0.25", "speed-pitch=chipmunk"],
+            &["3", "speed-step=0.25", "speed-step=0.5"][..],
+            &["3", "speed-step=0.25", "pitch=chipmunk"],
+            &["3", "speed-step=fast%"],
         ] {
             assert!(super::parse(bad).is_err(), "{bad:?}");
         }

@@ -265,6 +265,7 @@ pub fn build(directory: &Path, multiply: bool) -> Result<Fixture> {
         Ok(Command::SetRepeatEscalation {
             node: node("targeted-repeat")?,
             escalation: Some(RepeatEscalation {
+                speed: None,
                 gain_step: GainDb::new(1000)?,
                 zoom: Some(ZoomStep {
                     step: if multiply { ratio(1, 2)? } else { ratio(1, 1)? },

@@ -724,6 +724,7 @@ fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals()
             _ => unreachable!(),
         }),
         escalation: Some(crate::RepeatEscalation {
+            speed: None,
             gain_step: crate::GainDb::UNITY,
             zoom: Some(crate::ZoomStep {
                 step: ExactRatio::new(1, 8).unwrap(),

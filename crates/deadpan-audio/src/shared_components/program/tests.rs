@@ -70,6 +70,7 @@ pub(in crate::stages::shared_components) fn plan(
             iterations: IterationOrder::new(RevisionId::new(name).unwrap(), 2).unwrap(),
             gap: None,
             escalation: Some(RepeatEscalation {
+                speed: None,
                 gain_step: GainDb::new(step).unwrap(),
                 zoom: None,
             }),
