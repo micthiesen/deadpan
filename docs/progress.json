@@ -3485,9 +3485,11 @@
               "docs/PARITY.md",
               "docs/qualification/readonly-controls-2026-10-08.md",
               "docs/RELEASE_AUDIT.md",
-              "docs/REQUIREMENTS.md DP-21"
+              "docs/REQUIREMENTS.md DP-21",
+              "docs/qualification/recovery-matrix-2026-11-10.md",
+              "crates/deadpan-cli/tests/failure_matrix.rs"
             ],
-            "remaining": "Substantial stale/read-only/restore and no-write evidence exists. Tracker explicitly retains complete recovery/failure acceptance; no complete normative matrix reviewed here.",
+            "remaining": "The normative recovery matrix (docs/qualification/recovery-matrix-2026-11-10.md) covers all 51 applicable failure/conflict cells across the native app, headless CLI and live endpoint, with private diagnostics; only physical power loss and sleep during a render remain, on the To verify (owner) list.",
             "confidence": "medium"
           }
         ]

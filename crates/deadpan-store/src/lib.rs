@@ -435,7 +435,9 @@ impl ProjectStore {
                 },
             );
         }
+        let database = package.join("project.sqlite");
         Self::open_package(package, mode, inspection)
+            .map_err(|error| unopenable_database(&database, error))
     }
 
     fn open_package(
@@ -1128,6 +1130,58 @@ fn validate_extension(path: &Path) -> Result<(), StoreError> {
         return Err(StoreError::PackageExtension);
     }
     Ok(())
+}
+
+/// SQLite reports a database it may not read, or whose shared-memory file it
+/// cannot create beside it, as a generic open failure, sometimes naming its
+/// absolute path. Report the actual cause with a stable code and name only the
+/// file inside the package the caller already chose. A failed open commits
+/// nothing, so the project is unchanged. Every other failure is kept.
+fn unopenable_database(database: &Path, error: StoreError) -> StoreError {
+    let code = match &error {
+        StoreError::Database(rusqlite::Error::SqliteFailure(failure, _)) => failure.code,
+        _ => return error,
+    };
+    if code == rusqlite::ErrorCode::CannotOpen
+        && let Err(denied) = File::open(database)
+        && denied.kind() == std::io::ErrorKind::PermissionDenied
+    {
+        return StoreError::Io(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            "Deadpan may not read this project's database (project.sqlite inside the package); \
+             nothing has been changed. Restore read and write permission on the package, then open it again",
+        ));
+    }
+    // SQLite needs room for its shared-memory and write-ahead files even to
+    // read; on a full volume it reports a generic open or I/O failure.
+    if matches!(
+        code,
+        rusqlite::ErrorCode::CannotOpen | rusqlite::ErrorCode::SystemIoFailure
+    ) && database.parent().is_some_and(nearly_full)
+    {
+        return StoreError::Io(std::io::Error::new(
+            std::io::ErrorKind::StorageFull,
+            "The volume holding this project is full, so SQLite cannot create the files it needs \
+             beside project.sqlite even to open it; nothing has been changed. Free space on that \
+             volume, then open the project again",
+        ));
+    }
+    error
+}
+
+/// APFS reports some reserved space as available even when it refuses every
+/// new block (a full 16 MB test image still reports about 1 MiB), so treat
+/// less than 16 MiB as full when explaining an open failure. This only
+/// chooses the message for an open that already failed.
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn nearly_full(path: &Path) -> bool {
+    rustix::fs::statvfs(path)
+        .is_ok_and(|volume| volume.f_bavail.saturating_mul(volume.f_frsize) < 16 << 20)
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn nearly_full(_path: &Path) -> bool {
+    false
 }
 
 fn require_regular_file(path: &Path) -> Result<(), StoreError> {

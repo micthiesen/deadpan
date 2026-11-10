@@ -190,6 +190,8 @@ moves within a volume, changed content and records without a bookmark
 | Seek proxy build on a full cache volume | The worker's own movie write (classified by the worker itself as `disk_full` from ENOSPC/EDQUOT) and the sidecar write at publication both fail as disk-full, an environmental condition never remembered as the Original's failure; no entry and no staging left; the same build publishes once space returns; a published proxy stays readable on a full volume | `deadpan-cli` `proxy_disk_full.rs` (cache on a 16 MB image, real worker) |
 | Model pack volume fills during a download | The write fails with `No space left on device` (CLI code `DiskFull`); no finished file, receipt or active version; the kept `.part` is an exact prefix; while full the preflight refuses with `ModelPackSpace`; the install resumes from the kept bytes once space returns | `deadpan-models` `packs::disk_full_tests` (320 MB image filled by another writer mid-download) |
 | Model pack volume fills during offline folder or archive import | Real ENOSPC after preflight preserves the previously verified installed version and receipt. The failed replacement has no finished payload, receipt or installed directory; retry stages and verifies fully after space returns. | `deadpan-cli` `model_pack_import_disk_full.rs` (320 MB APFS image, source on another volume) |
+| Opening or editing a project on a full volume | `DiskFull` with "nothing has been changed" and what to do, for read-only and writable opens: SQLite cannot create its shared-memory and write-ahead files even to read, which it otherwise reports as a generic open or I/O failure. Chosen only after an open already failed, when the volume reports under 16 MiB available (APFS reports about 1 MiB on a full 16 MB image); the same edit saves once space returns | `deadpan-cli` `failure_matrix.rs` (16 MB image, real CLI process) |
+| Database without read permission | `PermissionDenied`, naming only `project.sqlite` inside the package rather than SQLite's absolute-path message; nothing written | `deadpan-cli` `failure_matrix.rs` (`chmod 000`) |
 | Render publication to a full destination | `destination_full`; no movie at the destination; the verified candidate publishes once space returns | `encoded_verification` `publication` |
 
 A WAL database needs writable shared memory even to read, so a project on a
@@ -224,6 +226,9 @@ when damaged-database replacement succeeds but reopening fails. Retained
 operation replies from older sessions cannot raise a new session's storage
 alert. Generation journal and acceptance failures keep the same explanation.
 See [storage-error qualification](qualification/storage-errors-2026-10-08.md).
+The [recovery matrix](qualification/recovery-matrix-2026-11-10.md) maps every
+failure and conflict class to its tests on the native app, headless CLI and
+live endpoint.
 
 ## Closing with unsaved previews
 
