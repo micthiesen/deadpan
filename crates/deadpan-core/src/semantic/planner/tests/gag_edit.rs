@@ -25,6 +25,7 @@ fn plan_gags(
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: crate::HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )

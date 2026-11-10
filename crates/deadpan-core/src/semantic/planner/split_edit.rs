@@ -54,6 +54,16 @@ where
         let left = self.child_ends[slot].0.clone();
         let right = self.child_ends[slot + 1].0.clone();
         let parent = self.context.parent.clone();
+        let is_source = |child: &NodeId| {
+            crate::cutaway_host(&self.current, child).is_some_and(|(host, _)| {
+                matches!(self.current.nodes()[&host].kind, NodeKind::Source { .. })
+            })
+        };
+        if !(is_source(&left) && is_source(&right)) {
+            // A pause or a group on one side cannot roll media; the leading
+            // sound continues from its own handle as a root sound instead.
+            return self.split_edit_by_sound(trace_index, kind, frames, slot);
+        }
         let delta = match kind {
             SplitEditKind::J => frames.frames().checked_neg(),
             SplitEditKind::L => Some(frames.frames()),
@@ -191,6 +201,387 @@ where
             .map_err(crate::DocumentError::from)?,
         );
         Ok(())
+    }
+}
+
+/// The beat at one edge of a direct child, through ordinary Sequence groups:
+/// its node and absolute Edit start and end.
+struct EdgeLeaf {
+    node: NodeId,
+    start: i64,
+    end: i64,
+}
+
+impl<F, R, S, P> Planner<'_, F, R, S, P>
+where
+    F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+    R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+    S: crate::SemanticSpeechProvider,
+    P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
+{
+    /// A J- or L-cut at a seam where one side is a pause or a group. Nothing
+    /// rolls: every picture, beat and duration stays. The leading beat (the
+    /// incoming beat's first beat for a J-cut, the outgoing beat's last for
+    /// an L-cut) keeps sounding from its own Original handle across the cut,
+    /// as one root sound event through that beat's exact audio mapping, its
+    /// seam side made Hard on both voices so the sound is continuous there.
+    /// The other side's sound under that stretch is muted, or, for a silent
+    /// pause, the event gets an explicit silence allowance for it.
+    fn split_edit_by_sound(
+        &mut self,
+        trace_index: usize,
+        kind: SplitEditKind,
+        frames: crate::FrameDuration,
+        slot: usize,
+    ) -> Result<(), EditError> {
+        let name = kind.name();
+        let length = frames.frames();
+        let at = self.context.cursor.0;
+        if self.context.scoped.is_some() {
+            return Err(invalid(&format!(
+                "a {name} next to a pause or group acts on the whole edit; leave the play scope first"
+            )));
+        }
+        // Edit frames are root frames, and so root sound frames, only below
+        // ordinary Sequences.
+        let mut ancestor = Some(self.context.parent.clone());
+        while let Some(node) = ancestor {
+            if !matches!(self.current.nodes()[&node].kind, NodeKind::Sequence { .. }) {
+                return Err(invalid(&format!(
+                    "a {name} next to a pause or group needs ordinary groups above it; leave the Repeat or speed change first"
+                )));
+            }
+            ancestor = self.current.parent_of(&node);
+        }
+        let left_start = slot
+            .checked_sub(1)
+            .map_or(self.bounds.0.0, |previous| self.child_ends[previous].1.0);
+        let left = (self.child_ends[slot].0.clone(), left_start, at);
+        let right = (
+            self.child_ends[slot + 1].0.clone(),
+            at,
+            self.child_ends[slot + 1].1.0,
+        );
+        let (leading, receiving) = match kind {
+            SplitEditKind::J => (right, left),
+            SplitEditKind::L => (left, right),
+        };
+        let leading_at_end = kind == SplitEditKind::L;
+        let lead = self.edge_leaf(&leading.0, leading.1, leading.2, leading_at_end, true)?;
+        let recv = self.edge_leaf(
+            &receiving.0,
+            receiving.1,
+            receiving.2,
+            !leading_at_end,
+            false,
+        )?;
+        let (host, offset) = crate::cutaway_host(&self.current, &lead.node)
+            .filter(|(host, _)| {
+                matches!(self.current.nodes()[host].kind, NodeKind::Source { .. })
+            })
+            .ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    match self.current.nodes()[&lead.node].kind {
+                        NodeKind::Hold { .. } => format!(
+                            "a pause has no sound of its own to carry across the cut; a {name} needs a beat of the Original on its {} side",
+                            if leading_at_end { "outgoing" } else { "incoming" }
+                        ),
+                        _ => format!(
+                            "a {name} needs a beat of the Original at the cut, not a Repeat or speed change"
+                        ),
+                    },
+                )
+            })?;
+        let stretch = if leading_at_end {
+            at..at + length
+        } else {
+            at - length..at
+        };
+        let available = recv.end - recv.start;
+        if available < length {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                format!(
+                    "a {name} of {length} frames needs that much of one beat or pause on the other side of the cut; at most {available} frames are available here"
+                ),
+            ));
+        }
+        // How the other side's own sound gives way under the stretch.
+        let pause = match &self.current.nodes()[&recv.node].kind {
+            NodeKind::Hold { recipe } if matches!(recipe.audio, crate::HoldAudio::Silence) => {
+                Some(recv.node.clone())
+            }
+            NodeKind::Hold { .. } => {
+                return Err(invalid(&format!(
+                    "this pause has its own sound; make it silent before a {name} reaches into it"
+                )));
+            }
+            _ => match crate::cutaway_host(&self.current, &recv.node) {
+                Some((host, _))
+                    if matches!(self.current.nodes()[&host].kind, NodeKind::Source { .. }) =>
+                {
+                    None
+                }
+                _ => {
+                    return Err(invalid(&format!(
+                        "a {name} needs a beat or a pause at the cut, not a Repeat or speed change"
+                    )));
+                }
+            },
+        };
+        let event = self.handle_sound(&lead, &host, offset, stretch.clone(), kind)?;
+        if pause.is_none() {
+            let local = (stretch.start - recv.start)..(stretch.end - recv.start);
+            self.parameter_edit(self.muted(&recv.node, local)?)?;
+        }
+        let edge = if leading_at_end {
+            crate::AudioBoundaryKind::NodeEnd
+        } else {
+            crate::AudioBoundaryKind::NodeStart
+        };
+        let leading_beat = &self.current.nodes()[&lead.node];
+        // A Split fragment's side fades only once marked editorial; an
+        // unmarked side already joins its handle sound without a fade.
+        let fades = match leading_beat.kind {
+            NodeKind::Retime {
+                purpose: crate::RetimePurpose::Partition,
+                ..
+            } => {
+                if leading_at_end {
+                    leading_beat.audio_editorial_edges.end
+                } else {
+                    leading_beat.audio_editorial_edges.start
+                }
+            }
+            _ => true,
+        };
+        if fades && leading_beat.audio_edges.get(edge) != crate::AudioEdgePolicy::Hard {
+            self.parameter_edit(Command::SetAudioEdge {
+                node: lead.node.clone(),
+                edge,
+                policy: crate::AudioEdgePolicy::Hard,
+            })?;
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::Sound { new_revision, id } =
+            (self.allocate)(SemanticAllocationRequest::Sound {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a split edit's sound requires a sound allocation"));
+        };
+        if self.current.sounds().contains_key(&id) {
+            return Err(EditError::new(
+                EditErrorCode::IdentityConflict,
+                "the split edit's sound identity is already present",
+            ));
+        }
+        self.reserve_revision(&new_revision)?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::SetSound {
+                id: id.clone(),
+                event,
+            },
+        )?)?;
+        if let Some(pause) = pause {
+            self.parameter_edit(Command::SetSoundAllowance {
+                sound: id,
+                issuer: crate::SoundHoldIssuer::Node {
+                    instance: crate::InstancePath {
+                        node: pause,
+                        repeats: Vec::new(),
+                    },
+                },
+                allowed: true,
+            })?;
+        }
+        self.context.cursor = ProjectFrame(at);
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_range = Some(
+            FrameRange::new(ProjectFrame(stretch.start), ProjectFrame(stretch.end))
+                .map_err(crate::DocumentError::from)?,
+        );
+        Ok(())
+    }
+
+    /// The beat at `child`'s end (or start), descending through ordinary
+    /// Sequence groups and skipping empty children. Groups on the leading
+    /// side must carry no audio treatment, which the sound event would not
+    /// receive.
+    fn edge_leaf(
+        &self,
+        child: &NodeId,
+        start: i64,
+        end: i64,
+        at_end: bool,
+        leading: bool,
+    ) -> Result<EdgeLeaf, EditError> {
+        let mut leaf = EdgeLeaf {
+            node: child.clone(),
+            start,
+            end,
+        };
+        for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+            let node = &self.current.nodes()[&leaf.node];
+            let NodeKind::Sequence { children } = &node.kind else {
+                if leading && !node.audio_treatments.is_empty() {
+                    return Err(invalid(
+                        "the beat whose sound crosses the cut has gain or effects, which its handle would not keep; clear them first",
+                    ));
+                }
+                return Ok(leaf);
+            };
+            if leading && !node.audio_treatments.is_empty() {
+                return Err(invalid(
+                    "the group whose sound crosses the cut has gain or effects, which its handle would not keep; clear them first",
+                ));
+            }
+            let mut next = None;
+            let ordered: Vec<&NodeId> = if at_end {
+                children.iter().rev().collect()
+            } else {
+                children.iter().collect()
+            };
+            for candidate in ordered {
+                let duration = self.current.node_duration(candidate)?.frames();
+                if duration > 0 {
+                    next = Some(if at_end {
+                        EdgeLeaf {
+                            node: candidate.clone(),
+                            start: leaf.end - duration,
+                            end: leaf.end,
+                        }
+                    } else {
+                        EdgeLeaf {
+                            node: candidate.clone(),
+                            start: leaf.start,
+                            end: leaf.start + duration,
+                        }
+                    });
+                    break;
+                }
+            }
+            leaf = next.ok_or_else(|| invalid("an empty group sits at the cut"))?;
+        }
+        Err(invalid("the group at the cut is nested too deeply"))
+    }
+
+    /// A root sound event playing `lead`'s own Original sound over the
+    /// absolute Edit frames `heard` beyond its edge, from its handle.
+    fn handle_sound(
+        &self,
+        lead: &EdgeLeaf,
+        host: &NodeId,
+        offset: i64,
+        heard: std::ops::Range<i64>,
+        kind: SplitEditKind,
+    ) -> Result<crate::SoundEvent, EditError> {
+        let name = kind.name();
+        let NodeKind::Source { source } = &self.current.nodes()[host].kind else {
+            return Err(invalid("the leading beat is not a Source"));
+        };
+        let audio = source
+            .audio
+            .clone()
+            .filter(|_| source.link == crate::LinkRelation::Linked)
+            .ok_or_else(|| {
+                invalid(&format!(
+                    "the beat at the cut has no linked sound for a {name}"
+                ))
+            })?;
+        if !matches!(source.video, SourceVideo::Stream { .. }) {
+            return Err(invalid(&format!("a {name} needs a beat of the Original")));
+        }
+        let rate = self.current.presentation_basis().frame_rate;
+        let (start, frames) = match source.audio_mapping {
+            crate::SourceAudioMapping::FitBeat => {
+                return Err(invalid(&format!(
+                    "the beat's sound is fitted to its picture; it has no natural-rate handle for a {name}"
+                )));
+            }
+            crate::SourceAudioMapping::Duration { frames } => (ExactRatio::ZERO, frames),
+            crate::SourceAudioMapping::Placement { start, frames }
+            | crate::SourceAudioMapping::SelectedPlacement { start, frames, .. } => (start, frames),
+        };
+        let shift = source
+            .audio_mapping
+            .start_frames_with_offset(source.audio_offset, rate)
+            .and_then(|with| with.checked_sub(start))
+            .map_err(crate::DocumentError::from)?;
+        // Host-physical frame of an absolute Edit frame of the leaf.
+        let delta = lead.start - offset;
+        let wanted_start = ExactRatio::integer(heard.start - delta)
+            .checked_sub(shift)
+            .map_err(crate::DocumentError::from)?;
+        let wanted_end = wanted_start
+            .checked_add(ExactRatio::integer(heard.end - heard.start))
+            .map_err(crate::DocumentError::from)?;
+        let support_end = start
+            .checked_add(frames)
+            .map_err(crate::DocumentError::from)?;
+        if wanted_start.compare(start).is_lt() || wanted_end.compare(support_end).is_gt() {
+            let seam = ExactRatio::integer(
+                if kind == SplitEditKind::L {
+                    heard.start
+                } else {
+                    heard.end
+                } - delta,
+            )
+            .checked_sub(shift)
+            .map_err(crate::DocumentError::from)?;
+            let room = if kind == SplitEditKind::L {
+                support_end.checked_sub(seam)
+            } else {
+                seam.checked_sub(start)
+            }
+            .map_err(crate::DocumentError::from)?
+            .floor()
+            .max(0);
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                format!(
+                    "a {name} of {} frames needs more of the Original's sound {} this beat; at most {room} frames are available here",
+                    heard.end - heard.start,
+                    if kind == SplitEditKind::L {
+                        "after"
+                    } else {
+                        "before"
+                    }
+                ),
+            ));
+        }
+        let moved = |value: ExactRatio| {
+            value
+                .checked_add(ExactRatio::integer(delta))
+                .map_err(|error| EditError::from(crate::DocumentError::from(error)))
+        };
+        let label = self.current.nodes()[&lead.node].label.clone();
+        let hard_start = kind == SplitEditKind::L;
+        Ok(crate::SoundEvent {
+            owner: self.current.root().clone(),
+            label: format!("{name} · {label}"),
+            source: audio,
+            mapping: crate::SourceAudioMapping::SelectedPlacement {
+                start: moved(start)?,
+                frames,
+                selection: crate::ExactFrameRange::new(moved(wanted_start)?, moved(wanted_end)?)?,
+            },
+            offset: source.audio_offset,
+            treatments: crate::AudioTreatments::default(),
+            start_edge: if hard_start {
+                crate::AudioEdgePolicy::Hard
+            } else {
+                crate::AudioEdgePolicy::Automatic
+            },
+            end_edge: if hard_start {
+                crate::AudioEdgePolicy::Automatic
+            } else {
+                crate::AudioEdgePolicy::Hard
+            },
+            overflow: crate::SoundOverflowPolicy::Reject,
+        })
     }
 }
 

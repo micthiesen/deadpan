@@ -16,7 +16,10 @@ a Source. Source-owned framing and audio treatments are retained.
 The Source must retain a full qualified video span, an explicit mapping with
 adjacent endpoint holds, and a positive editorial window. Enabled audio must
 retain the same asset's full measured span and its linked affine clock. Audio
-may be intentionally absent. An independent sample offset remains unchanged.
+may be intentionally absent. An independent sample offset remains unchanged;
+an [`:audio-lag`](SOURCE_AUDIO_MAPPING.md) keeps the editorial window, so a
+lagged Source slips with its offset (`an_audio_lag_keeps_the_editorial_window_so_slip_and_trim_carry_the_offset`,
+the `audio-lag-slip` preview/export fixture and the `split-edits` replay).
 
 The visible intersection of the editorial window and the selected allocation
 must lie within measured picture support. Audio coverage does not constrain

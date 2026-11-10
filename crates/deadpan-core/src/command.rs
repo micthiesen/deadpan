@@ -2672,10 +2672,21 @@ pub(crate) fn reduce(
                 ));
             }
             if source.audio_mapping != *mapping || source.audio_offset != *offset {
-                source.edit_window = None;
+                let mut after = source.clone();
+                after.audio_mapping = *mapping;
+                after.audio_offset = *offset;
+                // An offset that keeps the linked selections inside the
+                // editorial window (`:audio-lag` on an admitted Source)
+                // retains it, so Trim and Slip stay available; any other
+                // stream-mapping change clears it.
+                if !crate::source_edit::linked_window_agrees(document, &after) {
+                    after.edit_window = None;
+                }
+                let NodeKind::Source { source } = &mut node_mut(document, node)?.kind else {
+                    unreachable!("checked above");
+                };
+                *source = after;
             }
-            source.audio_mapping = *mapping;
-            source.audio_offset = *offset;
         }
         Command::SetHoldDuration { node, duration } => {
             let recipe = hold_mut(document, node)?;

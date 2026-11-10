@@ -45,6 +45,7 @@ where
                     video: crate::HoldVideo::Background,
                     picture_context: None,
                     audio: HoldAudio::Silence,
+                    cutaways: Vec::new(),
                 })
             } else {
                 let site = planner.context.scoped.as_ref().map_or(
@@ -139,7 +140,27 @@ where
         if self.context.cursor != range.start() {
             return Err(invalid("a bleep refills its time at the cut's join"));
         }
-        self.insert_hold(trace_index, range.duration(), |_| Ok(provider))
+        // Across cuts, later passages show as picture-only cutaways on the one
+        // Hold, so a single tone covers the whole range.
+        let mut provider = provider;
+        let cutaways = std::mem::take(&mut provider.cutaways);
+        if cutaways
+            .iter()
+            .any(|cutaway| cutaway.range.end().0 > range.duration().frames())
+        {
+            return Err(invalid(
+                "a bleep's later pictures must lie inside its pause",
+            ));
+        }
+        let hold =
+            self.insert_hold_with_id(trace_index, range.duration(), false, |_| Ok(provider))?;
+        if !cutaways.is_empty() {
+            self.parameter_edit(Command::SetCutaways {
+                node: hold,
+                cutaways,
+            })?;
+        }
+        Ok(())
     }
 
     /// `:lift`: cut the Visual selection, then fill its time with a silent
@@ -180,6 +201,7 @@ where
                 video: crate::HoldVideo::Background,
                 picture_context: None,
                 audio: HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         })
     }
@@ -286,6 +308,18 @@ where
         request_ai: bool,
         provider: impl FnOnce(&mut Self) -> Result<super::PauseProvider, EditError>,
     ) -> Result<(), EditError> {
+        self.insert_hold_with_id(trace_index, duration, request_ai, provider)
+            .map(|_| ())
+    }
+
+    /// Insert the pause and return its Hold's identity.
+    fn insert_hold_with_id(
+        &mut self,
+        trace_index: usize,
+        duration: FrameDuration,
+        request_ai: bool,
+        provider: impl FnOnce(&mut Self) -> Result<super::PauseProvider, EditError>,
+    ) -> Result<NodeId, EditError> {
         if self.context.visual_selection.is_some() {
             return Err(invalid(
                 "clear the Visual selection before inserting a pause",
@@ -315,6 +349,9 @@ where
             ));
         }
         let provider = provider(self)?;
+        if !provider.cutaways.is_empty() {
+            return Err(invalid("only a bleep's pause carries cutaways"));
+        }
         if scoped.is_some()
             && (!matches!(
                 provider.video,
@@ -487,11 +524,11 @@ where
         if self.context.scoped.is_some() {
             super::framing::validate_scoped_context(&self.current, &self.context)?;
             self.trace[trace_index].resolved_selection =
-                Some(SliceCaptureSelection::Child { node: id });
+                Some(SliceCaptureSelection::Child { node: id.clone() });
         }
         self.trace[trace_index].resolved_range =
             Some(FrameRange::new(at, end).map_err(crate::DocumentError::from)?);
-        Ok(())
+        Ok(id)
     }
 
     pub(super) fn set_framing(

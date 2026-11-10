@@ -661,7 +661,7 @@ where
         Ok(())
     }
 
-    fn parameter_edit(&mut self, command: Command) -> Result<(), EditError> {
+    pub(super) fn parameter_edit(&mut self, command: Command) -> Result<(), EditError> {
         self.charge_step(false)?;
         let SemanticAllocation::ParameterEdit { new_revision } =
             (self.allocate)(SemanticAllocationRequest::ParameterEdit {

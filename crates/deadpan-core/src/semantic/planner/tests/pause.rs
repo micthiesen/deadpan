@@ -25,6 +25,7 @@ fn plan_pauses(
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: crate::HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )
@@ -576,6 +577,7 @@ fn nothing_happens_holds_room_tone_then_true_silence_in_one_group() {
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: crate::HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )
@@ -653,6 +655,7 @@ fn nothing_happens_holds_room_tone_then_true_silence_in_one_group() {
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: crate::HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )
@@ -906,6 +909,7 @@ fn plan_with_sites(
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: crate::HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     );
@@ -1118,6 +1122,7 @@ fn are_we_done_hangs_a_reverb_tail_under_a_reaction_cutaway_in_one_group() {
                     assert!(matches!(site, crate::PauseSite::Boundary { .. }));
                     crate::HoldAudio::Silence
                 },
+                cutaways: Vec::new(),
             })
         },
     )
@@ -1194,6 +1199,7 @@ fn are_we_done_hangs_a_reverb_tail_under_a_reaction_cutaway_in_one_group() {
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: crate::HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )
@@ -1466,6 +1472,7 @@ fn nested_follow_speed_semantic_pauses_refresh_exact_scope_and_replay_as_one_edi
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: crate::HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )

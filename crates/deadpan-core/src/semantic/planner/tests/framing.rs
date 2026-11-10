@@ -340,6 +340,7 @@ fn zoom_ordinary_owner_remains_available_with_retained_nested_tape_pause_clocks(
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
                 picture_context: None,
+                cutaways: Vec::new(),
             })
         },
     )

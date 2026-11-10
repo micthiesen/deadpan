@@ -4092,6 +4092,7 @@ mod scoped_capture_property {
                         video: HoldVideo::Background,
                         picture_context: None,
                         audio: HoldAudio::Silence,
+                        cutaways: Vec::new(),
                     })
                 },
             )

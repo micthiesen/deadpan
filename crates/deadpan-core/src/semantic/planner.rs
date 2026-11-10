@@ -516,6 +516,9 @@ pub struct PauseProvider {
     pub picture_context: Option<crate::CapturedFraming>,
     /// Silence for an ordinary pause; reversed audio or a tail otherwise.
     pub audio: crate::HoldAudio,
+    /// Picture-only cutaways on the new Hold, in its own frames. Only a bleep
+    /// across cuts has them: each later passage shows its own pictures.
+    pub cutaways: Vec<crate::Cutaway>,
 }
 
 /// Exact stopped-picture geometry requested from the staged document. The

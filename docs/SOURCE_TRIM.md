@@ -42,7 +42,9 @@ coincides with its allocation edge, contraction can leave W unchanged. An edge
 with fractional padding moves the corresponding exact endpoint of W. Extension
 beyond W widens only that endpoint. Video selection is W intersected with its
 measured support. Linked audio uses `(W∩audio_support)-audio_offset`, preserving
-empty support and absent audio as distinct states.
+empty support and absent audio as distinct states. An `:audio-lag` keeps W and
+selects its offset sound by the same rule, so a lagged Source trims with its
+signed offset unchanged.
 
 ## Physical ownership and effects
 

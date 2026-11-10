@@ -60,11 +60,18 @@ envelope. Preview, commit, undo and redo use the same store transaction path.
 
 Native `:audio-lag +80ms`, `:audio-lag -2f` and `:audio-lag 0` set the signed
 offset of the Source under the selected beat (through neutral Split
-Partitions), keeping its mapping, picture and timing: the sound plays that much
-later or earlier than its picture, clipped to the beat. Durations convert once
-to 48 kHz samples. As for every generic stream-mapping change, a changed offset
-clears the Source's common edit window, so Slip and Trim then refuse that
-Source. The inspector shows the offset beside the link, for example
+Partitions), keeping its picture and timing: the sound plays that much later
+or earlier than its picture, clipped to the beat. Durations convert once to
+48 kHz samples. On a Source with an admitted linked editorial window `W`
+(every native Original beat), the lag keeps `W` and selects the offset sound
+inside it exactly as Trim and Slip do, `(W∩shifted audio support)-offset`: the
+window hears the offset sound, filled from the Original's own audio handle,
+and stays silent only where the Original's audio runs out (since 2026-11-10).
+Slip and Trim therefore keep applying and carry the signed offset through their
+exact clamps. `SetSourceAudioMapping` keeps a window only when the changed
+linked picture and offset audio selections still agree with it; any other
+stream-mapping change, and a lag on a Source without a window, clears it as
+before, so Slip and Trim refuse that Source. The inspector shows the offset beside the link, for example
 `Linked · sound 50.0 ms late`.
 
 Database schema 19 migrates schemas 1 through 18 directly to core schema 13 JSON.

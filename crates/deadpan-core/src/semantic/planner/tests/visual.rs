@@ -726,6 +726,7 @@ fn bleep_resolves_the_range_pictures_before_cutting_and_refills_its_time() {
                     frequency_hz: 1_000,
                     level,
                 },
+                cutaways: Vec::new(),
             })
         },
     )
@@ -764,4 +765,99 @@ fn bleep_resolves_the_range_pictures_before_cutting_and_refills_its_time() {
             level,
         }
     );
+}
+
+#[test]
+fn a_bleep_across_cuts_puts_later_passages_on_its_pause_as_cutaways() {
+    let mut document = fixture(10);
+    let time_base = crate::SourceTimeBase::new(1, 30).unwrap();
+    let span = crate::SourceSpan::new(
+        crate::SourceTimestamp {
+            ticks: 0,
+            time_base,
+        },
+        crate::SourceTimestamp {
+            ticks: 100,
+            time_base,
+        },
+    )
+    .unwrap();
+    document.assets.insert(
+        crate::AssetId::new("original").unwrap(),
+        crate::AssetRecord {
+            label: "Original".into(),
+            content_hash: "a".repeat(64),
+            video: Some(span),
+            audio: None,
+            still_image: false,
+            frame_count: Some(FrameDuration::new(100).unwrap()),
+            source_qualification: None,
+        },
+    );
+    let level = crate::GainDb::new(-10_000).unwrap();
+    let later = crate::Cutaway {
+        range: range(3, 5),
+        asset: crate::AssetId::new("original").unwrap(),
+        selection: crate::ExactSourceSpan::new(
+            crate::SourcePoint {
+                ticks: crate::ExactRatio::integer(40),
+                time_base,
+            },
+            crate::SourcePoint {
+                ticks: crate::ExactRatio::integer(42),
+                time_base,
+            },
+        )
+        .unwrap(),
+        fit: crate::CutawayFit::Hold,
+        removed: false,
+    };
+    let run = |cutaways: Vec<crate::Cutaway>| {
+        plan_semantic_with_speech(
+            &document,
+            &with_visual(7, 2, 7, false),
+            &program(vec![SemanticInstruction::Bleep {
+                register: name('b'),
+                frequency_hz: 1_000,
+                level,
+            }]),
+            SemanticRegisterBank {
+                entries: &BTreeMap::new(),
+                version: 7,
+            },
+            revision("outer"),
+            allocate,
+            no_original,
+            |_| Err(crate::speech_unavailable()),
+            |_, _| {
+                Ok(crate::PauseProvider {
+                    video: HoldVideo::Background,
+                    picture_context: None,
+                    audio: HoldAudio::Tone {
+                        frequency_hz: 1_000,
+                        level,
+                    },
+                    cutaways: cutaways.clone(),
+                })
+            },
+        )
+    };
+    let planned = run(vec![later.clone()]).unwrap();
+    assert_eq!(planned.document.duration().unwrap().frames(), 10);
+    let pause = planned.context.selected_child.clone().unwrap();
+    let beat = &planned.document.nodes()[&pause];
+    assert!(matches!(&beat.kind, NodeKind::Hold { recipe } if recipe.duration.frames() == 5));
+    // One pause and one tone; the later passage shows on it.
+    assert_eq!(beat.cutaways, vec![later.clone()]);
+    let request = planned.request.as_ref().unwrap();
+    let reverted = crate::apply(&document, request)
+        .unwrap()
+        .inverse
+        .apply(&planned.document)
+        .unwrap();
+    assert_eq!(reverted, document);
+    // A cutaway reaching past the pause refuses.
+    let mut beyond = later;
+    beyond.range = range(3, 6);
+    assert!(run(vec![beyond]).is_err());
 }

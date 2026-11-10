@@ -164,8 +164,26 @@ A tone reads no media, has no frozen-context input and needs no store
 admission. `,b` or `:bleep [880Hz] [level=-6dB]` (default 1 kHz at -10 dB)
 resolves the Visual range's pictures before cutting it into the register, then
 inserts the Play/Tone Hold of exactly the cut length at the join, as one
-compound and one Undo (`SemanticInstruction::Bleep`). The range must be one
-continuous natural-rate Original passage; a group object refuses.
+compound and one Undo (`SemanticInstruction::Bleep`). The range must show
+Original pictures; a group object refuses.
+
+A range across cuts, or reaching into an unframed group (since 2026-11-10), is
+still one Hold and one tone, so the tone never restarts or dips at a cut. The
+host splits the range into runs whose pictures advance exactly one project
+frame of the Original's clock per frame: the first run plays as the Hold's
+`Play` picture, and each later run becomes a picture-only
+[cutaway](CUTAWAYS.md) on the new Hold over exactly its frames, whose
+selection starts half a frame before the run's first picture point, so every
+frame center samples the same Original time it showed before. Contiguous Split
+fragments form one run. Because a cutaway carries none of the old framing, a
+range across cuts must show every picture unframed at every level (no beat or
+group framing and no captured framing); a framed part, a pause, a still or
+generated picture in the range, more than 16 cuts, or a run starting before
+the Original's first picture refuses with a reason. Evidence:
+`a_bleep_across_cuts_puts_later_passages_on_its_pause_as_cutaways` (one Hold,
+its cutaway, exact Compound Undo, a cutaway past the pause refusing), the
+`split-edits` replay (`,b` over a cut keeps every picture and the length) and
+the `bleep-across-cut` preview/export fixture.
 
 ## Lift
 
@@ -248,8 +266,8 @@ a `Tail of: Live 2 s before` row.
 
 ## Remaining
 
-A bleep mixed over the sound instead of replacing it, bleeping across a cut,
-choosing the tail's source range by hand, reversing composite
+A bleep mixed over the sound instead of replacing it, bleeping framed
+pictures across a cut, choosing the tail's source range by hand, reversing composite
 structure (groups, Repeats, framed scopes) or at other speeds, a reverse
 picture of edited (cutaway) content with its own sound, and listening
 qualification of the two effects. Selected sends from beats and placed sounds

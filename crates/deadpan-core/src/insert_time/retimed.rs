@@ -1116,6 +1116,7 @@ mod one_leaf_replay_tests {
                     video: crate::HoldVideo::Background,
                     picture_context: None,
                     audio: crate::HoldAudio::Silence,
+                    cutaways: Vec::new(),
                 })
             },
         )

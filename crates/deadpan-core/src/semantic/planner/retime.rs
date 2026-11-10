@@ -489,7 +489,10 @@ where
                 "the sound already has that offset; no edit was made",
             ));
         }
-        let mapping = source.audio_mapping;
+        // An admitted linked Source keeps its editorial window: the offset
+        // sound is selected inside it, so Trim and Slip still apply.
+        let mapping = crate::source_edit::offset_audio_mapping(&self.current, source, offset)?
+            .unwrap_or(source.audio_mapping);
         self.charge_step(false)?;
         let SemanticAllocation::ParameterEdit { new_revision } =
             (self.allocate)(SemanticAllocationRequest::ParameterEdit {

@@ -341,3 +341,70 @@ pub(crate) fn selected_audio(
 pub(crate) fn invalid(message: &str) -> DocumentError {
     DocumentError::new(DocumentErrorCode::SourceRangeInvalid, message)
 }
+
+/// Whether `source`'s editorial window still agrees with its linked picture
+/// and offset audio selections, so a stream-mapping change may retain it.
+pub(crate) fn linked_window_agrees(document: &ProjectDocument, source: &SourceNode) -> bool {
+    let (Some(window), SourceVideo::Stream { asset, span }) = (source.edit_window, &source.video)
+    else {
+        return false;
+    };
+    let Some(record) = document.assets().get(asset) else {
+        return false;
+    };
+    let picture = source.video_mapping.start_frames();
+    let picture_agrees = source
+        .video_mapping
+        .duration_frames(source.duration)
+        .and_then(|frames| support(picture, frames))
+        .and_then(|video_support| {
+            source
+                .video_mapping
+                .selection_frames(source.duration)
+                .map(|selected| selected == intersect(window_range(window), video_support))
+        })
+        .unwrap_or(false);
+    picture_agrees
+        && linked_audio(document, source, record, asset, *span, window, "")
+            .is_ok_and(|audio| audio.is_some())
+}
+
+/// The audio mapping that gives an admitted linked Source the independent
+/// `offset` inside its unchanged editorial window: the window then hears the
+/// offset sound, filled from the Original's own audio handle where it exists
+/// and silent where the audio support ends, exactly as Trim and Slip select
+/// it (`(W∩shifted support)-offset`). `None` when the Source has no admitted
+/// window, so the caller keeps its mapping and the window is cleared.
+pub(crate) fn offset_audio_mapping(
+    document: &ProjectDocument,
+    source: &SourceNode,
+    offset: crate::AudioSample,
+) -> Result<Option<SourceAudioMapping>, DocumentError> {
+    if !linked_window_agrees(document, source) {
+        return Ok(None);
+    }
+    let Some(window) = source.edit_window else {
+        return Ok(None);
+    };
+    let start = source.audio_mapping.start_frames();
+    let frames = source.audio_mapping.duration_frames(source.duration)?;
+    let shifted = source
+        .audio_mapping
+        .start_frames_with_offset(offset, document.presentation_basis().frame_rate)?;
+    let shift = shifted.checked_sub(start)?;
+    let selected = selected_audio(window_range(window), support(shifted, frames)?);
+    let mapping = SourceAudioMapping::SelectedPlacement {
+        start,
+        frames,
+        selection: ExactFrameRange {
+            start: selected.start.checked_sub(shift)?,
+            end: selected.end.checked_sub(shift)?,
+        },
+    };
+    mapping.selection_frames_with_offset(
+        source.duration,
+        offset,
+        document.presentation_basis().frame_rate,
+    )?;
+    Ok(Some(mapping))
+}

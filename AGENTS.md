@@ -2264,8 +2264,13 @@ it; without saturation the chain remains one exact sum. Decide pitch-preserving
 processing only with `PitchPolicy::processes(unity_rate)`: a nonzero `Shift`
 processes even at unity speed, so never test `== Preserve && scale != 1`.
 J/L-cuts are one Roll plus a cutaway whose span comes from the pre-Roll affine
-picture map; `Cutaway.removed` is a video-only delete that shows the background
-and records the removed pictures. See [role edits](docs/ROLE_EDITS.md).
+picture map; beside a pause or a group they roll nothing and carry the leading
+beat's handle as a root sound (Hard at the seam) with an allowance or mute on
+the other side. A bleep across cuts is one Play/Tone Hold whose later passages
+are cutaways on it. `:audio-lag` keeps an admitted editorial window, so
+`SetSourceAudioMapping` clears the window only when its selections disagree.
+`Cutaway.removed` is a video-only delete that shows the background and records
+the removed pictures. See [role edits](docs/ROLE_EDITS.md).
 
 Measured gain waveforms belong to the captured committed beat before effects,
 independently of Before/Draft mix audition. Keep signed stereo extrema, exact

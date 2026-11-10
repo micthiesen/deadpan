@@ -490,6 +490,7 @@ fn plan_repeat_over(
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )
@@ -847,6 +848,7 @@ fn plan_shift(
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )

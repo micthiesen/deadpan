@@ -3438,6 +3438,184 @@ pub fn l_cut(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// Shorten, ripple delete Edit [15, 21) (Original 27..32, which holds the
+/// click) and insert an 8-frame black silent pause at Edit 15: Edit [0, 15)
+/// Original 12..26, the pause [15, 23), then Edit [23, 32) Original 33..41.
+fn pause_seam(project: &mut Project) -> Result<ProjectDocument> {
+    project.shorten()?;
+    project.delete_range(15, 21)?;
+    let at = ProjectFrame(15);
+    let document = project.apply(|project, document, revision| {
+        let identities = match document.insert_time_target(at)?.split {
+            Some(split) => project.fresh(split.required_ids)?,
+            None => Vec::new(),
+        };
+        Ok(Command::InsertTime {
+            at,
+            hold: silent(8, HoldVideo::Background)?,
+            id: node("black")?,
+            identities: SplitIdentities { nodes: identities },
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    if document.duration()?.frames() != 32 {
+        return Err("unexpected pause seam base".into());
+    }
+    Ok(document)
+}
+
+fn pause_seam_pictures() -> Vec<(u64, Expected)> {
+    [0u64, 14, 15, 18, 22, 23, 26, 31]
+        .into_iter()
+        .map(|frame| {
+            (
+                frame,
+                match frame {
+                    0..15 => base(frame),
+                    15..23 => Expected::Background,
+                    _ => original(10 + frame),
+                },
+            )
+        })
+        .collect()
+}
+
+/// `:lcut 6f` at the cut into a silent pause (Edit 15). The outgoing beat's
+/// sound continues from its handle (Original 27..33) as a root sound with a
+/// silence allowance for the pause, so the deleted click (Original sample
+/// 48,000) is heard at Edit sample 28,781 under the black pause; pictures and
+/// time are unchanged.
+pub fn l_cut_pause(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "l-cut-pause")?;
+    pause_seam(&mut project)?;
+    let saved = project.run_semantic(
+        json!([{"type":"split_edit","kind":"l","length":{"unit":"frames","frames":6}}]),
+        15,
+        None,
+    )?;
+    if saved.duration()?.frames() != 32 || saved.sounds().len() != 1 {
+        return Err("the L-cut into a pause changed time or placed no sound".into());
+    }
+    let mut fixture = project.finish(
+        vec!["Lingering sound (L-cut)"],
+        pause_seam_pictures(),
+        Vec::new(),
+    )?;
+    // B(21) = 33,634: the handle ends there and the rest of the pause is silent.
+    fixture.audio = vec![(28_672, true), (34_048, false)];
+    Ok(fixture)
+}
+
+/// `:jcut 6f` at the cut out of the same pause (Edit 23). The incoming beat's
+/// sound starts from its handle (Original 27..33) over the pause's last 6
+/// frames, so the click sounds at Edit sample 31,984 (Original 33 is Edit 23,
+/// 10 frames or 16,016 samples earlier); pictures and time are unchanged.
+pub fn j_cut_pause(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "j-cut-pause")?;
+    pause_seam(&mut project)?;
+    let saved = project.run_semantic(
+        json!([{"type":"split_edit","kind":"j","length":{"unit":"frames","frames":6}}]),
+        23,
+        None,
+    )?;
+    if saved.duration()?.frames() != 32 || saved.sounds().len() != 1 {
+        return Err("the J-cut out of a pause changed time or placed no sound".into());
+    }
+    let mut fixture = project.finish(
+        vec!["Premature sound (J-cut)"],
+        pause_seam_pictures(),
+        Vec::new(),
+    )?;
+    // The pause before the handle, B(15)..B(17) = 24,024..27,227, is silent.
+    fixture.audio = vec![(24_576, false), (31_744, true)];
+    Ok(fixture)
+}
+
+/// Ripple delete Edit [15, 17) (Original 27..28), then a Visual [12, 20)
+/// `:bleep level=-3dB` across that cut through the headless semantic path:
+/// one 8-frame pause plays Original 24..26 then, as a cutaway on it, Original
+/// 29..33, over one tone that replaces the click (Edit sample 25,578).
+pub fn bleep_across_cut(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "bleep-across-cut")?;
+    project.shorten()?;
+    project.delete_range(15, 17)?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":8},
+            {"type":"bleep","register":"b","level":-3000}
+        ]),
+        12,
+        None,
+    )?;
+    let (pause, start) = root_child_at(&saved, 12)?;
+    let beat = &saved.nodes()[&pause];
+    if start != 12
+        || beat.cutaways.len() != 1
+        || !matches!(
+            &beat.kind,
+            NodeKind::Hold { recipe } if recipe.duration.frames() == 8 && matches!(
+                (&recipe.video, &recipe.audio),
+                (HoldVideo::Play { .. }, HoldAudio::Tone { frequency_hz: 1_000, .. })
+            )
+        )
+    {
+        return Err(format!("unexpected bleep across a cut {beat:?}").into());
+    }
+    let expectations = [0u64, 11, 12, 14, 15, 17, 19, 20, 27]
+        .into_iter()
+        .map(|frame| {
+            (
+                frame,
+                original(if frame < 15 { 12 + frame } else { 14 + frame }),
+            )
+        })
+        .collect();
+    let mut fixture = project.finish(vec!["Bleep"], expectations, Vec::new())?;
+    // The tone fills [B(12), B(20)) = [19,219, 32,032), where the click was.
+    fixture.audio = vec![
+        (16_384, false),
+        (19_456, true),
+        (25_600, true),
+        (31_488, true),
+        (33_024, false),
+    ];
+    Ok(fixture)
+}
+
+/// `:audio-lag +50ms` then `:slip +3f` on the shortened base beat through the
+/// headless semantic path. The lag keeps the editorial window (the window
+/// hears the offset sound, filled from the handle), so Slip applies: Edit `f`
+/// shows Original 15 + f, and the click (Original sample 48,000) is heard at
+/// 28,781 - B(3) + 2,400 = 26,376.
+pub fn audio_lag_slip(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "audio-lag-slip")?;
+    let document = project.shorten()?;
+    let (beat, _) = root_child_at(&document, 0)?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"set_audio_lag","offset":2400},
+            {"type":"slip","frames":3}
+        ]),
+        0,
+        Some(&beat),
+    )?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64 {
+        return Err("a slip changed the duration".into());
+    }
+    let expectations = [0u64, 9, 10, 20, 26]
+        .into_iter()
+        .map(|frame| (frame, original(15 + frame)))
+        .collect();
+    let mut fixture = project.finish(vec!["Audio lag"], expectations, Vec::new())?;
+    // Silent where the click was before the slip and before the lag.
+    fixture.audio = vec![(23_808, false), (26_368, true), (28_672, false)];
+    Ok(fixture)
+}
+
 /// `:select role=audio` + `d` over Edit [15, 20), then `:select role=video` +
 /// `d` over [23, 27), through the headless semantic path: the click at Edit
 /// sample 28,781 is silenced while its pictures stay, and Edit 23..27 show
@@ -3995,7 +4173,7 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 48] = [
+    let builders: [(&str, Builder); 52] = [
         ("audio-shift", audio_shift),
         ("ramp", ramp),
         ("continuous-ramp", continuous_ramp),
@@ -4029,6 +4207,10 @@ pub fn partition_with_skips(
         ("nothing-happens", nothing_happens),
         ("repeat-gap-room-tone", repeat_gap_room_tone),
         ("audio-lag", audio_lag),
+        ("audio-lag-slip", audio_lag_slip),
+        ("l-cut-pause", l_cut_pause),
+        ("j-cut-pause", j_cut_pause),
+        ("bleep-across-cut", bleep_across_cut),
         ("bed-drop", bed_drop),
         ("mute-range", mute_range),
         ("off-center", off_center),

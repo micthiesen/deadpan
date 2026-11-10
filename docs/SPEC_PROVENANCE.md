@@ -106,6 +106,21 @@ easings would lose that unless they are polynomial, so none was added. The
 stepped form remains a second, explicitly chosen variable-rate construction.
 Pitch-preserving continuous ramps stay required and unimplemented.
 
+On 2026-11-10 three Section 8.3 role edits were extended under the same
+delegated authority. A bleep across cuts stays one Hold with one tone, the
+later passages shown as picture-only cutaways on it, because restarting the
+tone per passage would dip at each cut; framed pictures across a cut refuse
+since a cutaway carries no framing. A J- or L-cut beside a pause or across a
+group boundary moves only sound: the leading beat's handle plays as a root
+sound event, Hard at the seam so it stays continuous, while a silent pause gets
+an explicit allowance and a beat is muted under it. Rolling a pause would
+need media it does not have, and shortening it would change a picture the
+user placed. An audio lag on a Source with an editorial window now keeps the
+window and fills it with the offset sound from the Original's handle, the
+selection rule Trim and Slip already used, so "explicit link offset" means the
+sound is slipped against its picture within the same beat rather than leaving
+a silent hole at one end; Slip and Trim then carry the offset unchanged.
+
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
 | [AGENT_HANDOFF.md](spec/archive/1.0/AGENT_HANDOFF.md) | 4,340 | `464f689e1eb5ad6b2905286e516259f07dc83fea8ebb2b0330663976b905ae6c` |

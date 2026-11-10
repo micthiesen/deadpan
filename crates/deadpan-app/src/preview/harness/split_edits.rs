@@ -511,6 +511,7 @@ fn role_repeats(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"sounds":sound_count(d),"beats":lengths(d)}),
     )?;
     audio_shifts(d)?;
+    boundaries(d)?;
     timing_view(d)
 }
 
@@ -678,5 +679,122 @@ fn audio_shifts(d: &mut Driver<'_>) -> Result<(), String> {
         sound_count(d) == 0,
         json!({"sounds":0}),
         json!({"sounds":sound_count(d)}),
+    )
+}
+
+fn holds(d: &Driver<'_>) -> Vec<usize> {
+    let Some(workspace) = d.app().workspace.as_ref() else {
+        return Vec::new();
+    };
+    workspace
+        .document
+        .nodes()
+        .values()
+        .filter(|node| matches!(node.kind, NodeKind::Hold { .. }))
+        .map(|node| node.cutaways.len())
+        .collect()
+}
+
+/// Split edits beside a pause, a bleep across the cut and Slip after an
+/// audio lag: no time moves and every picture stays.
+fn boundaries(d: &mut Driver<'_>) -> Result<(), String> {
+    let frames = [30, 39, 40, 41, 85, 89];
+    let pictures_before = pictures(d, &frames)?;
+    at(d, 40)?;
+    edit(d, "hold 8f")?;
+    let paused = pictures(d, &[39, 48, 49])?;
+    at(d, 40)?;
+    edit(d, "lcut 6f")?;
+    d.check(
+        ":lcut 6f into a pause carries the outgoing sound over it as one placed sound; beats, pictures and length stay",
+        sound_count(d) == 1
+            && lengths(d) == [40, 8, 50]
+            && pictures(d, &[39, 48, 49])? == paused
+            && d.app().sequence_length() == 98
+            && d.app().sequence_cursor == 40,
+        json!({"sounds":1,"beats":[40, 8, 50],"frames":98,"cursor":40}),
+        json!({"sounds":sound_count(d),"beats":lengths(d),"frames":d.app().sequence_length(),"cursor":d.app().sequence_cursor,"error":d.app().error}),
+    )?;
+    d.capture("L-cut into a pause")?;
+    undo(d)?;
+    at(d, 48)?;
+    edit(d, "jcut 6f")?;
+    d.check(
+        ":jcut 6f out of a pause starts the incoming sound over the pause's last frames",
+        sound_count(d) == 1 && lengths(d) == [40, 8, 50] && d.app().sequence_length() == 98,
+        json!({"sounds":1,"beats":[40, 8, 50]}),
+        json!({"sounds":sound_count(d),"beats":lengths(d),"error":d.app().error}),
+    )?;
+    undo(d)?;
+    at(d, 40)?;
+    let before = d.revision();
+    d.command("jcut 6f")?;
+    d.wait_for("The refused split edit reply", |app| {
+        !app.macros.is_pending() && !app.service.is_busy() && app.error.is_some()
+    })?;
+    d.settled()?;
+    d.check(
+        "A J-cut led by a pause refuses: a pause has no sound of its own",
+        d.revision() == before
+            && d.app()
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("no sound of its own")),
+        json!("refused"),
+        json!({"error":d.app().error}),
+    )?;
+    undo(d)?;
+
+    // ,b across the cut at 40: one pause, one tone, the later moment's
+    // pictures as a cutaway on it.
+    at(d, 36)?;
+    d.key(Key::V)?;
+    d.chord(&[Key::Num8, Key::L])?;
+    edit(d, "bleep")?;
+    let after = pictures(d, &frames)?;
+    d.check(
+        ":bleep across a cut makes one pause with one cutaway and keeps every picture and the length",
+        holds(d) == [1] && after == pictures_before && d.app().sequence_length() == 90,
+        json!({"holds_with_cutaways":[1],"pictures":pictures_before,"frames":90}),
+        json!({"holds_with_cutaways":holds(d),"pictures":after,"frames":d.app().sequence_length(),"error":d.app().error}),
+    )?;
+    d.capture("Bleep across a cut")?;
+    undo(d)?;
+
+    // An audio lag keeps the beat trimmable: :slip applies after it.
+    at(d, 10)?;
+    edit(d, "audio-lag +50ms")?;
+    let before = d.revision();
+    d.command("slip +3f")?;
+    d.wait_for(
+        "The lagged beat's Slip proposal has reached the GPU",
+        |app| {
+            !app.service.is_busy()
+                && app
+                    .slip
+                    .as_ref()
+                    .is_some_and(|draft| draft.ready_for_check())
+                && !app.presentation.loading()
+                && !app.presentation.needs_render()
+        },
+    )?;
+    d.capture("Slip of a beat with an audio lag")?;
+    d.key(Key::Enter)?;
+    d.changed(&before)?;
+    d.settled()?;
+    let slipped = pictures(d, &[10, 39])?;
+    d.check(
+        ":slip +3f applies to a beat with an audio lag and shows Original material 3 frames later",
+        slipped == [13, 42] && lengths(d) == [40, 50] && d.app().error.is_none(),
+        json!({"pictures":[13, 42]}),
+        json!({"pictures":slipped,"beats":lengths(d),"error":d.app().error}),
+    )?;
+    undo(d)?;
+    undo(d)?;
+    d.check(
+        "Undo restores the unslipped, unlagged beats",
+        pictures(d, &frames)? == pictures_before && lengths(d) == [40, 50],
+        json!({"pictures":pictures_before}),
+        json!({"pictures":pictures(d, &frames)?}),
     )
 }

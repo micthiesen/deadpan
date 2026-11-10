@@ -2364,7 +2364,7 @@
               "docs/ROLE_EDITS.md",
               "docs/SECTION8_COVERAGE.md Audio"
             ],
-            "remaining": "Bleep across cuts/groups, offset Source Trim/Slip and J/L cuts across group/Hold boundaries remain restricted. Tone overlay itself is an alternative, not a mandatory missing mode.",
+            "remaining": "Bleep across cuts and into unframed groups, J/L cuts beside silent pauses and across group boundaries, and Trim/Slip after an audio lag are implemented (2026-11-10). Bleeping framed pictures across a cut, split edits led by a pause, reaching into a pause with its own sound or below Repeats/speed changes remain refused. Tone overlay itself is an alternative, not a mandatory missing mode.",
             "normative": "8.3"
           },
           {

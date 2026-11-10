@@ -210,6 +210,7 @@ fn plan(
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     );

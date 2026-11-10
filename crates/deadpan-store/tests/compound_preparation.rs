@@ -406,6 +406,7 @@ fn one_leaf_plan_with_audio(store: &ProjectStore, audio: HoldAudio) -> Result<Se
                 video: HoldVideo::Background,
                 picture_context: None,
                 audio: audio.clone(),
+                cutaways: Vec::new(),
             })
         },
     )?;

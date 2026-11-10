@@ -100,6 +100,7 @@ fn plan_steps(
                 video: crate::HoldVideo::Background,
                 picture_context: None,
                 audio: crate::HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )

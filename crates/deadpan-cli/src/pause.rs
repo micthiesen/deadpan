@@ -87,6 +87,7 @@ pub fn pause_provider_within(
             video: HoldVideo::Background,
             picture_context: None,
             audio: HoldAudio::Silence,
+            cutaways: Vec::new(),
         });
     }
     let insertion_parent = match within {
@@ -164,12 +165,14 @@ fn freeze(
                 },
                 picture_context,
                 audio: HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         }
         Picture::Blank | Picture::Background => Ok(PauseProvider {
             video: HoldVideo::Background,
             picture_context: None,
             audio: HoldAudio::Silence,
+            cutaways: Vec::new(),
         }),
         Picture::Still { .. } | Picture::Accepted { .. } => Err(
             "Freezing still or accepted generated footage for a new pause is not available yet."
@@ -204,12 +207,15 @@ pub fn reverse_provider(
             Some(source) => HoldAudio::Reverse { source },
             None => HoldAudio::Silence,
         },
+        cutaways: Vec::new(),
     })
 }
 
 /// The pause a bleep puts in place of the `frames` before `at`: the same
 /// pictures played forward at their natural rate, and a tone instead of
-/// their sound.
+/// their sound. A range across cuts (or into an unframed group) is one Hold
+/// and one tone: the first passage plays as the Hold's picture and each later
+/// passage is a picture-only cutaway on it showing exactly its own pictures.
 pub fn bleep_provider(
     document: &ProjectDocument,
     plan: &RenderPlan,
@@ -219,7 +225,78 @@ pub fn bleep_provider(
     level: deadpan_core::GainDb,
     index: &mut IndexLookup<'_>,
 ) -> Result<PauseProvider, String> {
-    let passage = passage(document, plan, at, frames, false, "Bleep", index)?;
+    let audio = HoldAudio::Tone {
+        frequency_hz,
+        level,
+    };
+    let single = passage(document, plan, at, frames, false, "Bleep", index);
+    let single_error = match single {
+        Ok(passage) => {
+            return Ok(PauseProvider {
+                video: HoldVideo::Play {
+                    asset: passage.asset,
+                    span: passage.span,
+                    origin: Some(passage.start),
+                },
+                picture_context: passage.picture_context,
+                audio,
+                cutaways: Vec::new(),
+            });
+        }
+        Err(error) => error,
+    };
+    let runs = match natural_runs(document, plan, at, frames)? {
+        Some(runs) if runs.len() > 1 => runs,
+        _ => return Err(single_error),
+    };
+    if runs.len() > deadpan_core::MAX_CUTAWAYS_PER_NODE + 1 {
+        return Err(format!(
+            "A bleep crosses at most {} cuts; select a shorter range.",
+            deadpan_core::MAX_CUTAWAYS_PER_NODE
+        ));
+    }
+    let first = &runs[0];
+    let end = ProjectFrame(at.0 - frames.frames() + first.offset + first.frames);
+    let passage = passage(
+        document,
+        plan,
+        end,
+        FrameDuration::new(first.frames).map_err(|error| error.to_string())?,
+        false,
+        "Bleep",
+        index,
+    )?;
+    let mut cutaways = Vec::with_capacity(runs.len() - 1);
+    for run in &runs[1..] {
+        cutaways.push(deadpan_core::Cutaway {
+            range: deadpan_core::FrameRange::new(
+                ProjectFrame(run.offset),
+                ProjectFrame(run.offset + run.frames),
+            )
+            .map_err(|error| error.to_string())?,
+            asset: run.asset.clone(),
+            selection: deadpan_core::ExactSourceSpan::new(
+                deadpan_core::SourcePoint {
+                    ticks: run.clock_start,
+                    time_base: run.time_base,
+                },
+                deadpan_core::SourcePoint {
+                    ticks: run
+                        .clock_start
+                        .checked_add(
+                            run.ticks_per_frame
+                                .checked_mul(ExactRatio::integer(run.frames))
+                                .map_err(|error| error.to_string())?,
+                        )
+                        .map_err(|error| error.to_string())?,
+                    time_base: run.time_base,
+                },
+            )
+            .map_err(|error| error.to_string())?,
+            fit: deadpan_core::CutawayFit::Hold,
+            removed: false,
+        });
+    }
     Ok(PauseProvider {
         video: HoldVideo::Play {
             asset: passage.asset,
@@ -227,11 +304,103 @@ pub fn bleep_provider(
             origin: Some(passage.start),
         },
         picture_context: passage.picture_context,
-        audio: HoldAudio::Tone {
-            frequency_hz,
-            level,
-        },
+        audio,
+        cutaways,
     })
+}
+
+/// One stretch of a bleep across cuts: `frames` consecutive project frames,
+/// starting `offset` frames into the range, that show one Original's pictures
+/// advancing exactly one project frame of its clock per frame.
+struct NaturalRun {
+    offset: i64,
+    frames: i64,
+    asset: AssetId,
+    time_base: deadpan_core::SourceTimeBase,
+    ticks_per_frame: ExactRatio,
+    /// The exact source time at the run's first frame's leading edge.
+    clock_start: ExactRatio,
+}
+
+/// Split the `frames` before `at` into natural-rate Original runs, or `None`
+/// when a frame shows something else. Each frame's picture must be shown with
+/// no framing at any level, so a cutaway on the new Hold (which has none of
+/// the old framing) shows exactly the same picture.
+fn natural_runs(
+    document: &ProjectDocument,
+    plan: &RenderPlan,
+    at: ProjectFrame,
+    frames: FrameDuration,
+) -> Result<Option<Vec<NaturalRun>>, String> {
+    let rate = document.presentation_basis().frame_rate;
+    let count = frames.frames();
+    if count <= 0 || count > at.0 {
+        return Ok(None);
+    }
+    if i128::from(count) * i128::from(rate.denominator())
+        > i128::from(MAX_REVERSE_SECONDS) * i128::from(rate.numerator())
+    {
+        return Err(format!("Bleep at most {MAX_REVERSE_SECONDS} s at a time."));
+    }
+    let first = at.0 - count;
+    let mut runs: Vec<NaturalRun> = Vec::new();
+    let mut next: Option<ExactRatio> = None;
+    for frame in first..at.0 {
+        let sample = plan
+            .picture(ProjectFrame(frame))
+            .map_err(|error| error.to_string())?;
+        let Picture::Source { asset, point, .. } = &sample.picture else {
+            return Ok(None);
+        };
+        if sample.picture_context.is_some() {
+            return Err(
+                "A bleep across cuts needs unframed pictures; this range shows a captured framing."
+                    .into(),
+            );
+        }
+        if sample.framing.iter().any(|scope| scope.pose.is_some()) {
+            return Err(
+                "A bleep across cuts needs unframed pictures; bleep each framed part separately."
+                    .into(),
+            );
+        }
+        let base = point.time_base;
+        let ticks_per_frame = ExactRatio::new(
+            i128::from(rate.denominator()) * i128::from(base.denominator()),
+            i128::from(rate.numerator()) * i128::from(base.numerator()),
+        )
+        .map_err(|error| error.to_string())?;
+        let continues = runs.last().is_some_and(|run| {
+            run.asset == *asset && run.time_base == base && next == Some(point.ticks)
+        });
+        if continues {
+            if let Some(run) = runs.last_mut() {
+                run.frames += 1;
+            }
+        } else {
+            let half = ticks_per_frame
+                .checked_mul(ExactRatio::new(1, 2).map_err(|error| error.to_string())?)
+                .map_err(|error| error.to_string())?;
+            runs.push(NaturalRun {
+                offset: frame - first,
+                frames: 1,
+                asset: asset.clone(),
+                time_base: base,
+                ticks_per_frame,
+                clock_start: point
+                    .ticks
+                    .checked_sub(half)
+                    .map_err(|error| error.to_string())?,
+            });
+        }
+        next = Some(
+            point
+                .ticks
+                .checked_add(ticks_per_frame)
+                .map_err(|error| error.to_string())?,
+        );
+    }
+    Ok(Some(runs))
 }
 
 struct Passage {

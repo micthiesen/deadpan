@@ -33,6 +33,50 @@ rate). If either side lacks the source handle, the whole edit refuses with the
 largest available length; it is never silently shortened. An existing cutaway
 over the stretch refuses. The cursor stays at the picture cut.
 
+### Beside a pause or across a group boundary
+
+When one side of the cut is a pause or a group, nothing can roll: a pause has
+no media handle, and a Roll needs two literally adjacent Source beats. The
+split edit then keeps every beat, picture and duration and moves only sound
+(since 2026-11-10):
+
+- The leading beat is the incoming side for a J-cut and the outgoing side for
+  an L-cut; for a group it is the group's first (J) or last (L) nonempty beat,
+  through ordinary Sequence groups. It must be a Source or unity Partition of
+  the Original with linked sound and a natural-rate audio mapping. Its sound
+  continues from its own Original handle across the cut as one root
+  [sound event](SOUND_EVENTS.md) through that beat's exact audio mapping and
+  independent offset, over exactly the split length. The event's seam side
+  is Hard, and so is the leading beat's own edge at the cut where it would
+  fade (an unmarked Split fragment side has no fade and is left alone), so
+  the sound is sample-continuous there; the far end of the event fades as
+  usual.
+- The other side's beat at the cut (again through groups) gives way: a
+  silent pause gets an explicit silence allowance for the event, so the pause
+  stays silent except for the carried sound; a beat of the Original is muted
+  over the stretch with one clip-gain mute range in its own frames.
+- Everything happens in one Compound and one Undo, with the same
+  `SplitEdit { kind, length }` instruction, so recording and `.` behave as
+  for a Roll split edit. The cursor stays at the picture cut.
+
+It refuses with a reason when the leading side is a pause ("a pause has no
+sound of its own"), a Repeat or a speed change; when a pause on the other side
+has its own sound; when the other side's beat or pause at the cut is shorter
+than the split (the largest available length is reported); when the Original
+handle runs out (likewise); when a leading beat or group carries gain or
+effects, which the handle sound would not keep; inside a play scope; and
+below a Repeat or speed change, where Edit frames are not root frames. Two
+adjacent Source beats still roll exactly as above.
+
+Evidence: `role_boundaries.rs` at 30000/1001 fps checks the exact heard Edit
+frames, the Original frame at each event's first frame, Hard edges, the
+allowance or mute range, unchanged nodes and duration, exact Compound Undo and
+each refusal. The `split-edits` replay types `:lcut 6f` into and `:jcut 6f`
+out of a `:hold 8f` pause and the refused pause-led J-cut. The `l-cut-pause`
+and `j-cut-pause` preview/export fixtures place the Original's click only in
+the carried handle, under a black pause, and compare the export with the
+preview.
+
 Evidence: `j_and_l_cuts_move_the_sound_cut_and_keep_every_picture_and_the_duration`
 and `split_edits_refuse_without_a_seam_handles_or_whole_length`
 ([split_edit.rs](../crates/deadpan-core/tests/split_edit.rs)) compare every
@@ -180,6 +224,7 @@ zero-offset audio.
 
 ## Remaining
 
-Inter-play holds for audio-only repeats, copying a range together with its repeats (refused today),
-split edits
-across group boundaries or onto Holds, role scope for yank/repeat/paste.
+Inter-play holds for audio-only repeats, copying a range together with its
+repeats (refused today), split edits led by a pause or reaching into a pause
+with its own sound, split edits below Repeats or speed changes, and role scope
+for yank/repeat/paste.

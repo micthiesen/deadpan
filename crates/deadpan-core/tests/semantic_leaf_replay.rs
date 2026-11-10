@@ -296,6 +296,7 @@ fn plan_in_namespace(
                 video: HoldVideo::Background,
                 picture_context: Some(picture_context()),
                 audio: HoldAudio::Silence,
+                cutaways: Vec::new(),
             })
         },
     )
