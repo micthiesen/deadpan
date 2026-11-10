@@ -371,8 +371,14 @@ Current insertion supports existing root seams before arbitrary composite
 suffixes and interiors of Source or ordinary Background/Freeze Hold beats when
 followed by either physical fragments or composite structures, including inside
 unretimed Sequence groups, FollowSpeed speed changes and concrete Repeat plays or
-gaps. Interior cuts beneath Preserve or Shift Retime ancestors and selected
-Original-moment payloads remain required. Native scoped-inspector temporal intent also remains guarded;
+gaps. A pause inside one Preserve or Shift speed change splits that stage into
+two complete processing contexts at an integral output frame
+(`insert_time::processing_stage`). Still refused there, with a readable
+message: a processing stage nested inside another (its input would be cut),
+a split stage below a transparent window that carries its own framing, gain or
+edges, and an inner group with moving framing. Inserting a selected Original
+moment is the paste path (`SpliceSource`, [Original moments](SOURCE_MOMENTS.md)),
+not a pause payload. Native scoped-inspector temporal intent also remains guarded;
 the new path addresses the concrete cursor from ordinary Sequence navigation.
 Arbitrary insertion must inherit its enclosing
 group's ownership. These are required follow-ups, not reduced V1 scope.
