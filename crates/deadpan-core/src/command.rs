@@ -1802,7 +1802,9 @@ fn apply_with_durations_captured(
         capture.restore(&mut result)?;
     }
     if let Some(capture) = beat_sound_edit {
-        capture.restore(&mut result)?;
+        capture
+            .restore(&mut result)
+            .map_err(crate::sound_clock::edit::readable_refusal)?;
     }
     if let Some(allowances) = allowance_edit {
         allowances.restore(&mut result)?;
@@ -2199,6 +2201,7 @@ pub(crate) fn reduce(
                     || old.source != event.source
                     || old.mapping != event.mapping
                     || old.offset != event.offset)
+                && !old.narrows_to(event, document.presentation_basis.frame_rate)?
             {
                 return Err(EditError::new(
                     EditErrorCode::InvalidCommand,

@@ -420,6 +420,30 @@ impl DeadpanApp {
             crate::project::sound::placement(workspace, &asset, at)?;
             return Ok(Some(ProjectSoundEdit::Place { asset, at }));
         }
+        if action == SoundAction::Attach {
+            let asset = self
+                .selected_sound
+                .clone()
+                .ok_or("Choose a sound in the sound-effects catalog first: Tab to the Original and sounds pane, then j/k selects a sound.")?;
+            let owner = self
+                .selected_beat
+                .clone()
+                .ok_or("Select a beat in Your edit first, then attach the sound at the Edit cursor inside it.")?;
+            let parent = self.sequence_scope.resolve(workspace)?.owner.clone();
+            let at = ProjectFrame(
+                i64::try_from(self.sequence_cursor)
+                    .map_err(|_| "Edit cursor exceeds the supported range.")?,
+            );
+            // Immediate fit feedback; the service resolves the same recipe
+            // again against the captured revision.
+            crate::project::sound::attachment(workspace, &asset, &parent, &owner, at)?;
+            return Ok(Some(ProjectSoundEdit::Attach {
+                asset,
+                parent,
+                owner,
+                at,
+            }));
+        }
         if !self.event_focused() {
             return Err(
                 "Select a placed sound first. Use :sounds or the Placed sounds pane.".into(),
@@ -484,7 +508,9 @@ impl DeadpanApp {
                 event.end_edge,
             ),
             SoundAction::Edges(edge) => (event.treatments.trim().millidecibels(), edge, edge),
-            SoundAction::Place | SoundAction::Focus => unreachable!("handled above"),
+            SoundAction::Place | SoundAction::Focus | SoundAction::Attach => {
+                unreachable!("handled above")
+            }
         };
         Ok(Some(ProjectSoundEdit::Update {
             id,

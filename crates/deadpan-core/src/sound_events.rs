@@ -31,13 +31,61 @@ impl SoundEvent {
         at: crate::ProjectFrame,
         rate: crate::FrameRate,
     ) -> Result<Self, EditError> {
+        self.cut_at_exact(crate::ExactRatio::integer(at.0), rate)
+    }
+
+    /// A bed drop on a sound that follows timeline cuts. `at` is a current
+    /// Edit frame boundary; the retained route maps it back to the recipe's
+    /// own clock, so everything the bed would play after `at` is removed while
+    /// the route, source phase and every earlier cut stay exactly as they were.
+    /// Inside an inserted pause the bed ends where that pause begins.
+    pub fn cut_routed_at(
+        &self,
+        route: &crate::RootSoundRoute,
+        at: crate::ProjectFrame,
+    ) -> Result<Self, EditError> {
+        let compiled = route.compile()?;
+        let outside = || {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "move the Edit cursor inside the selected sound, then cut it there",
+            )
+        };
+        let at = crate::ExactRatio::integer(at.0);
+        if !at.compare(crate::ExactRatio::ZERO).is_gt()
+            || at.compare(compiled.output_extent()).is_gt()
+        {
+            return Err(outside());
+        }
+        let before = compiled.query(
+            crate::ExactFrameRange {
+                start: crate::ExactRatio::ZERO,
+                end: at,
+            },
+            crate::SoundRouteQueryLimits::default(),
+        )?;
+        // Routes are monotone, so the last retained recipe point before the
+        // cursor is the exact cut in the recipe clock.
+        let end = before
+            .slices
+            .iter()
+            .filter_map(|slice| slice.recipe.map(|recipe| recipe.end))
+            .next_back()
+            .ok_or_else(outside)?;
+        self.cut_at_exact(end, route.recipe_grid.frame_rate)
+    }
+
+    fn cut_at_exact(
+        &self,
+        at: crate::ExactRatio,
+        rate: crate::FrameRate,
+    ) -> Result<Self, EditError> {
         let invalid = |message: &str| EditError::new(EditErrorCode::InvalidCommand, message);
         let time = |error: crate::TimeError| EditError::from(DocumentError::from(error));
         let selected = self
             .mapping
             .selection_frames_with_offset(FrameDuration::ZERO, self.offset, rate)
             .map_err(time)?;
-        let at = crate::ExactRatio::integer(at.0);
         if !selected.start.compare(at).is_lt() || !at.compare(selected.end).is_lt() {
             return Err(EditError::new(
                 EditErrorCode::SelectionUnavailable,
@@ -69,6 +117,39 @@ impl SoundEvent {
         };
         cut.end_edge = AudioEdgePolicy::Hard;
         Ok(cut)
+    }
+
+    /// Whether `next` keeps this recipe's complete source placement and only
+    /// selects a nonempty part of its current selection. A retained route maps
+    /// the unchanged recipe clock, so such a narrowing keeps the route exact.
+    pub(crate) fn narrows_to(
+        &self,
+        next: &Self,
+        rate: crate::FrameRate,
+    ) -> Result<bool, DocumentError> {
+        let placement = |mapping: &SourceAudioMapping| match *mapping {
+            SourceAudioMapping::FitBeat => None,
+            SourceAudioMapping::Duration { frames } => Some((crate::ExactRatio::ZERO, frames)),
+            SourceAudioMapping::Placement { start, frames }
+            | SourceAudioMapping::SelectedPlacement { start, frames, .. } => Some((start, frames)),
+        };
+        if self.owner != next.owner
+            || self.source != next.source
+            || self.offset != next.offset
+            || placement(&self.mapping).is_none()
+            || placement(&self.mapping) != placement(&next.mapping)
+        {
+            return Ok(false);
+        }
+        let old =
+            self.mapping
+                .selection_frames_with_offset(FrameDuration::ZERO, self.offset, rate)?;
+        let new =
+            next.mapping
+                .selection_frames_with_offset(FrameDuration::ZERO, next.offset, rate)?;
+        Ok(!new.start.compare(old.start).is_lt()
+            && new.start.compare(new.end).is_lt()
+            && !new.end.compare(old.end).is_gt())
     }
 }
 

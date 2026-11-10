@@ -5,6 +5,7 @@ use deadpan_core::{AudioEdgePolicy, AudioSample, ExactRatio, FrameDuration, Soun
 use egui::{Key, Modifiers};
 
 mod allowances;
+mod sting;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.report.skipped.push(
@@ -536,8 +537,45 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "Moving a routed sound rejects without losing its journal",
     )?;
     d.capture("Routed sound retains its journal after rejected repositioning")?;
+    routed_cut(d, &first, &routes)?;
     allowances::run(d, &first, &catalog.1)?;
-    recorded_placement(d, &catalog.1)
+    recorded_placement(d, &catalog.1)?;
+    sting::run(d, &catalog.1)
+}
+
+/// `:sound-cut` on a sound that follows timeline cuts: the cursor sits in the
+/// inserted pause, so the bed ends where that pause begins. Only the recipe's
+/// selection narrows; the retained route is unchanged, and Undo restores it.
+fn routed_cut(
+    d: &mut Driver<'_>,
+    id: &SoundId,
+    routes: &std::collections::BTreeMap<SoundId, deadpan_core::RootSoundRoute>,
+) -> Result<(), String> {
+    let uncut = event(d, id)?;
+    let at = ProjectFrame(i64::try_from(d.app().sequence_cursor).map_err(|e| e.to_string())?);
+    let expected = uncut
+        .cut_routed_at(&routes[id], at)
+        .map_err(|error| error.message)?;
+    d.command("sounds")?;
+    commit(d, "sound-cut")?;
+    d.check(
+        "A routed bed drop narrows only the selection and keeps the edit journal",
+        event(d, id)? == expected
+            && event(d, id)?.end_edge == AudioEdgePolicy::Hard
+            && document(d)?.sound_routes() == routes,
+        json!({"recipe":expected,"routes":routes}),
+        json!({"recipe":event(d, id)?}),
+    )?;
+    d.capture("Routed sound cut at the Edit cursor")?;
+    let before = d.revision();
+    d.key(Key::U)?;
+    d.changed(&before)?;
+    d.check(
+        "One Undo restores the complete routed bed",
+        event(d, id)? == uncut && document(d)?.sound_routes() == routes,
+        json!({"recipe":uncut}),
+        json!({"recipe":event(d, id)?}),
+    )
 }
 
 /// While a macro records, `,s` in Your edit places the selected catalog sound

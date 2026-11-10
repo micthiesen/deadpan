@@ -396,7 +396,11 @@ fn fixed_retime_descendant_owned_sound_keeps_changed_input_refusal() {
         };
         let error = apply(&before, &request).unwrap_err();
         assert_eq!(error.code, EditErrorCode::InvalidCommand);
-        assert_eq!(error.message, "sound clock processing subtree changed");
+        assert!(
+            error
+                .message
+                .ends_with("(sound clock processing subtree changed)")
+        );
         assert_eq!(before.to_json().unwrap(), snapshot);
     }
 }

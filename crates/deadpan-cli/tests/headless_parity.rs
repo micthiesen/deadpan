@@ -391,6 +391,55 @@ fn placed_sound_edits_derive_the_native_events() -> Result {
     Ok(())
 }
 
+#[test]
+fn attached_sting_derives_the_native_beat_sound() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = project(scratch.path())?;
+    let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    let root = before.root().clone();
+    let owner = before.children(&root).next().unwrap().clone();
+    let attach = |at: i64| json!({"type":"attach","asset":"boing","parent":root,"owner":owner,"at":at,"id":"sting"});
+    let preview = parsed(&sound(scratch.path(), &package, attach(2), true));
+    assert_eq!(preview["committed"], false, "{preview}");
+    let attached = parsed(&sound(scratch.path(), &package, attach(2), false));
+    assert_eq!(attached["committed"], true, "{attached}");
+    assert_eq!(attached["sound_id"], "sting");
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    let document = store.snapshot()?;
+    let asset = deadpan_core::AssetId::new("boing")?;
+    let receipt = store.source_qualification(
+        document.assets()[&asset]
+            .source_qualification
+            .as_ref()
+            .unwrap(),
+    )?;
+    // Exactly the recipe the native `:sound-attach` derives at that frame:
+    // the complete sound placed two frames into its beat, with no picture change.
+    let expected = deadpan_cli::sound_events::attachment(
+        &before,
+        &receipt,
+        &asset,
+        &root,
+        &owner,
+        deadpan_core::ProjectFrame(2),
+    )?;
+    assert_eq!(
+        expected.mapping.start_frames(),
+        deadpan_core::ExactRatio::integer(2)
+    );
+    let sting = deadpan_core::SoundId::new("sting")?;
+    assert_eq!(document.beat_sounds()[&owner][&sting], expected);
+    assert_eq!(document.nodes(), before.nodes());
+    assert!(document.sounds().is_empty());
+    drop(store);
+    // The same identity again, and a cursor outside the beat, are refused.
+    let again = parsed(&sound(scratch.path(), &package, attach(2), false));
+    assert_eq!(again["error"]["code"], "SoundEditRefused", "{again}");
+    let outside = parsed(&sound(scratch.path(), &package, attach(500), false));
+    assert_eq!(outside["error"]["code"], "SoundEditRefused", "{outside}");
+    Ok(())
+}
+
 /// The open-project route: the same commands, served by the owner's writer.
 #[test]
 fn open_project_commands_run_on_the_owner_writer() -> Result {

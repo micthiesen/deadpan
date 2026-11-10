@@ -1137,6 +1137,21 @@ impl Service {
                 }
                 (Command::DeleteSound { id }, None, "Sound removed and saved")
             }
+            ProjectSoundEdit::Attach {
+                asset,
+                parent,
+                owner,
+                at,
+            } => {
+                let event = super::sound::attachment(workspace, &asset, &parent, &owner, at)?;
+                let id = deadpan_core::SoundId::new(uuid::Uuid::new_v4().to_string())
+                    .map_err(display)?;
+                (
+                    Command::SetBeatSound { owner, id, event },
+                    None,
+                    "Sound attached to the beat and saved",
+                )
+            }
         };
         let request = CommandRequest {
             project_id: workspace.document.project_id().clone(),

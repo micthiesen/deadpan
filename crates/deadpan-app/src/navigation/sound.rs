@@ -37,6 +37,8 @@ pub enum SoundAction {
     Allowance(bool),
     /// End the sound abruptly at the Edit cursor (a bed drop).
     Cut,
+    /// Attach the catalog sound to the selected beat at the Edit cursor.
+    Attach,
     Delete,
 }
 
@@ -122,7 +124,7 @@ pub(super) fn envelope(arguments: &[&str]) -> Result<SoundAction, String> {
 pub(super) fn parse(verb: &str, argument: Option<&str>) -> Result<SoundAction, String> {
     match verb {
         "sound-place" | "sounds" | "sound-delete" | "sound-allow" | "sound-silence"
-        | "sound-cut" => {
+        | "sound-cut" | "sound-attach" => {
             if argument.is_some() {
                 return Err("This command takes no arguments.".into());
             }
@@ -132,6 +134,7 @@ pub(super) fn parse(verb: &str, argument: Option<&str>) -> Result<SoundAction, S
                 "sound-allow" => SoundAction::Allowance(true),
                 "sound-silence" => SoundAction::Allowance(false),
                 "sound-cut" => SoundAction::Cut,
+                "sound-attach" => SoundAction::Attach,
                 _ => SoundAction::Delete,
             })
         }
@@ -286,6 +289,7 @@ mod tests {
         action("SOUNDS", SoundAction::Focus);
         action(":sound-delete", SoundAction::Delete);
         action(":sound-cut", SoundAction::Cut);
+        action(":sound-attach", SoundAction::Attach);
         action(":sound-allow", SoundAction::Allowance(true));
         action("SOUND-SILENCE", SoundAction::Allowance(false));
         action(

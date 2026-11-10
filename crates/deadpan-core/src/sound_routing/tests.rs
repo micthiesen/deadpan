@@ -429,3 +429,104 @@ fn capacity_failure_and_duration_mismatch_leave_original_capture_untouched() {
     assert!(capture.restore(&mut wrong).is_err());
     assert!(wrong.sounds.is_empty() && wrong.sound_routes.is_empty());
 }
+
+/// A bed that follows timeline cuts is cut at the current Edit cursor through
+/// its retained route: only the selection narrows, so the route, source phase
+/// and earlier cuts stay exact, and Undo restores the complete bed.
+#[test]
+fn routed_bed_cut_maps_the_cursor_back_through_its_retained_route() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let before = fixture(
+        rate,
+        12,
+        selected(ExactRatio::ZERO, ExactRatio::integer(12)),
+    );
+    let step = |document: &ProjectDocument, name: &str, command: Command| {
+        let request = CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: RevisionId::new(name).unwrap(),
+            command,
+        };
+        let transaction = crate::apply(document, &request).unwrap();
+        let after = transaction.forward.apply(document).unwrap();
+        assert_eq!(transaction.inverse.apply(&after).unwrap(), *document);
+        after
+    };
+    // A 3-frame pause at frame 4 makes the bed follow the cut: recipe frame
+    // 4 now sounds at Edit frame 7.
+    let count = before
+        .insert_time_target(ProjectFrame(4))
+        .unwrap()
+        .split
+        .map_or(0, |split| split.required_ids);
+    let paused = step(
+        &before,
+        "paused",
+        Command::InsertTime {
+            at: ProjectFrame(4),
+            hold: HoldRecipe {
+                duration: frames(3),
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            },
+            id: node("pause"),
+            identities: SplitIdentities {
+                nodes: (0..count).map(|i| node(&format!("split-{i}"))).collect(),
+            },
+            timing: AudioTimingId {
+                allocation: RevisionId::new("paused").unwrap(),
+                ordinal: 0,
+            },
+        },
+    );
+    let route = paused.sound_routes[&sound()].clone();
+    let event = paused.sounds[&sound()].clone();
+    let end = |event: &SoundEvent| {
+        event
+            .mapping
+            .selection_frames_with_offset(FrameDuration::ZERO, event.offset, rate)
+            .unwrap()
+            .end
+    };
+    // After the pause, inside the pause (ends where it begins), and before it.
+    for (cursor, recipe) in [(10, 7), (5, 4), (7, 4), (2, 2)] {
+        let cut = event.cut_routed_at(&route, ProjectFrame(cursor)).unwrap();
+        assert_eq!(end(&cut), ExactRatio::integer(recipe), "cursor {cursor}");
+        assert_eq!(cut.end_edge, AudioEdgePolicy::Hard);
+        assert_eq!(
+            (cut.offset, cut.start_edge),
+            (event.offset, event.start_edge)
+        );
+        let saved = step(
+            &paused,
+            &format!("cut-{cursor}"),
+            Command::SetSound {
+                id: sound(),
+                event: cut.clone(),
+            },
+        );
+        // The route journal is untouched; only the recipe's selection changed.
+        assert_eq!(saved.sound_routes, paused.sound_routes);
+        assert_eq!(saved.sounds[&sound()], cut);
+        saved.validate().unwrap();
+    }
+    // At the start or past the end of the edit there is nothing to cut.
+    for cursor in [0, 16] {
+        assert!(event.cut_routed_at(&route, ProjectFrame(cursor)).is_err());
+    }
+    // Moving the routed recipe itself still requires an explicit replacement.
+    let mut moved = event.clone();
+    moved.offset = AudioSample(1);
+    let request = CommandRequest {
+        project_id: paused.project_id().clone(),
+        expected_revision: paused.revision_id().clone(),
+        new_revision: RevisionId::new("moved").unwrap(),
+        command: Command::SetSound {
+            id: sound(),
+            event: moved,
+        },
+    };
+    assert!(crate::apply(&paused, &request).is_err());
+}

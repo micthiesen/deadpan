@@ -49,3 +49,25 @@ pub fn nudge(workspace: &Workspace, id: &SoundId, frames: i64) -> Result<SoundEv
 pub fn cut(workspace: &Workspace, id: &SoundId, at: ProjectFrame) -> Result<SoundEvent, String> {
     deadpan_cli::sound_events::cut(&workspace.document, &workspace.plan, id, at)
 }
+
+/// A sting on a beat: the complete catalog sound attached to `owner` at `at`.
+pub fn attachment(
+    workspace: &Workspace,
+    asset: &AssetId,
+    parent: &deadpan_core::NodeId,
+    owner: &deadpan_core::NodeId,
+    at: ProjectFrame,
+) -> Result<deadpan_core::BeatSound, String> {
+    let source = workspace
+        .sources
+        .get(asset)
+        .ok_or("The catalog sound is no longer registered.")?;
+    deadpan_cli::sound_events::attachment(
+        &workspace.document,
+        &source.receipt,
+        asset,
+        parent,
+        owner,
+        at,
+    )
+}

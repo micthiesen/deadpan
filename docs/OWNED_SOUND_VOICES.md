@@ -5,7 +5,10 @@ The saved command path now connects those recipes to bounded occurrence
 preparation and the canonical authored bus. Independent retained clocks now
 support moving and copying unchanged sound-bearing subtrees through ordinary
 Sequence edits. Beat objects now select those attachments explicitly for copy,
-cut and paste; native beat-sound placement and Repeat transforms remain open.
+cut and paste. Native `:sound-attach` (headless `sound` `attach`) attaches a
+catalog sound to the selected beat at the Edit cursor; see
+[beds and stings](SOUND_EVENTS.md#beds-and-stings-through-edits) for what
+each edit does to it.
 
 ## Saved attachment contract
 
@@ -26,7 +29,10 @@ without previous moves retains its source placement before the copy is pasted.
 
 Explicit-timing insertion, deletion, replacement, slice paste and MoveRange can
 transport surviving attachments when their complete scoped processing
-subtree is unchanged. Whole-owner deletion removes its events and clocks.
+subtree is unchanged. Other captures of a sound without a journal start from
+its whole top-level root branch; a MoveRange starts from the sound's own
+processing scope (the owner, or its enclosing non-Partition Retime), so a
+beat carrying a sting can move inside or out of its group. Whole-owner deletion removes its events and clocks.
 Changing that processing subtree or transporting root-owned attachments fails
 explicitly. Eligible endpoint Splits retain the complete owner behind disjoint
 delivery Partitions and transport its exact recipe and chronological clocks.
@@ -126,8 +132,8 @@ and exact expected asset record; clock-only store changes recheck receipts and
 original ownership. A warm cache cannot conceal source revocation.
 
 Remaining work includes temporal edits inside the surviving processing branch,
-occurrence isolation, root-owned attachment
-transport, allowances, tails and native placement. Beat-object Repeat still
+refining a Partition fragment that owns a sound, occurrence isolation,
+root-owned attachment transport, allowances and tails. Beat-object Repeat still
 requires its sound attachment lifecycle; copy, cut and paste preserve the
 explicit attachment choice.
 
@@ -360,8 +366,9 @@ The final product still requires all of the following:
 - Extend whole-owner copying to partial captures and timing-preserving edits.
   Whole-beat `ib`/`ab` copies already differ without changing picture bounds.
 - Add scoped beat-sound allowances and permitted tails.
-- Expose captured native placement/editing through the common command path,
-  then verify preview/export equivalence and audible behavior.
+- Native placement exists (`:sound-attach`, with preview/export fixture
+  `sting-follows-beat`); attachment editing, a beat card and inspector view of
+  attached sounds, and listening remain.
 
 Root sound editing and its guards remain described in [sound events](SOUND_EVENTS.md).
 The [qualification record](qualification/owned-sound-voices-2026-10-03.md)

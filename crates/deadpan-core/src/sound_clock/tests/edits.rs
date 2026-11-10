@@ -301,7 +301,7 @@ fn split_sound_limit_failure_is_atomic() {
 }
 
 #[test]
-fn reordering_equal_shaped_siblings_cannot_reassign_an_unclocked_owner() {
+fn reordering_equal_shaped_siblings_keeps_each_sound_on_its_own_owner() {
     for cached_scope in [false, true] {
         let mut before = fixture();
         if cached_scope {
@@ -319,37 +319,42 @@ fn reordering_equal_shaped_siblings_cannot_reassign_an_unclocked_owner() {
                 .insert(node("alpha"), before.beat_sounds[&node("owner")].clone());
         }
         before.validate().unwrap();
-        let snapshot = before.to_json().unwrap();
-        let error = apply(
+        // A move keeps node identity: the sound follows its owner after the
+        // equal-shaped sibling, never staying at the old position.
+        let after = edit(
             &before,
-            &request(
-                &before,
-                "reordered",
-                Command::MoveRange {
-                    source_revision: before.revision_id().clone(),
-                    source_parent: node("top"),
-                    range: if cached_scope {
-                        range(5, 9)
-                    } else {
-                        range(1, 5)
-                    },
-                    destination: MoveRangeDestination::Seam {
-                        parent: node("top"),
-                        index: if cached_scope { 3 } else { 2 },
-                    },
-                    identities: SplitIdentities { nodes: vec![] },
-                    timing: timing("reordered"),
+            "reordered",
+            Command::MoveRange {
+                source_revision: before.revision_id().clone(),
+                source_parent: node("top"),
+                range: if cached_scope {
+                    range(5, 9)
+                } else {
+                    range(1, 5)
                 },
-            ),
-        )
-        .unwrap_err();
-        assert!(
-            error
-                .message
-                .contains("sound owner moved outside its captured scope"),
-            "{error}"
+                destination: MoveRangeDestination::Seam {
+                    parent: node("top"),
+                    index: if cached_scope { 3 } else { 2 },
+                },
+                identities: SplitIdentities { nodes: vec![] },
+                timing: timing("reordered"),
+            },
         );
-        assert_eq!(before.to_json().unwrap(), snapshot);
+        assert_eq!(after.beat_sounds, before.beat_sounds);
+        assert!(!after.beat_sounds.contains_key(&node("sibling")));
+        let saved = &after.audio_bindings.sound_clocks[&node("owner")][&sound("effect")];
+        assert_eq!(saved.scope(), &node("owner"));
+        assert_eq!(saved.clocks()[0].owner(), &node("owner"));
+        assert_eq!(journal(&after), vec![timing("reordered")]);
+        if cached_scope {
+            // The unmoved owner needs no clock.
+            assert!(
+                !after
+                    .audio_bindings
+                    .sound_clocks
+                    .contains_key(&node("alpha"))
+            );
+        }
     }
 }
 
@@ -805,3 +810,5 @@ fn edit_without_sounds(document: &ProjectDocument) -> ProjectDocument {
         },
     )
 }
+
+mod sting_matrix;

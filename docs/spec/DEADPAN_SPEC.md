@@ -233,6 +233,8 @@ Effects declare both their evaluation space and order. An effect inside Repeat i
 
 Moving a group moves its owned attachments. Ripple deletion removes owned events inside the removed content and trims intersecting host-local events. Sequence-pinned events remain fixed and are visibly marked. Duplicating a group duplicates its attachments unless explicitly marked shared, such as one persistent music bed outside the group.
 
+A sound attached to a beat (a sting) belongs to that beat: it moves, splits, groups and is deleted with it, and when the beat is repeated it sounds in every play unless the user keeps it on the first play only. A bed owned by the edit itself keeps its own clock: a move inside it leaves the bed where it was, a ripple deletion removes the deleted part of the bed with the picture, and inserted time is silent in the bed. Ending such a bed at the cursor (a bed drop) maps the cursor back through those retained cuts, so the bed stops exactly where it is heard to stop.
+
 Validate: no cycles; one structural parent per authored child; positive durations except explicitly empty sequences; valid assets; bounded ranges; finite effect parameters; valid occurrence references; no NaN values. Protect against maliciously deep documents with a generous documented depth limit and iterative traversal.
 
 # 6. The editing language

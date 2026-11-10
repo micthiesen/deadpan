@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-226 actions, 148 command verbs.
+227 actions, 149 command verbs.
 
 ## Start & View
 
@@ -172,7 +172,8 @@ Headless status links to [PARITY](PARITY.md).
 | **Move a placed sound** (`sound.at`)<br>h / Left/l / Right move an uncut sound by exact project frames without accumulated rounding; Enter or :sound-at 137 chooses an exact sample onset. Escape cancels entry. Sounds with retained timeline cuts cannot be moved yet. | - | `:sound-at 274000` | Placed sounds | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `sound <p> --json move \| nudge` |
 | **Placed sound gain** (`sound.gain`)<br>+/- change the selected sound's gain by 3 dB, or enter a value from -96 to 24 dB, to three decimal places. Counts repeat the step; Monitor and Original levels stay unchanged. | - | `:sound-gain -3` | Placed sounds | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `sound <p> --json set (gain or gain step)` |
 | **Placed sound edges** (`sound.edges`)<br>Set both endpoint fade policies on the selected sound. Gain and edge changes retain its timeline cuts. | - | `:sound-edges soft\|hard` | Placed sounds | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `sound <p> --json set (edges)` |
-| **Bed drop** (`sound.cut`)<br>End the selected placed sound abruptly at the Edit cursor with a hard edge. Its onset, source phase and gain stay; one Undo. Sounds that follow timeline cuts refuse. | - | `:sound-cut` | Your edit, Placed sounds | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `sound <p> --json cut` |
+| **Bed drop** (`sound.cut`)<br>End the selected placed sound abruptly at the Edit cursor with a hard edge. Its onset, source phase and gain stay; one Undo. A sound that follows timeline cuts ends where the cursor falls in its retained route. | - | `:sound-cut` | Your edit, Placed sounds | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `sound <p> --json cut` |
+| **Attach a sting to the beat** (`sound.attach`)<br>Attach the complete selected catalog sound to the selected beat, starting at the Edit cursor inside it. The sound belongs to the beat: it moves, splits, groups, repeats in every play and is deleted with it; one Undo. It must end inside the beat. | - | `:sound-attach` | Your edit, Sound catalog | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `sound <p> --json attach` |
 | **Remove a placed sound** (`sound.delete`)<br>Remove only the selected placed sound (dd in Placed sounds). Undo restores it. Focus Beats to cut picture time. | - | `:sound-delete` | Placed sounds | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `command delete_sound` |
 | **Allow / silence a sound in a pause** (`sound.allow`)<br>Allow or silence the selected sound in the identified pause at the retained Edit cursor. Exact occurrence only; never fills a timing gap. | - | `:sound-allow`, `:sound-silence` | Placed sounds | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `command set_sound_allowance` |
 | **Add the sting sound** (`sting`)<br>Add Deadpan's own triumphant sting, synthesized here (no third-party sound), to the sound catalog; place it on a quiet moment with ,s and adjust it like any sound. | - | `:sting` | Every editor context | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `sound --write-sting <file>, then retain-original and register-source audio_only` |
@@ -1358,6 +1359,7 @@ Acts on the selected beat.
 - `:room-tone` acts on the selected pause.
 - `:sequence` acts on the view only; nothing is edited.
 - `:sound-allow` acts on the selected placed sound.
+- `:sound-attach` acts on the Edit cursor.
 - `:sound-cut` acts on the selected placed sound.
 - `:sound-delete` acts on the selected placed sound.
 - `:sound-place` acts on the Edit cursor.

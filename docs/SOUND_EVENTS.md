@@ -153,8 +153,9 @@ store transactions as structural edits:
 | `+` / `-`, with an optional count | Change the selected event's gain by 3 dB per step. |
 | `:sound-gain -3.125` | Set exact gain, with at most three decimal places, within -96 through +24 dB. |
 | Soft / Hard or `:sound-edges soft\|hard` | Set both event endpoints to Automatic or Hard. |
-| `:sound-cut` | Bed drop: end the selected event abruptly at the Edit cursor. Its mapping becomes a selected placement whose exact local selection ends at that frame boundary, with a Hard end edge; onset, source phase and gain stay. The cursor must lie strictly inside the audible sound; routed events refuse. |
+| `:sound-cut` | Bed drop: end the selected event abruptly at the Edit cursor. Its mapping becomes a selected placement whose exact local selection ends at that frame boundary, with a Hard end edge; onset, source phase and gain stay. The cursor must lie strictly inside the audible sound. A routed event (one that follows timeline cuts) ends where the cursor falls in its retained route: the cursor maps back to the recipe's own clock, only the selection narrows and the route is unchanged. Inside an inserted pause the bed ends where that pause begins. |
 | `dd` or `:sound-delete` | Remove the selected event. |
+| `:sound-attach` | Attach the selected catalog sound to the selected beat, starting at the Edit cursor inside it (a sting). See [beds and stings](#beds-and-stings-through-edits). |
 | `:sound-allow` / `:sound-silence` | Grant or revoke this sound's permission in the concrete silent pause under the Edit frame. |
 | `u` / Ctrl-R | Use ordinary durable undo/redo. |
 
@@ -166,8 +167,10 @@ The contextual `dd` key removes a sound, while command entry uses the explicit
 `:sound-delete`; `:delete` is rejected in sound context. `:source` and `:sequence`
 leave event focus, and the viewer's navigation buttons always move picture time.
 
-Routed events keep their timing journals when gain or edges change. Native move
-and frame-nudge controls reject them rather than resetting their cuts. Silent
+Routed events keep their timing journals when gain or edges change, and when
+`:sound-cut` narrows their selection. Native move and frame-nudge controls
+reject them rather than resetting their cuts: a new onset has no single
+meaning across retained cuts. Silent
 Holds suppress event output by default. The inspector identifies the exact pause
 at the retained Edit cursor; `:sound-allow` permits only the selected effect in
 that occurrence and `:sound-silence` revokes that permission. The caption shows
@@ -206,6 +209,53 @@ instruction, which the planner resolves to the same root event (natural-rate
 span from the asset record at the cursor's audio boundary, refused when it would
 end past the edit); store admission still rechecks the receipt. The
 `sound-placement` replay records a placement and runs it at a new cursor.
+
+## Beds and stings through edits
+
+A bed is a sound owned by the edit itself (a root `SoundEvent`); a sting is a
+sound attached to a beat (`BeatSound`, `:sound-attach`). They follow different
+anchors (specification Section 5.4):
+
+| Edit | Root bed | Beat-attached sting |
+| --- | --- | --- |
+| Ripple delete (`dd`, Visual `d`, `:delete`) inside or across the bed / of the beat | The deleted part of the bed goes with the picture; the bed continues across the join on its own clock without restarting its source. Deleting all of its support deletes it. | Deleting the beat deletes its sting; Undo restores both. Deleting a range across the beat keeps the surviving part's sting behind a delivery crop. |
+| Pause or splice inserted inside | Inserted time is silent in the bed; the rest resumes on its prior phase. | Inserted before or after the beat: the sting moves with the beat. Inside the beat: the beat is split and both fragments keep the sting behind delivery crops. |
+| `:splice` move of a range | The bed stays on the edit clock; it does not follow the moved picture. | The sting moves with its beat, inside or out of its group, on its retained clock. |
+| `s` Split | Non-root Split leaves the bed unchanged. | Both fragments keep the complete recipe and phase; the mixed PCM is unchanged. Splitting a Partition fragment that itself carries the sting (a beat already cut by an earlier pause or Split) still refuses. |
+| Group / Ungroup | Unchanged. | Unchanged. Ungroup of a Sequence that owns a sound itself refuses, as do Group and Ungroup inside a sting's retained clock scope. |
+| `rr`, `r` + motion, `:repeat N` wrap | The bed is routed through the repeated plays. | The sting sounds in every play; `rib` keeps it on the first play only. |
+| `:sound-cut` | Ends at the cursor through the retained route (above). | Not applicable. |
+| Trim, Slip, Roll, speed change or Hold length change inside the owner | Trim and Roll before or around the bed transform it; speed changes and Hold length changes with root sounds refuse. | Edits before or after the beat transport it; changing timing inside the beat refuses with "this edit changes the timing inside a beat that carries an attached sound". |
+
+Moving a beat that carries a sting proves only the sting's own processing
+subtree (the owner, or its enclosing speed change), not the whole top-level
+group it started in. Other beats in that group may therefore move around it,
+and the sting may leave the group. Each move appends the pre-edit placement to
+the sting's clock journal; the retained PCM labels move by the exact
+difference of the old and new absolute sample boundaries.
+
+Still refused, readably and atomically: legacy whole-node `WrapRepeat`,
+`Move` and `Insert` (historical replay grammar only), a sting owned by the
+project root, Ungroup of a sound-owning Sequence, timing changes inside the
+sting's beat (Hold length, Trim of that Source, speed change), refining a
+Partition fragment that carries the sting, and a timing edit inside another
+beat of the sting's top-level group before the sting has a retained clock
+(its first capture covers the whole top-level group; a whole-beat move
+narrows it to the sting's own beat). Moving or re-onsetting a routed bed
+(`:sound-at`, `h`/`l`) refuses because a new onset has no single meaning
+across retained cuts; speed changes and Hold length changes refuse while
+root sounds exist.
+
+Evidence (2026-11-10): core `sting_matrix` tests at 30000/1001 (move inside
+and out of a group with exact retained layouts, Split, Group/Ungroup, Repeat
+in every play and `rib`, delete with exact Undo, fragment edits, readable
+refusals) and `routed_bed_cut_maps_the_cursor_back_through_its_retained_route`;
+decoded PCM in `a_moved_sting_beat_plays_its_complete_sound_at_the_new_boundary`
+(untreated sample-exact and EQ-treated); release preview/export fixtures
+`routed-bed-drop` and `sting-follows-beat`; the headless
+`attached_sting_derives_the_native_beat_sound`; and the `sound-placement`
+replay's routed `:sound-cut` with Undo plus `:sound-attach`, `rr`, `dd` and
+Undo through real keys.
 
 ## Persisted root sounds
 
@@ -298,7 +348,10 @@ avoids an empty intermediate map. Logical support, rounded sample support and
 cut edges all use the same direct map.
 
 `SetSound` changes label, gain or endpoint policy without discarding the journal.
-Changing a routed recipe, mapping, owner or offset requires `ReplaceSound`, which
+It may also narrow a routed recipe's selection in place, keeping the same
+owner, source, offset and placement (the routed bed drop): the route maps the
+unchanged recipe clock, and validation still requires surviving support.
+Any other change to a routed recipe, mapping, owner or offset requires `ReplaceSound`, which
 explicitly clears the previous route in the same reversible transaction. Stored
 recipe containment is checked against its original extent, not today's shorter
 root. Route-only changes recheck their unchanged source receipts too.

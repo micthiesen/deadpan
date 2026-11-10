@@ -2,6 +2,33 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Beds and stings through edits (DP-09.6), 2026-11-10
+
+Beds and stings now keep their anchors through edits
+([beds and stings](SOUND_EVENTS.md#beds-and-stings-through-edits),
+specification Section 5.4). `:sound-attach` attaches the selected catalog
+sound to the selected beat at the Edit cursor (headless `sound` `attach`).
+The sting follows its beat's identity: `:splice` moves (inside or out of
+its group, a newly supported case; an unclocked sting's transport now proves
+only its own processing subtree for a move), `s` Split, Group, Ungroup and
+`dd` deletion (removed with the beat, exact Undo); a repeated beat sounds the
+sting in every play, and `rib` keeps it on the first play. A routed root bed
+can now be dropped: `:sound-cut` maps the cursor back through the retained
+route and only narrows the recipe's selection (core `SetSound` admits an
+in-place narrowing without clearing the route). Timing changes that the
+transport cannot prove now refuse with an action-oriented message. Core tests
+at 30000/1001 check journals, retained layouts and exact Undo; decoded PCM
+proves a moved sting plays its complete sound at the new boundary; release
+preview/export verifies `routed-bed-drop` (12 audio blocks) and
+`sting-follows-beat` (19 blocks) at offset zero; the `sound-placement` replay
+passes 299 checks, adding a routed `:sound-cut` with Undo and `:sound-attach`,
+`rr` and `dd` with Undo through real keys. Still refused: legacy whole-node
+commands, root-owned stings, Ungroup of a sound-owning Sequence, timing
+changes inside the sting's beat, refining a Partition fragment that carries
+a sting, edits inside another beat of an unclocked sting's top-level group,
+and moving a routed bed. The beat card and inspector do not yet show
+attached sounds. DP-09 stays partial; no requirement or gate is newly complete.
+
 ## Command-line Tab completion and complete argument schemas, 2026-11-10
 
 Every registry verb now declares its arguments

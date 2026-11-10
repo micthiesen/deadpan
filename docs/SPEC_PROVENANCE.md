@@ -142,6 +142,16 @@ each other through every later edit, stores no media and needs no
 admission. One continuous natural-rate Original passage keeps its captured
 form, so existing reverses are unchanged.
 
+Also on 2026-11-10, Section 5.4 gained the anchor semantics of beds and
+stings under the same delegated authority, closing DP-09.6. A beat-attached
+sting follows its beat's identity through move, split, group, deletion and
+Repeat, sounding in every play by default because an attachment inside a
+Repeat is evaluated per play; `rib` keeps it on the first play. A root bed
+stays on the edit's own clock: moves inside it leave it in place, ripple
+deletion removes the deleted part and insertions are silent in it. A bed
+drop on such a bed maps the cursor back through its retained route, so
+dropping a bed never needs to discard the route or re-time the recipe.
+
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
 | [AGENT_HANDOFF.md](spec/archive/1.0/AGENT_HANDOFF.md) | 4,340 | `464f689e1eb5ad6b2905286e516259f07dc83fea8ebb2b0330663976b905ae6c` |

@@ -31,6 +31,9 @@ mod new_group_birth;
 #[path = "sound_clocks/neutral_ungroup.rs"]
 mod neutral_ungroup;
 
+#[path = "sound_clocks/moved_owner.rs"]
+mod moved_owner;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

@@ -1945,6 +1945,164 @@ pub fn bed_drop(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// A bed that follows a timeline cut, then `:sound-cut`. The click sound of
+/// [`sound_event`] starts at Edit frame 10 (sample 16,016); a two-frame
+/// silent black pause inserted at Edit 12 routes it, so its recipe frames
+/// [12, 15.12) now sound from Edit 14 (sample 22,422). With the cursor at
+/// Edit 15 the cut maps back through the route to recipe frame 13: the bed
+/// keeps [10, 12) and [14, 15) and is silent from sample 24,024, where it
+/// previously ran to about 27,420. The base click moves 3,203 samples later.
+pub fn routed_bed_drop(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "routed-bed-drop")?;
+    project.shorten()?;
+    place_click_sound(&mut project)?;
+    let at = ProjectFrame(12);
+    project.apply(|project, document, revision| {
+        let identities = match document.insert_time_target(at)?.split {
+            Some(split) => project.fresh(split.required_ids)?,
+            None => Vec::new(),
+        };
+        Ok(Command::InsertTime {
+            at,
+            hold: silent(2, HoldVideo::Background)?,
+            id: node("pause")?,
+            identities: SplitIdentities { nodes: identities },
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    project.apply(|_, document, _| {
+        // The same `SoundEvent::cut_routed_at` the native `:sound-cut` commits.
+        let id = SoundId::new("click")?;
+        let route = document
+            .sound_routes()
+            .get(&id)
+            .ok_or("the pause routes the bed")?;
+        let event = document.sounds()[&id].cut_routed_at(route, ProjectFrame(15))?;
+        let SourceAudioMapping::SelectedPlacement { selection, .. } = event.mapping else {
+            return Err("the cut sound has a selected placement".into());
+        };
+        if selection.end != ExactRatio::integer(13 - SOUND_FRAME)
+            || event.end_edge != AudioEdgePolicy::Hard
+        {
+            return Err(format!("unexpected routed cut {:?}", event.mapping).into());
+        }
+        Ok(Command::SetSound { id, event })
+    })?;
+    let expectations = [0u64, 10, 11, 12, 13, 14, 16, 31]
+        .into_iter()
+        .map(|frame| {
+            (
+                frame,
+                match frame {
+                    0..12 => base(frame),
+                    12..14 => Expected::Background,
+                    _ => base(frame - 2),
+                },
+            )
+        })
+        .collect();
+    let mut fixture = project.finish(vec!["Bed drop", "`:sound-cut`"], expectations, Vec::new())?;
+    fixture.audio = vec![
+        (16_128, true),
+        (18_688, true),
+        (19_456, false),
+        (21_504, false),
+        (22_528, true),
+        (23_552, true),
+        (24_320, false),
+        (26_112, false),
+        (31_872, true),
+    ];
+    Ok(fixture)
+}
+
+/// A sting attached to a beat moves with it. Split the base edit at Edit 10
+/// and 16 and attach the click sound to the beat [10, 16) at its start, then
+/// move that beat to the end. Its pictures and the sting now play from Edit
+/// 24 (sample 38,438); the old position no longer sounds.
+pub fn sting_follows_beat(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "sting-follows-beat")?;
+    project.shorten()?;
+    project.split_root(10)?;
+    project.split_root(16)?;
+    let wav = project.directory.join("sound.wav");
+    fs::copy(sound_media(), &wav)?;
+    register_catalog_sound(&mut project, &wav, "Click sound")?;
+    project.apply(|_, document, _| {
+        let (owner, start) = root_child_at(document, 10)?;
+        if start != 10 {
+            return Err("the sting beat starts at Edit 10".into());
+        }
+        let (asset, span) = document
+            .assets()
+            .iter()
+            .find(|(_, record)| record.video.is_none() && record.audio.is_some())
+            .map(|(id, record)| (id.clone(), record.audio.expect("audio")))
+            .ok_or("the catalog sound is registered")?;
+        let rate = document.presentation_basis().frame_rate;
+        Ok(Command::SetBeatSound {
+            owner,
+            id: SoundId::new("sting")?,
+            event: deadpan_core::BeatSound {
+                label: "Click".into(),
+                source: SourceAudio { asset, span },
+                mapping: SourceAudioMapping::natural_rate(span, rate)?,
+                offset: AudioSample(0),
+                treatments: AudioTreatments::default(),
+                start_edge: AudioEdgePolicy::Automatic,
+                end_edge: AudioEdgePolicy::Automatic,
+                overflow: SoundOverflowPolicy::Reject,
+            },
+        })
+    })?;
+    let moved = project.apply(|_, document, revision| {
+        let range = FrameRange::new(ProjectFrame(10), ProjectFrame(16))?;
+        let destination = deadpan_core::MoveRangeDestination::Seam {
+            parent: document.root().clone(),
+            index: root_children(document)?.len(),
+        };
+        Ok(Command::MoveRange {
+            source_revision: document.revision_id().clone(),
+            source_parent: document.root().clone(),
+            range,
+            destination,
+            identities: SplitIdentities::default(),
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    if moved.beat_sounds().len() != 1 {
+        return Err("the sting stays attached to its moved beat".into());
+    }
+    let expectations = [0u64, 9, 10, 16, 23, 24, 29]
+        .into_iter()
+        .map(|frame| {
+            (
+                frame,
+                match frame {
+                    0..10 => base(frame),
+                    10..24 => base(frame + 6),
+                    _ => base(frame - 14),
+                },
+            )
+        })
+        .collect();
+    let mut fixture = project.finish(vec!["Wrongly triumphant sting"], expectations, Vec::new())?;
+    fixture.audio = vec![
+        (16_128, false),
+        (17_920, false),
+        (38_528, true),
+        (41_984, true),
+        (45_824, true),
+    ];
+    Ok(fixture)
+}
+
 /// Register `pcm-stereo-48000.wav` and place it whole as root sound `click`
 /// at Edit frame [`SOUND_FRAME`]. The plain WAVE header declares no speaker
 /// layout, so registration states the explicit stereo L/R interpretation that
@@ -4296,7 +4454,7 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 55] = [
+    let builders: [(&str, Builder); 57] = [
         ("audio-shift", audio_shift),
         ("ramp", ramp),
         ("continuous-ramp", continuous_ramp),
@@ -4338,6 +4496,8 @@ pub fn partition_with_skips(
         ("j-cut-pause", j_cut_pause),
         ("bleep-across-cut", bleep_across_cut),
         ("bed-drop", bed_drop),
+        ("routed-bed-drop", routed_bed_drop),
+        ("sting-follows-beat", sting_follows_beat),
         ("mute-range", mute_range),
         ("off-center", off_center),
         ("freeze-hold", freeze_hold),

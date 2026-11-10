@@ -177,7 +177,8 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 | `,s`, `:sound-place` | `sound` `{"type":"place","asset":…,"at":{"frame":N}}` (or `{"sample":N}`): the complete catalog span at that onset, derived by the shared `sound_events::placement` | R, D | Equivalent |
 | `:sound-at`, `h`/`l` nudges | `sound` `move` (`at`) / `nudge` (`frames`) | R, D | Equivalent |
 | `:sound-gain`, `+`/`-`, `:sound-edges` | `sound` `set` with `gain_millidecibels` or `gain_step_millidecibels`, and/or `edges` | R, D | Equivalent |
-| `:sound-cut` | `sound` `cut` at an Edit frame | R, D | Equivalent |
+| `:sound-cut` | `sound` `cut` at an Edit frame; a routed sound ends where that frame falls in its retained route | R, D | Equivalent |
+| `:sound-attach` | `sound` `{"type":"attach","asset":…,"parent":…,"owner":…,"at":N}`: the complete catalog span attached to beat `owner` (a direct child of Sequence `parent`) from Edit frame `N`, derived by the shared `sound_events::attachment` | R, D | Equivalent |
 | `:sound-allow`, `:sound-silence` | `sound` `allowance` at an Edit frame (resolves the one silent pause there), or `command` `set_sound_allowance` | R, D | Equivalent |
 | `:sound-delete` | `sound` `delete`, or `command` `delete_sound` | R, D | Equivalent |
 | `:sting` | `sound --write-sting <file>` writes the same synthesized bytes; then `project retain-original` and `register-source` with `audio_only` streams, the app's `ImportSound` steps | R, D | Equivalent |

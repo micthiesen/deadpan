@@ -3200,7 +3200,9 @@ impl DeadpanApp {
         if let Ok(navigation::command::Entry::Action(Action::Sound(action))) = &command
             && !matches!(
                 action,
-                navigation::SoundAction::Place | navigation::SoundAction::Focus
+                navigation::SoundAction::Place
+                    | navigation::SoundAction::Focus
+                    | navigation::SoundAction::Attach
             )
         {
             match sound_target {
@@ -6298,7 +6300,11 @@ fn sound_action_allowed(action: &Action) -> bool {
             | Action::Escape
             | Action::Invalid(_)
             | Action::OfferInsert
-            | Action::Sound(navigation::SoundAction::Place | navigation::SoundAction::Focus)
+            | Action::Sound(
+                navigation::SoundAction::Place
+                    | navigation::SoundAction::Focus
+                    | navigation::SoundAction::Attach
+            )
     )
 }
 

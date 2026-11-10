@@ -163,6 +163,96 @@ pub fn placement(
     asset: &AssetId,
     at: AudioSample,
 ) -> Result<SoundEvent, String> {
+    let (label, span) = catalog_span(document, receipt, asset)?;
+    let rate = document.presentation_basis().frame_rate;
+    let event = SoundEvent {
+        owner: document.root().clone(),
+        label,
+        source: SourceAudio {
+            asset: asset.clone(),
+            span,
+        },
+        mapping: SourceAudioMapping::natural_rate(span, rate).map_err(|error| error.to_string())?,
+        offset: at,
+        treatments: deadpan_core::AudioTreatments::default(),
+        start_edge: AudioEdgePolicy::Automatic,
+        end_edge: AudioEdgePolicy::Automatic,
+        overflow: SoundOverflowPolicy::Reject,
+    };
+    validate_placement(document, plan, &event)?;
+    Ok(event)
+}
+
+/// Attach the complete measured catalog sound to `owner`, a direct child of
+/// the ordinary Sequence `parent`, starting at Edit frame boundary `at` inside
+/// it (a sting on a beat). The sound belongs to that beat: it follows the beat
+/// through Split, Move, Group, Repeat and deletion. Its natural-rate recipe is
+/// placed at the exact owner-local frame, so it never changes picture time and
+/// must end inside the beat.
+pub fn attachment(
+    document: &ProjectDocument,
+    receipt: &SourceQualificationReceipt,
+    asset: &AssetId,
+    parent: &deadpan_core::NodeId,
+    owner: &deadpan_core::NodeId,
+    at: ProjectFrame,
+) -> Result<deadpan_core::BeatSound, String> {
+    let Some(deadpan_core::NodeKind::Sequence { children }) =
+        document.nodes().get(parent).map(|node| &node.kind)
+    else {
+        return Err("Attach a sound to a beat inside an ordinary Sequence.".into());
+    };
+    let index = children
+        .iter()
+        .position(|child| child == owner)
+        .ok_or("Select a beat in this group first, then attach the sound.")?;
+    let boundary = |index| {
+        document
+            .source_splice_boundary(parent, index)
+            .map_err(|error| error.message)
+    };
+    let (start, end) = (boundary(index)?, boundary(index + 1)?);
+    if at.0 < start.0 || at.0 >= end.0 {
+        return Err(
+            "Move the Edit cursor inside the selected beat; the sound starts there.".into(),
+        );
+    }
+    let (label, span) = catalog_span(document, receipt, asset)?;
+    let rate = document.presentation_basis().frame_rate;
+    let frames = SourceAudioMapping::natural_rate(span, rate)
+        .and_then(|mapping| mapping.duration_frames(FrameDuration::ZERO))
+        .map_err(|error| error.to_string())?;
+    let event = deadpan_core::BeatSound {
+        label,
+        source: SourceAudio {
+            asset: asset.clone(),
+            span,
+        },
+        mapping: SourceAudioMapping::Placement {
+            start: ExactRatio::integer(at.0 - start.0),
+            frames,
+        },
+        offset: AudioSample(0),
+        treatments: deadpan_core::AudioTreatments::default(),
+        start_edge: AudioEdgePolicy::Automatic,
+        end_edge: AudioEdgePolicy::Automatic,
+        overflow: SoundOverflowPolicy::Reject,
+    };
+    let selected = event
+        .mapping
+        .selection_frames_with_offset(FrameDuration::ZERO, event.offset, rate)
+        .map_err(|error| error.to_string())?;
+    if selected.end.compare_integer(end.0 - start.0).is_gt() {
+        return Err("The complete sound runs past the end of the selected beat; move the Edit cursor earlier or choose a longer beat.".into());
+    }
+    Ok(event)
+}
+
+fn catalog_span(
+    document: &ProjectDocument,
+    receipt: &SourceQualificationReceipt,
+    asset: &AssetId,
+) -> Result<(String, deadpan_core::SourceSpan), String> {
     let metadata = document
         .assets()
         .get(asset)
@@ -188,22 +278,7 @@ pub fn placement(
     if metadata.audio != Some(span) {
         return Err("The catalog sound differs from its measured source qualification.".into());
     }
-    let event = SoundEvent {
-        owner: document.root().clone(),
-        label: metadata.label.clone(),
-        source: SourceAudio {
-            asset: asset.clone(),
-            span,
-        },
-        mapping: SourceAudioMapping::natural_rate(span, rate).map_err(|error| error.to_string())?,
-        offset: at,
-        treatments: deadpan_core::AudioTreatments::default(),
-        start_edge: AudioEdgePolicy::Automatic,
-        end_edge: AudioEdgePolicy::Automatic,
-        overflow: SoundOverflowPolicy::Reject,
-    };
-    validate_placement(document, plan, &event)?;
-    Ok(event)
+    Ok((metadata.label.clone(), span))
 }
 
 pub fn moved(
@@ -291,17 +366,27 @@ pub fn nudge(
 /// A bed drop: end the sound abruptly at Edit frame boundary `at`, keeping
 /// its onset, source phase and gain. The selection ends exactly at that frame
 /// boundary in the sound's own exact frame clock, and the end edge is Hard so
-/// no fade softens the cut.
+/// no fade softens the cut. A routed sound ends at the cursor's position in
+/// its retained route.
 pub fn cut(
     document: &ProjectDocument,
     plan: &RenderPlan,
     id: &SoundId,
     at: ProjectFrame,
 ) -> Result<SoundEvent, String> {
-    if document.sound_routes().contains_key(id) {
-        return Err("This sound follows timeline cuts. Cutting a routed sound is not supported yet; no edit was made.".into());
+    let event = document
+        .sounds()
+        .get(id)
+        .ok_or("The selected sound no longer exists.")?;
+    // A sound that follows timeline cuts keeps its retained route: the cursor
+    // maps back through it to the recipe's own clock, and only the selection
+    // narrows. Its recipe still spans the original extent, not today's edit.
+    if let Some(route) = document.sound_routes().get(id) {
+        return event
+            .cut_routed_at(route, at)
+            .map_err(|error| error.message);
     }
-    let event = movable(document, id)?
+    let event = event
         .cut_at(at, document.presentation_basis().frame_rate)
         .map_err(|error| error.message)?;
     validate_placement(document, plan, &event)?;
@@ -370,6 +455,17 @@ pub enum SoundEdit {
         asset: AssetId,
         at: Onset,
         /// The new sound's identity; omitted for a fresh one.
+        #[serde(default)]
+        id: Option<SoundId>,
+    },
+    /// `:sound-attach`: attach the catalog sound to beat `owner`, a direct
+    /// child of Sequence `parent`, starting at Edit frame `at` inside it.
+    Attach {
+        asset: AssetId,
+        parent: deadpan_core::NodeId,
+        owner: deadpan_core::NodeId,
+        at: i64,
+        /// The attachment's local identity; omitted for a fresh one.
         #[serde(default)]
         id: Option<SoundId>,
     },
@@ -455,6 +551,43 @@ pub fn command(
                 return Err(refused("A placed sound already has this identity."));
             }
             set(&id, event)
+        }
+        SoundEdit::Attach {
+            asset,
+            parent,
+            owner,
+            at,
+            id,
+        } => {
+            let qualification = document
+                .assets()
+                .get(asset)
+                .and_then(|record| record.source_qualification.clone())
+                .ok_or_else(|| refused("The catalog sound is no longer registered."))?;
+            let receipt = store
+                .source_qualification(&qualification)
+                .map_err(crate::live_project::LiveError::store)?;
+            let event = attachment(document, &receipt, asset, parent, owner, ProjectFrame(*at))
+                .map_err(refused)?;
+            let id = match id {
+                Some(id) => id.clone(),
+                None => SoundId::new(uuid::Uuid::new_v4().to_string()).map_err(refused)?,
+            };
+            if document
+                .beat_sounds()
+                .get(owner)
+                .is_some_and(|events| events.contains_key(&id))
+            {
+                return Err(refused("This beat already has a sound with this identity."));
+            }
+            (
+                Command::SetBeatSound {
+                    owner: owner.clone(),
+                    id: id.clone(),
+                    event,
+                },
+                id,
+            )
         }
         SoundEdit::Move { id, at } => set(
             id,

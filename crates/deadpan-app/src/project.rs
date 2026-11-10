@@ -951,6 +951,14 @@ pub enum ProjectSoundEdit {
     Delete {
         id: SoundId,
     },
+    /// Attach the catalog sound to the captured beat (a direct child of the
+    /// captured Sequence scope), starting at this Edit frame inside it.
+    Attach {
+        asset: AssetId,
+        parent: deadpan_core::NodeId,
+        owner: deadpan_core::NodeId,
+        at: ProjectFrame,
+    },
 }
 
 /// Ordinary node operations edit direct children of the captured Sequence scope.

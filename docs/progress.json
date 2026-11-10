@@ -2408,7 +2408,7 @@
               "docs/OWNED_SOUND_VOICES.md",
               "docs/SECTION8_COVERAGE.md Bed drop/Wrongly triumphant sting"
             ],
-            "remaining": "Root bed drop and synthesized sting work; sound following cuts and beat-attached bed transforms remain incomplete.",
+            "remaining": "Stings follow their beat through move, Split, Group, Repeat (every play; rib first play) and deletion, and routed beds drop at the cursor through their route; refining a sting-bearing Partition fragment, timing changes inside the sting's beat, Ungroup of a sound-owning Sequence, root-owned stings, moving routed beds and showing attachments in the beat card and inspector remain.",
             "normative": "8.3,5.4"
           },
           {
