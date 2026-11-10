@@ -2391,7 +2391,7 @@
               "docs/REVERSE_AND_TAILS.md",
               "docs/qualification/tail-sends-2026-10-12.md"
             ],
-            "remaining": "Tails inside speed changes refuse by definition (their ring is at the edit rate; the shared stage would stretch or re-pitch it), with the fix in the message; listening qualification of tails and custom pause sounds is an owner check.",
+            "remaining": "Custom Hold policy and broader incoming-tail/loop interactions remain incomplete; tails inside speed changes refuse.",
             "normative": "8.3,10.4"
           },
           {
