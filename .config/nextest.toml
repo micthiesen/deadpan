@@ -52,3 +52,11 @@ threads-required = 6
 [[profile.default.overrides]]
 filter = "binary(proxy_resume)"
 retries = 1
+
+# The same hardware encoder can, under a loaded gate, emit one picture out of
+# order (the worker refuses it as invalid_packet). The app retries that once
+# (`deadpan_media::retryable`); these direct worker tests do not, so they get
+# the same single retry. A second failure is a real result.
+[[profile.default.overrides]]
+filter = "binary(proxy_real_media)"
+retries = 1
