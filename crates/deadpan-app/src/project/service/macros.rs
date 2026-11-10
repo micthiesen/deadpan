@@ -393,12 +393,15 @@ fn scoped_macro_receipt(
             let mut expected = context.clone();
             expected.scoped = Some(after.clone());
             // One-play structural edits continue at the changed beat's start
-            // (Split keeps its boundary); the planner owns that exact frame.
+            // (Split keeps its boundary, a paste starts on the pasted beat);
+            // the planner owns that exact frame.
             if plan.trace.iter().any(|row| {
                 matches!(
                     row.instruction,
                     SemanticInstruction::Split
                         | SemanticInstruction::DeleteBeat
+                        | SemanticInstruction::Cut { .. }
+                        | SemanticInstruction::Paste { .. }
                         | SemanticInstruction::Repeat { .. }
                         | SemanticInstruction::SetRepeatPlays { .. }
                         | SemanticInstruction::SetRepeat { .. }

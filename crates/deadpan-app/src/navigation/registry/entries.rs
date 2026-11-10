@@ -691,7 +691,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::EDIT,
         replay: Replay::Recorded,
         headless: eq("yank_beat instruction", SEL),
-        help: "Copy the explicit selected beat with its owned attachments, including an empty group. Use no count or one.",
+        help: "Copy the explicit selected beat with its owned attachments, including an empty group. Use no count or one. Inside a Repeat's contents with This play chosen at every enclosing Repeat, it copies the beat as it plays in that play, without isolating it; {paste.after}/{paste.before} place it in another play or outside the Repeat.",
     },
     Spec {
         id: "yank.operator",
@@ -730,7 +730,7 @@ pub static SPECS: &[Spec] = &[
             "cut instruction; delete_ripple / delete_range commands",
             STRUCT,
         ),
-        help: "Without a Visual selection, {cut.beat} cuts one whole beat, including an empty group, and selects the following sibling. :delete captures the exact range or beat when command entry opens; stale or missing targets fail; :delete role=audio|video deletes one role over the Visual range once. A saved cut replaces the copy register; {paste.after}/{paste.before} or :splice places that copy. Undo restores the removed content and retains the copy, including after reopening. In Placed sounds it removes only the selected sound. Inside a Repeat's contents with This play chosen at every enclosing Repeat, {cut.beat} or :delete removes the beat from that play only (not copied to a register); the rest of the play closes up and other plays keep the shared definition.",
+        help: "Without a Visual selection, {cut.beat} cuts one whole beat, including an empty group, and selects the following sibling. :delete captures the exact range or beat when command entry opens; stale or missing targets fail; :delete role=audio|video deletes one role over the Visual range once. A saved cut replaces the copy register; {paste.after}/{paste.before} or :splice places that copy. Undo restores the removed content and retains the copy, including after reopening. In Placed sounds it removes only the selected sound. Inside a Repeat's contents with This play chosen at every enclosing Repeat, {cut.beat} copies the beat as it plays there to the register and removes it from that play only, in one Undo; :delete removes it there without copying. The rest of the play closes up and other plays keep the shared definition.",
     },
     Spec {
         id: "cut.range",
@@ -777,7 +777,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::YOUR_EDIT,
         replay: Replay::Recorded,
         headless: eq("paste / replace_selection instructions", SEL),
-        help: "Without an Edit range, paste the copied Original or Edit slice after/before the selected beat in the displayed group; an empty group accepts a paste at its start. A selected nonempty Edit range or group object is replaced by the copy in one undoable transaction. Command entry captures the exact range, including its absence; stale destinations fail.",
+        help: "Without an Edit range, paste the copied Original or Edit slice after/before the selected beat in the displayed group; an empty group accepts a paste at its start. A selected nonempty Edit range or group object is replaced by the copy in one undoable transaction. Command entry captures the exact range, including its absence; stale destinations fail. Inside a Repeat's contents with This play chosen at every enclosing Repeat, it pastes after/before the selected beat in that play only; later plays and everything after keep their timing, and other plays keep the shared definition. A play's whole contents need a split first.",
     },
     Spec {
         id: "splice",

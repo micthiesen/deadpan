@@ -472,3 +472,211 @@ fn scoped_structure_refuses_without_explicit_play_and_for_unsupported_intent_ato
         "{error:?}"
     );
 }
+
+fn plan_with_bank(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+    instructions: Vec<SemanticInstruction>,
+    bank: &BTreeMap<RegisterName, Arc<RegisterValue>>,
+    allocator: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+) -> Result<SemanticPlan, EditError> {
+    plan_semantic_with_framing(
+        document,
+        context,
+        &program(instructions),
+        SemanticRegisterBank {
+            entries: bank,
+            version: 3,
+        },
+        revision(&format!("{}-outer", document.revision_id())),
+        allocator,
+        no_original,
+        |_| Err(speech_unavailable()),
+        |_: &ProjectDocument, _: PauseSite| Err(speech_unavailable()),
+        None,
+        state,
+    )
+}
+
+fn copied(plan: &SemanticPlan, register: RegisterName) -> Arc<CapturedEditSlice> {
+    let Some(RegisterValue::Edited { slice }) = plan.register_writes.get(&register).map(|v| &**v)
+    else {
+        panic!("an edited copy in {register:?}")
+    };
+    slice.clone()
+}
+
+#[test]
+fn scoped_copy_then_paste_places_that_occurrence_after_the_beat_in_its_play_only() {
+    let before = fixture();
+    // `yy` then `p` on `a` in outer play 1, inner play 1 (27..31).
+    let plan = plan_with_bank(
+        &before,
+        &chosen("a", 1, Some(1), 28),
+        vec![
+            SemanticInstruction::Yank {
+                selector: SemanticSelector::SelectedBeat,
+                register: RegisterName::unnamed(),
+            },
+            SemanticInstruction::Paste {
+                register: RegisterName::unnamed(),
+                before: false,
+            },
+        ],
+        &BTreeMap::new(),
+        super::super::allocate,
+    )
+    .unwrap();
+    check_replay(&before, &plan);
+    let slice = copied(&plan, RegisterName::unnamed());
+    // The register holds exactly that occurrence's effective contents.
+    assert_eq!(
+        *slice,
+        CapturedEditSlice::capture_occurrence(
+            &before,
+            &presentation(1, 1),
+            slice.capture_timing().clone()
+        )
+        .unwrap()
+    );
+    assert_eq!(
+        slice.range(),
+        FrameRange::new(ProjectFrame(27), ProjectFrame(31)).unwrap()
+    );
+    assert_eq!(
+        plan.document.duration().unwrap().frames(),
+        before.duration().unwrap().frames() + 4
+    );
+    // The paste continues on the pasted beat at the seam after `a`.
+    assert_eq!(plan.context.cursor, ProjectFrame(31));
+    assert_eq!(
+        plan.trace[1].resolved_range,
+        Some(FrameRange::new(ProjectFrame(31), ProjectFrame(35)).unwrap())
+    );
+    let mapped = plan.context.scoped.as_ref().unwrap();
+    assert!(
+        plan.document
+            .parent_of(&mapped.target.node)
+            .is_some_and(|parent| plan.document.children(&parent).count() == 3)
+    );
+    // Other plays keep the shared definitions.
+    for shared in ["body", "inside", "a", "b"] {
+        assert_eq!(
+            before.nodes()[&node(shared)],
+            plan.document.nodes()[&node(shared)]
+        );
+    }
+    let Command::Compound { transaction } = &plan.request.as_ref().unwrap().command else {
+        panic!("one Compound")
+    };
+    assert!(matches!(
+        &transaction.steps()[1],
+        ResolvedStep::Paste { edit, .. } if matches!(
+            edit.command.as_command(),
+            Command::EditOccurrence { edit: OccurrenceEdit::PasteSlice { before: false, .. }, .. }
+        )
+    ));
+
+    // The copy, from the bank, pastes before `b` in outer play 0, inner play 0.
+    let bank = BTreeMap::from([(
+        RegisterName::unnamed(),
+        Arc::new(RegisterValue::Edited {
+            slice: slice.clone(),
+        }),
+    )]);
+    let elsewhere = plan_with_bank(
+        &plan.document,
+        &chosen("b", 0, Some(0), 7),
+        vec![SemanticInstruction::Paste {
+            register: RegisterName::unnamed(),
+            before: true,
+        }],
+        &bank,
+        renamed("again"),
+    )
+    .unwrap();
+    check_replay(&plan.document, &elsewhere);
+    assert_eq!(elsewhere.context.cursor, ProjectFrame(6));
+    assert_eq!(
+        elsewhere.document.duration().unwrap().frames(),
+        plan.document.duration().unwrap().frames() + 4
+    );
+}
+
+#[test]
+fn scoped_cut_copies_the_occurrence_and_removes_it_from_that_play_in_one_transaction() {
+    let before = fixture();
+    // `"xdd` on `b` in outer play 2, inner play 0 (42..45).
+    let register = name('x');
+    let plan = plan_with_bank(
+        &before,
+        &chosen("b", 2, Some(0), 43),
+        vec![SemanticInstruction::Cut {
+            selector: SemanticSelector::SelectedBeat,
+            register,
+        }],
+        &BTreeMap::new(),
+        super::super::allocate,
+    )
+    .unwrap();
+    check_replay(&before, &plan);
+    let slice = copied(&plan, register);
+    assert_eq!(copied(&plan, RegisterName::unnamed()), slice);
+    assert_eq!(
+        slice.range(),
+        FrameRange::new(ProjectFrame(42), ProjectFrame(45)).unwrap()
+    );
+    assert_eq!(
+        plan.document.duration().unwrap().frames(),
+        before.duration().unwrap().frames() - 3
+    );
+    let Command::Compound { transaction } = &plan.request.as_ref().unwrap().command else {
+        panic!("one Compound")
+    };
+    assert!(matches!(
+        transaction.steps(),
+        [ResolvedStep::Yank { .. }, ResolvedStep::Edit { edit }] if matches!(
+            edit.command.as_command(),
+            Command::EditOccurrence { edit: OccurrenceEdit::DeleteRipple { .. }, .. }
+        )
+    ));
+    assert_eq!(plan.context.cursor, ProjectFrame(42));
+    assert_eq!(
+        before.nodes()[&node("b")],
+        plan.document.nodes()[&node("b")]
+    );
+}
+
+#[test]
+fn scoped_copy_and_paste_refuse_motions_and_empty_registers_readably() {
+    let before = fixture();
+    let motion = plan_with_bank(
+        &before,
+        &chosen("a", 1, Some(1), 28),
+        vec![SemanticInstruction::Yank {
+            selector: SemanticSelector::Motion {
+                motion: SemanticMotion::Beats {
+                    forward: true,
+                    count: plays(1),
+                },
+            },
+            register: RegisterName::unnamed(),
+        }],
+        &BTreeMap::new(),
+        super::super::allocate,
+    )
+    .unwrap_err();
+    assert!(motion.message.contains("copy ranges"), "{motion}");
+    let empty = plan_with_bank(
+        &before,
+        &chosen("a", 1, Some(1), 28),
+        vec![SemanticInstruction::Paste {
+            register: name('q'),
+            before: false,
+        }],
+        &BTreeMap::new(),
+        super::super::allocate,
+    )
+    .unwrap_err();
+    assert!(empty.message.contains("register is empty"), "{empty}");
+}

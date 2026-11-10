@@ -4202,7 +4202,9 @@ impl DeadpanApp {
                         if self.scoped_target().ok().flatten().is_some_and(|target| target.has_single_play_authority()) {
                             hints.tier(key_labels::Tier::More);
                             self.add_editor_hint(&mut hints, EditorKey::Split, "split in this play");
-                            self.add_editor_hint(&mut hints, EditorKey::CutBeat, "delete in this play");
+                            self.add_editor_hint(&mut hints, EditorKey::CopyBeat, "copy in this play");
+                            self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut in this play");
+                            if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", "paste in this play"); }
                             self.add_editor_hint(&mut hints, EditorKey::Repeat, "repeat in this play");
                         }
                         }

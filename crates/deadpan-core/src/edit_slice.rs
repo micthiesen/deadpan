@@ -9,7 +9,7 @@ mod sound_clocks;
 mod wire;
 
 pub use children::SequenceChildrenPlan;
-pub(crate) use placement::apply;
+pub(crate) use placement::{apply, apply_in_occurrence};
 pub(crate) use set::apply as apply_set;
 pub use set::{
     CapturedEditSet, EditSetComponentIdentities, EditSetIdentityRequirements,
@@ -97,6 +97,10 @@ struct SliceWire {
     /// Absent for every capture that keeps its owned attachments.
     #[serde(default, skip_serializing_if = "SliceAttachments::is_owned")]
     attachments: SliceAttachments,
+    /// The explicit play at every enclosing Repeat of a whole-child copy
+    /// inside Repeat contents. Absent for ordinary Sequence captures.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    plays: Vec<crate::RepeatInstance>,
     source_duration: FrameDuration,
     parts: Vec<SlicePart>,
     #[serde(deserialize_with = "crate::audio_gain::node_map")]
@@ -281,6 +285,50 @@ impl CapturedEditSlice {
         attachments: SliceAttachments,
         timing: AudioTimingId,
     ) -> Result<Self, EditError> {
+        Self::capture_in_plays(document, parent, selection, attachments, &[], timing)
+    }
+
+    /// Capture one whole beat as it plays in one explicit occurrence: This
+    /// play at every enclosing Repeat. The copy holds that occurrence's
+    /// effective contents (its own override branch, or the shared default) and
+    /// each physical owner's clock over that occurrence's project interval.
+    /// Copying isolates nothing.
+    pub fn capture_occurrence(
+        document: &ProjectDocument,
+        instance: &crate::InstancePath,
+        timing: AudioTimingId,
+    ) -> Result<Self, EditError> {
+        if instance.repeats.is_empty() {
+            return Err(invalid(
+                "an occurrence copy needs This play chosen at every enclosing Repeat",
+            ));
+        }
+        let parent = document.parent_of(&instance.node).ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the selected beat has no group in this play",
+            )
+        })?;
+        Self::capture_in_plays(
+            document,
+            &parent,
+            &SliceCaptureSelection::Child {
+                node: instance.node.clone(),
+            },
+            SliceAttachments::Owned,
+            &instance.repeats,
+            timing,
+        )
+    }
+
+    fn capture_in_plays(
+        document: &ProjectDocument,
+        parent: &NodeId,
+        selection: &SliceCaptureSelection,
+        attachments: SliceAttachments,
+        plays: &[crate::RepeatInstance],
+        timing: AudioTimingId,
+    ) -> Result<Self, EditError> {
         document.validate()?;
         let stripped;
         let document = match (attachments, selection) {
@@ -304,8 +352,12 @@ impl CapturedEditSlice {
         if let SliceCaptureSelection::Range { range } = selection {
             crate::insert_time::sequence_range::preflight_capture(document, parent, *range)?;
         }
-        let parent_start = document.source_splice_boundary(parent, 0)?;
         let durations = document.durations()?;
+        let parent_start = if plays.is_empty() {
+            document.source_splice_boundary(parent, 0)?
+        } else {
+            occurrence_parent_start(document, parent, selection, plays, &durations)?
+        };
         let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
             unreachable!()
         };
@@ -330,7 +382,14 @@ impl CapturedEditSlice {
                             "capture target is not a direct child of its named Sequence",
                         )
                     })?;
-                let start = document.source_splice_boundary(parent, index)?;
+                let start = ProjectFrame(
+                    children[..index]
+                        .iter()
+                        .try_fold(parent_start.0, |start, child| {
+                            start.checked_add(durations[child].frames())
+                        })
+                        .ok_or_else(overflow)?,
+                );
                 FrameRange::new(
                     start,
                     ProjectFrame(
@@ -397,7 +456,7 @@ impl CapturedEditSlice {
             }
             AudioBindingState::default()
         } else {
-            capture_audio(document, &parts, &selected, range, &timing)?
+            capture_audio(document, &parts, &selected, range, plays, &timing)?
         };
         let nodes: BTreeMap<_, _> = selected
             .iter()
@@ -446,6 +505,7 @@ impl CapturedEditSlice {
             range,
             selection: Some(selection.clone()),
             attachments,
+            plays: plays.to_vec(),
             source_duration: document.duration()?,
             parts,
             nodes,
@@ -506,11 +566,12 @@ impl CapturedEditSlice {
                 "slice capture source is a different revision",
             ));
         }
-        let captured = Self::capture_selection_with(
+        let captured = Self::capture_in_plays(
             source,
             &self.0.parent,
             self.selection(),
             self.0.attachments,
+            &self.0.plays,
             self.0.capture_timing.clone(),
         )?;
         if captured != *self {
@@ -547,6 +608,11 @@ impl CapturedEditSlice {
     /// Whether this copy carries its owned temporal attachments (`ab`).
     pub fn attachments(&self) -> SliceAttachments {
         self.0.attachments
+    }
+    /// The explicit play at every enclosing Repeat for a copy made inside
+    /// Repeat contents; empty for ordinary Sequence captures.
+    pub fn plays(&self) -> &[RepeatInstance] {
+        &self.0.plays
     }
     /// A readable outline of the captured structure for inspection before
     /// reuse: each part's root with its kind, label and length, and the
@@ -714,6 +780,13 @@ impl CapturedEditSlice {
         if value.range.start().0 < 0 || value.range.end().0 > value.source_duration.frames() {
             return Err(invalid("slice bounds are outside its captured project"));
         }
+        if !value.plays.is_empty()
+            && !matches!(self.selection(), SliceCaptureSelection::Child { .. })
+        {
+            return Err(invalid(
+                "an occurrence copy captures exactly one whole beat",
+            ));
+        }
         let context = self.context()?;
         let durations = context.durations()?;
         match self.selection() {
@@ -826,11 +899,60 @@ impl ProjectDocument {
     }
 }
 
+/// The project start of `parent` in the explicit occurrence named by `plays`,
+/// derived from the selected child's exact whole-frame occurrence interval.
+/// Speed changes and crops in that play have no such interval and refuse.
+fn occurrence_parent_start(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    selection: &SliceCaptureSelection,
+    plays: &[crate::RepeatInstance],
+    durations: &BTreeMap<NodeId, FrameDuration>,
+) -> Result<ProjectFrame, EditError> {
+    let SliceCaptureSelection::Child { node } = selection else {
+        return Err(invalid(
+            "an occurrence copy captures exactly one whole beat",
+        ));
+    };
+    let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
+        return Err(EditError::new(
+            EditErrorCode::SelectionUnavailable,
+            "this beat is the play's whole contents; copy it from the parent (Backspace), or press Enter to copy a beat in its group",
+        ));
+    };
+    let index = children
+        .iter()
+        .position(|child| child == node)
+        .ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "capture target is not a direct child of its named Sequence",
+            )
+        })?;
+    let instance = crate::InstancePath {
+        node: node.clone(),
+        repeats: plays.to_vec(),
+    };
+    // The site check refuses whole-contents beats and speed-change ancestors.
+    crate::occurrence_edit::ripple::site(document, &instance)?;
+    let (start, _) = document.occurrence_structure_interval(&instance)?;
+    let prefix = children[..index]
+        .iter()
+        .try_fold(0_i64, |sum, child| {
+            sum.checked_add(durations[child].frames())
+        })
+        .ok_or_else(overflow)?;
+    Ok(ProjectFrame(
+        start.0.checked_sub(prefix).ok_or_else(overflow)?,
+    ))
+}
+
 fn capture_audio(
     document: &ProjectDocument,
     parts: &[SlicePart],
     selected: &BTreeSet<NodeId>,
     range: FrameRange,
+    plays: &[crate::RepeatInstance],
     timing: &AudioTimingId,
 ) -> Result<AudioBindingState, EditError> {
     // Check before detaching voices: pruning can remove a clock-only record,
@@ -896,6 +1018,13 @@ fn capture_audio(
     )?;
     state.bindings.retain(|id, _| selected.contains(id));
     state.gap_bindings.retain(|id, _| selected.contains(id));
+    // A copy from one play keeps that play's clocks without the enclosing
+    // Repeats, which the copy does not contain.
+    for play in plays {
+        for owner in selected {
+            crate::explode::close_bindings(&mut state, owner, &play.node, &play.iteration)?;
+        }
+    }
     sound_clocks::capture(document, parts, selected, timing, &mut state)?;
     let retained: BTreeSet<_> = state
         .owners()

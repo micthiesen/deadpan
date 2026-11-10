@@ -485,11 +485,20 @@ fn close_owner(
     repeat: &NodeId,
     iteration: &IterationId,
 ) -> Result<(), EditError> {
-    let timings = &result.audio_bindings.timings;
-    for bindings in [
-        &mut result.audio_bindings.bindings,
-        &mut result.audio_bindings.gap_bindings,
-    ] {
+    close_bindings(&mut result.audio_bindings, node, repeat, iteration)
+}
+
+/// Close one owner's retained clocks for a concrete play of `repeat`, as if
+/// that play no longer had the Repeat around it. An occurrence copy uses
+/// this for every enclosing Repeat of the copied play.
+pub(crate) fn close_bindings(
+    state: &mut crate::AudioBindingState,
+    node: &NodeId,
+    repeat: &NodeId,
+    iteration: &IterationId,
+) -> Result<(), EditError> {
+    let timings = &state.timings;
+    for bindings in [&mut state.bindings, &mut state.gap_bindings] {
         let Some(binding) = bindings.get_mut(node) else {
             continue;
         };

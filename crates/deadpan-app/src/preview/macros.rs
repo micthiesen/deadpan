@@ -1796,6 +1796,15 @@ impl DeadpanApp {
                         | SemanticInstruction::Retime { .. }
                         | SemanticInstruction::Split
                         | SemanticInstruction::DeleteBeat
+                        | SemanticInstruction::Yank {
+                            selector: deadpan_core::SemanticSelector::SelectedBeat,
+                            ..
+                        }
+                        | SemanticInstruction::Cut {
+                            selector: deadpan_core::SemanticSelector::SelectedBeat,
+                            ..
+                        }
+                        | SemanticInstruction::Paste { .. }
                         | SemanticInstruction::SetRepeatPlays { .. }
                         | SemanticInstruction::Repeat {
                             selector: deadpan_core::SemanticSelector::SelectedBeat,
@@ -1811,7 +1820,7 @@ impl DeadpanApp {
                 )
                 && !matches!(&instruction, SemanticInstruction::SetAudio { change } if gain::scoped_audio_change(change))
             {
-                return Err("This play supports whole-beat gain, mute, saturation, balance and EQ, speed changes, freeze and black pauses, pause and gap lengths, silence and room tone, splitting, deleting and repeating a beat, Repeat plays and gaps, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
+                return Err("This play supports whole-beat gain, mute, saturation, balance and EQ, speed changes, freeze and black pauses, pause and gap lengths, silence and room tone, splitting, copying, cutting, deleting and repeating a beat, pasting beside it, Repeat plays and gaps, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
             }
             if !captured.matches(self)
                 || self

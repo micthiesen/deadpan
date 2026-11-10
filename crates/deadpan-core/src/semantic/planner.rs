@@ -34,6 +34,7 @@ mod mixed_hold_duration;
 pub use mixed_hold_duration::SemanticMixedHoldDurationContext;
 mod pause;
 mod play_gap;
+mod scoped_copy;
 mod scoped_gain;
 mod scoped_structure;
 mod selected_hold_duration;
@@ -940,6 +941,9 @@ where
                             speed: None,
                             ..
                         }
+                        | SemanticInstruction::Yank { .. }
+                        | SemanticInstruction::Cut { .. }
+                        | SemanticInstruction::Paste { .. }
                         | SemanticInstruction::Call { .. }
                 )
                 && !matches!(
@@ -948,7 +952,7 @@ where
                 )
             {
                 return Err(invalid(
-                    "single-play macro authority supports only Zoom, whole-owner gain, mute, saturation, balance and EQ, speed changes, freeze or black pause intent, Hold duration or sound, splitting, deleting or repeating the beat, Repeat plays and gaps, and named calls",
+                    "single-play macro authority supports only Zoom, whole-owner gain, mute, saturation, balance and EQ, speed changes, freeze or black pause intent, Hold duration or sound, splitting, copying, cutting, deleting or repeating the beat, pasting beside it, Repeat plays and gaps, and named calls",
                 ));
             }
             if matches!(
@@ -1133,6 +1137,16 @@ where
                 }
                 SemanticInstruction::ClearSelection => {
                     self.context.visual_selection = None;
+                }
+                SemanticInstruction::Yank { selector, register }
+                    if self.context.scoped.is_some() =>
+                {
+                    self.scoped_capture(index, *register, selector, false)?;
+                }
+                SemanticInstruction::Cut { selector, register }
+                    if self.context.scoped.is_some() =>
+                {
+                    self.scoped_capture(index, *register, selector, true)?;
                 }
                 SemanticInstruction::Yank { selector, register } => {
                     self.capture_selector(index, *register, selector, false)?;
@@ -1399,6 +1413,17 @@ where
                 }
                 SemanticInstruction::InsertOriginal { asset } => {
                     self.insert_original(index, asset)?;
+                }
+                SemanticInstruction::Paste { register, before }
+                    if self.context.scoped.is_some() =>
+                {
+                    self.scoped_structure(
+                        index,
+                        scoped_structure::ScopedStructure::Paste {
+                            register: *register,
+                            before: *before,
+                        },
+                    )?;
                 }
                 SemanticInstruction::Paste { register, before } => {
                     self.paste_instruction(index, *register, *before)?;

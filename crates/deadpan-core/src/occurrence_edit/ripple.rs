@@ -121,6 +121,75 @@ pub(crate) fn delete(
     Ok(result)
 }
 
+/// The beat's group slot and exact project frame of the seam after (or
+/// before) it in this play.
+fn paste_seam(site: &Site, before: bool) -> (usize, ProjectFrame) {
+    if before {
+        (site.slot, ProjectFrame(site.start))
+    } else {
+        (site.slot + 1, ProjectFrame(site.end))
+    }
+}
+
+/// Paste a copied edited slice beside the beat in its play only. The slice
+/// installs exactly as the root seam paste installs it; everything after the
+/// seam, including later plays and gaps, keeps its own pre-edit clock.
+pub(crate) fn paste_slice(
+    document: &ProjectDocument,
+    instance: &InstancePath,
+    before: bool,
+    slice: &crate::CapturedEditSlice,
+    identities: &crate::SlicePasteIdentities,
+    timing: &AudioTimingId,
+    context: crate::command::EditContext<'_>,
+) -> Result<ProjectDocument, EditError> {
+    let site = site(document, instance)?;
+    let (index, boundary) = paste_seam(&site, before);
+    let command = Command::SpliceSlice {
+        parent: site.parent,
+        index,
+        slice: slice.clone(),
+        identities: identities.clone(),
+        timing: timing.clone(),
+    };
+    crate::edit_slice::apply_in_occurrence(document, &command, boundary, context)
+}
+
+/// Paste one copied Original moment beside the beat in its play only. The new
+/// Source starts unbound on the project-origin grid, as at the root; each
+/// later owner keeps its own pre-edit clock.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn paste_source(
+    document: &ProjectDocument,
+    instance: &InstancePath,
+    before: bool,
+    source: &crate::SourceNode,
+    id: &NodeId,
+    label: &str,
+    timing: &AudioTimingId,
+    allocation: &crate::RevisionId,
+) -> Result<ProjectDocument, EditError> {
+    validate_timing(document, timing, allocation)?;
+    if crate::scoped_edit::occupied_node_ids(document).contains(id) {
+        return Err(EditError::new(
+            EditErrorCode::IdentityConflict,
+            "the pasted beat identity must be fresh, including retained audio names",
+        ));
+    }
+    let site = site(document, instance)?;
+    let (index, boundary) = paste_seam(&site, before);
+    crate::insert_time::splice_source_in_occurrence(
+        document,
+        &site.parent,
+        index,
+        boundary,
+        id,
+        crate::insert_time::source_leaf(label, source.clone()),
+        timing,
+        allocation,
+    )
+}
+
 /// Wrap the beat in a new Repeat in its play only. Its first play keeps the
 /// beat's old sample phase; everything after the beat keeps its own clock.
 pub(crate) fn wrap_repeat(

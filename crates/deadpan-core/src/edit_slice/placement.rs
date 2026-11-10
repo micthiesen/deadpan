@@ -23,6 +23,9 @@ enum Destination<'a> {
 }
 
 struct Placement<'a> {
+    /// A seam inside one already isolated Repeat play. Its boundary comes
+    /// from that occurrence, and later plays and owners keep their clocks.
+    occurrence: bool,
     parent: &'a NodeId,
     slice: &'a CapturedEditSlice,
     identities: &'a SlicePasteIdentities,
@@ -32,7 +35,14 @@ struct Placement<'a> {
 }
 
 impl<'a> Placement<'a> {
-    fn resolve(document: &ProjectDocument, command: &'a Command) -> Result<Self, EditError> {
+    fn resolve(
+        document: &ProjectDocument,
+        command: &'a Command,
+        occurrence: Option<ProjectFrame>,
+    ) -> Result<Self, EditError> {
+        if occurrence.is_some() && !matches!(command, Command::SpliceSlice { .. }) {
+            return Err(invalid("an occurrence paste inserts at a seam"));
+        }
         let (parent, slice, identities, timing, splits, destination) = match command {
             Command::SpliceSlice {
                 parent,
@@ -48,7 +58,10 @@ impl<'a> Placement<'a> {
                 None,
                 Destination::Seam {
                     index: *index,
-                    boundary: document.source_splice_boundary(parent, *index)?,
+                    boundary: match occurrence {
+                        Some(boundary) => boundary,
+                        None => document.source_splice_boundary(parent, *index)?,
+                    },
                 },
             ),
             Command::SpliceSliceAt {
@@ -110,6 +123,7 @@ impl<'a> Placement<'a> {
         };
         slice.check_destination(document)?;
         Ok(Self {
+            occurrence: occurrence.is_some(),
             parent,
             slice,
             identities,
@@ -200,7 +214,20 @@ pub(crate) fn apply(
     command: &Command,
     context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
-    apply_inner(document, command, context, false).map(|(document, _)| document)
+    apply_inner(document, command, context, false, None).map(|(document, _)| document)
+}
+
+/// Seam paste inside one already isolated Repeat play. `command` is the
+/// `SpliceSlice` at the play's group slot; `boundary` is that slot's exact
+/// project frame in this occurrence. Every later owner, including later plays
+/// and gaps of each enclosing Repeat, keeps its own pre-edit clock.
+pub(crate) fn apply_in_occurrence(
+    document: &ProjectDocument,
+    command: &Command,
+    boundary: ProjectFrame,
+    context: crate::command::EditContext<'_>,
+) -> Result<ProjectDocument, EditError> {
+    apply_inner(document, command, context, false, Some(boundary)).map(|(document, _)| document)
 }
 
 /// Set placement collects copied marks until every component is installed.
@@ -211,7 +238,7 @@ pub(super) fn apply_detached_marks(
     command: &Command,
     context: crate::command::EditContext<'_>,
 ) -> Result<(ProjectDocument, BTreeMap<MarkId, Mark>), EditError> {
-    apply_inner(document, command, context, true)
+    apply_inner(document, command, context, true, None)
 }
 
 fn apply_inner(
@@ -219,8 +246,9 @@ fn apply_inner(
     command: &Command,
     context: crate::command::EditContext<'_>,
     detach_marks: bool,
+    occurrence: Option<ProjectFrame>,
 ) -> Result<(ProjectDocument, BTreeMap<MarkId, Mark>), EditError> {
-    let placement = Placement::resolve(document, command)?;
+    let placement = Placement::resolve(document, command, occurrence)?;
     if &placement.timing.allocation != context.allocation {
         return Err(invalid(
             "slice timing allocation must equal the new revision",
@@ -308,14 +336,29 @@ fn apply_inner(
         }
     };
     if let Some(timing) = &timings.suffix {
-        working = crate::insert_time::composite::prepare_suffix(
-            &working,
-            placement.parent,
-            end,
-            suffix_boundary,
-            total,
-            timing,
-        )?;
+        working = if placement.occurrence {
+            let affected = crate::insert_time::composite::occurrence_shifted_owners(
+                &working,
+                placement.parent,
+                end,
+            )?;
+            crate::insert_time::composite::prepare_owners(
+                &working,
+                &affected,
+                suffix_boundary,
+                total,
+                timing,
+            )?
+        } else {
+            crate::insert_time::composite::prepare_suffix(
+                &working,
+                placement.parent,
+                end,
+                suffix_boundary,
+                total,
+                timing,
+            )?
+        };
     }
     // All clocks above refer to the unchanged-duration split tree. Replace its
     // child interval directly; no shorter deletion-only clock is ever observed.

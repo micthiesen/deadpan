@@ -694,20 +694,44 @@ pub(crate) fn validate_paste(
     value: &RegisterValue,
     command: &Command,
 ) -> Result<(), EditError> {
-    match (value, command) {
+    enum Placed<'a> {
+        Set(&'a crate::CapturedEditSet),
+        Slice(&'a crate::CapturedEditSlice),
+        Source(&'a crate::SourceNode),
+        Other,
+    }
+    let placed = match command {
+        Command::SpliceEditSet { set, .. } => Placed::Set(set),
+        Command::SpliceSlice { slice, .. }
+        | Command::SpliceSliceAt { slice, .. }
+        | Command::ReplaceSlice { slice, .. }
+        | Command::ReplaceSliceChildren { slice, .. } => Placed::Slice(slice),
+        Command::EditOccurrence {
+            edit: crate::OccurrenceEdit::PasteSlice { slice, .. },
+            ..
+        } => Placed::Slice(slice),
+        Command::SpliceSource { source, .. }
+        | Command::SpliceSourceAt { source, .. }
+        | Command::ReplaceSource { source, .. }
+        | Command::ReplaceSourceChildren { source, .. } => Placed::Source(source),
+        Command::EditOccurrence {
+            edit: crate::OccurrenceEdit::PasteSource { source, .. },
+            ..
+        } => Placed::Source(source),
+        _ => Placed::Other,
+    };
+    match (value, placed) {
         (RegisterValue::Macro { .. }, _) => Err(invalid("a macro cannot be pasted as content")),
-        (RegisterValue::EditedSet { set: selected }, Command::SpliceEditSet { set, .. })
+        (RegisterValue::EditedSet { set: selected }, Placed::Set(set))
             if selected.as_ref() == set =>
         {
             Ok(())
         }
-        (
-            RegisterValue::Edited { slice: selected },
-            Command::SpliceSlice { slice, .. }
-            | Command::SpliceSliceAt { slice, .. }
-            | Command::ReplaceSlice { slice, .. }
-            | Command::ReplaceSliceChildren { slice, .. },
-        ) if selected.as_ref() == slice => Ok(()),
+        (RegisterValue::Edited { slice: selected }, Placed::Slice(slice))
+            if selected.as_ref() == slice =>
+        {
+            Ok(())
+        }
         (
             RegisterValue::Original {
                 asset,
@@ -715,10 +739,7 @@ pub(crate) fn validate_paste(
                 ordinals,
                 ..
             },
-            Command::SpliceSource { source, .. }
-            | Command::SpliceSourceAt { source, .. }
-            | Command::ReplaceSource { source, .. }
-            | Command::ReplaceSourceChildren { source, .. },
+            Placed::Source(source),
         ) => {
             validate_original(document, asset, qualification, ordinals)?;
             let record = &document.assets()[asset];

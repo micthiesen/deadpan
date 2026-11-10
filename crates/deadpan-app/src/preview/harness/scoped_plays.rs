@@ -6,6 +6,7 @@ use egui::Key;
 
 mod analysis_navigation;
 mod audio_setters;
+mod copy_paste;
 mod fixed_hold_duration;
 pub(super) mod fixed_retime_duration;
 mod framing_macros;
@@ -819,17 +820,20 @@ fn play_structure_macro(
         });
     let recorded = play_lengths(d, repeat)?;
     d.check(
-        "Recording s and dd inside play 2 edits that play only and saves only Split and DeleteBeat",
+        "Recording s and dd inside play 2 edits that play only and saves only Split and the beat cut",
         recording
             && program
                 == Some(vec![
                     deadpan_core::SemanticInstruction::Split,
-                    deadpan_core::SemanticInstruction::DeleteBeat,
+                    deadpan_core::SemanticInstruction::Cut {
+                        selector: deadpan_core::SemanticSelector::SelectedBeat,
+                        register: deadpan_core::RegisterName::unnamed(),
+                    },
                 ])
             && recorded == [before[0], 10, before[2]]
             && document(d)?.nodes()[&shared] == *shared_node
             && d.app().error.is_none(),
-        json!({"program":["split","delete_beat"],"plays":[before[0], 10, before[2]]}),
+        json!({"program":["split","cut selected beat"],"plays":[before[0], 10, before[2]]}),
         json!({"recording":recording,"program":program,"plays":recorded,"error":d.app().error}),
     )?;
     let played = document(d)?.clone();
@@ -875,5 +879,6 @@ fn play_structure_macro(
         play_lengths(d, repeat)? == before && document(d)?.overrides() == original.overrides(),
         json!({"plays":before}),
         json!({"plays":play_lengths(d, repeat)?}),
-    )
+    )?;
+    copy_paste::run(d, repeat, before, original, shared_node)
 }

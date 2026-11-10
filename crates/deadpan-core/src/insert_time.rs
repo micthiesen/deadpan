@@ -889,6 +889,56 @@ fn overflow() -> EditError {
     )
 }
 
+/// The leaf a pasted Original moment becomes, exactly as `SpliceSource` builds it.
+pub(crate) fn source_leaf(label: &str, source: crate::SourceNode) -> BeatNode {
+    BeatNode {
+        audio_treatments: Default::default(),
+        label: label.to_owned(),
+        framing: None,
+        audio_editorial_edges: Default::default(),
+        audio_edges: Default::default(),
+        kind: NodeKind::Source { source },
+        cutaways: Vec::new(),
+        captions: Vec::new(),
+    }
+}
+
+/// `SpliceSource` at a group seam inside one already isolated Repeat play.
+/// `at` is the seam's exact project frame in that occurrence. Each later
+/// owner, including later plays and gaps of every enclosing Repeat, keeps
+/// its own pre-edit clock; the new Source starts unbound.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn splice_source_in_occurrence(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    index: usize,
+    at: ProjectFrame,
+    id: &NodeId,
+    node: BeatNode,
+    timing: &crate::AudioTimingId,
+    allocation: &RevisionId,
+) -> Result<ProjectDocument, EditError> {
+    let NodeKind::Source { source } = &node.kind else {
+        return Err(invalid("source splice requires a Source leaf"));
+    };
+    if source.duration == FrameDuration::ZERO {
+        return Err(EditError::new(
+            crate::EditErrorCode::InvalidDuration,
+            "zero-length source splice changes no time or history",
+        ));
+    }
+    if document.nodes().len() >= crate::MAX_DOCUMENT_NODES {
+        return Err(limit("paste exceeds the document node limit"));
+    }
+    let total = document.duration()?.frames();
+    total
+        .checked_add(source.duration.frames())
+        .ok_or_else(overflow)?;
+    let affected = composite::occurrence_shifted_owners(document, parent, index)?;
+    let working = composite::prepare_owners(document, &affected, at, total, timing)?;
+    insert_leaf_at(&working, parent, index, id, node, allocation)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

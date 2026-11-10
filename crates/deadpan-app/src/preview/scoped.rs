@@ -10,7 +10,7 @@ pub(super) mod model;
 #[cfg(test)]
 mod range_tests;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime) and s, dd, rr, :repeat N and :repeat gap= on a beat require one play at every level. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime) and s, dd, yy, p, P, rr, :repeat N and :repeat gap= on a beat require one play at every level. Other timing edits and range copying require the parent.";
 /// The shared gap row edits only that gap; `j`/`k` reach the play's contents.
 pub(super) const SHARED_GAP_ONLY: &str = "The shared gap after this play takes a length (Enter), room tone (:room-tone), silence (:hold-silence) or its own copy (:isolate-gap). Select the play's contents with k for other edits.";
 const FRAMING_RANGE_ONLY: &str = "This play's Edit range is for :zoom or :creep. Clear the range with Escape before other beat edits.";
@@ -22,6 +22,12 @@ pub(super) enum ScopedStructure {
     Split,
     /// Remove the beat from this play; the rest of the play closes up.
     Delete,
+    /// Copy the beat as it plays here into the register (`yy`).
+    Copy,
+    /// Copy the beat into the register, then remove it from this play (`dd`).
+    Cut,
+    /// Paste the register after (`p`) or before (`P`) the beat in this play.
+    Paste { before: bool },
     /// Wrap the beat in a new Repeat with this many total plays.
     Repeat { plays: u32 },
     /// Set the selected Repeat's total plays in this play.
@@ -108,10 +114,12 @@ impl DeadpanApp {
         match action {
             Action::Edit(BeatEdit::Split) => Some(ScopedStructure::Split),
             Action::Edit(BeatEdit::Delete) => Some(ScopedStructure::Delete),
-            Action::Operator {
-                cut: true,
-                selector,
-            } if selector == &selected => Some(ScopedStructure::Delete),
+            Action::Operator { cut, selector } if selector == &selected => Some(if *cut {
+                ScopedStructure::Cut
+            } else {
+                ScopedStructure::Copy
+            }),
+            Action::PasteMoment { before } => Some(ScopedStructure::Paste { before: *before }),
             Action::Repeat { selector, plays } if selector == &selected => {
                 Some(ScopedStructure::Repeat { plays: plays.get() })
             }
@@ -151,6 +159,36 @@ impl DeadpanApp {
         Ok(match edit {
             ScopedStructure::Split => I::Split,
             ScopedStructure::Delete => I::DeleteBeat,
+            ScopedStructure::Copy | ScopedStructure::Cut => {
+                unreachable!("one-play copies and cuts complete their operator")
+            }
+            ScopedStructure::Paste { before } => {
+                if self.copied.is_pending() {
+                    return Err("Wait for the copy to finish saving before placing it.".into());
+                }
+                let register = self.copied.selected();
+                match self.copied.selected_content() {
+                    None => {
+                        return Err(register.map_or_else(
+                            || "Copy a beat first: yy on a beat, in this play or another, or an Original range.".into(),
+                            |name| format!("Register {name} is empty. Copy or cut into it first; no edit was made."),
+                        ));
+                    }
+                    Some(copied::Content::Macro(_)) => {
+                        return Err(copied::MACRO_PASTE_ERROR.into());
+                    }
+                    Some(_) => {}
+                }
+                I::Paste {
+                    register: register.map_or(
+                        Ok(deadpan_core::RegisterName::unnamed()),
+                        |name| {
+                            deadpan_core::RegisterName::new(name).map_err(|error| error.to_string())
+                        },
+                    )?,
+                    before,
+                }
+            }
             ScopedStructure::Repeat { plays } => I::Repeat {
                 selector: deadpan_core::SemanticSelector::SelectedBeat,
                 plays: count(plays)?,
@@ -207,15 +245,36 @@ impl DeadpanApp {
                 // All plays and several selected plays keep their refusal.
                 return Err(STRUCTURE_UNAVAILABLE.to_owned());
             }
+            if matches!(edit, ScopedStructure::Copy | ScopedStructure::Cut) {
+                return Ok(None);
+            }
             let instruction = self.scoped_structure_instruction(edit)?;
-            Ok((self.capture_macro_target()?, instruction))
+            Ok(Some((self.capture_macro_target()?, instruction)))
         })();
+        if matches!(edit, ScopedStructure::Paste { .. }) {
+            // A paste consumes its one-shot register choice, as at the parent.
+            self.copied.clear_selection();
+        }
         match request {
-            Ok((capture, instruction)) => {
+            Ok(None) => {
+                // The operator captured its play and register on its first key.
+                self.cancel_repeats("a one-play structural edit was requested");
+                self.operator_action(
+                    edit == ScopedStructure::Cut,
+                    deadpan_core::SemanticSelector::SelectedBeat,
+                );
+            }
+            Ok(Some((capture, instruction))) => {
                 self.cancel_repeats("a one-play structural edit was requested");
                 self.apply_recorded_instruction(Ok(capture), Ok(instruction));
             }
-            Err(error) => self.error = Some(error),
+            Err(error) => {
+                if matches!(edit, ScopedStructure::Copy | ScopedStructure::Cut) {
+                    self.operator_target = None;
+                    self.copied.begin_write();
+                }
+                self.error = Some(error);
+            }
         }
     }
 

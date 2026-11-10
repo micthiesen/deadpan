@@ -1,5 +1,6 @@
 //! Structural edits of one visible Repeat occurrence (`EditOccurrence` Split,
-//! DeleteRipple, RepeatChild, SetRepeatPlays and SetRepeatGaps): exact isolation needs before
+//! DeleteRipple, PasteSlice, PasteSource, RepeatChild, SetRepeatPlays and
+//! SetRepeatGaps): exact isolation needs before
 //! allocation and the selection that follows the committed result.
 
 use super::*;
@@ -73,7 +74,10 @@ impl ProjectDocument {
                     ));
                 }
             }
-            OccurrenceEdit::DeleteRipple { .. } | OccurrenceEdit::RepeatChild { .. } => {
+            OccurrenceEdit::DeleteRipple { .. }
+            | OccurrenceEdit::RepeatChild { .. }
+            | OccurrenceEdit::PasteSlice { .. }
+            | OccurrenceEdit::PasteSource { .. } => {
                 crate::occurrence_edit::ripple::site(self, instance)?;
             }
             OccurrenceEdit::SetRepeatPlays { plays, .. } => {
@@ -98,7 +102,7 @@ impl ProjectDocument {
             }
             _ => {
                 return Err(invalid(
-                    "a one-play structural edit splits, deletes or repeats a beat, or sets a Repeat's plays or gaps",
+                    "a one-play structural edit splits, deletes, pastes beside or repeats a beat, or sets a Repeat's plays or gaps",
                 ));
             }
         }
@@ -139,7 +143,15 @@ impl ProjectDocument {
                     .cloned()
                     .ok_or_else(|| invalid("split needs more node identities"))?
             }
-            OccurrenceEdit::RepeatChild { id, .. } => id.clone(),
+            OccurrenceEdit::RepeatChild { id, .. } | OccurrenceEdit::PasteSource { id, .. } => {
+                id.clone()
+            }
+            OccurrenceEdit::PasteSlice { identities, .. } => identities
+                .authored
+                .nodes
+                .first()
+                .cloned()
+                .ok_or_else(|| invalid("a pasted copy has no imported root"))?,
             OccurrenceEdit::SetRepeatPlays { .. } | OccurrenceEdit::SetRepeatGaps { .. } => {
                 map(&instance.node)
             }
@@ -161,7 +173,7 @@ impl ProjectDocument {
             }
             _ => {
                 return Err(invalid(
-                    "a one-play structural edit splits, deletes or repeats a beat, or sets a Repeat's plays or gaps",
+                    "a one-play structural edit splits, deletes, pastes beside or repeats a beat, or sets a Repeat's plays or gaps",
                 ));
             }
         };

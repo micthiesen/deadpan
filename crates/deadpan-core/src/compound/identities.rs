@@ -182,6 +182,9 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         } => {
             nodes.extend(&identities.nodes);
             marks.extend(&identities.marks);
+            if let OccurrenceEdit::PasteSlice { identities, .. } = edit {
+                marks.extend(&identities.authored.marks);
+            }
             occurrence(edit, nodes);
         }
         Command::EditScopedMany { identities, .. } => {
@@ -266,6 +269,11 @@ fn occurrence<'a>(edit: &'a OccurrenceEdit, nodes: &mut Vec<&'a NodeId>) {
         OccurrenceEdit::Insert { subtree, .. }
         | OccurrenceEdit::SetPlayOverride { subtree, .. }
         | OccurrenceEdit::SetGapOverride { subtree, .. } => nodes.extend(subtree.nodes.keys()),
+        OccurrenceEdit::PasteSlice { identities, .. } => {
+            nodes.extend(&identities.authored.nodes);
+            nodes.extend(&identities.aliases);
+        }
+        OccurrenceEdit::PasteSource { id, .. } => nodes.push(id),
         OccurrenceEdit::Group { id, .. }
         | OccurrenceEdit::WrapRepeat { id, .. }
         | OccurrenceEdit::RepeatChild { id, .. }

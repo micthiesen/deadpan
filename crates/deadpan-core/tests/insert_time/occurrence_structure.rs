@@ -585,3 +585,181 @@ fn setting_the_same_gaps_in_one_play_refuses_without_an_edit() {
     let error = apply(&before, &request).unwrap_err();
     assert!(error.message.contains("not the last"), "{error}");
 }
+
+fn slice_pool(name: &str, slice: &CapturedEditSlice) -> SlicePasteIdentities {
+    let needs = slice.identity_requirements().unwrap();
+    SlicePasteIdentities {
+        authored: OccurrenceIdentities {
+            nodes: (0..needs.nodes)
+                .map(|index| id(&format!("{name}-node-{index}")))
+                .collect(),
+            marks: (0..needs.marks)
+                .map(|index| MarkId::new(format!("{name}-mark-{index}")).unwrap())
+                .collect(),
+        },
+        aliases: (0..needs.aliases)
+            .map(|index| id(&format!("{name}-alias-{index}")))
+            .collect(),
+    }
+}
+
+fn in_ordinal(node: &str, ordinal: u32) -> InstancePath {
+    in_play(&id(node), ordinal)
+}
+
+#[test]
+fn copying_in_one_play_captures_that_occurrence_without_an_edit() {
+    let before = played();
+    // b plays at frames 1, 4 and 7; play 2 holds it over [4, 5).
+    let slice =
+        CapturedEditSlice::capture_occurrence(&before, &second_play("b"), timing("copy")).unwrap();
+    assert_eq!(
+        slice.range(),
+        FrameRange::new(ProjectFrame(4), ProjectFrame(5)).unwrap()
+    );
+    assert_eq!(slice.parent(), &id("body"));
+    assert_eq!(
+        slice.selection(),
+        &SliceCaptureSelection::Child { node: id("b") }
+    );
+    assert_eq!(slice.plays(), second_play("b").repeats.as_slice());
+    assert_eq!(slice.duration(), duration(1));
+    // The payload names its occurrence and recaptures exactly from it.
+    slice.validate_capture(&before).unwrap();
+    let wire = slice.to_json().unwrap();
+    assert_eq!(CapturedEditSlice::from_json(&wire).unwrap(), slice);
+    // Each play is a distinct capture of the same shared definition.
+    let third = CapturedEditSlice::capture_occurrence(&before, &in_ordinal("b", 2), timing("copy"))
+        .unwrap();
+    assert_ne!(third, slice);
+    assert_eq!(
+        third.range(),
+        FrameRange::new(ProjectFrame(7), ProjectFrame(8)).unwrap()
+    );
+    // The whole play contents have no group to copy from.
+    let whole =
+        CapturedEditSlice::capture_occurrence(&before, &second_play("body"), timing("copy"))
+            .unwrap_err();
+    assert!(whole.message.contains("whole contents"), "{whole}");
+}
+
+#[test]
+fn pasting_a_play_copy_in_another_play_changes_only_that_occurrence_and_keeps_later_clocks() {
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = played();
+        let slice =
+            CapturedEditSlice::capture_occurrence(&before, &second_play("b"), timing("copy"))
+                .unwrap();
+        let paste = OccurrenceEdit::PasteSlice {
+            before: false,
+            identities: slice_pool("paste", &slice),
+            slice: Box::new(slice.clone()),
+            timing: timing("paste"),
+        };
+        // `p` on c in play 3 inserts the copy after it, at frame 9.
+        let (request, target, presentation) =
+            occurrence(&before, "paste", in_ordinal("c", 2), paste);
+        let after = edit(&before, request);
+        assert_eq!(after.duration().unwrap(), duration(12));
+        // Plays 1 and 2 keep the shared definition.
+        assert_eq!(kids(&after, &id("body")), vec![id("a"), id("b"), id("c")]);
+        assert_eq!(play_root(&after, 0), id("body"));
+        assert_eq!(play_root(&after, 1), id("body"));
+        let owned = kids(&after, &play_root(&after, 2));
+        assert_eq!(owned.len(), 4);
+        assert_eq!(owned[3], id("paste-node-0"));
+        assert_eq!(target.node, id("paste-node-0"));
+        assert_eq!(presentation.node, id("paste-node-0"));
+        assert!(target.matches_instance(&after, &presentation).unwrap());
+        // As at the root, the copy arrives as one group holding the beat.
+        let pasted = kids(&after, &id("paste-node-0"));
+        assert_eq!(pasted.len(), 1);
+        assert_eq!(
+            after.nodes()[&pasted[0]].kind,
+            before.nodes()[&id("b")].kind
+        );
+        // The tail started at frame 9, B(9) = 14414. It now starts at frame
+        // 10 and keeps that entry instead of re-rounding to B(10) = 16016.
+        assert_eq!(
+            reference_at_anchor(&after, &id("tail")),
+            ExactRatio::integer(14414)
+        );
+        // Copying the pasted beat back out of play 3 captures exactly it.
+        let copied = CapturedEditSlice::capture_occurrence(
+            &after,
+            &presentation,
+            AudioTimingId {
+                allocation: revision("again"),
+                ordinal: 0,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            copied.range(),
+            FrameRange::new(ProjectFrame(9), ProjectFrame(10)).unwrap()
+        );
+        assert_eq!(copied.parent(), &play_root(&after, 2));
+    })
+}
+
+#[test]
+fn pasting_an_original_moment_before_a_beat_in_one_play_keeps_later_plays_clocks() {
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = played();
+        let NodeKind::Source { source } = source(2).kind else {
+            panic!("Source")
+        };
+        let paste = OccurrenceEdit::PasteSource {
+            before: true,
+            source: Box::new(source.clone()),
+            id: id("moment"),
+            label: "Media [0..2)".into(),
+            timing: timing("moment"),
+        };
+        // `P` on a in play 1 inserts two frames at frame 0.
+        let (request, target, _) = occurrence(&before, "moment", in_ordinal("a", 0), paste);
+        let after = edit(&before, request);
+        assert_eq!(after.duration().unwrap(), duration(13));
+        assert_eq!(target.node, id("moment"));
+        let owned = kids(&after, &play_root(&after, 0));
+        assert_eq!(owned[0], id("moment"));
+        assert_eq!(owned.len(), 4);
+        assert_eq!(kids(&after, &id("body")), vec![id("a"), id("b"), id("c")]);
+        assert_eq!(after.nodes()[&id("moment")].label, "Media [0..2)");
+        // Shared a started play 2 at frame 3, B(3) = 4805, and now at 5.
+        assert_eq!(
+            anchored(&after, &in_ordinal("a", 1)),
+            ExactRatio::integer(4805)
+        );
+        assert_eq!(
+            reference_at_anchor(&after, &id("tail")),
+            ExactRatio::integer(14414)
+        );
+    })
+}
+
+#[test]
+fn one_play_pastes_refuse_whole_contents_and_root_beats_readably() {
+    let before = played();
+    let slice =
+        CapturedEditSlice::capture_occurrence(&before, &second_play("b"), timing("copy")).unwrap();
+    let paste = OccurrenceEdit::PasteSlice {
+        before: false,
+        identities: slice_pool("paste", &slice),
+        slice: Box::new(slice),
+        timing: timing("paste"),
+    };
+    let whole = before
+        .occurrence_structure_requirements(&second_play("body"), &paste)
+        .unwrap_err();
+    assert!(whole.message.contains("whole contents"), "{whole}");
+    let root = InstancePath {
+        node: id("tail"),
+        repeats: vec![],
+    };
+    assert!(
+        before
+            .occurrence_structure_requirements(&root, &paste)
+            .is_err()
+    );
+}

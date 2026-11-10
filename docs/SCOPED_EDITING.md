@@ -145,9 +145,11 @@ copy, so other plays keep the shared definition. One Undo restores everything.
 
 - `s` splits at the Edit cursor. A play whose whole contents are one beat gains
   a group holding both fragments. The inspector selects the right fragment.
-- `dd` removes the beat from that play and the rest of the play closes up. It
-  is not copied to a register. The inspector selects the following beat, else
-  the preceding one, else the emptied group, with the cursor at the old start.
+- `dd` removes the beat from that play and the rest of the play closes up.
+  Since 2026-11-09 it is a cut: the beat as it plays there is saved to the
+  register first (see below), in the same transaction. `:delete` still removes
+  without copying. The inspector selects the following beat, else the
+  preceding one, else the emptied group, with the cursor at the old start.
 - `rr` wraps the beat in a new Repeat in that play; the inspector selects it.
 - `:repeat N` on a selected Repeat (since 2026-11-09) sends `SetRepeatPlays`
   and changes that Repeat's total plays in this occurrence only, as the root
@@ -185,8 +187,8 @@ a beat inside a speed change or crop in the play, and documents with placed
 sounds or beat sounds ("remove the sound events before editing time").
 
 These keys commit through semantic Apply, so a recording macro records them and
-dot repeats them. The saved intent is `Split`, `DeleteBeat` (delete without a
-register), `Repeat` on the selected beat, `SetRepeatPlays` or `SetRepeat` with
+dot repeats them. The saved intent is `Split`, `Cut` of the selected beat
+(`dd`), `DeleteBeat` (`:delete`, without a register), `Repeat` on the selected beat, `SetRepeatPlays` or `SetRepeat` with
 plays and gaps only; it names no beat, node or play. Each invocation resolves
 the beat and the explicit play chain chosen then and authors the same single
 `EditOccurrence` the native key does, with the same continuation. A macro
@@ -198,12 +200,57 @@ fragment", "rr inside play 2 repeats the right fragment there only", "dd inside
 play 2 deletes the left fragment there only", ":repeat 3 on the Repeat inside
 play 2 sets its plays there only", ":repeat 4 gap=6f on the Repeat inside play
 2 sets its plays and gaps there only", the five Undos, "Recording s and dd
-inside play 2 edits that play only and saves only Split and DeleteBeat" and
+inside play 2 edits that play only and saves only Split and the beat cut" and
 "@a in play 3 splits and deletes at the new play's cursor and leaves play 2 as
 recorded";
 `project::tests::scoped_structure` and core
 `insert_time::occurrence_structure` cover nested plays, retained clocks and
 refusals.
+
+## Copying and pasting a beat in This play
+
+Since 2026-11-09, with This play chosen at every enclosing Repeat, `yy` copies
+the selected beat as it plays in that occurrence, `dd` cuts it, and `p`/`P`
+paste a register after or before it in that play only. A `"x` prefix names the
+register as at the parent.
+
+- `yy` captures `CapturedEditSlice::capture_occurrence`: the play's effective
+  contents (its own override branch, or the shared default) and every physical
+  owner's clock over that occurrence's project interval, closed for each
+  enclosing play as Explode closes them, so the copy carries no Repeat
+  reference. The slice records the explicit plays (`plays`) and recaptures
+  from them at store admission. Copying isolates nothing and saves no
+  revision; the bank write is the only change.
+- `dd` is one Compound: that capture, then the one-play `DeleteRipple`.
+- `p`/`P` send one `EditOccurrence` `PasteSlice` (an edited copy) or
+  `PasteSource` (an Original moment). It isolates the chosen plays outside-in
+  and then places the content exactly as the root seam paste does
+  (`SpliceSlice`/`SpliceSource`), at the seam after or before the beat in that
+  occurrence: every later owner (the rest of the play, later plays and gaps of
+  each enclosing Repeat, and everything after) keeps its own pre-edit sample
+  entry, and the pasted Source starts unbound on the project grid. Other plays
+  keep the shared definition. The inspector selects the pasted beat with the
+  cursor at its start. One Undo removes it.
+- A copy made in a play also pastes at the parent (`p` outside the contents
+  and macros). Place slice cannot narrow it to a shorter range.
+
+Refusals: a play's whole contents (split it first, or press Enter), a beat
+inside a speed change or crop in that play, documents with placed or beat
+sounds, an empty register, a copied node set, an empty copied group, Visual
+ranges and motions (`yw`, `d3l`), and All plays or several selected plays.
+Macros record `Yank`/`Cut` of the selected beat and `Paste`; a recorded paste
+resolves the beat and play at each run. Dot repeats the cut in the play chosen
+then; like the parent paste, `p` is not dot-repeatable. Evidence: core
+`insert_time::occurrence_structure` (copy, slice paste and Original paste at
+30000/1001 fps keeping the tail's and later plays' retained entries, exact
+Undo, refusals), the planner `scoped_structure` tests (register equals the
+occurrence capture, cut Compound, refusals), `project::tests::scoped_structure::copy_paste`
+(service copy, paste, cut, Undo, parent and native parent paste of a play copy)
+and the `scoped-plays` replay checks "yy inside play 2 copies that play's right
+part into the default register without an edit", "p on play 3's whole contents
+refuses readably without an edit", "p inside play 3 pastes play 2's copy after
+its right part there only and selects it" and "Three Undos remove the paste and
+both splits; the copy remains".
 
 ## Framing a range in This play
 
@@ -284,7 +331,7 @@ one concrete play at every level; Retime ancestors refuse this occurrence path
 capture also refuses a boundary whose preceding picture does not pass through
 the selected insertion parent; black pauses need no sampled picture.
 Mixed owned-gap Hold resizing, Repeat/Retime timing combinations, other
-timing edits (Trim, Slip, motions and ranges), copy/paste and general macros
+timing edits (Trim, Slip, motions and ranges), range copies and general macros
 inside these contents remain required work; their native actions refuse
 without editing the retained outer beat. Split, beat deletion, Repeat wraps and
 Repeat count and gap changes in This play are described above.

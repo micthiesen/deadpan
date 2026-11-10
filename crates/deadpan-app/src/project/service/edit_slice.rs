@@ -139,6 +139,14 @@ impl Service {
             .capture_snapshot_at(slice.revision_id())
             .map_err(display)?;
         slice.validate_capture(&document).map_err(display)?;
+        if !slice.plays().is_empty() {
+            // A copy from one Repeat play names that play, not an ordinary
+            // Sequence path; its recapture above proves parent and interval.
+            if copied.bounds() != slice.range() {
+                return Err("Copied Edit scope differs from its historical play".into());
+            }
+            return Ok(document);
+        }
         let plan = RenderPlan::compile(&document).map_err(display)?;
         let owner = copied.scope().resolve_document(&document, &plan)?;
         if owner.owner != slice.parent()

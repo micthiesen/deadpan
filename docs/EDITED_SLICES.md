@@ -63,6 +63,23 @@ admission. It does not flatten
 Repeat plays or retimed output into new source clips. Partial Repeat/Retime
 occurrences and generated Hold interiors remain outside this boundary.
 
+`capture_occurrence` (since 2026-11-09) copies one whole direct child of a
+group inside Repeat contents as it plays in one explicit occurrence: This play
+at every enclosing Repeat, recorded in the payload's `plays` field (absent for
+ordinary captures). The parent is the play's effective group (an override
+branch or the shared default), the range is that occurrence's project interval,
+and each physical owner's clock is captured over that interval and then closed
+for each enclosing play exactly as Explode closes it, so the copy names no
+Repeat. Admission recaptures from the same plays. It refuses a play's whole
+contents, a beat inside a speed change or crop in the play, and any other
+selection kind. The result is an ordinary edited copy: it pastes at a seam
+outside the Repeat, or into another play with `OccurrenceEdit::PasteSlice`,
+which isolates the chosen plays and then installs it as `SpliceSlice` does,
+reanchoring every later owner (including later plays and gaps) on its own
+pre-edit clock. `OccurrenceEdit::PasteSource` places an Original moment the
+same way as `SpliceSource`. See
+[scoped editing](SCOPED_EDITING.md#copying-and-pasting-a-beat-in-this-play).
+
 ## Destination placement
 
 The destination parent and its ancestors must be ordinary Sequences. Interior

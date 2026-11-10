@@ -7,6 +7,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use super::*;
 use crate::project::macros::{Id, Operation};
 use crate::project::scoped::Target;
+mod copy_paste;
 mod play_gap_replay;
 
 use deadpan_core::{

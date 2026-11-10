@@ -630,6 +630,10 @@ pub(crate) fn captured_content(command: &Command) -> Option<CapturedContent<'_>>
         | Command::ReplaceSlice { slice, .. } => Some(CapturedContent::Slice(slice)),
         Command::ReplaceSliceChildren { slice, .. } => Some(CapturedContent::Slice(slice)),
         Command::SpliceEditSet { set, .. } => Some(CapturedContent::Set(set)),
+        Command::EditOccurrence {
+            edit: deadpan_core::OccurrenceEdit::PasteSlice { slice, .. },
+            ..
+        } => Some(CapturedContent::Slice(slice)),
         _ => None,
     }
 }
@@ -690,6 +694,10 @@ fn validate_original_paste(
         | Command::SpliceSourceAt { source, .. }
         | Command::ReplaceSource { source, .. } => source,
         Command::ReplaceSourceChildren { source, .. } => source,
+        Command::EditOccurrence {
+            edit: deadpan_core::OccurrenceEdit::PasteSource { source, .. },
+            ..
+        } => source,
         _ => return Err(invalid("Original register requires an Original placement")),
     };
     if source != expected {

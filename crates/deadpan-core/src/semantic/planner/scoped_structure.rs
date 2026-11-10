@@ -1,5 +1,5 @@
-//! `s`, `dd`, `rr`, `:repeat N` and `:repeat [N] gap=` on the beat in the
-//! invocation's explicit play. Each is one `EditOccurrence` leaf built exactly
+//! `s`, `dd`, `rr`, `p`/`P`, `:repeat N` and `:repeat [N] gap=` on the beat
+//! in the invocation's explicit play. Each is one `EditOccurrence` leaf built exactly
 //! as the native edit builds it; the saved instruction names no node or play,
 //! so a replay or dot resolves the beat and play chain chosen at invocation.
 
@@ -19,6 +19,11 @@ pub(super) enum ScopedStructure {
     SetGaps {
         plays: Option<u32>,
         gaps: Vec<crate::PauseLength>,
+    },
+    /// Paste a register after (or before) the beat in this play only.
+    Paste {
+        register: RegisterName,
+        before: bool,
     },
 }
 
@@ -168,8 +173,15 @@ where
             }
             ScopedStructure::Repeat { .. } => 1,
             ScopedStructure::Delete | ScopedStructure::SetPlays { .. } => 0,
-            ScopedStructure::SetGaps { .. } => 0,
+            ScopedStructure::SetGaps { .. } | ScopedStructure::Paste { .. } => 0,
         };
+        let paste = match &kind {
+            ScopedStructure::Paste { register, .. } => Some(self.scoped_paste_content(*register)?),
+            _ => None,
+        };
+        let (paste_nodes, paste_marks) = paste
+            .as_ref()
+            .map_or((0, 0), super::scoped_copy::ScopedPaste::identities);
         let gaps = match &kind {
             ScopedStructure::SetGaps { plays, gaps } => {
                 Some(self.scoped_gaps(&instance, start, *plays, gaps)?)
@@ -177,10 +189,11 @@ where
             _ => None,
         };
         let extra = extra
+            + paste_nodes
             + gaps
                 .as_ref()
                 .map_or(0, |gaps| gaps.durations.len().saturating_sub(1));
-        let build = |revision: &RevisionId, mut ids: Vec<NodeId>| {
+        let build = |revision: &RevisionId, mut ids: Vec<NodeId>, marks: Vec<crate::MarkId>| {
             let timing = AudioTimingId {
                 allocation: revision.clone(),
                 ordinal: 0,
@@ -207,6 +220,10 @@ where
                     .as_ref()
                     .expect("gap edits resolve their recipes")
                     .edit(revision, timing, ids)?,
+                ScopedStructure::Paste { before, .. } => paste
+                    .as_ref()
+                    .expect("pastes resolve their register")
+                    .edit(*before, ids, marks, timing)?,
             })
         };
         // Isolation sizing and the no-op refusals depend on neither the
@@ -214,6 +231,7 @@ where
         let probe = build(
             self.current.revision_id(),
             vec![instance.node.clone(); extra],
+            Vec::new(),
         )?;
         let needs = self
             .current
@@ -228,14 +246,19 @@ where
                 .nodes
                 .checked_add(extra)
                 .ok_or_else(|| limit("one-play edit identities overflow"))?,
-            marks: needs.marks,
+            marks: needs
+                .marks
+                .checked_add(paste_marks)
+                .ok_or_else(|| limit("one-play edit identities overflow"))?,
         })?
         else {
             return Err(invalid(
                 "a one-play structural edit requires an Isolation allocation",
             ));
         };
-        if identities.nodes.len() != needs.nodes + extra || identities.marks.len() != needs.marks {
+        if identities.nodes.len() != needs.nodes + extra
+            || identities.marks.len() != needs.marks + paste_marks
+        {
             return Err(invalid(
                 "a one-play structural edit requires its exact isolation identity pools",
             ));
@@ -253,36 +276,80 @@ where
         }
         let mut nodes = identities.nodes;
         let fresh = nodes.split_off(needs.nodes);
-        let edit = build(&new_revision, fresh)?;
-        let identities = crate::OccurrenceIdentities {
-            nodes,
-            marks: identities.marks,
-        };
+        let mut marks = identities.marks;
+        let fresh_marks = marks.split_off(needs.marks);
+        let edit = build(&new_revision, fresh, fresh_marks)?;
+        let identities = crate::OccurrenceIdentities { nodes, marks };
         let (target, presentation) =
             self.current
                 .occurrence_structure_selection(&instance, &edit, &identities)?;
-        self.commit_leaf(LeafEdit::new(
+        let leaf = LeafEdit::new(
             new_revision,
             Command::EditOccurrence {
                 instance,
                 edit,
                 identities,
             },
-        )?)?;
+        )?;
+        let pasted = match (&kind, &paste) {
+            (ScopedStructure::Paste { register, before }, Some(paste)) => {
+                // As the root paste: a Paste step names its register value, so
+                // admission revalidates the copied content or Original moment.
+                crate::compound::validate_paste(
+                    &self.current,
+                    paste.value().as_ref(),
+                    leaf.command.as_command(),
+                )?;
+                let applied = crate::apply(&self.current, &leaf.request(&self.current))?;
+                let next = applied.forward.apply(&self.current)?;
+                charge(
+                    &mut self.document_bytes,
+                    wire::size(&next, MAX_DOCUMENT_JSON_BYTES)?,
+                    MAX_COMPOUND_DOCUMENT_BYTES,
+                    "macro staged document byte limit",
+                )?;
+                self.current = next;
+                self.steps.push(ResolvedStep::Paste {
+                    name: *register,
+                    edit: leaf,
+                });
+                self.refresh_children()?;
+                let cursor = if *before { start } else { end };
+                Some((cursor, paste.duration()))
+            }
+            _ => {
+                self.commit_leaf(leaf)?;
+                None
+            }
+        };
         let node = target.node.clone();
         self.context.scoped = Some(SemanticScopedContext {
             root: scoped.root,
             target,
             presentation,
         });
-        // Split keeps the cursor on its new boundary; the other edits continue
-        // at the changed beat's start, as the native edit does.
-        if kind != ScopedStructure::Split {
+        // Split keeps the cursor on its new boundary; a paste continues at the
+        // pasted beat's start; the other edits continue at the changed beat's
+        // start, as the native edit does.
+        if let Some((cursor, _)) = pasted {
+            self.context.cursor = cursor;
+        } else if kind != ScopedStructure::Split {
             self.context.cursor = start;
         }
         super::framing::validate_scoped_context(&self.current, &self.context)?;
         self.trace[trace_index].resolved_parent = self.current.parent_of(&node);
         self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child { node });
+        if let Some((cursor, duration)) = pasted {
+            self.trace[trace_index].resolved_range = Some(
+                FrameRange::new(
+                    cursor,
+                    ProjectFrame(cursor.0.checked_add(duration.frames()).ok_or_else(|| {
+                        EditError::new(EditErrorCode::TimingOverflow, "pasted interval overflows")
+                    })?),
+                )
+                .map_err(crate::DocumentError::from)?,
+            );
+        }
         Ok(())
     }
 

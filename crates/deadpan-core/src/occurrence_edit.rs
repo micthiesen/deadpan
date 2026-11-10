@@ -73,6 +73,25 @@ pub enum OccurrenceEdit {
         branches: Vec<crate::RepeatGapHold>,
         timing: crate::AudioTimingId,
     },
+    /// Paste a copied edited slice after (or before) the beat in this
+    /// occurrence only, as the root `SpliceSlice` places it at a seam. Later
+    /// owners, plays and gaps keep their own clocks. The beat needs a
+    /// Sequence parent.
+    PasteSlice {
+        before: bool,
+        slice: Box<crate::CapturedEditSlice>,
+        identities: crate::SlicePasteIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Paste one copied Original moment after (or before) the beat in this
+    /// occurrence only, as the root `SpliceSource` places it at a seam.
+    PasteSource {
+        before: bool,
+        source: Box<crate::SourceNode>,
+        id: NodeId,
+        label: String,
+        timing: crate::AudioTimingId,
+    },
     Group {
         start: usize,
         end: usize,
@@ -182,6 +201,9 @@ impl OccurrenceEdit {
                 subtree: subtree.clone(),
             },
             Self::Delete | Self::DeleteRipple { .. } => Command::Delete { node },
+            Self::PasteSlice { .. } | Self::PasteSource { .. } => {
+                unreachable!("one-play pastes return before the generic reducer")
+            }
             Self::SetRepeatPlays { plays, timing } => Command::SetRepeatPlays {
                 node,
                 plays: *plays,
@@ -493,6 +515,27 @@ pub(crate) fn apply_captured(
     match edit {
         OccurrenceEdit::DeleteRipple { timing } => {
             return ripple::delete(&result, &target, timing, allocation);
+        }
+        OccurrenceEdit::PasteSlice {
+            before,
+            slice,
+            identities,
+            timing,
+        } => {
+            return ripple::paste_slice(
+                &result, &target, *before, slice, identities, timing, context,
+            );
+        }
+        OccurrenceEdit::PasteSource {
+            before,
+            source,
+            id,
+            label,
+            timing,
+        } => {
+            return ripple::paste_source(
+                &result, &target, *before, source, id, label, timing, allocation,
+            );
         }
         OccurrenceEdit::RepeatChild { id, plays, timing } => {
             return ripple::wrap_repeat(document, &result, &target, id, *plays, timing, allocation);

@@ -1893,7 +1893,7 @@
               "docs/qualification/targeted-explode-2026-10-25.md strict scope reconciliation",
               "docs/qualification/scoped-target-sampling-2026-10-25.md"
             ],
-            "remaining": "One-play Split, delete, wrap, Repeat plays and gaps, and the shared gap after a play edit one occurrence with macros and dot (2026-11-09). Copy/paste, Trim, Slip and range cuts inside plays, and edits inside speed changes or with placed sounds, still refuse.",
+            "remaining": "One-play Split, delete, wrap, Repeat plays and gaps, the shared gap after a play, and copy (yy), cut (dd) and paste (p/P) of a beat edit one occurrence with macros and dot (2026-11-09). Range copies, pastes into a play's whole contents, Trim, Slip and range cuts inside plays, and edits inside speed changes or with placed sounds, still refuse.",
             "normative": "5.2,6.3"
           }
         ]
@@ -1989,7 +1989,7 @@
               "docs/SCOPED_EDITING.md",
               "docs/REPEAT_GAP_BRANCHES.md"
             ],
-            "remaining": "Shared and owned gaps of one play are editable natively, including nested Repeats (2026-11-09). Occurrence copy/paste and remaining temporal scopes refuse.",
+            "remaining": "Shared and owned gaps of one play are editable natively, including nested Repeats (2026-11-09). yy, dd and p/P copy, cut and paste a beat in one explicit play (2026-11-09). Range copies inside plays and remaining temporal scopes refuse.",
             "normative": "5.2,7.2"
           },
           {
