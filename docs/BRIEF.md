@@ -67,52 +67,66 @@ This list is finite. When every box is checked, the project is done and the
 owner starts using it. Check a box only with the evidence named on its line,
 and write that evidence as one line under the item. No other records.
 
-- [ ] **F1 Installed app.** `cargo xtask install` builds the release bundle
+- [x] **F1 Installed app.** `cargo xtask install` builds the release bundle
   and places a launchable `Deadpan.app` in `/Applications`. Evidence: the
   installed app's `--smoke-test` passes and its version line names the commit.
-- [ ] **F2 Real-footage acceptance session.** One scripted session on a real
+  Done 2026-11-11: installed with the AI runtime (795 MiB, ad hoc signed);
+  `--smoke-test` passes and `--version` names the installed commit. The
+  `phoneme-ctc-en` and `whisper-base-en` v2 packs are installed.
+- [x] **F2 Real-footage acceptance session.** One scripted session on a real
   video of at least ten minutes with speech: create the project, transcribe,
   search a word, repeat it with a gain and zoom step, insert a pause, creep
   on the pause, cut away to another moment, change speed, reverse a passage,
   place a sound effect, play, render. It runs through the real UI replay
   harness and headless. Evidence: both runs pass and `verify-export` passes
   on the rendered movie.
+  Done 2026-11-11 on Tears of Steel (12:14, untagged 1920x800 H.264): every
+  step passes headless (`tools/acceptance/session.py`), including a speed
+  change after the sound is placed, and in the `acceptance-real` replay;
+  `verify-export` passes on the 17,594-frame movie.
 - [x] **F3 Timeline overview.** The whole edit is visible as one strip, to
   scale, with every beat, the cursor, selection, pauses, repeats and placed
   sounds, readable at 10 beats and at 1,000. Beat cards remain the detail
   view. Evidence: replay frames at 10 and 1,000 beats.
-  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; the final sweep passed.
 - [x] **F4 Transcript pane.** The transcript is readable as text (not a
   six-line rail list), follows the cursor, is searchable, and a word can be
   selected and operated on from it. Evidence: acceptance replay frames.
-  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; the final sweep passed.
 - [x] **F5 Quiet inspector and footer.** The inspector shows the selected
   beat's main values first and folds the rest; the footer is one row of the
   keys that matter in the current context. Evidence: replay frames at
   1280x820 and 960x640.
-  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; the final sweep passed.
 - [x] **F6 Word timing.** Word boundaries are good enough that a word repeat
   does not clip the word. Evidence: measured median word-start error under
   60 ms on real speech, with refinement on by default.
   Done 2026-11-10 (77668e18e and the commit after it): on LibriSpeech
   test-clean against forced-alignment truth, word starts are a 20 ms median,
   93% within 60 ms, p90 50 ms with the phoneme aligner (50 ms median with
-  DTW alone). Needs the `phoneme-ctc-en` pack installed; install it with the
-  app (F1).
+  DTW alone). Confirmed 2026-11-11 through a bundle's own `deadpan-cli`
+  (08775c23f) after fixing a deadline bug that had made the bundled refiner
+  align nothing. Clean read speech only; music-backed speech is unmeasured.
 - [x] **F7 Picture first.** The picture is the largest thing on screen and is
   never clipped at 1280x820 or 960x640; a settled frame never shows
   "Preparing picture". Evidence: replay frames.
-  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; the final sweep passed.
 - [x] **F8 Render and Trim screens.** Render sits inside the layout and shows
   a destination, progress and result without raw internals; Trim shows its
   junction pictures. Evidence: replay frames.
-  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
-- [ ] **F9 Sound sanity on the real export.** No clicks at cuts
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; the final sweep passed.
+- [x] **F9 Sound sanity on the real export.** No clicks at cuts
   (discontinuity scan), no clipping, A/V offset within one frame, levels
   unchanged where nothing was authored. Evidence: scan output on the
   acceptance movie.
-- [ ] **F10 Playback on real footage.** Sixty seconds of the acceptance edit
+  Done 2026-11-11 (`tools/acceptance/scan.py`): 14 cuts, worst click ratio
+  0.86 against a 1.5 threshold (about 10 before cuts faded by default); no
+  clipping (peak 0.90); A/V offset 0 ms; level within 0.013 dB.
+- [x] **F10 Playback on real footage.** Sixty seconds of the acceptance edit
   plays without dropped pictures at 1080p. Evidence: measured run.
+  Done 2026-11-11 on a quiet machine: 0 of 1,440 pictures dropped, no
+  underruns, first sound after 1.09 s. Under five concurrent builds an
+  earlier run dropped 13.
 - [x] **F11 Clear refusals.** The combinations that refuse do so with a
   message that names the alternative. Evidence: a sampled list of ten.
   Done 2026-11-11 (5c5d5944f): ten refusals sampled on the acceptance
@@ -129,7 +143,10 @@ and write that evidence as one line under the item. No other records.
   ten minutes on this Mac. Tests that pin superseded behavior
   (before/after/trace/baseline oracles) are deleted; slow matrices run only
   on request.
-  Done 2026-11-10 (787f039d1), full gate still to be confirmed at the end:
+  Done 2026-11-10 (787f039d1); confirmed 2026-11-11 on a clean copy of the
+  final tree: 8,689 tests in 144 s, 82 s and 58 s on a quiet machine (about
+  6.6 minutes while other builds ran), and the 168 opt-in slow
+  tests pass in about 42 minutes. Earlier measurement:
   the three test stages ran in 238 s, 117 s and 67 s with other builds
   running. `cargo xtask gate --slow` runs the 235 opt-in tests.
 - [x] **S3 Derived audio timing.** Original audio placement is derived from
@@ -148,6 +165,25 @@ and write that evidence as one line under the item. No other records.
   the adversarial tests, trace recorders and legacy baselines are removed.
   Left in place: per-allocation budget accounting, history validation, the
   update and model-pack code, and placed-sound route journals.
+
+## Known rough edges
+
+Measured or seen during the acceptance run; none blocks editing. They are
+candidates for the owner's first sessions, not agent work.
+
+- Render runs at about half real time: 24.6 minutes for the 12-minute
+  acceptance edit on a quiet machine.
+- Preparing a new project takes 37 to 85 seconds for a 12-minute video
+  (single-threaded index measurement); the app shows the steps and waits.
+- `:retime 2` asks for an explicit pitch policy (`pitch=tape` or
+  `pitch=preserve`).
+- A speed change inside a Repeat or another speed change, and most edits
+  inside a beat that carries an attached sound, refuse with a message.
+- Whisper base hears music as "[music playing]" and gives few words on
+  music-heavy video (402 words in 12 minutes of Tears of Steel).
+- AI pauses need the 36 GB `ltx-2.3-q4-bridge` pack, which needs its
+  licences accepted in the app; it is not installed.
+- Nobody has listened to the audio or used the keys by hand yet.
 
 ## Done
 
