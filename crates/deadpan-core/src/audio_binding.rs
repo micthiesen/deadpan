@@ -1338,6 +1338,31 @@ impl AudioBindingState {
             )
     }
 
+    /// The independent sound clocks and only the timing tables they name.
+    /// Original audio placement is derived from the current tree; owner and
+    /// Repeat-gap bindings no longer steer rendering.
+    pub fn sound_clocks_only(&self) -> Self {
+        let mut used = BTreeSet::new();
+        for journals in self.sound_clocks.values() {
+            for journal in journals.values() {
+                for reference in journal.clocks() {
+                    used.insert(reference.timing());
+                }
+            }
+        }
+        Self {
+            timings: self
+                .timings
+                .iter()
+                .filter(|(id, _)| used.contains(id))
+                .map(|(id, layout)| (id.clone(), layout.clone()))
+                .collect(),
+            bindings: Default::default(),
+            gap_bindings: Default::default(),
+            sound_clocks: self.sound_clocks.clone(),
+        }
+    }
+
     /// Allocation names remain reserved even when no current Repeat uses them.
     pub fn allocation_ids(&self) -> BTreeSet<&RevisionId> {
         let mut ids = BTreeSet::new();

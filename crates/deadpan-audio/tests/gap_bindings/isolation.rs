@@ -205,41 +205,6 @@ fn materialized_gap_retains_distinct_outer_play_clocks_and_definition_birth() {
 }
 
 #[test]
-fn materializing_a_born_gap_keeps_its_canonical_clock_and_discards_old_outer_window() {
-    let original = document(
-        ntsc(),
-        &["lead", "repeat"],
-        vec![
-            ("lead", silence(1)),
-            ("repeat", repeated(1, room(2, 100..321))),
-            ("child", silence(1)),
-        ],
-    );
-    let captured = capture(&original);
-    let mut state = serde_json::to_value(captured.audio_bindings()).unwrap();
-    let lattice = state["gap_bindings"]["repeat"]["lattice"].clone();
-    state["gap_bindings"]["repeat"]["reanchors"] = serde_json::json!([{
-        "placement": lattice,
-        "window": ExactFrameRange::new(ExactRatio::integer(900), ExactRatio::integer(901)).unwrap(),
-    }]);
-    let captured = install(
-        &captured,
-        AudioBindingState::from_json(&state.to_string()).unwrap(),
-    );
-    let grown = set_gap(&captured, "grow", 3, room(2, 100..321));
-    let isolated = isolate(&grown, "isolate-born", 0);
-    let mut provider = Provider::new();
-    let waveform = room_reference(&provider, 100..321, 3204);
-    check_node_reads(&isolated, &mut provider, 3203, &waveform[..128]);
-    let binding = &isolated.audio_bindings().bindings()[&id("isolated-gap")];
-    assert!(matches!(
-        binding.lattice.reference.root,
-        AudioClockRoot::GapDefinitionPointCeil { .. }
-    ));
-    assert_eq!(binding.reanchors[0].window, None);
-}
-
-#[test]
 fn isolated_gap_under_real_preserve_matches_the_unedited_pcm_and_fresh_seeks() {
     let original = document(
         ntsc(),

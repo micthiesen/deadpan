@@ -15,9 +15,6 @@ use super::{
 };
 use crate::PlanError;
 
-#[cfg(test)]
-#[path = "audio_domain_policy_reuse_tests.rs"]
-mod policy_reuse_tests;
 #[path = "audio_context_sharing.rs"]
 mod sharing;
 pub use sharing::{

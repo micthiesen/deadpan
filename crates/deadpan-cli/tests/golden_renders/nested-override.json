@@ -5,9 +5,9 @@
       "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
       "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
       "779bd42ce8ca09b3fa37185885acb7a52941156c452edc89011319def31d1f16",
-      "c5091b2c93a7bd2f487c087a8e8506ba09b223276f15bbabb58ce7e9916474d2",
+      "0de3ca51b6ec13df902fc747974e4b117c39074242716e2f2eaf935b83cc0af8",
       "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
-      "a758c2cf0e878879afe370bf9470f8b541eadc133c2cb19463ace5bd81bb03d0",
+      "a2143f90a47ac6adbbd8b7a4bd5e709fa622caebe62cc68af87b6eb04c74a77c",
       "c003d139616bd1816ba57b5400775feb5933c0f4e27dda99b330e76f1873f739",
       "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
       "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
@@ -16,7 +16,7 @@
     "end": 83283,
     "pcm": "sha256 of interleaved stereo little-endian f32, limited audition bus, per 8192-sample block",
     "start": 0,
-    "total": "998ce07edf9e0f940ad4b79ca38054a38e393754b6e2bec9e227c3c4d2de3091"
+    "total": "b457dbf30022fba063158549d18be9458a5f96e4af23f56738e11ee73d757b46"
   },
   "fixture": "nested-override",
   "frame_rate": [

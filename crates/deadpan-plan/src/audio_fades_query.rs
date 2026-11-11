@@ -9,10 +9,6 @@ use crate::plan::audio_owners::admission::{
     Budget as QueryBudget, Memory, Owned, Result as QueryResult, outer,
 };
 
-#[cfg(test)]
-#[path = "audio_fades_query_trace.rs"]
-pub(in crate::plan) mod trace;
-
 type Guard<T, A> = GuardedBound<
     T,
     <A as AudioSoundContextAdmission>::Issuer,
@@ -157,8 +153,6 @@ fn construct<A: AudioSoundContextAdmission>(
             let value = walked.value.adopt_memory(walked.memory, &mut budget)?;
             let span = match &*value {
                 AudioWalkSpan::Leaf(leaf) => {
-                    #[cfg(test)]
-                    trace::observe(trace::Event::at(trace::Phase::PrimaryLeaf, cursor));
                     let grid = leaf.grid;
                     let voice = ExactRatio::integer(leaf.envelope_samples.start.0)
                         ..ExactRatio::integer(leaf.envelope_samples.end.0);
@@ -167,13 +161,9 @@ fn construct<A: AudioSoundContextAdmission>(
                 }
                 AudioWalkSpan::Stage(processing) => match &processing.content {
                     AudioSignalContent::Bound(_) => {
-                        #[cfg(test)]
-                        trace::observe(trace::Event::at(trace::Phase::PrimaryBound, cursor));
                         bound_fade(value, cursor, samples.end, captured, &mut budget)?
                     }
                     AudioSignalContent::Stage(_) | AudioSignalContent::ProjectedStage(_) => {
-                        #[cfg(test)]
-                        trace::observe(trace::Event::at(trace::Phase::PrimaryStage, cursor));
                         let allocated_end = processing.allocated_samples.end;
                         let flat = plan.audio_walk_inner_admitted(
                             cursor,
@@ -364,21 +354,9 @@ fn retained_span<A: AudioSoundContextAdmission>(
         value: Vec::new(),
         memory: budget.memory(),
     };
-    #[cfg(test)]
-    trace::observe(trace::Event::lengths(
-        trace::Phase::InitialStartBefore,
-        0,
-        1,
-    ));
     budget.reserve(&mut start.memory, array::<AudioFadeEdge>(1)?)?;
     start.value = Vec::with_capacity(1);
     assert_eq!(start.value.capacity(), 1);
-    #[cfg(test)]
-    trace::observe(trace::Event::lengths(
-        trace::Phase::InitialStartAfter,
-        0,
-        start.value.capacity(),
-    ));
     let partial = value.map(budget, move |value| {
         let mut edges = start.value;
         edges.push(AudioFadeEdge {
@@ -404,17 +382,9 @@ fn retained_span<A: AudioSoundContextAdmission>(
         value: Vec::new(),
         memory: budget.memory(),
     };
-    #[cfg(test)]
-    trace::observe(trace::Event::lengths(trace::Phase::InitialEndBefore, 0, 1));
     budget.reserve(&mut end.memory, array::<AudioFadeEdge>(1)?)?;
     end.value = Vec::with_capacity(1);
     assert_eq!(end.value.capacity(), 1);
-    #[cfg(test)]
-    trace::observe(trace::Event::lengths(
-        trace::Phase::InitialEndAfter,
-        0,
-        end.value.capacity(),
-    ));
     let value = partial.map(budget, move |partial| {
         let mut edges = end.value;
         edges.push(AudioFadeEdge {
@@ -497,19 +467,8 @@ fn bound_fade_untrimmed<A: AudioSoundContextAdmission>(
         return Err(PlanError::InvalidPlan("fade reference rate must be positive").into());
     }
     let Some(domain) = bound.envelope_domain_query(budget)? else {
-        #[cfg(test)]
-        trace::observe(trace::Event::at(trace::Phase::EnvelopeNone, start));
         return empty(start..end, budget).keep(primary, budget);
     };
-    #[cfg(test)]
-    trace::observe(trace::Event::at(
-        if domain.seed.grid.boundary_rule() == crate::AudioBoundaryRule::PointCeil {
-            trace::Phase::EnvelopePointCeil
-        } else {
-            trace::Phase::EnvelopeRootRoundEven
-        },
-        start,
-    ));
     let origin = bound.lattice_origin();
     let scale = bound.envelope_scale();
     if scale.compare_integer(0).is_le() {
@@ -600,14 +559,10 @@ fn bound_fade_untrimmed<A: AudioSoundContextAdmission>(
     let domain = &envelope.value.domain;
     let support = domain.root_samples();
     if q.compare_integer(support.start.0).is_lt() {
-        #[cfg(test)]
-        trace::observe(trace::Event::at(trace::Phase::BeforeEnvelopeSupport, start));
         let end = inverse_end(start, end, q, step, support.start)?;
         return empty(start..end, budget).keep(primary, budget);
     }
     if q.compare_integer(support.end.0).is_ge() {
-        #[cfg(test)]
-        trace::observe(trace::Event::at(trace::Phase::AfterEnvelopeSupport, start));
         return empty(start..end, budget).keep(primary, budget);
     }
     let probe = AudioSample(i64::try_from(q.floor()).map_err(|_| TimeError::Overflow)?);
@@ -634,8 +589,6 @@ fn bound_fade_untrimmed<A: AudioSoundContextAdmission>(
     if !matches!(&*walked.value, AudioWalkSpan::Leaf(_)) {
         return Err(PlanError::InvalidPlan("bound fade retained a stage").into());
     }
-    #[cfg(test)]
-    trace::observe(trace::Event::at(trace::Phase::RetainedGeometryLeaf, start));
     let leaf = walked.flattened_leaf(budget)?;
     let end = inverse_end(start, end, q, step, leaf.allocated_samples.end)?;
     let virtual_start = virtual_position(leaf.envelope_extent.start, origin, scale)?;
@@ -709,25 +662,7 @@ fn push_origin<A: AudioSoundContextAdmission>(
     budget.check_memory(capacity)?;
     budget.check_memory(&origin.memory)?;
     let needed = output.len().checked_add(1).ok_or(TimeError::Overflow)?;
-    #[cfg(test)]
-    let grows = needed > output.capacity();
-    #[cfg(test)]
-    if grows {
-        trace::observe(trace::Event::lengths(
-            trace::Phase::OriginGrowthBefore,
-            output.len(),
-            needed,
-        ));
-    }
     budget.grow(output, capacity, needed)?;
-    #[cfg(test)]
-    if grows {
-        trace::observe(trace::Event::lengths(
-            trace::Phase::OriginGrowthAfter,
-            output.len(),
-            output.capacity(),
-        ));
-    }
     // Transfer the owning edge's complete payload lane before the infallible move.
     budget.check_memory(&origin.memory)?;
     budget.check_memory(memory)?;
@@ -859,12 +794,6 @@ fn grow_side<A: AudioSoundContextAdmission>(
     let count = needed
         .max(edges.capacity().checked_mul(2).ok_or(TimeError::Overflow)?)
         .max(1);
-    #[cfg(test)]
-    trace::observe(trace::Event::lengths(
-        trace::Phase::SideGrowthBefore,
-        edges.len(),
-        count,
-    ));
     let mut replacement = Owned {
         value: Vec::new(),
         memory: budget.memory(),
@@ -910,12 +839,6 @@ fn grow_side<A: AudioSoundContextAdmission>(
     } else {
         growth.end_capacity = growth.next_capacity;
     }
-    #[cfg(test)]
-    trace::observe(trace::Event::lengths(
-        trace::Phase::SideGrowthAfter,
-        side(&value, start).len(),
-        side(&value, start).capacity(),
-    ));
     Ok(SpanWork {
         value,
         start_capacity: growth.start_capacity,
@@ -938,12 +861,6 @@ fn merge_edge<A: AudioSoundContextAdmission>(
         if old.editorial {
             new.value.length = new.value.length.min(old.length);
         }
-        #[cfg(test)]
-        trace::observe(trace::Event::lengths(
-            trace::Phase::OriginMergeBefore,
-            old.origins.len(),
-            new.value.origins.len(),
-        ));
         for origin in &old.origins {
             budget.canonical(new.value.origins.len() + origin.instance.repeats.len() + 1)?;
             if !new.value.origins.contains(origin) {
@@ -960,14 +877,6 @@ fn merge_edge<A: AudioSoundContextAdmission>(
     } else {
         span = grow_side(span, start, budget)?;
     }
-    #[cfg(test)]
-    if let Some(index) = index {
-        trace::observe(trace::Event::lengths(
-            trace::Phase::OriginMergeReady,
-            side(&span.value, start)[index].origins.len(),
-            new.value.origins.len(),
-        ));
-    }
     let edge = GuardedBound::plain(new.value, budget.issuer)
         .adopt_memory(new.memory, budget)?
         .adopt_memory(new.capacity, budget)?;
@@ -983,14 +892,6 @@ fn merge_edge<A: AudioSoundContextAdmission>(
             }
             span
         })?;
-    #[cfg(test)]
-    if let Some(index) = index {
-        trace::observe(trace::Event::lengths(
-            trace::Phase::OriginMergeAfter,
-            side(&value, start)[index].origins.len(),
-            side(&value, start).len(),
-        ));
-    }
     Ok(SpanWork {
         value,
         start_capacity: span.start_capacity,

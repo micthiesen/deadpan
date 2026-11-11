@@ -1072,7 +1072,7 @@ impl RenderPlan {
                 extents.is_some(),
             ))),
             reused_fragments: fragments::ReuseCount(reused_fragments),
-            audio_bindings: document.audio_bindings().clone(),
+            audio_bindings: document.audio_bindings().sound_clocks_only(),
             sound_clock_layout: if document.audio_bindings().sound_clocks().is_empty() {
                 None
             } else {

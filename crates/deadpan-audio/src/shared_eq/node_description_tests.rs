@@ -214,64 +214,6 @@ fn retained_plan_with_treatments(treatments: Option<AudioTreatments>) -> Arc<Ren
 }
 
 #[test]
-fn incoming_retained_description_clones_the_exact_input_arc() {
-    let plan = retained_plan();
-    let query = plan
-        .audio_gain_owners(AudioSample(128)..AudioSample(129), Default::default())
-        .unwrap();
-    let tone = query.spans()[0]
-        .owners()
-        .iter()
-        .find(|clock| clock.instance().node.as_str() == "tone")
-        .unwrap();
-    let input = plan
-        .audio_owner_input(tone, AudioSample(128), Default::default())
-        .unwrap();
-    let retained = input
-        .retained_at(AudioSample(128), Default::default())
-        .unwrap()
-        .unwrap()
-        .into_shared();
-    let owners = retained
-        .owners(AudioSample(128)..AudioSample(129), Default::default())
-        .unwrap();
-    let owner = owners.spans()[0]
-        .owners()
-        .iter()
-        .find(|clock| clock.instance().node.as_str() == "tone")
-        .unwrap();
-    let incoming = Contexts {
-        original: Context::Retained(retained.clone()),
-        sounds: Sounds::None,
-    };
-    let cancelled = AtomicBool::new(false);
-    let work = RefCell::new(ReadWork::default());
-    let control = fixture::control(&cancelled, &work);
-    let description = describe(
-        &plan,
-        request(
-            &incoming,
-            owner,
-            AudioSample(128),
-            Temporal::Wet(TailEffect::Reverb),
-            true,
-        ),
-        control,
-    )
-    .unwrap();
-    let Context::Retained(actual) = &description.context.original else {
-        panic!("incoming retained consumer must remain opaque");
-    };
-    assert!(actual.ptr_eq(&retained));
-    assert!(matches!(description.context.sounds, Sounds::None));
-    assert_eq!(description.stop.before, 0);
-    assert!(description.stop.owner == OwnerKey::new(owner));
-    // The initial incoming owner query remains; owner_context itself returns
-    // the Arc immediately without adding a root/domain query.
-    assert_eq!(work.borrow().plan_work, owners.work());
-}
-
-#[test]
 fn metadata_query_work_removes_one_actual_membership_query() {
     let plan = fixture::fixture();
     let owner = fixture::owner(&plan);
@@ -402,42 +344,6 @@ fn overflow_cancellation_and_late_boundary_failure_keep_existing_order() {
 }
 
 #[test]
-fn captured_retained_context_bills_the_probe_once_before_owner_query() {
-    let plan = retained_plan();
-    let owners = plan
-        .audio_gain_owners(AudioSample(128)..AudioSample(129), Default::default())
-        .unwrap();
-    let owner = owners.spans()[0]
-        .owners()
-        .iter()
-        .find(|clock| clock.instance().node.as_str() == "tone")
-        .unwrap();
-    let input = plan
-        .audio_owner_input(owner, AudioSample(128), Default::default())
-        .unwrap();
-    let probe = input
-        .retained_probe_at(AudioSample(128), Default::default())
-        .unwrap();
-    let retained = probe.input().unwrap();
-    let retained_owners = retained
-        .owners(AudioSample(128)..AudioSample(129), Default::default())
-        .unwrap();
-    let expected = input.work() + probe.work() + retained_owners.work();
-    let cancelled = AtomicBool::new(false);
-    let work = RefCell::new(ReadWork::default());
-    let result = Context::Root
-        .owner_context(
-            &plan,
-            owner,
-            AudioSample(128),
-            fixture::control(&cancelled, &work),
-        )
-        .unwrap();
-    assert!(matches!(result, Context::Retained(_)));
-    assert_eq!(work.borrow().plan_work, expected);
-}
-
-#[test]
 fn absent_member_keeps_query_work_without_requesting_capture_headroom() {
     let plan = fixture::fixture();
     let owners = plan
@@ -537,4 +443,3 @@ mod query_admission;
 
 #[path = "capture_admission_tests.rs"]
 mod capture_admission;
-

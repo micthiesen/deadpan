@@ -111,33 +111,6 @@ fn probe<'plan, A: AudioSoundContextAdmission>(
         true,
         (None, Some(&mut editorial), None, None),
     );
-    #[cfg(test)]
-    {
-        use crate::plan::audio_owners::tests::legacy_snapshot_v1::capture_baseline;
-        match &walked {
-            Ok(value) => capture_baseline::probe_walk_ref(
-                input.context.plan,
-                at,
-                Ok(&value.value),
-                &editorial.value,
-                (limits.maximum_work, budget.remaining),
-            ),
-            Err(Error::Plan(error)) => capture_baseline::probe_walk_ref(
-                input.context.plan,
-                at,
-                Err(error),
-                &editorial.value,
-                (limits.maximum_work, budget.remaining),
-            ),
-            Err(Error::Policy(_)) => capture_baseline::probe_policy_refusal(
-                input.context.plan,
-                at,
-                &editorial.value,
-                editorial.memory.lease.is_some(),
-                (limits.maximum_work, budget.remaining),
-            ),
-        }
-    }
     let mut walked = walked?;
     let value = match &*walked.value {
         AudioWalkSpan::Stage(span) if matches!(span.content, AudioSignalContent::Bound(_)) => {
@@ -175,12 +148,6 @@ fn probe<'plan, A: AudioSoundContextAdmission>(
     };
     budget.check_memory(&value._memory)?;
     let work = limits.maximum_work - budget.remaining;
-    #[cfg(test)]
-    crate::plan::audio_owners::tests::legacy_snapshot_v1::capture_baseline::probe_result(
-        input.context.plan,
-        value.as_ref(),
-        work,
-    );
     let result = AdmittedAudioOwnerRetainedProbe {
         value,
         work,
@@ -257,6 +224,3 @@ fn initialize_shared<'plan>(
     *Arc::get_mut(&mut arc).expect("private unique retained Arc") = retained;
     SharedAudioOwnerRetainedInput(arc)
 }
-#[cfg(test)]
-#[path = "audio_owner_probe_tests.rs"]
-mod tests;

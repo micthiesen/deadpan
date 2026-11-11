@@ -17,8 +17,6 @@ use crate::{AudioSampleGrid, PlanError};
 #[path = "audio_bound_probe.rs"]
 mod probe;
 pub use probe::AdmittedAudioBoundDomain;
-#[cfg(test)]
-pub(in crate::plan) use probe::phase_trace;
 #[path = "audio_bound_query.rs"]
 pub(in crate::plan) mod query;
 
@@ -69,46 +67,6 @@ pub struct AudioBound<'plan> {
     constraints: Vec<EnvelopeConstraint>,
 }
 
-#[cfg(test)]
-impl AudioBound<'_> {
-    pub(in crate::plan) fn capture_baseline_snapshot(
-        &self,
-        expected_plan: &RenderPlan,
-    ) -> serde_json::Value {
-        use super::audio_owners::tests::legacy_snapshot_v1::capture_baseline as snapshot;
-        assert!(self.belongs_to(expected_plan));
-        let Self {
-            plan: _,
-            node,
-            definition,
-            instance,
-            gap,
-            resolved,
-            reference_at_anchor,
-            reference_step,
-            support,
-            envelope_scale,
-            constraints,
-        } = self;
-        serde_json::json!({
-            "belongs_to_expected_plan":true,
-            "node":expected_plan.nodes[*node].inspection.id.as_str(),
-            "definition":definition,"instance":instance,"gap":gap,"resolved":resolved,
-            "reference_at_anchor":reference_at_anchor,"reference_step":reference_step,
-            "support":support,"envelope_scale":envelope_scale,
-            "constraints":constraints.iter().map(|v|snapshot::constraint(expected_plan,v)).collect::<Vec<_>>(),
-        })
-    }
-
-    /// Synthetic branch coverage for empty retained support. This preserves
-    /// every real binding field and changes only the private support interval.
-    pub(in crate::plan) fn synthetic_empty_support_for_test(&self) -> Self {
-        let mut value = self.clone();
-        value.support = ExactRatio::ZERO..ExactRatio::ZERO;
-        value
-    }
-}
-
 impl crate::audio_allocated::OwnedHeap for AudioBound<'_> {
     fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
         let Self {
@@ -151,7 +109,7 @@ impl Eq for AudioBound<'_> {}
 
 impl RenderPlan {
     pub fn has_audio_bindings(&self) -> bool {
-        !self.audio_bindings.is_empty()
+        !self.audio_bindings.bindings().is_empty() || !self.audio_bindings.gap_bindings().is_empty()
     }
 }
 

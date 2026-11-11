@@ -106,18 +106,6 @@ fn direct_reference() -> bool {
 }
 
 #[cfg(test)]
-pub(super) fn with_direct_reference<R>(action: impl FnOnce() -> R) -> R {
-    struct Reset(bool);
-    impl Drop for Reset {
-        fn drop(&mut self) {
-            DIRECT_REFERENCE.with(|value| value.set(self.0));
-        }
-    }
-    let _reset = Reset(DIRECT_REFERENCE.with(|value| value.replace(true)));
-    action()
-}
-
-#[cfg(test)]
 pub(super) fn reset_trace() {
     CAPTURE_TRACE.with(|value| value.set(CaptureTrace::default()));
 }

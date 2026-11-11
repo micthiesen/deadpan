@@ -1,7 +1,4 @@
 //! Actual policy construction under one work and allocation admission.
-#[cfg(test)]
-#[path = "audio_policy_point_trace.rs"]
-pub(in crate::plan) mod point_trace;
 
 use super::*;
 use crate::AudioSoundContextAdmission;
@@ -793,28 +790,7 @@ fn bound_policy<A: AudioSoundContextAdmission>(
                     .end
                     .checked_sub(origin)
                     .ok_or(TimeError::Overflow)?;
-            #[cfg(test)]
-            let point_context = point_trace::Context {
-                origin,
-                reference_support: [support.start, support.end],
-                selection: [selection.start, selection.end],
-                signal_range: [range.start, range.end],
-            };
-            #[cfg(test)]
-            point_trace::record(
-                point_trace::Phase::BeforeClone,
-                point_context,
-                &[],
-                (budget.canonical_used, budget.additional_used),
-            );
             let signal = domain.signal_admitted(budget)?;
-            #[cfg(test)]
-            point_trace::record(
-                point_trace::Phase::AfterClone,
-                point_context,
-                &[],
-                (budget.canonical_used, budget.additional_used),
-            );
             let ranges = signal_policy(
                 &signal.value,
                 range,
@@ -824,22 +800,7 @@ fn bound_policy<A: AudioSoundContextAdmission>(
                 depth + 1,
                 endpoints,
             )?;
-            #[cfg(test)]
-            point_trace::record(
-                point_trace::Phase::BeforeOffset,
-                point_context,
-                &ranges.value,
-                (budget.canonical_used, budget.additional_used),
-            );
-            let offset = offset_ranges(ranges, origin, budget)?;
-            #[cfg(test)]
-            point_trace::record(
-                point_trace::Phase::AfterOffset,
-                point_context,
-                &offset.value,
-                (budget.canonical_used, budget.additional_used),
-            );
-            offset
+            offset_ranges(ranges, origin, budget)?
         }
         AudioBoundDomain::Empty => unreachable!("empty operand returned before selection"),
     };
@@ -938,9 +899,6 @@ fn finish<A: AudioSoundContextAdmission>(
         forwarded: A::METERED,
     })
 }
-
-#[cfg(test)]
-pub(in crate::plan) use point::provider_child_probe;
 
 #[path = "audio_tape_policy_query.rs"]
 mod tape;

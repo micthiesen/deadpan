@@ -1,5 +1,5 @@
 use super::*;
-use deadpan_plan::{AudioSignalContent, AudioSignalTape, AudioSignalTapeRun};
+use deadpan_plan::{AudioSignalTape, AudioSignalTapeRun};
 
 fn divided_root(plan: &RenderPlan, cut: i64, end: i64) -> AudioSignalTape<'_> {
     let cut = ExactRatio::integer(cut);
@@ -17,57 +17,6 @@ fn divided_root(plan: &RenderPlan, cut: i64, end: i64) -> AudioSignalTape<'_> {
         ],
     )
     .unwrap()
-}
-
-#[test]
-fn bound_source_reads_keep_the_physical_allocation_anchor_across_tape_seams() {
-    let rate = FrameRate::new(48_000, 1).unwrap();
-    let original = document(
-        rate,
-        &["a"],
-        [("a", source(rate, 1024, 512..1536))],
-        BTreeMap::new(),
-    );
-    let bindings = capture_unbound_audio_bindings(
-        &original,
-        AudioTimingId {
-            allocation: RevisionId::new("tape-capture").unwrap(),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(&original).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-    let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let plan = compile(&bound, false);
-    let tape = divided_root(&plan, 512, 1024);
-    let query = tape
-        .query(SignalSample(504)..SignalSample(520), Default::default())
-        .unwrap();
-    assert_eq!(query.spans.len(), 2);
-    for span in &query.spans {
-        assert!(matches!(span.content, AudioSignalContent::Bound(_)));
-        assert_eq!(span.allocated_samples, SignalSample(0)..SignalSample(1024));
-    }
-    let mut renderer = StageAudio::new(Arc::clone(&plan));
-    let mut provider = FixtureProvider::new();
-    for (start, count) in [(640, 128), (504, 16), (0, 64)] {
-        let actual = renderer
-            .read_tape(
-                &mut provider,
-                &tape,
-                SignalSample(start),
-                count,
-                TIMEOUT,
-                &AtomicBool::new(false),
-            )
-            .unwrap();
-        let expected: Vec<_> = (512 + start..512 + start + i64::from(count))
-            .map(fixture_sample)
-            .collect();
-        assert_eq!(actual.samples, expected, "bound read at {start}");
-        assert!(actual.suppressed.is_empty());
-    }
 }
 
 #[test]

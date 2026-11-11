@@ -115,6 +115,47 @@ pub(super) fn source_point_from_local(
     })
 }
 
+/// Original placement is derived from the current tree, so a Source moved by
+/// a 29.97-style frame count lands between source samples. When one output
+/// sample advances exactly one source sample, read from the nearest whole
+/// source sample instead: the PCM is then copied rather than interpolated,
+/// and the shift is at most half a sample.
+pub(super) fn whole_source_sample<S: Copy>(
+    sampling: AudioSampleMap<S>,
+    content: &AudioContent,
+) -> Result<AudioSampleMap<S>, PlanError> {
+    let AudioContent::Source {
+        source,
+        start,
+        duration,
+        ..
+    } = content
+    else {
+        return Ok(sampling);
+    };
+    let ticks_per_local = ExactRatio::integer(source.span.end().ticks - source.span.start().ticks)
+        .checked_div(*duration)?;
+    let step = sampling
+        .local_frames_per_sample()
+        .checked_mul(ticks_per_local)?;
+    if step != ExactRatio::ONE {
+        return Ok(sampling);
+    }
+    let ticks = sampling
+        .local_at_anchor()
+        .checked_sub(*start)?
+        .checked_mul(ticks_per_local)?;
+    let nearest = ticks.checked_add(ExactRatio::new(1, 2)?)?.floor();
+    let nearest = ExactRatio::integer(i64::try_from(nearest).map_err(|_| TimeError::Overflow)?);
+    AudioSampleMap::new(
+        sampling.anchor(),
+        sampling
+            .local_at_anchor()
+            .checked_add(nearest.checked_sub(ticks)?.checked_div(ticks_per_local)?)?,
+        sampling.local_frames_per_sample(),
+    )
+}
+
 /// Authored instructions, not decoded PCM or a claim of supported DSP effects.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -488,8 +529,6 @@ impl RenderPlan {
         capture: &mut Option<AudioDomainSeed>,
         seed: Option<&AudioWalkSeed>,
     ) -> Result<(), PlanError> {
-        #[cfg(test)]
-        let before = budget.remaining;
         let walked = self.audio_walk_inner(
             sample,
             budget,
@@ -497,15 +536,6 @@ impl RenderPlan {
             true,
             true,
             (Some(&mut *capture), None, Some(owner), None),
-        );
-        #[cfg(test)]
-        super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::capture(
-            self,
-            sample,
-            owner,
-            capture.as_ref(),
-            &walked,
-            (before, budget.remaining),
         );
         // Preserve the actual complete walk and its original discard point.
         walked?;

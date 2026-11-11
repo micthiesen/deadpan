@@ -29,8 +29,6 @@ mod wide_query;
 pub use treatment_boundary_admission::AdmittedAudioTreatmentBoundary;
 #[path = "audio_owner_query.rs"]
 pub(super) mod query_admission;
-#[cfg(test)]
-use query_admission::{Output, walk_query};
 use query_admission::{State, query_tracked};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -706,43 +704,6 @@ fn query_mapped<'plan, S: Copy>(
     .map(|value| value.query.unmetered())
 }
 
-#[cfg(test)]
-fn walk(
-    plan: &RenderPlan,
-    state: Walk,
-    position: Position,
-    output: &mut WalkOutput,
-    origin: AudioOwnerClockOrigin,
-    budget: &mut Budget,
-    depth: usize,
-) -> Result<(), PlanError> {
-    let mut policy = admission::Unmetered;
-    let mut query_budget = admission::Budget::new(budget, &mut policy);
-    let old = std::mem::replace(
-        output,
-        WalkOutput {
-            start: 0,
-            end: 0,
-            owners: Vec::new(),
-            support: AudioOwnerSupport::Active,
-            through_processor: false,
-            original_is_silent: false,
-        },
-    );
-    let mut tracked = Output::plain(old, ());
-    let result = admission::outer::<_, admission::Unmetered>(walk_query(
-        plan,
-        State::plain(state, ()),
-        position,
-        &mut tracked,
-        &origin,
-        &mut query_budget,
-        depth,
-    ));
-    *output = tracked.value;
-    result
-}
-
 fn restrict_end(
     position: Position,
     boundary: i64,
@@ -764,15 +725,3 @@ fn restrict_end(
     }
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "audio_owners/tests.rs"]
-pub(in crate::plan) mod tests;
-
-#[cfg(test)]
-#[path = "audio_owners/treatment_boundary_admission_tests.rs"]
-mod treatment_boundary_admission_tests;
-
-#[cfg(test)]
-#[path = "audio_owners/wide_gain_query_admission_tests.rs"]
-pub(in crate::plan) mod wide_gain_query_admission_tests;

@@ -564,16 +564,6 @@ pub(super) mod work_trace {
             None => *overflow = true,
         }
     }
-    pub(in crate::stages) fn reset() {
-        TRACE.with(|trace| trace.set(Snapshot::default()));
-        ENABLED.with(|enabled| enabled.set(true));
-    }
-    pub(in crate::stages) fn disable() {
-        ENABLED.with(|enabled| enabled.set(false));
-    }
-    pub(in crate::stages) fn snapshot() -> Snapshot {
-        TRACE.with(Cell::get)
-    }
     pub(in crate::stages) fn residency_spent() {
         update(|value| add(&mut value.accepted_residency_units, &mut value.overflow));
     }

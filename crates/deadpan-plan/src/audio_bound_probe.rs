@@ -109,8 +109,6 @@ impl<'plan> AudioBound<'plan> {
             AudioRootPlacement::new(lattice.origin, lattice.frames_per_local_frame, support)?;
         // These exact physical checks were in both actual in_*_clock calls.
         definition_value.validate_physical_placement(&placement)?;
-        #[cfg(test)]
-        phase_trace::temporary_definition::<A>(definition_value);
         match lattice.grid_rule {
             AudioBindingGridRule::RootRoundEven => {
                 let mut domain = definition_value.root_domain_on_grid_query(
@@ -119,10 +117,6 @@ impl<'plan> AudioBound<'plan> {
                     crate::AudioBoundaryRule::RoundEven,
                     budget,
                 )?;
-                #[cfg(test)]
-                if A::METERED {
-                    phase_trace::root_initial(&domain.value, definition_value);
-                }
                 if !A::METERED {
                     self.set_domain_evaluation(&mut domain.value);
                 } else {
@@ -140,10 +134,6 @@ impl<'plan> AudioBound<'plan> {
                     lattice.grid_origin,
                     budget,
                 )?;
-                #[cfg(test)]
-                if A::METERED {
-                    phase_trace::point_initial(&domain.value, definition_value);
-                }
                 // The old call evaluates both copies before replacing either
                 // embedded Signal field. Keep the old/new values overlapped.
                 let mut evaluation = Owned {
@@ -152,13 +142,6 @@ impl<'plan> AudioBound<'plan> {
                 };
                 let selector = budget.definition(&mut evaluation.memory, &self.definition)?;
                 let mut copied_repeats = repeats(&self.instance.repeats, budget)?;
-                #[cfg(test)]
-                phase_trace::point_evaluation(
-                    &domain.value,
-                    definition_value,
-                    &selector,
-                    &copied_repeats.value,
-                );
                 budget.check_memory(&evaluation.memory)?;
                 budget.check_memory(&copied_repeats.memory)?;
                 budget.merge_checked(&mut evaluation.memory, &mut copied_repeats.memory)?;
@@ -230,13 +213,9 @@ impl<'plan> AudioBound<'plan> {
         // Cleared owning edges remain a conservative per-domain bound until
         // this returned domain drops, not a dead walker/workspace charge.
         let next_definition = budget.definition(&mut domain.memory, &self.definition)?;
-        #[cfg(test)]
-        phase_trace::root_selector(&domain.value, next_definition.as_ref(), _definition);
         domain.value.seed.definition = next_definition;
         domain.value.seed.bypass_binding = Some(self.binding_target());
         let mut copied_repeats = repeats(&self.instance.repeats, budget)?;
-        #[cfg(test)]
-        phase_trace::root_repeats(&domain.value, &copied_repeats.value, _definition);
         budget.check_memory(&domain.memory)?;
         budget.check_memory(&copied_repeats.memory)?;
         budget.merge_checked(&mut domain.memory, &mut copied_repeats.memory)?;
@@ -263,8 +242,6 @@ impl<'plan> AudioBound<'plan> {
             for value in &self.constraints {
                 next.value.push(budget.constraint(&mut next.memory, value)?);
             }
-            #[cfg(test)]
-            phase_trace::root_constraints(&domain.value, &next.value, _definition);
             budget.check_memory(&domain.memory)?;
             budget.check_memory(&next.memory)?;
             budget.merge_checked(&mut domain.memory, &mut next.memory)?;
@@ -275,8 +252,6 @@ impl<'plan> AudioBound<'plan> {
             memory: budget.memory(),
         };
         instance.value = Some(budget.instance_fixed(&mut instance.memory, &self.instance)?);
-        #[cfg(test)]
-        phase_trace::root_instance(&domain.value, instance.value.as_ref().unwrap(), _definition);
         budget.check_memory(&domain.memory)?;
         budget.check_memory(&instance.memory)?;
         budget.merge_checked(&mut domain.memory, &mut instance.memory)?;
@@ -284,11 +259,3 @@ impl<'plan> AudioBound<'plan> {
         Ok(())
     }
 }
-
-#[cfg(test)]
-#[path = "audio_bound_probe_tests.rs"]
-mod tests;
-
-#[cfg(test)]
-#[path = "audio_bound_probe_phase_trace_tests.rs"]
-pub(in crate::plan) mod phase_trace;

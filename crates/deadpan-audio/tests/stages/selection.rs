@@ -130,92 +130,6 @@ fn selected_empty_host_intersections_and_zero_point_windows_do_not_read_media() 
 }
 
 #[test]
-fn changing_a_selected_window_keeps_retained_phase_and_uses_current_support() {
-    let rate = FrameRate::new(48_000, 1).unwrap();
-    let (original, mut provider) = fixture(
-        48_000,
-        selected(
-            rate,
-            48_000,
-            400,
-            ratio(-3, 7),
-            ExactFrameRange::new(ExactRatio::integer(100), ExactRatio::integer(150)).unwrap(),
-            0,
-        ),
-        rate,
-    );
-    let bound = capture(&original);
-    let edited = apply(
-        &bound,
-        &CommandRequest {
-            project_id: bound.project_id().clone(),
-            expected_revision: bound.revision_id().clone(),
-            new_revision: RevisionId::new("selected-window-change").unwrap(),
-            command: Command::SetSourceAudioMapping {
-                node: id("source"),
-                offset: AudioSample(0),
-                mapping: SourceAudioMapping::SelectedPlacement {
-                    start: ratio(-3, 7),
-                    frames: ExactRatio::integer(2000),
-                    selection: ExactFrameRange::new(
-                        ExactRatio::integer(200),
-                        ExactRatio::integer(250),
-                    )
-                    .unwrap(),
-                },
-            },
-        },
-    )
-    .unwrap();
-    let current = edited.forward.apply(&bound).unwrap();
-    assert_eq!(edited.inverse.apply(&current).unwrap(), bound);
-    provider.revisions.insert(current.revision_id().clone());
-    let mut renderer = StageAudio::new(Arc::new(RenderPlan::compile(&current).unwrap()));
-    let mut actual = Vec::new();
-    for (start, count) in [(0, 251), (251, 149)] {
-        let block = renderer
-            .read(
-                &mut provider,
-                AudioSample(start),
-                count,
-                TIMEOUT,
-                &AtomicBool::new(false),
-            )
-            .unwrap();
-        assert_eq!(&block.revision_id, current.revision_id());
-        assert_eq!(&block.project_id, current.project_id());
-        assert_eq!(block.start, AudioSample(start));
-        actual.extend(block.samples);
-    }
-    let expected = provider
-        .source
-        .prepare(
-            ResampleRecipe::new(
-                301..351,
-                ratio(2103, 7),
-                AudioSample(200),
-                ExactRatio::ONE,
-                AudioSample(200)..AudioSample(250),
-            )
-            .unwrap(),
-            AudioSample(200),
-            50,
-            TIMEOUT,
-            &AtomicBool::new(false),
-        )
-        .unwrap()
-        .samples;
-    assert_eq!(actual[200..250], expected);
-    assert!(
-        actual[..200]
-            .iter()
-            .chain(&actual[250..])
-            .all(|v| *v == [0.; 2])
-    );
-    assert!(actual[200..250].iter().any(|v| *v != [0.; 2]));
-}
-
-#[test]
 fn selected_source_follow_speed_uses_exact_window_on_its_retained_physical_grid() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let start = ratio(-3, 7);
@@ -318,9 +232,17 @@ fn fractional_selected_source_preserves_original_phase_and_excludes_outside_taps
         };
         let support = i64::try_from(point(selection.start).ceil().unwrap()).unwrap()
             ..i64::try_from(point(selection.end).ceil().unwrap()).unwrap();
+        // A unity-rate read starts at the nearest whole source sample.
+        let origin = point(ExactRatio::integer(left - 3));
+        let origin = if speed == ExactRatio::ONE {
+            let nearest = origin.checked_add(ratio(1, 2)).unwrap().floor();
+            ExactRatio::integer(i64::try_from(nearest).unwrap())
+        } else {
+            origin
+        };
         let recipe = ResampleRecipe::new(
             support.clone(),
-            point(ExactRatio::integer(left - 3)),
+            origin,
             AudioSample(left),
             speed,
             AudioSample(left)..AudioSample(right),

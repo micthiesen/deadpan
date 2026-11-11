@@ -404,32 +404,7 @@ fn domain_policy_inner(
         }
         return Ok(suppressed);
     }
-    #[cfg(test)]
-    let (bindings, before_second_query) = {
-        let before = work.remaining;
-        let result = domain.processing_inner(range.clone(), work.limits()?, false);
-        super::audio_owners::tests::legacy_snapshot_v1::policy_binding_baseline::second_returned(
-            domain,
-            samples.clone(),
-            (depth, endpoints, before),
-            &result,
-        );
-        (result?, before)
-    };
-    #[cfg(not(test))]
     let bindings = domain.processing_inner(range, work.limits()?, false)?;
-    #[cfg(test)]
-    {
-        let result = work.observed(bindings.work, bindings.lookup);
-        super::audio_owners::tests::legacy_snapshot_v1::policy_binding_baseline::second_accounted(
-            samples.clone(),
-            (depth, before_second_query, work.remaining),
-            bindings.work,
-            &result,
-        );
-        result?;
-    }
-    #[cfg(not(test))]
     work.observed(bindings.work, bindings.lookup)?;
     for span in bindings.spans {
         match span.content {

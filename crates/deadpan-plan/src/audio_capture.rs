@@ -11,12 +11,6 @@ pub(in crate::plan) struct WalkResult<'plan, I, L> {
     pub(in crate::plan) value: GuardedBound<AudioWalkSpan<'plan>, I, L>,
     pub(in crate::plan) memory: Memory<I, L>,
 }
-#[cfg(test)]
-impl<'plan, I: Copy + Eq, L> WalkResult<'plan, I, L> {
-    pub(in crate::plan) fn span(&self) -> &AudioWalkSpan<'plan> {
-        &self.value
-    }
-}
 impl<'plan, I: Copy + Eq, L> WalkResult<'plan, I, L> {
     /// Flattening never stops at bindings or Preserve stages. Retain both actual
     /// Plan guards while extracting only that closed legacy Leaf shape.
@@ -885,6 +879,10 @@ impl RenderPlan {
                 })
             });
         }
+        let sampling = match &*content {
+            AudioSignalContent::Leaf(leaf) => whole_source_sample(sampling, leaf)?,
+            _ => sampling,
+        };
         let leaf_envelope = AudioEnvelope::from_samples(envelope_samples.clone())?;
         let node = budget.node(&mut memory, &self.nodes[current].inspection.id)?;
         budget.check_memory(&memory)?;

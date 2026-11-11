@@ -360,6 +360,3 @@ fn public_signal_policy_frozen_before_body_is_exact() {
     .unwrap();
     assert_eq!(body(), expected);
 }
-
-#[path = "audio_signal_policy_paired_tests.rs"]
-mod paired;

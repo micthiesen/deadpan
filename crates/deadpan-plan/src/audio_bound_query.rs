@@ -405,16 +405,6 @@ impl RenderPlan {
                     };
                     core::<_, A>(value.take_work(&adapter))?
                 };
-                #[cfg(test)]
-                super::super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::core_receipt(
-                    value.value().work, value.value().lattice.work, work.units(),
-                    work.canonical_units(),work.additional_units(),work.was_forwarded(),
-                );
-                #[cfg(test)]
-                super::super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::paired_core_binding(
-                    &self.audio_bindings, id, environment, gap.is_some(), budget.remaining,
-                    value.value(), (work.units(), work.canonical_units(), work.additional_units(), work.was_forwarded()),
-                );
                 budget.account_core(work)?;
             }
         }

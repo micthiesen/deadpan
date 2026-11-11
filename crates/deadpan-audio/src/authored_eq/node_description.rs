@@ -52,20 +52,6 @@ impl<'plan, I: Copy + Eq, L> std::ops::Deref for Description<'plan, I, L> {
 }
 
 #[cfg(test)]
-pub(super) fn describe<'plan>(
-    plan: &'plan RenderPlan,
-    request: Request<'_, 'plan>,
-    control: WorkControl<'_>,
-) -> Result<Description<'plan, (), ()>, StageAudioError> {
-    describe_admitted(
-        plan,
-        request,
-        control,
-        &mut sound_context_admission::Unmetered,
-    )
-}
-
-#[cfg(test)]
 pub(super) fn describe_admitted<'plan, A>(
     plan: &'plan RenderPlan,
     request: Request<'_, 'plan>,

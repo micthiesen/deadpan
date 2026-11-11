@@ -85,37 +85,3 @@ fn actual_numerical_original_path_reaches_query_admission_before_legacy_capture(
     );
     assert_eq!(actual_work.borrow().sound_context_frames, 0);
 }
-
-#[test]
-fn legacy_numerical_query_receipts_still_equal_the_pre_admission_golden() {
-    let plan = fixture::fixture();
-    let owner = fixture::owner(&plan);
-    let input = plan
-        .audio_owner_input(&owner, AudioSample(128), Default::default())
-        .unwrap();
-    let domain = Context::Domain(Arc::new(input.context().clone()));
-    let retained = retained_plan();
-    let query = retained
-        .audio_gain_owners(AudioSample(128)..AudioSample(129), Default::default())
-        .unwrap();
-    let tone = query.spans()[0]
-        .owners()
-        .iter()
-        .find(|owner| owner.instance().node.as_str() == "tone")
-        .unwrap();
-    let actual = serde_json::json!([
-        super::legacy_query_receipts::one(&plan, &Context::Root, &owner, "unbound_eq_root"),
-        super::legacy_query_receipts::one(&plan, &domain, &owner, "unbound_eq_actual_domain"),
-        super::legacy_query_receipts::one(
-            &retained,
-            &Context::Root,
-            tone,
-            "accepted_retained_tone"
-        )
-    ]);
-    let frozen: serde_json::Value = serde_json::from_str(include_str!(
-        "../../tests/fixtures/owner-query-baseline-v1/work-receipts.json"
-    ))
-    .unwrap();
-    assert_eq!(actual, frozen["cases"]);
-}

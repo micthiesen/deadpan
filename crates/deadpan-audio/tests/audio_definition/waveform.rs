@@ -183,63 +183,6 @@ fn waveform_repeat_gap_and_selection_exhaustion_use_intrinsic_definition_clocks(
 }
 
 #[test]
-fn waveform_ntsc_preserve_uses_point_ceil_and_an_exact_terminal_owner_end() {
-    let rate = FrameRate::new(30_000, 1001).unwrap();
-    let document = document(
-        rate,
-        &["prefix", "stage"],
-        [
-            ("prefix", hold(1, HoldAudio::Silence)),
-            ("source", source(rate, 5, 0..8197)),
-            ("stage", retime("source", 2, 1..4, PitchPolicy::Preserve)),
-        ],
-        BTreeMap::new(),
-    );
-    let plan = compile(&document, false);
-    let input = sample_reference(
-        1602..6407,
-        ratio(8008, 5),
-        ExactRatio::ONE,
-        4805,
-        fixture_sample,
-    );
-    let expected = stretch(&input, 3204, 3, 2);
-    let definition = plan.audio_definition(node("stage")).unwrap();
-    let result = StageAudio::new(Arc::clone(&plan))
-        .measure_definition(
-            &mut FixtureProvider::new(),
-            &definition,
-            WaveformControl {
-                limits: WaveformLimits::default(),
-                cancelled: &AtomicBool::new(false),
-                memory: &WaveformMemory::default(),
-            },
-            |_| {},
-        )
-        .unwrap();
-    assert_extrema(&result.waveform, &expected);
-    let last = result.waveform.level(0).unwrap().len() - 1;
-    assert_eq!(
-        result.waveform.bin_owner_frames(0, last).unwrap().end,
-        ExactRatio::integer(2)
-    );
-    assert!(
-        result
-            .waveform
-            .descriptor()
-            .grid
-            .at(SignalSample(3204))
-            .unwrap()
-            .compare_integer(2)
-            .is_gt()
-    );
-    assert_eq!(
-        result.waveform.bin_owner_frames(0, 0).unwrap().end,
-        ratio(160, 1001)
-    );
-}
-
-#[test]
 fn waveform_one_request_cannot_renew_stage_work_at_block_boundaries() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let document = document(

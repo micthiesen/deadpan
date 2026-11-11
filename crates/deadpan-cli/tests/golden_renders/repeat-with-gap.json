@@ -11,14 +11,14 @@
       "e784b1a6b833682034b42f83ea84643cd24066dd8fecc8c8cbdbd477979f65bf",
       "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
       "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
-      "380430eacde1cc52b5e3758502bb0dbc7e62d684405df551eae8d9ffc1d0c693",
+      "7d6a46ddf3111c599e620d07fadff1e4eedc4dd22ef667f3fc47a55556a3fafa",
       "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31",
       "c6774dcb173a0de35d0215e99686bf9d61bb7c163403563bed74fcd484698d03"
     ],
     "end": 105706,
     "pcm": "sha256 of interleaved stereo little-endian f32, limited audition bus, per 8192-sample block",
     "start": 0,
-    "total": "a2180ffb061cf529c2473a3870c9a988a82af0574c7a54d376467a86081e2276"
+    "total": "78fa0a735ee96a9e23be9d89f7ccd8a1a05b826e8aefe3428fd1bfd1d6afbd86"
   },
   "fixture": "repeat-with-gap",
   "frame_rate": [

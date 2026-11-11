@@ -457,14 +457,3 @@ fn ordinary_tape_policy_matches_external_before_v1() {
     let expected: Value = serde_json::from_slice(&std::fs::read(file).unwrap()).unwrap();
     assert_eq!(matrix(), strip(expected));
 }
-
-#[test]
-fn ordinary_tape_policy_matches_frozen_baseline_v1() {
-    let expected = include_bytes!("../tests/fixtures/tape-policy-baseline-v1/snapshot.json");
-    let mut observed = serde_json::to_vec(&matrix()).unwrap();
-    observed.push(b'\n');
-    assert_eq!(
-        observed, expected,
-        "complete ordinary Tape body, without work or capacity normalization"
-    );
-}

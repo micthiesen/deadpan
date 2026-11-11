@@ -575,9 +575,6 @@ fn prepare_refusal_releases_complete_source_and_inventory_without_commit() {
     });
 }
 
-#[path = "audio_tape_policy_paired_tests.rs"]
-mod tape_policy_pairs;
-
 #[test]
 fn issuer_and_unmetered_handoff_reject_before_prepare() {
     visit(|point, _| {
@@ -712,6 +709,3 @@ fn borrowed_protocol_prepare_refusal_keeps_source_until_shared_borrow_ends() {
         backend.released();
     });
 }
-
-#[path = "audio_signal_policy_custody_tests.rs"]
-mod signal_custody;

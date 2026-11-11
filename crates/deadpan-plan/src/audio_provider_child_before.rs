@@ -63,7 +63,7 @@ fn error(value: &PlanError) -> Value {
         PlanError::InvalidAudioRootPlacement(message) => {
             json!({"variant":"InvalidAudioRootPlacement","message":message})
         }
-        other => super::super::audio_owners::tests::legacy_snapshot_v1::error_json(other),
+        other => json!({"variant":"Other","message":other.to_string()}),
     }
 }
 fn lookup(value: LookupStats) -> Value {
@@ -81,9 +81,8 @@ fn content(plan: &RenderPlan, value: &AudioSignalContent<'_>) -> Value {
         AudioSignalContent::Stage(value) => {
             json!({"tag":"Stage","value":value.point_content_old_snapshot(plan)})
         }
-        AudioSignalContent::Bound(value) => {
-            json!({"tag":"Bound","value":value.capture_baseline_snapshot(plan)})
-        }
+        // Plans no longer carry owner bindings.
+        AudioSignalContent::Bound(_) => json!({"tag":"Bound"}),
         AudioSignalContent::ProjectedStage(value) => {
             json!({"tag":"ProjectedStage","value":value.provider_before_snapshot(plan)})
         }
@@ -836,9 +835,6 @@ fn ordinary_provider_child_matches_external_before_v1() {
     let expected: Value = serde_json::from_slice(&std::fs::read(expected).unwrap()).unwrap();
     assert_eq!(matrix(), strip_envelope(expected));
 }
-
-#[path = "audio_provider_child_admission_tests.rs"]
-mod admission_tests;
 
 #[path = "audio_tape_policy_before_bridge.rs"]
 mod tape_policy_before_bridge;

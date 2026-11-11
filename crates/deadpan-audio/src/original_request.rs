@@ -725,7 +725,7 @@ pub(super) fn with_legacy_original_queries<T>(action: impl FnOnce() -> T) -> T {
 }
 #[cfg(test)]
 pub(super) use policy_trace::{
-    DomainPolicyTrace, domain_policy_trace, reset_domain_policy_trace, with_domain_policy_trace,
+    domain_policy_trace, reset_domain_policy_trace, with_domain_policy_trace,
 };
 
 #[cfg(all(test, any(target_os = "macos", target_os = "linux")))]

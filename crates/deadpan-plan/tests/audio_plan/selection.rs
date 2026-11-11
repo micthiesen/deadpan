@@ -50,7 +50,8 @@ fn source_selection_separates_affine_phase_filter_support_and_allocation() {
     assert_eq!(support.end.ticks, ratio(-333_988, 7));
     assert_eq!(
         q.spans[1].source_point(AudioSample(11)).unwrap().ticks,
-        ratio(-335_891, 7)
+        // A unity-rate read starts at the nearest whole source sample.
+        ExactRatio::integer(-47_984)
     );
     assert!(
         q.spans[1]

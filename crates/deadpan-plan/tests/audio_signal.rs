@@ -534,11 +534,11 @@ fn selected_child_grid_keeps_fractional_origin_and_signed_source_placement() {
     assert_eq!(span.transform.grid_origin, ExactRatio::integer(1));
     assert_eq!(
         span.source_point(SignalSample(0)).unwrap().ticks,
-        ratio(513, 5)
+        ExactRatio::integer(103)
     );
     assert_eq!(
         span.source_point(SignalSample(9)).unwrap().ticks,
-        ratio(558, 5)
+        ExactRatio::integer(112)
     );
     assert_eq!(
         span.source_point_at_signal_frame(ExactRatio::integer(4))

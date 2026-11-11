@@ -59,25 +59,6 @@ pub(super) fn pending_source(start: AudioSample, permissions: &Vec<Permissions>)
     }
 }
 
-pub(super) fn enable() {
-    STATE.with(|state| *state.borrow_mut() = State::default());
-    ENABLED.with(|enabled| enabled.set(true));
-}
-
-pub(super) fn disable() {
-    ENABLED.with(|enabled| enabled.set(false));
-}
-
-pub(super) fn is_enabled() -> bool {
-    active()
-}
-
-pub(super) fn reset_if_enabled() {
-    if active() {
-        STATE.with(|state| *state.borrow_mut() = State::default());
-    }
-}
-
 pub(super) fn begin(
     source: PendingSource,
     source_reservation_frames: u64,
@@ -342,20 +323,4 @@ fn event(kind: &str, value: Value) {
             .unwrap()
             .push(json!({"kind": kind, "value": value}));
     });
-}
-
-pub(super) fn snapshot() -> Value {
-    STATE.with(|state| {
-        let state = state.borrow();
-        json!({
-            "enabled": active(),
-            "unfinished": state.current.is_some(),
-            "active_row": state.current,
-            "row_limit": MAX_ROWS,
-            "event_limit_per_row": MAX_EVENTS_PER_ROW,
-            "truncated_rows": state.truncated_rows,
-            "truncated_events": state.truncated_events,
-            "rows": state.rows.iter().map(|row| &row.json).collect::<Vec<_>>()
-        })
-    })
 }

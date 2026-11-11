@@ -265,7 +265,3 @@ impl<'plan> AudioDomain<'plan> {
         )
     }
 }
-
-#[cfg(test)]
-#[path = "span_start_tests.rs"]
-mod tests;

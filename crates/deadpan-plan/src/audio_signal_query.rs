@@ -404,6 +404,12 @@ impl<'plan> AudioSignal<'plan> {
                 .signal_frames_per_sample
                 .checked_div(transform.signal_frames_per_local_frame)?,
         )?;
+        let sampling = match &*content {
+            AudioSignalContent::Leaf(leaf) => {
+                crate::plan::audio::whole_source_sample(sampling, leaf)?
+            }
+            _ => sampling,
+        };
         budget.check_memory(&memory)?;
         budget.check_memory(&repeats_capacity)?;
         budget.check_memory(&retimes_capacity)?;

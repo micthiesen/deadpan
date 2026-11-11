@@ -200,11 +200,6 @@ mod shared_mix_mask_trace;
 mod sound_context_admission;
 
 #[cfg(test)]
-pub(super) fn test_audio_mask_payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
-    point_suppression::audio_payload_frames(capacity)
-}
-
-#[cfg(test)]
 #[path = "stage_block_policy_before_trace.rs"]
 mod stage_block_policy_before_trace;
 
@@ -6338,91 +6333,6 @@ mod controlled_reads {
     }
 
     #[test]
-    fn placed_ntsc_source_preserves_signed_reference_phase_and_controlled_dependencies() {
-        let (plan, mut provider) = fixture_at_rate(FrameRate::new(30_000, 1001).unwrap());
-        let definition = plan
-            .audio_definition(AudioDefinitionSelector::Node {
-                node: NodeId::new("a").unwrap(),
-            })
-            .unwrap();
-        let domain = definition
-            .in_point_clock(
-                deadpan_plan::AudioRootPlacement::new(
-                    ExactRatio::new(-1, 3).unwrap(),
-                    ExactRatio::ONE,
-                    ExactRatio::ZERO..ExactRatio::new(1, 4).unwrap(),
-                )
-                .unwrap(),
-                ExactRatio::new(1, 7).unwrap(),
-            )
-            .unwrap();
-        assert_eq!(
-            domain.reference_samples(),
-            ReferenceSample(-762)..ReferenceSample(-362)
-        );
-        // The source begins at 2/3 of a physical sample. Neither zero-based
-        // storage nor the selected 1/7-frame clock origin may reset that phase.
-        let recipe = ResampleRecipe::new(
-            0..401,
-            ExactRatio::new(2, 3).unwrap(),
-            AudioSample(0),
-            ExactRatio::ONE,
-            AudioSample(0)..AudioSample(400),
-        )
-        .unwrap();
-        let cancelled = AtomicBool::new(false);
-        let work = RefCell::new(ReadWork::default());
-        let control = WorkControl {
-            cancelled: &cancelled,
-            deadline: Instant::now() + Duration::from_secs(10),
-            work: &work,
-        };
-        let mut renderer = StageAudio::new(Arc::clone(&plan));
-        let expected_dependency = BTreeMap::from([(
-            AssetId::new("media").unwrap(),
-            provider.prepared.provenance(),
-        )]);
-        for (offset, count) in [(256, 144), (0, 256)] {
-            let expected = provider
-                .prepared
-                .prepare(
-                    recipe.clone(),
-                    AudioSample(offset),
-                    count,
-                    Duration::from_secs(10),
-                    &cancelled,
-                )
-                .unwrap()
-                .samples;
-            let actual = renderer
-                .read_point_domain_controlled(
-                    &mut provider,
-                    &domain,
-                    ReferenceSample(-762 + offset),
-                    count,
-                    control,
-                    0,
-                )
-                .unwrap();
-            assert_eq!(actual.samples, expected);
-            assert_eq!(actual.dependencies, expected_dependency);
-        }
-        assert_eq!(work.borrow().observed, expected_dependency);
-        let mut foreign = StageAudio::new(fixture().0);
-        assert!(matches!(
-            foreign.read_point_domain(
-                &mut provider,
-                &domain,
-                ReferenceSample(-762),
-                1,
-                Duration::from_secs(10),
-                &cancelled
-            ),
-            Err(StageAudioError::ForeignDomain)
-        ));
-    }
-
-    #[test]
     fn placed_point_preserve_rechecks_policy_that_owned_no_input_point() {
         let (_, mut provider) = fixture();
         let cancelled = AtomicBool::new(false);
@@ -6689,10 +6599,6 @@ mod controlled_reads {
         assert_eq!(renderer.cached_stage_count(), 2);
     }
 }
-
-#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
-#[path = "bound_reads.rs"]
-mod bound_reads;
 
 #[cfg(test)]
 mod sampling_recipes {

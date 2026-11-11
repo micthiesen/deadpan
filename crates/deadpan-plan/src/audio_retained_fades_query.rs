@@ -7,10 +7,6 @@ use crate::plan::audio_bound::query::GuardedBound;
 use crate::plan::audio_fades::query as fades;
 use crate::plan::audio_owners::admission::{Memory, outer};
 
-#[cfg(test)]
-#[path = "audio_retained_fades_query_trace.rs"]
-pub(in crate::plan) mod trace;
-
 type CopiedProcessing<'plan, A> = GuardedBound<
     AudioWalkSpan<'plan>,
     <A as AudioSoundContextAdmission>::Issuer,
@@ -68,11 +64,7 @@ fn processing_copy<'plan, A: AudioSoundContextAdmission>(
     };
     let copy = bound.copy_for_retained_fade_query(budget)?;
     let copy = GuardedBound::plain(copy.value, budget.issuer).adopt_memory(copy.memory, budget)?;
-    #[cfg(test)]
-    trace::observe(trace::Phase::BoundBoxBefore);
     let content = copy.boxed(budget)?;
-    #[cfg(test)]
-    trace::observe(trace::Phase::BoundBoxAfter);
     struct Mapping<C, F, I, L> {
         content: C,
         fields: F,
@@ -176,16 +168,8 @@ impl AudioOwnerRetainedInput<'_> {
                         + self.editorial.constraints.len()
                         + self.editorial.repeats.len(),
                 )?;
-                #[cfg(test)]
-                trace::observe(trace::Phase::ProcessingCopyBefore);
                 let primary = processing_copy(&self.processing, &mut budget)?;
-                #[cfg(test)]
-                trace::observe(trace::Phase::ProcessingCopyAfter);
-                #[cfg(test)]
-                trace::observe(trace::Phase::EditorialCopyBefore);
                 let editorial = editorial_copy(&self.editorial, &mut budget)?;
-                #[cfg(test)]
-                trace::observe(trace::Phase::EditorialCopyAfter);
                 let span = fades::retained_bound_span_admitted(
                     primary,
                     cursor,
@@ -202,17 +186,7 @@ impl AudioOwnerRetainedInput<'_> {
                     );
                 }
                 cursor = span.samples.end;
-                #[cfg(test)]
-                trace::observe(trace::Phase::OuterPushBefore {
-                    old_len: spans.spans.len(),
-                    old_capacity: spans.spans.capacity(),
-                });
                 spans = collection::push(spans, span, &mut budget)?;
-                #[cfg(test)]
-                trace::observe(trace::Phase::OuterPushAfter {
-                    new_len: spans.spans.len(),
-                    new_capacity: spans.spans.capacity(),
-                });
             }
             fades::finish_query(spans, limits.maximum_work, &mut budget)
         })())

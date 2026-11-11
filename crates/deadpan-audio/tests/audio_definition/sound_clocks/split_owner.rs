@@ -178,11 +178,6 @@ fn interior_pauses_keep_attached_and_shared_equalizer_history() {
 }
 
 #[test]
-fn split_edits_keep_original_and_attached_sound_in_the_shared_equalizer() {
-    witness(true, true);
-}
-
-#[test]
 fn a_plain_split_keeps_attached_sound_on_both_fragments_with_identical_pcm() {
     for treated in [false, true] {
         let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();

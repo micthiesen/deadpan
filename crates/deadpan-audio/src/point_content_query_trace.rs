@@ -60,24 +60,6 @@ fn host_evictions() -> ([usize; 2], bool) {
     super::original_request::flattened_work_trace::host_eviction_units()
 }
 
-pub(super) fn reset() {
-    TRACE.with(|trace| {
-        assert_eq!(trace.get().active_depth, 0);
-        assert_eq!(trace.get().live_results, 0);
-        trace.set(Snapshot::default());
-    });
-    ENABLED.with(|enabled| enabled.set(true));
-}
-
-pub(super) fn disable() {
-    TRACE.with(|trace| assert_eq!(trace.get().active_depth, 0));
-    ENABLED.with(|enabled| enabled.set(false));
-}
-
-pub(super) fn snapshot() -> Snapshot {
-    TRACE.with(Cell::get)
-}
-
 fn add(value: &mut usize, amount: usize, overflow: &mut bool) {
     if let Some(next) = value.checked_add(amount) {
         *value = next;

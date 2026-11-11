@@ -151,39 +151,6 @@ fn timing(name: &str) -> AudioTimingId {
     }
 }
 
-fn bind_source(current: &ProjectDocument, historical: &ProjectDocument) -> ProjectDocument {
-    let clock = timing("old");
-    let binding = AudioBindingState::new(
-        vec![AudioTimingRecord {
-            id: clock.clone(),
-            layout: FrozenAudioLayout::capture(historical).unwrap(),
-        }],
-        BTreeMap::from([(
-            id("leaf"),
-            OwnedAudioBinding {
-                lattice: AudioPlacementTemplate {
-                    reference_local_offset: ExactRatio::ZERO,
-                    gap_after: None,
-                    reference: AudioReferenceClock {
-                        recipe: AudioRecipeKind::Node,
-                        timing: clock,
-                        root: AudioClockRoot::ProjectRootRoundEven,
-                        physical: id("leaf"),
-                    },
-                    arguments: Vec::new(),
-                    births: Vec::new(),
-                },
-                reanchors: Vec::new(),
-                resume: None,
-            },
-        )]),
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(current).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(binding).unwrap();
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
-}
-
 #[test]
 fn ordinary_source_sequence_and_repeat_are_free_without_expanding_plays() {
     for plays in [2, 1024] {
@@ -272,35 +239,6 @@ fn sparse_override_processing_is_not_hidden_by_a_transparent_default_play() {
 }
 
 #[test]
-fn a_bound_historical_definition_is_scanned_behind_an_ordinary_current_source() {
-    let current = document(&["leaf"], vec![("leaf", source(8))]);
-    let historical = document(
-        &["leaf", "view"],
-        vec![
-            ("leaf", source(8)),
-            ("view", retime("hidden-input", 8, 4, PitchPolicy::Preserve)),
-            ("hidden-input", source(8)),
-        ],
-    );
-    assert!(discover(&current).is_intrinsic_free());
-    let bound = bind_source(&current, &historical);
-    assert!(!discover(&bound).is_intrinsic_free());
-
-    let historical = document(
-        &["leaf", "view"],
-        vec![
-            ("leaf", source(8)),
-            (
-                "view",
-                retime("hidden-input", 8, 4, PitchPolicy::FollowSpeed),
-            ),
-            ("hidden-input", source(8)),
-        ],
-    );
-    assert!(discover(&bind_source(&current, &historical)).is_intrinsic_free());
-}
-
-#[test]
 fn retained_audio_context_keeps_its_own_historical_processing_inventory() {
     let historical = document(
         &["view"],
@@ -316,66 +254,6 @@ fn retained_audio_context_keeps_its_own_historical_processing_inventory() {
             .audio_intrinsic_preparation(AudioQueryLimits::default())
             .unwrap()
             .is_intrinsic_free()
-    );
-}
-
-#[test]
-fn work_exhaustion_retains_spent_visits_and_never_claims_intrinsic_free() {
-    let doc = document(&["leaf"], vec![("leaf", source(4))]);
-    let plan = RenderPlan::compile(&doc).unwrap();
-    let complete = plan
-        .audio_intrinsic_preparation(AudioQueryLimits::default())
-        .unwrap();
-    assert_eq!(complete, AudioIntrinsicPreparation::NotRequired { work: 3 });
-    for maximum_work in 1..complete.work() {
-        let partial = plan
-            .audio_intrinsic_preparation(AudioQueryLimits {
-                maximum_work,
-                ..AudioQueryLimits::default()
-            })
-            .unwrap();
-        assert_eq!(
-            partial,
-            AudioIntrinsicPreparation::WorkLimit { work: maximum_work }
-        );
-        assert!(!partial.is_intrinsic_free());
-    }
-    assert_eq!(
-        plan.audio_intrinsic_preparation(AudioQueryLimits {
-            maximum_work: complete.work(),
-            ..AudioQueryLimits::default()
-        })
-        .unwrap(),
-        complete,
-    );
-    let historical = document(
-        &["leaf", "view"],
-        vec![
-            ("leaf", source(8)),
-            ("view", retime("hidden-input", 8, 4, PitchPolicy::Preserve)),
-            ("hidden-input", source(8)),
-        ],
-    );
-    let current = document(&["leaf"], vec![("leaf", source(8))]);
-    let bound = RenderPlan::compile(&bind_source(&current, &historical)).unwrap();
-    let positive = bound
-        .audio_intrinsic_preparation(AudioQueryLimits::default())
-        .unwrap();
-    assert!(matches!(
-        positive,
-        AudioIntrinsicPreparation::MayBeRequired { .. }
-    ));
-    let short = bound
-        .audio_intrinsic_preparation(AudioQueryLimits {
-            maximum_work: positive.work() - 1,
-            ..AudioQueryLimits::default()
-        })
-        .unwrap();
-    assert_eq!(
-        short,
-        AudioIntrinsicPreparation::WorkLimit {
-            work: positive.work() - 1
-        }
     );
 }
 

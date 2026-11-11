@@ -1086,9 +1086,10 @@ fn ntsc_fractional_input_and_output_origins_preserve_exact_three_over_two_speed(
     // C=1601.6: selected input starts at 1601.6 and ends at 6406.4.
     // Its 4805 grid positions retain exact phase; output extent 3203.2
     // requires 3204 cached frames but does not change the authored 3/2 rate.
+    // A unity-rate input read starts at the nearest whole source sample.
     let input = sample_reference(
         1602..6407,
-        ratio(8008, 5),
+        ExactRatio::integer(1602),
         ExactRatio::ONE,
         4805,
         fixture_sample,

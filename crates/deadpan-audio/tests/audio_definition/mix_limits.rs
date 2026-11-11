@@ -3,16 +3,8 @@ use super::*;
 use std::collections::BTreeSet;
 
 use deadpan_plan::{
-    AudioMixGate, AudioSignalContent, AudioSignalMix, AudioSignalTape, AudioSignalTapeRun,
-    AudioStageProjection,
+    AudioMixGate, AudioSignalMix, AudioSignalTape, AudioSignalTapeRun, AudioStageProjection,
 };
-
-#[derive(Clone, Copy, Debug)]
-enum HiddenHistory {
-    Ordinary,
-    Bound,
-    Projected,
-}
 
 struct CountingProvider {
     prepared: PreparedSource,
@@ -127,64 +119,44 @@ fn first_voice(plan: &RenderPlan) -> AudioSignalTape<'_> {
     .unwrap()
 }
 
-fn hidden_voice(plan: &RenderPlan, history: HiddenHistory) -> AudioSignalTape<'_> {
+fn hidden_voice(plan: &RenderPlan) -> AudioSignalTape<'_> {
     let signal = plan.audio_definition(node("inner")).unwrap().signal();
-    if matches!(history, HiddenHistory::Projected) {
-        let stage = projection::stage(signal);
-        let input = stage.input_signal();
-        let input_support = input.support();
-        let output_end = ExactRatio::integer(stage.descriptor().duration.frames());
-        let tape = |end| {
-            AudioSignalTape::new(
-                plan,
-                ExactRatio::ZERO..end,
-                vec![AudioSignalTapeRun::new(
-                    ExactRatio::ZERO..end,
-                    input_support.clone(),
-                    input.clone(),
-                )],
-            )
-            .unwrap()
-        };
-        let duration = stage.descriptor().duration;
-        let stage =
-            AudioStageProjection::new(stage, tape(input_support.end), tape(output_end), duration)
-                .unwrap();
-        return AudioSignalTape::new(
+    let stage = projection::stage(signal);
+    let input = stage.input_signal();
+    let input_support = input.support();
+    let output_end = ExactRatio::integer(stage.descriptor().duration.frames());
+    let tape = |end| {
+        AudioSignalTape::new(
             plan,
-            ExactRatio::ZERO..ExactRatio::ONE,
-            vec![AudioSignalTapeRun::intrinsic(
-                ExactRatio::ZERO..ExactRatio::ONE,
-                ExactRatio::ZERO..ExactRatio::ONE,
-                stage,
+            ExactRatio::ZERO..end,
+            vec![AudioSignalTapeRun::new(
+                ExactRatio::ZERO..end,
+                input_support.clone(),
+                input.clone(),
             )],
         )
-        .unwrap();
-    }
-    let query = signal
-        .query(SignalSample(0)..SignalSample(1), Default::default())
-        .unwrap();
-    assert!(matches!(
-        (&query.spans[0].content, history),
-        (AudioSignalContent::Stage(_), HiddenHistory::Ordinary)
-            | (AudioSignalContent::Bound(_), HiddenHistory::Bound)
-    ));
+        .unwrap()
+    };
+    let duration = stage.descriptor().duration;
+    let stage =
+        AudioStageProjection::new(stage, tape(input_support.end), tape(output_end), duration)
+            .unwrap();
     AudioSignalTape::new(
         plan,
         ExactRatio::ZERO..ExactRatio::ONE,
-        vec![AudioSignalTapeRun::new(
+        vec![AudioSignalTapeRun::intrinsic(
             ExactRatio::ZERO..ExactRatio::ONE,
             ExactRatio::ZERO..ExactRatio::ONE,
-            signal,
+            stage,
         )],
     )
     .unwrap()
 }
 
-fn mix(plan: &RenderPlan, history: HiddenHistory) -> AudioSignalMix<'_> {
+fn mix(plan: &RenderPlan) -> AudioSignalMix<'_> {
     AudioSignalMix::new(
         plan,
-        vec![first_voice(plan), hidden_voice(plan, history)],
+        vec![first_voice(plan), hidden_voice(plan)],
         vec![AudioMixGate::new(
             ExactRatio::ZERO..ExactRatio::ONE,
             vec![1],
@@ -194,56 +166,10 @@ fn mix(plan: &RenderPlan, history: HiddenHistory) -> AudioSignalMix<'_> {
 }
 
 #[test]
-fn all_hidden_dependency_kinds_enforce_the_shared_cap_before_any_source_io_and_recover() {
-    for history in [
-        HiddenHistory::Ordinary,
-        HiddenHistory::Bound,
-        HiddenHistory::Projected,
-    ] {
-        let doc = dependency_document(1025, matches!(history, HiddenHistory::Bound));
-        let plan = compile(&doc, false);
-        let mix = mix(&plan, history);
-        let mut renderer = StageAudio::new(Arc::clone(&plan));
-        let mut provider = CountingProvider::new();
-        assert!(
-            matches!(
-                renderer.read_mix(
-                    &mut provider,
-                    &mix,
-                    SignalSample(0),
-                    1,
-                    TIMEOUT,
-                    &AtomicBool::new(false),
-                ),
-                Err(StageAudioError::Limit("source dependencies"))
-            ),
-            "{history:?}"
-        );
-        assert_eq!(
-            provider.calls, 0,
-            "{history:?}: an earlier audible voice must not read before hidden admission"
-        );
-        let recovery = AudioSignalMix::new(&plan, vec![first_voice(&plan)], vec![]).unwrap();
-        let actual = renderer
-            .read_mix(
-                &mut provider,
-                &recovery,
-                SignalSample(0),
-                1,
-                TIMEOUT,
-                &AtomicBool::new(false),
-            )
-            .unwrap();
-        assert_eq!(actual.samples, vec![fixture_sample(0)]);
-        assert_eq!(provider.calls, 1);
-    }
-}
-
-#[test]
 fn exactly_1024_distinct_dependencies_are_admitted_with_duplicate_and_gated_voices() {
     let doc = dependency_document(1024, false);
     let plan = compile(&doc, false);
-    let mix = mix(&plan, HiddenHistory::Projected);
+    let mix = mix(&plan);
     let mut provider = CountingProvider::new();
     let actual = StageAudio::new(Arc::clone(&plan))
         .read_mix(

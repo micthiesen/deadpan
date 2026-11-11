@@ -39,45 +39,8 @@ pub(super) struct Request {
     pub(super) cache_work_before: usize,
 }
 
-pub(super) fn enable() {
-    STATE.with(|s| {
-        *s.borrow_mut() = State {
-            enabled: true,
-            ..State::default()
-        }
-    });
-}
-pub(super) fn disable() {
-    STATE.with(|s| s.borrow_mut().enabled = false);
-}
 pub(super) fn is_enabled() -> bool {
     STATE.with(|s| s.borrow().enabled)
-}
-pub(super) fn reset_if_enabled() {
-    STATE.with(|s| {
-        let mut s = s.borrow_mut();
-        if s.enabled {
-            *s = State {
-                enabled: true,
-                ..State::default()
-            };
-        }
-    });
-}
-pub(super) fn snapshot() -> Value {
-    STATE.with(|s| {
-        let s = s.borrow();
-        json!({
-            "schema": "components-inline-marks-v2",
-            "enabled": s.enabled,
-            "attempted_rows": s.attempted_rows,
-            "dropped_rows": s.attempted_rows - s.rows.len(),
-            "truncated_rows": s.truncated_rows,
-            "unfinished": !s.stack.is_empty(),
-            "active_row": s.stack.last().copied(),
-            "rows": s.rows.iter().map(|r| r.value.clone()).collect::<Vec<_>>(),
-        })
-    })
 }
 
 pub(super) fn begin_request(request: Request) -> Option<Receipt> {

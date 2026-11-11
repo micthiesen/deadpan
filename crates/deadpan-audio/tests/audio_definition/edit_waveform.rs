@@ -83,69 +83,6 @@ fn extrema(waveform: &EditWaveform, origin: i64, expected: &[[f32; 2]]) {
     }
 }
 
-fn gain(db: i32) -> AudioTreatments {
-    AudioTreatments::from_clip_gain(
-        ClipGain::new(GainDb::new(db).unwrap(), false, vec![], vec![]).unwrap(),
-    )
-}
-
-#[test]
-fn exact_ntsc_window_retains_fractional_phase_offset_ancestor_gain_and_filter_context() {
-    let rate = FrameRate::new(30_000, 1001).unwrap();
-    let mut src = source(rate, 5, 0..8197);
-    src.audio_edges.node_start = AudioEdgePolicy::Hard;
-    src.audio_edges.node_end = AudioEdgePolicy::Hard;
-    let NodeKind::Source { source } = &mut src.kind else {
-        unreachable!()
-    };
-    source.audio_offset = AudioSample(7);
-    let mut group = BeatNode::sequence("Group", vec![id("a")]);
-    group.audio_treatments = gain(3000);
-    let doc = document(
-        rate,
-        &["prefix", "group"],
-        [
-            ("prefix", hold(1, HoldAudio::Silence)),
-            ("group", group),
-            ("a", src),
-        ],
-        BTreeMap::new(),
-    );
-    let mut wire = serde_json::to_value(&doc).unwrap();
-    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(gain(-6000)).unwrap();
-    let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    // Absolute 2115 minus one exact NTSC frame (1601.6) and offset 7:
-    // source 506.4. Full 0..8197 support remains behind the display window.
-    let raw = sample_reference(
-        0..8197,
-        ratio(2532, 5),
-        ExactRatio::ONE,
-        513,
-        fixture_sample,
-    );
-    let expected: Vec<_> = raw
-        .iter()
-        .map(|sample| sample.map(|v| (f64::from(v) * 10_f64.powf(-3.0 / 20.0)) as f32))
-        .collect();
-    let wrong = sample_reference(
-        0..8197,
-        ratio(2537, 5),
-        ExactRatio::ONE,
-        513,
-        fixture_sample,
-    );
-    assert_ne!(raw, wrong);
-    let mut provider = FixtureProvider::new();
-    extrema(&measured(&doc, 2115, 2628, &mut provider), 2115, &expected);
-    // A shorter request must not acquire fresh filter bounds or edge fades.
-    extrema(
-        &measured(&doc, 2215, 2471, &mut provider),
-        2215,
-        &expected[100..356],
-    );
-    assert!(provider.calls > 0);
-}
-
 #[test]
 fn root_routes_and_silent_hold_permissions_change_actual_window_peaks() {
     let rate = FrameRate::new(48_000, 1).unwrap();
