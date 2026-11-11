@@ -24,8 +24,7 @@ pub fn run(arguments: &[String]) -> Result<()> {
     let head = git_head()?;
     let home = PathBuf::from(std::env::var_os("HOME").ok_or("HOME is not set")?);
     let developer = home.join("Library/Developer/Deadpan");
-    let ffmpeg = developer
-        .join("ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix");
+    let ffmpeg = developer.join("ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix");
     let ort = developer.join("onnxruntime-1.31.0-qualified-1/prefix");
 
     let staging = std::env::temp_dir().join(format!("deadpan-install-{}", std::process::id()));
@@ -33,9 +32,16 @@ pub fn run(arguments: &[String]) -> Result<()> {
         fs::remove_dir_all(&staging).map_err(|e| format!("{}: {e}", staging.display()))?;
     }
     let me = std::env::current_exe().map_err(|e| e.to_string())?;
-    println!("install: building the bundle for {head} in {}", staging.display());
+    println!(
+        "install: building the bundle for {head} in {}",
+        staging.display()
+    );
     let mut build = Command::new(&me);
-    build.arg("bundle").arg("--output").arg(&staging).args(&bundle_arguments);
+    build
+        .arg("bundle")
+        .arg("--output")
+        .arg(&staging)
+        .args(&bundle_arguments);
     if std::env::var_os("DEADPAN_FFMPEG_PREFIX").is_none() {
         build.env("DEADPAN_FFMPEG_PREFIX", &ffmpeg);
     }
