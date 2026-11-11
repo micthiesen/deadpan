@@ -190,7 +190,7 @@ Repeat gaps", "Room tone for pause fragment"). A Repeat without a gap refuses
 with the `:repeat N gap=` command that adds one. Inside one chosen Repeat play
 only ordinary Holds are targets; a fragment or gap there refuses readably.
 
-Evidence: core `pause_sound` tests (gap audio changes, durations, bindings,
+Evidence: core `pause_sound` tests (gap audio changes, durations,
 branches and permissions; refusals; fragment isolation; exact Undo), the
 service test `native_room_tone_applies_to_a_repeat_default_gap_and_one_split_fragment`,
 the `room-tone-gaps` replay (real keys open the sheet on a Repeat and on a split

@@ -1,16 +1,8 @@
 //! Audited parameter updates of an affine stage owning exact pause clocks.
-use std::collections::BTreeMap;
-
-use crate::audio_binding::RepeatOwnerUse;
-
-mod repeated;
-use repeated::RepeatedOwner;
 
 use crate::{
-    AudioBindingEnvironment, AudioTimingId, DocumentError, EditError, EditErrorCode, ExactRatio,
-    FrameDuration, FrozenAudioLayout, HoldAudio, InstancePath, MAX_DOCUMENT_DEPTH,
-    MAX_DOCUMENT_NODES, MIX_SAMPLE_RATE, NodeId, NodeKind, PitchPolicy, ProjectDocument,
-    ProjectFrame, RetimePurpose, RevisionId,
+    DocumentError, EditError, EditErrorCode, ExactRatio, FrameDuration, MAX_DOCUMENT_DEPTH,
+    MAX_DOCUMENT_NODES, NodeId, NodeKind, PitchPolicy, ProjectDocument, RetimePurpose,
 };
 
 pub(crate) fn clocked_retime_target(document: &ProjectDocument, node: &NodeId) -> bool {
@@ -45,13 +37,9 @@ fn invalid(message: &str) -> EditError {
     EditError::new(EditErrorCode::InvalidCommand, message)
 }
 
-/// Current physical owners and ancestry of the bounded affine family.
-/// Repeated owners retain their exact current branch, not a sampled play.
-fn family(
-    document: &ProjectDocument,
-    node: &NodeId,
-    pitch: PitchPolicy,
-) -> Result<BTreeMap<NodeId, Option<RepeatedOwner>>, EditError> {
+/// Admit the bounded affine family below `node`: tape pitch, no processing
+/// stage and at most one Repeat level.
+fn family(document: &ProjectDocument, node: &NodeId, pitch: PitchPolicy) -> Result<(), EditError> {
     let (_, current_pitch) = ordinary(document, node)?;
     if current_pitch != PitchPolicy::FollowSpeed || pitch != PitchPolicy::FollowSpeed {
         return Err(invalid(
@@ -83,8 +71,7 @@ fn family(
             return Err(super::super::limit("exact speed update ancestry"));
         }
     }
-    let mut pending = vec![(node, None::<RepeatedOwner>)];
-    let mut owners = BTreeMap::new();
+    let mut pending = vec![(node, false)];
     let mut visited = 0usize;
     while let Some((id, repeated)) = pending.pop() {
         visited += 1;
@@ -92,42 +79,16 @@ fn family(
             return Err(super::super::limit("exact speed update family"));
         }
         match &document.nodes()[id].kind {
-            NodeKind::Repeat { child, gap, .. } => {
-                if repeated.is_some() {
+            NodeKind::Repeat { child, .. } => {
+                if repeated {
                     return Err(invalid(
                         "updating exact pause clocks cannot yet change nested Repeat families",
                     ));
                 }
-                let member = |usage| {
-                    Some(RepeatedOwner {
-                        repeat: id.clone(),
-                        usage,
-                    })
-                };
-                pending.push((child, member(RepeatOwnerUse::DefaultBody)));
-                if gap.is_some() {
-                    owners.insert(id.clone(), member(RepeatOwnerUse::DefaultGap));
-                }
-                if let Some(overrides) = document.overrides().get(id) {
-                    for (iteration, root) in overrides.iter() {
-                        pending.push((
-                            root,
-                            member(RepeatOwnerUse::OwnedBody {
-                                iteration: iteration.clone(),
-                                root: root.clone(),
-                            }),
-                        ));
-                    }
-                }
-                if let Some(overrides) = document.gap_overrides().get(id) {
-                    for (iteration, root) in overrides.iter() {
-                        pending.push((
-                            root,
-                            member(RepeatOwnerUse::OwnedGap {
-                                iteration: iteration.clone(),
-                                root: root.clone(),
-                            }),
-                        ));
+                pending.push((child, true));
+                for overrides in [document.overrides(), document.gap_overrides()] {
+                    if let Some(overrides) = overrides.get(id) {
+                        pending.extend(overrides.iter().map(|(_, root)| (root, true)));
                     }
                 }
                 continue;
@@ -153,14 +114,11 @@ fn family(
                     ));
                 }
             }
-            NodeKind::Source { .. } | NodeKind::Hold { .. } => {
-                owners.insert(id.clone(), repeated.clone());
-            }
-            NodeKind::Sequence { .. } => {}
+            NodeKind::Source { .. } | NodeKind::Hold { .. } | NodeKind::Sequence { .. } => {}
         }
-        pending.extend(document.children(id).map(|child| (child, repeated.clone())));
+        pending.extend(document.children(id).map(|child| (child, repeated)));
     }
-    Ok(owners)
+    Ok(())
 }
 
 impl ProjectDocument {
@@ -183,8 +141,7 @@ impl ProjectDocument {
             .map_err(EditError::from)
     }
 
-    /// Preflight the actual retained reference transfer, including older
-    /// lattices surviving successive updates. This never changes the document.
+    /// Preflight a parameter update. This never changes the document.
     /// Identical raw Edit parameters retain their established no-op admission.
     pub fn validate_retime_update(
         &self,
@@ -213,205 +170,10 @@ impl ProjectDocument {
                 requested_pitch,
             );
         }
-        let owners = family(self, node, requested_pitch)?;
-        let frozen = FrozenAudioLayout::capture(self)?;
-        let clock = super::clock_of(self, node)?;
-        let factor = ExactRatio::integer(duration.frames())
-            .checked_div(clock.extent)
-            .map_err(DocumentError::from)?;
-        let rate = self.presentation_basis().frame_rate;
-        let frame_per_sample = ExactRatio::new(
-            i128::from(rate.numerator()),
-            i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
-        )
-        .map_err(DocumentError::from)?;
-        let stage = frozen.project(
-            &InstancePath {
-                node: node.clone(),
-                repeats: vec![],
-            },
-            ExactRatio::ZERO,
-            None,
-            MAX_DOCUMENT_NODES,
-        )?;
-        let mut work = stage.work;
-        let mut prospective = None;
-        for (owner, repeated) in owners {
-            // Only direct authored silent Holds bypass transfer. Default
-            // Repeat gaps still use a retained-domain transfer, even Silence.
-            if let Some(repeated) = repeated {
-                if matches!(&self.nodes()[&owner].kind, NodeKind::Hold { recipe } if recipe.audio == HoldAudio::Silence)
-                {
-                    continue;
-                }
-                repeated::validate_owner(
-                    self,
-                    &frozen,
-                    &owner,
-                    &repeated,
-                    (factor, frame_per_sample),
-                    &mut prospective,
-                    &mut work,
-                )?;
-                continue;
-            }
-            if !audible_owner(self, &owner) {
-                continue;
-            }
-            let path = InstancePath {
-                node: owner.clone(),
-                repeats: vec![],
-            };
-            let maximum = MAX_DOCUMENT_NODES
-                .checked_sub(work)
-                .filter(|left| *left > 0)
-                .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
-            let (current, allocation) =
-                frozen.project_scoped_with_allocation(frozen.root(), &path, None, maximum)?;
-            work = work
-                .checked_add(current.work)
-                .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
-            let Some(allocation) = allocation else {
-                continue;
-            };
-            // A positive mathematical interval can receive no mix samples
-            // after this update. Such a carrier never invokes the transfer
-            // resampler, so its unused historical rate cannot cap the edit.
-            // Sequence ancestors preserve the stage origin and root rounding.
-            let candidate_origin = current
-                .origin
-                .checked_sub(stage.origin)
-                .and_then(|offset| offset.checked_mul(factor))
-                .and_then(|offset| stage.origin.checked_add(offset))
-                .map_err(DocumentError::from)?;
-            let candidate_scale = current
-                .frames_per_local_frame
-                .checked_mul(factor)
-                .map_err(DocumentError::from)?;
-            let sample_boundary = |local: ExactRatio| {
-                local
-                    .checked_mul(candidate_scale)
-                    .and_then(|offset| candidate_origin.checked_add(offset))
-                    .and_then(|root| root.checked_div(frame_per_sample))
-                    .and_then(ExactRatio::round_even)
-                    .map_err(DocumentError::from)
-            };
-            if sample_boundary(allocation.start)? == sample_boundary(allocation.end)? {
-                continue;
-            }
-            // The raw carrier uses current meaningful support, not the
-            // narrower allocation of a transparent Partition. An empty
-            // historical sample domain returns silence before transfer.
-            let maximum = MAX_DOCUMENT_NODES
-                .checked_sub(work)
-                .filter(|left| *left > 0)
-                .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
-            let (raw, mut support) =
-                frozen.project_scoped_with_support(frozen.root(), &path, None, maximum)?;
-            work = work
-                .checked_add(raw.work)
-                .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
-            // Selected Source audio narrows the raw operand before transfer,
-            // just as AudioBound::raw_domain does. Its offset is already part
-            // of these physical-local endpoints; retained resumes add no shift.
-            if let NodeKind::Source { source } = &self.nodes()[&owner].kind
-                && source.audio.is_some()
-                && matches!(
-                    source.audio_mapping,
-                    crate::SourceAudioMapping::SelectedPlacement { .. }
-                )
-            {
-                let selected = source
-                    .audio_mapping
-                    .selection_frames_with_offset(source.duration, source.audio_offset, rate)
-                    .map_err(DocumentError::from)?;
-                let clipped = crate::source_edit::intersect(
-                    crate::ExactFrameRange {
-                        start: support.start,
-                        end: support.end,
-                    },
-                    selected,
-                );
-                if clipped.end.compare(clipped.start).is_le() {
-                    continue;
-                }
-                support = clipped.start..clipped.end;
-            }
-            let historical_unit = if self.audio_bindings().bindings().contains_key(&owner) {
-                let maximum = MAX_DOCUMENT_NODES
-                    .checked_sub(work)
-                    .filter(|left| *left > 0)
-                    .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
-                let binding = self.audio_bindings().resolve_in(
-                    &owner,
-                    AudioBindingEnvironment::Occurrence(&path),
-                    maximum,
-                )?;
-                work = work
-                    .checked_add(binding.work)
-                    .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
-                if binding
-                    .lattice
-                    .sample_boundary(support.start)
-                    .map_err(DocumentError::from)?
-                    == binding
-                        .lattice
-                        .sample_boundary(support.end)
-                        .map_err(DocumentError::from)?
-                {
-                    continue;
-                }
-                binding
-                    .lattice
-                    .local_frames_per_sample()
-                    .map_err(DocumentError::from)?
-            } else {
-                // Commit captures every missing carrier on this PRE-edit map,
-                // including its root-round-even raw allocation.
-                let old_boundary = |local: ExactRatio| {
-                    local
-                        .checked_mul(raw.frames_per_local_frame)
-                        .and_then(|offset| raw.origin.checked_add(offset))
-                        .and_then(|root| root.checked_div(frame_per_sample))
-                        .and_then(ExactRatio::round_even)
-                        .map_err(DocumentError::from)
-                };
-                if old_boundary(support.start)? == old_boundary(support.end)? {
-                    continue;
-                }
-                frame_per_sample
-                    .checked_div(current.frames_per_local_frame)
-                    .map_err(DocumentError::from)?
-            };
-            let transfer = frame_per_sample
-                .checked_div(current.frames_per_local_frame)
-                .and_then(|unit| unit.checked_div(factor))
-                .and_then(|unit| unit.checked_div(historical_unit))
-                .map_err(DocumentError::from)?;
-            if transfer.compare_integer(64).is_gt()
-                || transfer
-                    .checked_mul(ExactRatio::integer(64))
-                    .map_err(DocumentError::from)?
-                    .compare_integer(1)
-                    .is_lt()
-            {
-                return Err(invalid(
-                    "the retained audio transfer would leave the supported 1/64..64 range; choose a closer speed",
-                ));
-            }
-        }
+        // A clocked tape-pitch family resamples like any other tape speed
+        // change; only its structure needs admission.
+        family(self, node, requested_pitch)?;
         Ok(())
-    }
-}
-
-fn audible_owner(document: &ProjectDocument, owner: &NodeId) -> bool {
-    match &document.nodes()[owner].kind {
-        NodeKind::Hold { recipe } => recipe.audio != HoldAudio::Silence,
-        NodeKind::Repeat { gap, .. } => gap
-            .as_ref()
-            .is_some_and(|recipe| recipe.audio != HoldAudio::Silence),
-        NodeKind::Source { .. } | NodeKind::Retime { .. } => true,
-        NodeKind::Sequence { .. } => false,
     }
 }
 
@@ -420,7 +182,6 @@ pub(crate) fn set_retime(
     node: &NodeId,
     duration: FrameDuration,
     pitch: PitchPolicy,
-    allocation: &RevisionId,
 ) -> Result<ProjectDocument, EditError> {
     document.validate_retime_update(node, duration, pitch)?;
     let (old_duration, old_pitch) = ordinary(document, node)?;
@@ -430,30 +191,10 @@ pub(crate) fn set_retime(
         return Ok(document.clone());
     }
     super::supported(document)?;
-    let inner = family(document, node, pitch)?;
-    let mut affected = super::super::composite::occurrence_owners_after(document, node)?;
-    affected.extend(
-        inner
-            .keys()
-            .filter(|owner| !repeated::has_binding(document, owner))
-            .cloned(),
-    );
-    affected.retain(|owner| audible_owner(document, owner));
-    let total =
-        crate::derived_clock::integral(document.exact_durations()?[document.root()])?.frames();
-    let timing = AudioTimingId {
-        allocation: allocation.clone(),
-        ordinal: 0,
-    };
-    let mut result = crate::command_work::with_scoped_timing_captures(false, || {
-        super::super::composite::prepare_owners(
-            document,
-            &affected,
-            ProjectFrame(0),
-            total,
-            &timing,
-        )
-    })?;
+    family(document, node, pitch)?;
+    // Refuse a change whose suffix would cross a Retime ancestor.
+    super::super::composite::occurrence_owners_after(document, node)?;
+    let mut result = document.clone();
     let clock = super::clock_of(document, node)?;
     super::set_clock(
         &mut result,

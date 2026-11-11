@@ -2,7 +2,7 @@
 //! Compound isolates that gap and applies the pause edit to the copy only.
 
 use super::*;
-use crate::{AudioTimingId, GainDb, PauseLength, PlayGapChange, capture_unbound_audio_bindings};
+use crate::{GainDb, PauseLength, PlayGapChange};
 
 fn tone() -> HoldAudio {
     HoldAudio::Tone {
@@ -36,17 +36,6 @@ fn gapped() -> ProjectDocument {
     }
     document.nodes.insert(node("tail"), toned(2));
     document.nodes.insert(node("lead"), toned(2));
-    let bindings = capture_unbound_audio_bindings(
-        &document,
-        AudioTimingId {
-            allocation: revision("gap-capture"),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(&document).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
     document.validate().unwrap();
     document
 }

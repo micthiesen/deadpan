@@ -5,7 +5,7 @@ its retained child at unity speed while preserving the child's audio processing
 and envelope context. This is an implemented building block for structural
 splices. The later [Split command](STRUCTURAL_SPLIT.md) adds mark binding and
 occurrence handling plus native entry. Arbitrary-boundary Hold insertion still
-requires exact resume anchors and host integration.
+requires host integration; audio placement is derived from the current tree.
 
 ## Authored intent
 
@@ -68,9 +68,9 @@ provider, copy marks, or assert that a retained clone has valid logical lineage.
 ## Remaining splice contract
 
 A pair of partitions can preserve an unmoved render's sound. Moving a suffix by
-an inserted Hold, removing its prefix or reordering it additionally needs an
-exact source/DSP resume anchor at the new absolute sample boundary. Frame
-translation alone does not provide that at
+an inserted Hold, removing its prefix or reordering it additionally needs the source/DSP
+phase at the new absolute sample boundary, which the derived placement supplies.
+Frame translation alone does not provide that at
 fractional frame rates. Real new cuts also need intentional edge semantics.
 
 The [splice design](STRUCTURAL_SPLICE_DESIGN.md) records these obligations,

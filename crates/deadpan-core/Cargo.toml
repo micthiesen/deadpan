@@ -18,7 +18,6 @@ serde_json = { workspace = true, features = ["raw_value"] }
 test-support = []
 
 [dev-dependencies]
-deadpan-chaos.workspace = true
 deadpan-core = { workspace = true, features = ["test-support"] }
 proptest.workspace = true
 

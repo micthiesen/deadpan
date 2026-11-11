@@ -27,54 +27,7 @@ impl<'plan> WalkResult<'plan, (), ()> {
     }
 }
 type Content<'plan, I, L> = GuardedBound<AudioSignalContent<'plan>, I, L>;
-#[derive(Clone, Copy)]
-enum Terminal {
-    Leaf,
-    Bound,
-    Stage,
-    ProjectedStage,
-}
-
-/// Co-produced by the existing terminal dispatch, never by rescanning a tape.
-/// A successful Leaf/Bound-only walk did not take a Preserve stop.
-#[derive(Default)]
-pub(in crate::plan) struct ProcessingStops {
-    exposed_stage: bool,
-}
-
-impl ProcessingStops {
-    fn observe(&mut self, terminal: Terminal) {
-        self.exposed_stage |= matches!(terminal, Terminal::Stage | Terminal::ProjectedStage);
-    }
-
-    pub(in crate::plan) fn permits_binding_reuse(&self) -> bool {
-        !self.exposed_stage
-    }
-}
-
-#[test]
-fn processing_stop_witness_fails_closed_and_keeps_earlier_stops() {
-    for terminal in [Terminal::Stage, Terminal::ProjectedStage] {
-        let mut stops = ProcessingStops::default();
-        stops.observe(Terminal::Leaf);
-        stops.observe(Terminal::Bound);
-        assert!(stops.permits_binding_reuse());
-        stops.observe(terminal);
-        stops.observe(Terminal::Leaf);
-        stops.observe(Terminal::Bound);
-        assert!(!stops.permits_binding_reuse());
-    }
-}
-
 impl<'plan, I: Copy + Eq, L> GuardedBound<AudioSignalContent<'plan>, I, L> {
-    fn terminal(&self) -> Terminal {
-        match &**self {
-            AudioSignalContent::Leaf(_) => Terminal::Leaf,
-            AudioSignalContent::Bound(_) => Terminal::Bound,
-            AudioSignalContent::Stage(_) => Terminal::Stage,
-            AudioSignalContent::ProjectedStage(_) => Terminal::ProjectedStage,
-        }
-    }
     fn finish<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
         self,
         memory: Memory<I, L>,
@@ -116,11 +69,10 @@ fn stage_content<'plan, A: AudioSoundContextAdmission>(
 }
 // Preserve separate slot/editorial/clock borrows and the observed clock's
 // independent Plan lifetime; this names only the existing argument tuple.
-type WalkCaptures<'slot, 'editorial, 'clock, 'clock_plan, 'processing, I, L> = (
+type WalkCaptures<'slot, 'editorial, 'clock, 'clock_plan, I, L> = (
     Option<&'slot mut Owned<Option<AudioDomainSeed>, I, L>>,
     Option<&'editorial mut Owned<EditorialCapture, I, L>>,
     Option<&'clock super::super::AudioOwnerClock<'clock_plan>>,
-    Option<&'processing mut ProcessingStops>,
 );
 
 impl RenderPlan {
@@ -130,8 +82,8 @@ impl RenderPlan {
         budget: &mut QueryBudget<'_, A>,
         seed: Option<&AudioWalkSeed>,
         stop_at_preserve: bool,
-        stop_at_bindings: bool,
-        captures: WalkCaptures<'_, '_, '_, '_, '_, A::Issuer, A::Lease>,
+        _stop_at_bindings: bool,
+        captures: WalkCaptures<'_, '_, '_, '_, A::Issuer, A::Lease>,
     ) -> Result<WalkResult<'plan, A::Issuer, A::Lease>, A> {
         macro_rules! push {
             ($data:ident,$capacity:ident,$value:expr) => {{
@@ -140,7 +92,7 @@ impl RenderPlan {
                 $data.push($value);
             }};
         }
-        let (mut capture, editorial_capture, input_owner, processing_stops) = captures;
+        let (mut capture, editorial_capture, input_owner) = captures;
         let rate = self.metadata.presentation_basis.frame_rate;
         let mut transform = AudioTransform {
             project_origin: ExactRatio::ZERO,
@@ -265,48 +217,15 @@ impl RenderPlan {
                     .as_ref()
                     .map(|v| budget.iteration(&mut memory, v))
                     .transpose()?;
-                let content = if stop_at_bindings
-                    && bypass_binding != Some(BindingTarget::Gap(current))
-                    && let Some(bound) = self.bound_at_query(
-                        current,
-                        &repeats,
-                        definition,
-                        super::super::audio_bound::BoundPlacement {
-                            transform: super::super::SignalTransform {
-                                signal_origin: transform.project_origin,
-                                signal_frames_per_local_frame: transform
-                                    .project_frames_per_local_frame,
-                                grid_origin: grid.frame_origin(),
-                                signal_frames_per_sample: transform.project_frames_per_sample,
-                            },
-                            grid: AudioSampleGrid::new(
-                                grid.frame_origin(),
-                                transform.project_frames_per_sample,
-                                grid.boundary_rule(),
-                            )?,
-                            allocated_start: super::super::SignalSample(
-                                grid.boundary(extent.start)?.0,
-                            ),
-                            support: envelope.as_ref(),
-                            constraints: &constraints,
-                            gap: Some(&gap),
-                        },
+                let content = Content::plain(
+                    AudioSignalContent::Leaf(storage::hold(
+                        audio,
+                        gap.duration,
+                        &mut memory,
                         budget,
-                    )? {
-                    bound
-                        .boxed(budget)?
-                        .map(budget, AudioSignalContent::Bound)?
-                } else {
-                    Content::plain(
-                        AudioSignalContent::Leaf(storage::hold(
-                            audio,
-                            gap.duration,
-                            &mut memory,
-                            budget,
-                        )?),
-                        budget.issuer,
-                    )
-                };
+                    )?),
+                    budget.issuer,
+                );
                 domain_gap = Some(gap);
                 break (content, after);
             }
@@ -436,39 +355,6 @@ impl RenderPlan {
                         None => node_extent,
                     });
                 }
-            }
-            if stop_at_bindings
-                && bypass_binding != Some(BindingTarget::Node(current))
-                && let Some(bound) = self.bound_at_query(
-                    current,
-                    &repeats,
-                    definition,
-                    super::super::audio_bound::BoundPlacement {
-                        transform: super::super::SignalTransform {
-                            signal_origin: transform.project_origin,
-                            signal_frames_per_local_frame: transform.project_frames_per_local_frame,
-                            grid_origin: grid.frame_origin(),
-                            signal_frames_per_sample: transform.project_frames_per_sample,
-                        },
-                        grid: AudioSampleGrid::new(
-                            grid.frame_origin(),
-                            transform.project_frames_per_sample,
-                            grid.boundary_rule(),
-                        )?,
-                        allocated_start: super::super::SignalSample(grid.boundary(extent.start)?.0),
-                        support: envelope.as_ref(),
-                        constraints: &constraints,
-                        gap: None,
-                    },
-                    budget,
-                )?
-            {
-                break (
-                    bound
-                        .boxed(budget)?
-                        .map(budget, AudioSignalContent::Bound)?,
-                    None,
-                );
             }
             let local = probe
                 .checked_sub(transform.project_origin)?
@@ -857,11 +743,7 @@ impl RenderPlan {
         budget.merge_checked(&mut memory, &mut repeats_capacity)?;
         budget.merge_checked(&mut memory, &mut retimes_capacity)?;
         let definition = budget.definition_ref(&mut memory, definition)?;
-        let terminal = content.terminal();
-        if let Some(stops) = processing_stops {
-            stops.observe(terminal);
-        }
-        if !matches!(terminal, Terminal::Leaf) {
+        if !matches!(&*content, AudioSignalContent::Leaf(_)) {
             let node = budget.node(&mut memory, &self.nodes[current].inspection.id)?;
             return content.finish(memory, budget, move |content| {
                 AudioWalkSpan::Stage(AudioProcessingSpan {

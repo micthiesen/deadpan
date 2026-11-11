@@ -57,7 +57,7 @@ restore the exact prior value or absence, including through durable Undo/Redo.
 
 `prepend_owner_frames` returns the exact checked interval translated by a
 nonnegative prefix. It does not enlarge the Source. A future atomic edit must
-also update mappings, duration, retained audio clocks, effect clocks and marks.
+also update mappings, duration, effect clocks and marks.
 Tail-only context growth preserves the interval. A crop view's intersection with
 the retained interval can be empty if it contains only endpoint padding; that
 does not permit inventing a positive selected interval.

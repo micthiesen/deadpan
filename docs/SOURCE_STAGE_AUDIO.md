@@ -13,8 +13,7 @@ The reader requests bounded audio spans from the plan and stages 1 through 256
 samples atomically. Silence, Source placement, Sequence, Repeat and sparse
 occurrence mappings retain their existing plan semantics. A gap occurs only
 between repeat plays. A silent Hold contributes exactly its allocated samples;
-later Sources keep their authored mappings. Arbitrary-boundary Hold insertion
-still requires persisted exact resume intent and retained reference policies.
+later Sources keep their authored mappings. Placement is derived from the current tree (no stored resume intent).
 
 Every source recipe is anchored at the span's full `allocated_samples.start`,
 not the current query start. The source origin and per-output-sample step come

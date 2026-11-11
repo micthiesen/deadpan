@@ -55,10 +55,8 @@ The service builds one `EditOccurrence` whose `PasteSlice` (edited copy) or
 start in that play) and its Split names. Commit isolates the shown plays
 outside-in, then places the content exactly as the root `SpliceSlice`,
 `SpliceSliceAt`, `ReplaceSlice`, `SpliceSource`, `SpliceSourceAt` or
-`ReplaceSource` places it in that group: endpoint clocks are captured before
-any Split, and every later owner (the rest of the play, later plays and gaps of
-each enclosing Repeat, and everything after) keeps its own pre-edit sample
-entry. Other plays keep the shared definition. One Undo removes isolation,
+`ReplaceSource` places it in that group: every later owner (the rest of the play, later plays and gaps of
+each enclosing Repeat, and everything after) is sampled from its new position. Other plays keep the shared definition. One Undo removes isolation,
 Split and placement together. The inspector selects the placed beat at its
 start in that play. `ProjectDocument::occurrence_placement` is the preflight:
 group, its origin in the occurrence, the boundary or removed interval and the

@@ -2,8 +2,8 @@
 
 `AudioDomain` and `StageAudio::read_domain` render one physical Source, Hold,
 Repeat gap or opaque Preserve context independently of its visible allocation.
-This supplies the full signal that a future live resume binding must select.
-It does not author that binding or an inserted-time command. Core 15/database 21
+This supplies the full signal of one physical owner. It authors no
+inserted-time command. Core 15/database 21
 and retained-context schema 1 remain unchanged.
 
 ## Why whole-root reads are insufficient
@@ -98,20 +98,19 @@ a complete retained context against its historical revision. Receipts and
 verified original bytes remain required. Inspection never changes the history
 cursor or reinterprets a latest-head asset alias.
 
-## Remaining binding work
+## Remaining work
 
-The rendering boundary is implemented; authored selection of that boundary is
-still required. Bindings need independent later-domain anchors, composed phase,
-compact Repeat birth/edit correspondence and live ownership transforms. A
-frozen-body implementation would also require a bounded dependency graph and
+The rendering boundary is implemented. Original-audio bindings were removed on
+2026-11-11, so authored selection of that boundary is no longer needed for
+placement: each owner is sampled from the current tree. A frozen-body
+implementation would still require a bounded dependency graph and
 preparation shared across contexts. The preferred [owned recipe](OWNED_AUDIO_CLOCKS.md)
 approach evaluates Split's current children in explicit clocks within one plan,
-avoiding a duplicate raw-body graph. Its authored lifecycle is still unimplemented.
+avoiding a duplicate raw-body graph.
 
-[Definition-output reads](AUDIO_DEFINITIONS.md) now select a Node or actual
-Repeat default directly for the separate future birth operand. This avoids
-inventing an old occurrence when a Repeat gains new plays. Preserving intrinsic
-bindings while rebasing enclosing lexical Repeat placement remains required.
+[Definition-output reads](AUDIO_DEFINITIONS.md) select a Node or actual
+Repeat default directly for a newly born play, avoiding
+inventing an old occurrence when a Repeat gains new plays.
 
 Retained policies also need exact queries on both input and output grids of a
 new consuming Preserve stage. Scaling rounded input suppression ranges is

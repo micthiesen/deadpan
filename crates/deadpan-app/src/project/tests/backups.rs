@@ -498,7 +498,7 @@ fn opening_a_schema66_package_refuses_without_rewriting_or_backing_it_up() {
             .error
             .as_deref()
             .unwrap()
-            .contains("Nothing was changed and no backup was made")
+            .contains("cannot be opened; nothing in it was changed")
     );
     assert!(opened.workspace.is_none());
     assert!(opened.committed.is_none());

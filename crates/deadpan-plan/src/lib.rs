@@ -49,10 +49,6 @@ pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
 pub use plan::{
-    AdmittedAudioBoundDomain, AdmittedAudioFadeQuery, AdmittedAudioPointContentQuery,
-    AdmittedAudioPolicyQuery, AdmittedAudioProcessingQuery, AdmittedAudioQuery,
-};
-pub use plan::{
     AdmittedAudioDomainPolicy, AdmittedAudioDomainProcessing, AdmittedAudioDomainProcessingPolicy,
     AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain,
     AudioDomainProcessing, AudioDomainProcessingPolicy, AudioQuery, AudioQueryLimits,
@@ -60,12 +56,15 @@ pub use plan::{
     PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport, StorageStats,
 };
 pub use plan::{
+    AdmittedAudioFadeQuery, AdmittedAudioPointContentQuery, AdmittedAudioPolicyQuery,
+    AdmittedAudioProcessingQuery, AdmittedAudioQuery,
+};
+pub use plan::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,
-    AdmittedAudioOwnerRetainedProbe, AdmittedAudioOwnerSpanStartCandidates,
-    AdmittedAudioSpanStartInputCapture, AudioOwnerInput, AudioOwnerInputCandidates,
-    AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerOccurrence, AudioOwnerOccurrenceMap,
-    AudioOwnerOccurrences, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
-    AudioOwnerSpanStartRequest, SharedAudioOwnerQueryWork,
+    AdmittedAudioOwnerSpanStartCandidates, AdmittedAudioSpanStartInputCapture, AudioOwnerInput,
+    AudioOwnerInputCandidates, AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerOccurrence,
+    AudioOwnerOccurrenceMap, AudioOwnerOccurrences, AudioOwnerSpanStartRequest,
+    SharedAudioOwnerQueryWork,
 };
 pub use plan::{
     AdmittedAudioOwnerQuery, AdmittedAudioTreatmentBoundary, AudioOwnerClock,
@@ -73,8 +72,8 @@ pub use plan::{
     AudioTreatmentBoundary,
 };
 pub use plan::{
-    AdmittedOriginalContext, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
-    preflight_context_transfer, transfer_context_charges,
+    AdmittedOriginalContext, ContextChargeTransfer, preflight_context_transfer,
+    transfer_context_charges,
 };
 pub use plan::{
     AdmittedSignalPolicyQuery, AudioSignalPolicyMaskHandoff, SignalPolicyMaskRef, SignalPolicyView,
@@ -86,10 +85,8 @@ pub use plan::{
     AudioSourceOccurrenceSupport, AudioSourceOccurrenceSupports, AudioSourceOccurrences,
     AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
 };
-pub use plan::{
-    AudioBound, AudioBoundDomain, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery,
-};
 pub use plan::{AudioDefinition, AudioDefinitionSelector, AudioPointDomain, AudioRootPlacement};
+pub use plan::{AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery};
 pub use plan::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};
 pub use plan::{AudioOccurrenceAlias, AudioSoundClockBinding, AudioSoundClockScope};
 pub use plan::{

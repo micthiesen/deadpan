@@ -57,17 +57,6 @@ fn instance(owner: &str, repeats: &[(&str, u32)]) -> InstancePath {
     }
 }
 
-fn captured(document: &ProjectDocument, allocation: &str) -> AudioBindingState {
-    capture_unbound_audio_bindings(
-        document,
-        AudioTimingId {
-            allocation: rev(allocation),
-            ordinal: 0,
-        },
-    )
-    .unwrap()
-}
-
 fn attach_effect(document: &mut ProjectDocument, owner: &str) -> SoundId {
     let effect = SoundId::new("effect").unwrap();
     let source = SourceAudio {
@@ -100,11 +89,8 @@ fn attach_effect(document: &mut ProjectDocument, owner: &str) -> SoundId {
 
 #[test]
 fn ordinary_hold_duration_processing_changed_attachment_scope_refuses_atomically() {
-    for historical in [false, true] {
+    {
         let mut before = processing(PitchPolicy::Preserve, 1, false);
-        if historical {
-            before.audio_bindings = captured(&before, "attached-input");
-        }
         attach_effect(&mut before, "after");
         let snapshot = before.clone();
         let json = before.to_json().unwrap();

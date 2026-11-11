@@ -34,10 +34,7 @@ pub fn describe_store_error(error: &StoreError) -> String {
         (_, StoreError::NewerSchema { .. }) => format!(
             "{error}. Open it with that newer Deadpan to edit it; this build can only show it."
         ),
-        (_, StoreError::UnsupportedSchema(version)) => format!(
-            "This project uses development format {version}, which this build no longer opens (it reads format {}). Nothing was changed and no backup was made. Create a new project from its Original to continue.",
-            deadpan_store::DATABASE_SCHEMA_VERSION
-        ),
+        (_, StoreError::UnsupportedSchema(_)) => format!("{error}."),
         (_, StoreError::ReadOnlyLocation(_)) => error.to_string(),
         ("OriginalOffline", _) => format!(
             "The Original's file is missing. Locate it with :relink; nothing in the project was changed. ({error})"
@@ -436,8 +433,10 @@ mod tests {
     #[test]
     fn obsolete_and_newer_formats_explain_that_nothing_changed() {
         let old = describe_store_error(&StoreError::UnsupportedSchema(38));
-        assert!(old.contains("development format 38"));
-        assert!(old.contains("Nothing was changed"));
+        assert_eq!(
+            old,
+            "This project was made by an earlier development build of Deadpan (format 38) and cannot be opened; nothing in it was changed."
+        );
         let newer = describe_store_error(&StoreError::UnsupportedSchema(
             deadpan_store::DATABASE_SCHEMA_VERSION + 1,
         ));

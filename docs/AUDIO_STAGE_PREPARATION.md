@@ -52,7 +52,7 @@ its local origin and step. A resumed map can differ from the structural transfor
 Reconstruct the full prepared stage at that exact coordinate. Fractional phase
 belongs in this sampling operation, not an offset rounded to an integer native
 input boundary. Final allocation still uses the absolute project-frame endpoints
-rounded once. Persisted Hold resume and retained reference-policy masks remain open.
+rounded once. Retained reference-policy masks serve sound clocks only; Original placement is derived from the current tree.
 
 ## Plan boundary
 

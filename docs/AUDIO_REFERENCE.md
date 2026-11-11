@@ -3,8 +3,7 @@
 `FrozenAudioLayout` captures timing and audibility independently of a later live
 tree. `AudioReferencePlan` queries that snapshot in an explicit old clock, and
 `RetainedRootPolicy` applies its silence to resumed PCM. These are checked
-foundation APIs. They do not yet persist a Hold binding or implement an
-inserted-time command. Core 15/database 21 now retain [audio copy lineage](AUDIO_LINEAGE.md).
+foundation APIs. They persist no Original-audio placement; independent sound clocks use them. Core 15/database 21 now retain [audio copy lineage](AUDIO_LINEAGE.md).
 The separate [retained audio context](AUDIO_CONTEXT.md) supplies complete audio
 inputs and media contracts without treating this timing layout as admission.
 
@@ -14,7 +13,7 @@ The flat, closed layout retains durations, edge policies, exact Source audio
 placement including its offset, Hold/gap policy, compact Repeat order and sparse
 overrides, and Retime mapping/pitch/purpose. Tail policy retains its maximum in
 the original Hold's local frame units. No asset IDs, source media coordinates,
-labels, picture providers, marks, or previous resume bindings are captured.
+labels, picture providers, marks, or previous placement state are captured.
 This snapshot cannot authorize media access or establish supported Tail DSP.
 
 Node IDs are aliases scoped to the frozen layout. They are not references into
@@ -83,8 +82,7 @@ This consumer does not resample PCM, apply fades, mutate authored state, or
 transfer a root clock into a newly introduced Preserve input grid. It is not yet
 connected to an authored Hold command or the application transport.
 The separate [sampled-root transfer](AUDIO_SIGNAL_TRANSFER.md) now implements
-bounded conversion of already masked root PCM into a point grid. Authored
-bindings must still supply the correct retained context and active map.
+bounded conversion of already masked root PCM into a point grid. The consumer must still supply the correct retained context and active map.
 
 ## Physical processing domains and root maps
 
@@ -129,23 +127,18 @@ existing resampler and another real canonical Preserve operation.
 
 ## Remaining authored work
 
-An insertion must bind live owned domains to frozen aliases atomically, compose
-the current sampled coordinate at its cut, retain later domains' old starts,
-and preserve full processing contexts. Split/refinement and occurrence isolation
-must transform live bindings without rewriting frozen facts. Repeat growth,
-copying, deletion, policy changes and pruning need explicit lifecycle rules;
-changing a silence policy must replace its retained contribution rather than
-mute that location forever. Cross-grid conversion must consume the correctly
-bound context through the sampled-root adapter. Migration must freeze the previous grammar and give
-legacy projects no invented bindings.
+Original-audio bindings were removed on 2026-11-11: no live owned domain is bound
+to a frozen alias for Original placement any more. Frozen layouts serve
+independent beat-sound clocks. Changing a silence policy must replace its
+retained contribution rather than mute that location forever, and cross-grid
+conversion must consume the correctly bound context through the sampled-root
+adapter.
 
 Split and occurrence isolation now persist [audio copy lineage](AUDIO_LINEAGE.md).
 The frozen layout retains those explicit relationships separately from physical
 alias identity. Compatible lineage, clock, occurrence and exact placement can be
-compared without inferring a relationship from timing or media equality. The
-binding layer still needs to carry an active resume through these related
-contexts and replace changed contributions. Lineage alone is not a sampled
-signal, a live binding or proof of equal PCM.
+compared without inferring a relationship from timing or media equality. Lineage alone is not a sampled
+signal or proof of equal PCM.
 
 The [sampling contract](AUDIO_SAMPLING.md) and
 [splice design](STRUCTURAL_SPLICE_DESIGN.md) describe the remaining composition.

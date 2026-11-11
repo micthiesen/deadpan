@@ -143,7 +143,7 @@ fn replacement_admission_and_identity_failures_are_atomic() {
             0 => identities.nodes.truncate(4),
             1 => *id = super::id("a"),
             2 => identities.nodes[0] = id.clone(),
-            3 => timing.ordinal = u32::MAX,
+            3 => timing.allocation = RevisionId::new("wrong-timing").unwrap(),
             4 => source.duration = FrameDuration::ZERO,
             _ => unreachable!(),
         }

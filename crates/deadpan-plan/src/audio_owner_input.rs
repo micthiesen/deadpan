@@ -1,30 +1,21 @@
 //! Complete raw input contexts for post-time/pitch owner processing.
 
-use deadpan_core::{AudioSample, ExactRatio, TimeError};
+use deadpan_core::{AudioSample, TimeError};
 
-use super::audio::{AudioWalkSpan, Budget, EditorialCapture};
-use super::audio_owners::admission::{Budget as QueryBudget, Owned, Result as QueryResult};
+use super::audio::Budget;
 use super::{
-    AudioBound, AudioBoundDomain, AudioDomain, AudioFadeQuery, AudioOwnerClock,
-    AudioOwnerClockOrigin, AudioOwnerKind, AudioProcessingSpan, AudioQueryLimits,
-    AudioSignalContent, LookupStats, RenderPlan,
+    AudioDomain, AudioOwnerClock, AudioOwnerKind, AudioQueryLimits, LookupStats, RenderPlan,
 };
 use crate::{AudioSoundContextAdmission, PlanError};
 
-#[path = "audio_retained_fades_query.rs"]
-pub(in crate::plan) mod retained_fades;
-
 #[path = "audio_owner_input/candidates.rs"]
 mod candidates;
-#[path = "audio_owner_probe.rs"]
-mod probe;
 #[path = "audio_owner_input/span_start.rs"]
 mod span_start;
 pub use candidates::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture, AudioOwnerInputCandidates,
     AudioOwnerInputCapture,
 };
-pub use probe::{AdmittedAudioOwnerRetainedProbe, SharedAudioOwnerRetainedInput};
 pub use span_start::{
     AdmittedAudioOwnerSpanStartCandidates, AdmittedAudioSpanStartInputCapture,
     AudioOwnerSpanStartRequest, SharedAudioOwnerQueryWork,
@@ -68,8 +59,6 @@ impl<'plan> AudioOwnerInput<'plan> {
     /// Signed root-grid delivery context. It may span a whole Sequence or
     /// Repeat, and may include hidden samples outside current root allocation.
     /// `scope` identifies whether an enclosing processor must remain intact.
-    /// This interval is not the complete reference history of a resumed binding;
-    /// use `retained_at` to resolve that separate input instead of zero padding.
     pub fn context(&self) -> &AudioDomain<'plan> {
         &self.context
     }
@@ -79,243 +68,11 @@ impl<'plan> AudioOwnerInput<'plan> {
     pub fn work(&self) -> usize {
         self.work
     }
-
-    /// Compatibility lookup for consumers that do not account preparation
-    /// work. Controlled preparation should use retained_probe_at instead.
-    pub fn retained_at(
-        &self,
-        at: AudioSample,
-        limits: AudioQueryLimits,
-    ) -> Result<Option<AudioOwnerRetainedInput<'plan>>, PlanError> {
-        Ok(self.retained_probe_at(at, limits)?.into_input())
-    }
-
-    /// The first opaque retained input at this context sample and the work of
-    /// the same lookup, including a successful lookup that finds no input.
-    /// Do not descend through an enclosing Preserve to find one: that would
-    /// move post-time/pitch effects into its input. No PCM is opened here.
-    pub fn retained_probe_at(
-        &self,
-        at: AudioSample,
-        limits: AudioQueryLimits,
-    ) -> Result<AudioOwnerRetainedProbe<'plan>, PlanError> {
-        limits.validate()?;
-        if !self.context.root_samples().contains(&at) {
-            return Err(PlanError::AudioRangeOutOfRange);
-        }
-        let mut budget = Budget {
-            remaining: limits.maximum_work,
-            lookup: LookupStats::default(),
-        };
-        let mut editorial = EditorialCapture::default();
-        let walked = self.context.plan.audio_walk_editorial(
-            at,
-            &mut budget,
-            Some(&self.context.seed),
-            (true, true),
-            &mut editorial,
-        );
-        let walked = walked?;
-        let input = match walked {
-            AudioWalkSpan::Stage(span) if matches!(span.content, AudioSignalContent::Bound(_)) => {
-                let AudioSignalContent::Bound(bound) = &span.content else {
-                    unreachable!()
-                };
-                let domain = bound.raw_domain()?;
-                Some(AudioOwnerRetainedInput {
-                    plan: self.context.plan,
-                    processing: span,
-                    editorial,
-                    domain,
-                    work: limits.maximum_work - budget.remaining,
-                })
-            }
-            _ => None,
-        };
-        Ok(AudioOwnerRetainedProbe {
-            input,
-            work: limits.maximum_work - budget.remaining,
-        })
-    }
-}
-
-/// Result of one checked retained-input lookup. An absent operand still has
-/// actual traversal work. Owns the same optional input without cloning it.
-#[derive(Debug)]
-pub struct AudioOwnerRetainedProbe<'plan> {
-    input: Option<AudioOwnerRetainedInput<'plan>>,
-    work: usize,
-}
-
-impl<'plan> AudioOwnerRetainedProbe<'plan> {
-    pub fn input(&self) -> Option<&AudioOwnerRetainedInput<'plan>> {
-        self.input.as_ref()
-    }
-
-    pub fn work(&self) -> usize {
-        self.work
-    }
-
-    pub fn into_input(self) -> Option<AudioOwnerRetainedInput<'plan>> {
-        self.input
-    }
-}
-
-/// A retained processor's full raw operand and its exact map from consumer
-/// sample labels. Reference coordinates stay on their RootRoundEven or PointCeil
-/// grid; they are never fabricated by inverting a nominal automation clock.
-#[derive(Debug, Clone)]
-pub struct AudioOwnerRetainedInput<'plan> {
-    pub(super) plan: &'plan RenderPlan,
-    processing: AudioProcessingSpan<'plan>,
-    editorial: EditorialCapture,
-    domain: AudioBoundDomain<'plan>,
-    work: usize,
-}
-
-impl<'plan> AudioOwnerRetainedInput<'plan> {
-    pub(super) fn clock_origin(&self) -> super::AudioOwnerClockOrigin {
-        super::AudioOwnerClockOrigin::Retained {
-            definition: self.processing.definition.clone(),
-            instance: self.processing.instance.clone(),
-            kind: if self.processing.gap_after.is_some() {
-                AudioOwnerKind::DefaultGap
-            } else {
-                AudioOwnerKind::Node
-            },
-            gap_after: self.processing.gap_after.clone(),
-        }
-    }
-
-    /// Build the first per-span retained origin under the same owner-query
-    /// admission as the walk. Per-owner origin copies are charged separately
-    /// by the existing `Budget::origin` call in `walk_query`.
-    pub(super) fn clock_origin_admitted<A: AudioSoundContextAdmission>(
-        &self,
-        budget: &mut QueryBudget<'_, A>,
-    ) -> QueryResult<Owned<AudioOwnerClockOrigin, A::Issuer, A::Lease>, A> {
-        if !A::METERED {
-            return Ok(Owned {
-                value: self.clock_origin(),
-                memory: budget.memory(),
-            });
-        }
-        let mut memory = budget.memory();
-        budget.additional(1)?;
-        let definition = budget.definition(&mut memory, &self.processing.definition)?;
-        let mut capacity = budget.memory();
-        let instance = budget.instance(&mut memory, &mut capacity, &self.processing.instance)?;
-        let gap_after = self
-            .processing
-            .gap_after
-            .as_ref()
-            .map(|value| budget.iteration(&mut memory, value))
-            .transpose()?;
-        budget.check_memory(&memory)?;
-        budget.check_memory(&capacity)?;
-        budget.merge_checked(&mut memory, &mut capacity)?;
-        Ok(Owned {
-            value: AudioOwnerClockOrigin::Retained {
-                definition,
-                instance,
-                kind: if self.processing.gap_after.is_some() {
-                    AudioOwnerKind::DefaultGap
-                } else {
-                    AudioOwnerKind::Node
-                },
-                gap_after,
-            },
-            memory,
-        })
-    }
-    /// Checked immutable operand. Its offset origin is the original allocated
-    /// start, retained by `reference_at`; serialized metadata cannot replace it.
-    pub fn bound(&self) -> &AudioBound<'plan> {
-        let AudioSignalContent::Bound(bound) = &self.processing.content else {
-            unreachable!()
-        };
-        bound
-    }
-    /// Make a clone for private empty-support branch coverage. The bound is a
-    /// real captured operand; only its meaningful support and matching cached
-    /// raw-domain tag are replaced, so this is not a document/provider oracle.
-    pub fn domain(&self) -> &AudioBoundDomain<'plan> {
-        &self.domain
-    }
-    pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
-        self.bound().belongs_to(plan)
-    }
-    pub fn reference_at(&self, sample: AudioSample) -> Result<ExactRatio, PlanError> {
-        self.bound().reference_at_wide_offset(
-            i128::from(sample.0) - i128::from(self.processing.allocated_samples.start.0),
-        )
-    }
-    pub fn reference_samples_per_output_sample(&self) -> ExactRatio {
-        self.bound().reference_samples_per_output_sample()
-    }
-    pub fn work(&self) -> usize {
-        self.work
-    }
-
-    /// Creative output fades on the original consumer grid, including retained
-    /// history outside current delivery. This does not grant output allocation
-    /// or a silence/tail permission. Empty history remains a raw-reader policy.
-    pub fn fades(
-        &self,
-        samples: std::ops::Range<AudioSample>,
-        limits: AudioQueryLimits,
-    ) -> Result<AudioFadeQuery, PlanError> {
-        limits.validate()?;
-        if samples.end < samples.start {
-            return Err(PlanError::AudioRangeOutOfRange);
-        }
-        let mut budget = Budget {
-            remaining: limits.maximum_work,
-            lookup: LookupStats::default(),
-        };
-        let mut spans = Vec::new();
-        let mut cursor = samples.start;
-        while cursor < samples.end {
-            if spans.len() == limits.maximum_spans {
-                return Err(PlanError::AudioQueryLimit("retained fade span count"));
-            }
-            budget.spend(
-                1 + self.bound().work()
-                    + self.processing.retimes.len()
-                    + self.processing.instance.repeats.len()
-                    + self.editorial.editorial.len()
-                    + self.editorial.constraints.len()
-                    + self.editorial.repeats.len(),
-            )?;
-            let span = super::audio_fades::retained_bound_fade(
-                self.processing.clone(),
-                cursor,
-                samples.end,
-                self.editorial.clone(),
-                &mut budget,
-            )?;
-            if span.samples.start != cursor
-                || span.samples.end <= cursor
-                || span.samples.end > samples.end
-            {
-                return Err(PlanError::InvalidPlan(
-                    "retained fade interval did not advance",
-                ));
-            }
-            cursor = span.samples.end;
-            spans.push(span);
-        }
-        Ok(AudioFadeQuery {
-            spans,
-            lookup: budget.lookup,
-            work: limits.maximum_work - budget.remaining,
-        })
-    }
 }
 
 impl RenderPlan {
     /// Resolve complete raw context for an owner observed at this root sample.
-    /// Retain the first enclosing Preserve/binding instead of reconstructing its
+    /// Retain the first enclosing Preserve instead of reconstructing its
     /// output from nominal automation coordinates. Full owner contribution,
     /// ordered treatments and per-voice silence/tail gates are separate work.
     pub fn audio_owner_input(
@@ -431,7 +188,7 @@ fn capture_observed_admitted<'plan, A: crate::AudioSoundContextAdmission>(
             context,
             true,
             true,
-            (Some(&mut captured), None, Some(observed), None),
+            (Some(&mut captured), None, Some(observed)),
         );
         // The COMPLETE actual span and all workspace/Core/Box guards end at
         // the legacy discard, before the observed owner's unpaid old clone.

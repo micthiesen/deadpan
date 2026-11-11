@@ -92,7 +92,7 @@ pub(crate) fn prepare(
                 "a pause for all plays cannot yet move attached sounds; add it to this play only",
             ));
         }
-        all_plays_site(document, &target, *at)?;
+        all_plays_site(document, &target)?;
     }
     if identities.isolation.nodes.len() != target.isolation_nodes
         || identities.isolation.marks.len() != target.isolation_marks
@@ -155,9 +155,9 @@ pub(crate) fn prepare(
         let Site::Gap { repeat, after, .. } = target.site else {
             return Err(invalid("isolated pause lost its default gap"));
         };
-        // Materialization changes no root time or root sound route. Its
-        // physical binding capture needs the independent bus detached; restore
-        // it before the recursive leaf captures the actual insertion ripple.
+        // Materialization changes no root time or root sound route. Detach the
+        // independent bus around it; restore it before the recursive leaf
+        // records the actual insertion ripple.
         let sounds = std::mem::take(&mut result.sounds);
         let routes = std::mem::take(&mut result.sound_routes);
         result = crate::gap_override::isolate(
@@ -213,7 +213,6 @@ pub(crate) fn apply(
         hold,
         id,
         identities,
-        timing,
         all_plays,
         ..
     } = command
@@ -228,9 +227,7 @@ pub(crate) fn apply(
         *all_plays,
     )?;
     if is_shared(&target) {
-        return apply_all_plays(
-            document, &target, *at, hold, id, identities, timing, context,
-        );
+        return apply_all_plays(document, &target, hold, id, identities, context);
     }
     if target.isolation_nodes != 0 || target.gap {
         return Err(invalid(
@@ -238,9 +235,7 @@ pub(crate) fn apply(
         ));
     }
     let allocation = context.allocation;
-    let total = document.duration()?.frames();
     let mut working = document.clone();
-    let mut placement_timing = timing.clone();
     let (parent, slot) = match target.site {
         Site::Sequence { instance, index } => (instance.node, index),
         Site::Physical {
@@ -249,12 +244,8 @@ pub(crate) fn apply(
             sequence,
         } => {
             if target.split_nodes != 0 {
-                working.audio_bindings =
-                    crate::capture_unbound_audio_bindings(document, timing.clone())?;
-                working = super::split_captured(document, &working, |working| {
-                    crate::split::apply(working, &instance.node, cut, &identities.split, context)
-                })?;
-                placement_timing = next_timing(timing)?;
+                working =
+                    crate::split::apply(document, &instance.node, cut, &identities.split, context)?;
                 sequence.map_or_else(
                     || {
                         (
@@ -287,17 +278,13 @@ pub(crate) fn apply(
                     container.clone(),
                     BeatNode::sequence("", vec![instance.node]),
                 );
-                // Attached sounds retain the pre-container layout under the
-                // command's timing identity. The new placement graph needs a
-                // separate identity even though this wrapper has no duration.
-                placement_timing = next_timing(timing)?;
                 (container.clone(), usize::from(cut != FrameDuration::ZERO))
             }
         }
         Site::Gap { .. } => return Err(invalid("pause gap must be materialized before insertion")),
     };
-    let affected = super::composite::occurrence_shifted_owners(&working, &parent, slot)?;
-    working = super::composite::prepare_owners(&working, &affected, *at, total, &placement_timing)?;
+    // Refuse a suffix that would cross a Retime ancestor.
+    super::composite::occurrence_shifted_owners(&working, &parent, slot)?;
     super::insert_leaf_at(
         &working,
         &parent,
@@ -328,7 +315,6 @@ fn is_shared(target: &OccurrencePauseTarget) -> bool {
 struct AllPlaysSite {
     repeat: NodeId,
     end: i64,
-    first_cut: i64,
     /// Default occurrences of the edited definition: the pause appears in
     /// each, so the outermost Repeat grows by this many pause lengths.
     occurrences: i64,
@@ -339,7 +325,6 @@ struct AllPlaysSite {
 fn all_plays_site(
     document: &ProjectDocument,
     target: &OccurrencePauseTarget,
-    at: ProjectFrame,
 ) -> Result<AllPlaysSite, EditError> {
     let instance = match &target.site {
         Site::Sequence { instance, .. } | Site::Physical { instance, .. } => instance,
@@ -381,8 +366,6 @@ fn all_plays_site(
     let end = start
         .checked_add(durations[&outer.node].frames())
         .ok_or_else(overflow)?;
-    let mut shown = start;
-    let mut earliest = start;
     let mut occurrences = 1_i64;
     for (level, step) in instance.repeats.iter().enumerate().skip(first_default) {
         let NodeKind::Repeat { iterations, .. } = &document.nodes()[&step.node].kind else {
@@ -396,8 +379,8 @@ fn all_plays_site(
         let play = layout
             .play(&step.iteration)
             .ok_or_else(|| invalid("the Repeat play is missing"))?;
-        let chosen = match &scope.repeats[level].branch {
-            crate::RepeatEditBranch::Play { .. } => play.clone(),
+        match &scope.repeats[level].branch {
+            crate::RepeatEditBranch::Play { .. } => {}
             crate::RepeatEditBranch::Default => {
                 if overrides.is_some_and(|plays| plays.get(&step.iteration).is_some()) {
                     return Err(invalid(
@@ -416,16 +399,13 @@ fn all_plays_site(
                     .filter_map(|ordinal| iterations.at(ordinal))
                     .find(|iteration| overrides.is_none_or(|plays| plays.get(iteration).is_none()))
                     .and_then(|iteration| layout.play(&iteration))
-                    .ok_or_else(|| invalid("the Repeat has no default play"))?
+                    .ok_or_else(|| invalid("the Repeat has no default play"))?;
             }
-        };
-        shown = shown.checked_add(play.start).ok_or_else(overflow)?;
-        earliest = earliest.checked_add(chosen.start).ok_or_else(overflow)?;
+        }
         if let Some(next) = instance.repeats.get(level + 1) {
-            let mut offset = 0_i64;
             let mut current = &next.node;
             while current != &play.child {
-                let (parent, at) = index
+                let (parent, _) = index
                     .parents
                     .get(current)
                     .ok_or_else(|| invalid("the nested Repeat lost its definition"))?;
@@ -434,19 +414,13 @@ fn all_plays_site(
                         "a shared pause needs ordinary groups between Repeats",
                     ));
                 }
-                offset = offset.checked_add(*at).ok_or_else(overflow)?;
                 current = parent;
             }
-            shown = shown.checked_add(offset).ok_or_else(overflow)?;
-            earliest = earliest.checked_add(offset).ok_or_else(overflow)?;
         }
     }
-    let local = at.0.checked_sub(shown).ok_or_else(overflow)?;
-    let first_cut = earliest.checked_add(local).ok_or_else(overflow)?;
     Ok(AllPlaysSite {
         repeat: outer.node.clone(),
         end,
-        first_cut,
         occurrences,
     })
 }
@@ -475,7 +449,7 @@ pub(crate) fn all_plays_root_operation(
         authority.as_ref(),
         *all_plays,
     )?;
-    let site = all_plays_site(document, &target, *at)?;
+    let site = all_plays_site(document, &target)?;
     let frames = hold
         .duration
         .frames()
@@ -487,28 +461,18 @@ pub(crate) fn all_plays_root_operation(
     })
 }
 
-#[expect(
-    clippy::too_many_arguments,
-    reason = "the destructured command fields of one leaf"
-)]
 fn apply_all_plays(
     document: &ProjectDocument,
     target: &OccurrencePauseTarget,
-    at: ProjectFrame,
     hold: &crate::HoldRecipe,
     id: &NodeId,
     identities: &OccurrencePauseIdentities,
-    timing: &AudioTimingId,
     context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
-    let site = all_plays_site(document, target, at)?;
+    let site = all_plays_site(document, target)?;
     let total = document.duration()?.frames();
-    let first_cut = site.first_cut;
     let allocation = context.allocation;
-    // Every edit retains unbound lattices first, as gap changes do.
     let mut working = document.clone();
-    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
-    let mut next = next_timing(timing)?;
     let (parent, slot) = match &target.site {
         Site::Sequence { instance, index } => (instance.node.clone(), *index),
         Site::Physical {
@@ -517,9 +481,13 @@ fn apply_all_plays(
             sequence,
         } => {
             if target.split_nodes != 0 {
-                working = super::split_captured(document, &working, |working| {
-                    crate::split::apply(working, &instance.node, *cut, &identities.split, context)
-                })?;
+                working = crate::split::apply(
+                    document,
+                    &instance.node,
+                    *cut,
+                    &identities.split,
+                    context,
+                )?;
                 sequence.clone().map_or_else(
                     || {
                         (
@@ -557,26 +525,10 @@ fn apply_all_plays(
         }
         Site::Gap { .. } => unreachable!("admitted above"),
     };
-    // Every default play grows; each owner inside the Repeat from the first
-    // default cut keeps its own pre-edit clock, then the suffix after it.
-    if first_cut < site.end {
-        working = super::composite::prepare_owners(
-            &working,
-            &super::composite::repeat_interior_owners(&working, &site.repeat)?,
-            ProjectFrame(first_cut),
-            site.end,
-            &next,
-        )?;
-        next = next_timing(&next)?;
-    }
+    // Every default play grows. Refuse a suffix that would cross a Retime
+    // ancestor.
     if site.end < total {
-        working = super::composite::prepare_owners(
-            &working,
-            &super::composite::occurrence_owners_after(&working, &site.repeat)?,
-            ProjectFrame(site.end),
-            total,
-            &next,
-        )?;
+        super::composite::occurrence_owners_after(&working, &site.repeat)?;
     }
     super::insert_leaf_at(
         &working,

@@ -45,34 +45,14 @@ impl<'work> SignalPolicyInput<'work> {
         self,
         renderer: &mut StageAudio,
         control: WorkControl<'work>,
-        #[cfg(test)] origin: Option<read_signal_policy_native_trace::Ticket>,
     ) -> Result<SignalSuppressionMask, StageAudioError> {
         match self {
             Self::Ordinary(query) => Ok(SignalSuppressionMask::plain(super::merged_suppression(
                 query.suppressed,
             ))),
             Self::Admitted(query) => {
-                #[cfg(not(test))]
-                {
-                    let mut admission = sound_context_admission::Admission::new(renderer, control);
-                    query.into_suppression(&mut admission)
-                }
-                #[cfg(test)]
-                {
-                    let handoff = read_signal_policy_native_trace::handoff_begin(
-                        renderer,
-                        control,
-                        origin,
-                        query.view(),
-                    );
-                    let result = {
-                        let mut admission =
-                            sound_context_admission::Admission::new(renderer, control);
-                        query.into_suppression(&mut admission)
-                    };
-                    read_signal_policy_native_trace::handoff_result(&handoff, renderer, &result);
-                    result
-                }
+                let mut admission = sound_context_admission::Admission::new(renderer, control);
+                query.into_suppression(&mut admission)
             }
         }
     }

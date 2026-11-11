@@ -57,8 +57,7 @@ preserves the historical sample phase when no allocation overlap remains.
 Its closed-end sample
 boundary must be `B(end)`, and virtual boundaries may be signed. Dormant audio
 and an empty structural allocation are different cases. Slice capture retains
-endpoint history before appending its own allocation-entry step; the final
-resume can therefore be at local zero while preserving a nonzero phase.
+endpoint history; a nonzero phase can therefore remain at local zero.
 
 The independent root sound bus needs one operation derived from entry In/Out
 intent. Slip and Roll alone leave that bus fixed. Equal nonzero In/Out values can

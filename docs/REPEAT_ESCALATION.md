@@ -28,7 +28,7 @@ part of the Repeat node, so copies, deletion, occurrence isolation and history
 carry it like any other node field.
 
 `SetRepeatEscalation { node, escalation }` replaces it as one reversible edit.
-It changes no timing, play, gap or retained clock and preserves sound clocks.
+It changes no timing, play or gap and preserves sound clocks.
 The field is additive within core schema 46; earlier binaries reject it as an
 unknown field rather than ignoring it.
 

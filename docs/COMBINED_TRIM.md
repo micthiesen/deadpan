@@ -59,10 +59,10 @@ with that edge; far endpoint empties stay; strictly interior empties retire.
 ## Audio, marks and reversibility
 
 Capture the old tree once. Ripple keeps target, separately rolled B and suffix
-reanchor groups disjoint. A retained overlap supplies its old entry phase;
-disjoint earlier/later selections use the historical closed Source Start/End.
-Positive Roll anchors B at its retained old `U+R`, not its removed old start.
-Physical prefixes rebase existing owner clocks once. Marks receive both Source
+groups disjoint. Disjoint earlier/later selections use the historical closed
+Source Start/End. Positive Roll anchors B at its retained old `U+R`, not its
+removed old start. No audio clock is captured or rebased: placement is derived
+from the final tree. Marks receive both Source
 prefix translations in one final transform.
 
 The root sound bus receives one normalized `RootSoundOperation::Trim` derived

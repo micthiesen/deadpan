@@ -155,14 +155,6 @@ fn structural_document(timed: bool) -> Result<ProjectDocument> {
             fragments: vec![],
         })?;
     }
-    let document = ProjectDocument::from_json(&wire.to_string())?;
-    if !timed {
-        return Ok(document);
-    }
-    // Existing clocks make a zero paste's no-reanchor promise observable.
-    let bindings = capture_unbound_audio_bindings(&document, timing("existing-clocks"))?;
-    let mut wire = serde_json::to_value(document)?;
-    wire["audio_bindings"] = serde_json::to_value(bindings)?;
     Ok(ProjectDocument::from_json(&wire.to_string())?)
 }
 

@@ -212,13 +212,7 @@ fn with_clocks(document: &ProjectDocument, owner: &str, ordinals: &[u32]) -> Pro
             BTreeMap::from([(sound(), SoundClockJournal::new(scope, references).unwrap())]),
         )])
     };
-    let bindings = AudioBindingState::new_with_sound_clocks(
-        records,
-        BTreeMap::new(),
-        BTreeMap::new(),
-        journals,
-    )
-    .unwrap();
+    let bindings = AudioBindingState::new_with_sound_clocks(records, journals).unwrap();
     let mut wire = serde_json::to_value(document).unwrap();
     wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
     ProjectDocument::from_json(&wire.to_string()).unwrap()

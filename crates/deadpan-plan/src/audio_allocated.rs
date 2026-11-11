@@ -296,7 +296,6 @@ impl OwnedHeap for crate::AudioSignalContent<'_> {
         match self {
             Self::Leaf(content) => budget.visit(content),
             Self::Stage(stage) => budget.visit(stage),
-            Self::Bound(bound) => budget.visit(bound),
             Self::ProjectedStage(projection) => budget.visit(projection),
         }
     }
@@ -336,59 +335,6 @@ impl OwnedHeap for AudioProcessingQuery<'_> {
         budget.visit(project_id)?;
         budget.visit(revision_id)?;
         budget.visit(spans)
-    }
-}
-
-impl OwnedHeap for deadpan_core::AudioClockRoot {
-    fn visit_heap(&self, budget: &mut HeapBudget) -> Result<(), PlanError> {
-        match self {
-            Self::ProjectRootRoundEven => Ok(()),
-            Self::PreserveInputPointCeil { stage } => budget.visit(stage),
-            Self::DefinitionPointCeil { root } => budget.visit(root),
-            Self::GapDefinitionPointCeil { repeat } => budget.visit(repeat),
-        }
-    }
-}
-impl OwnedHeap for deadpan_core::ResolvedAudioPlacement {
-    fn visit_heap(&self, budget: &mut HeapBudget) -> Result<(), PlanError> {
-        let Self {
-            clock,
-            grid_rule: _,
-            grid_origin: _,
-            frames_per_sample: _,
-            origin: _,
-            frames_per_local_frame: _,
-            local_duration: _,
-            local_support: _,
-            instance,
-            gap_after,
-            birth: _,
-            gap_birth: _,
-            work: _,
-        } = self;
-        budget.visit(clock)?;
-        budget.visit(instance)?;
-        budget.visit(gap_after)
-    }
-}
-impl OwnedHeap for deadpan_core::ResolvedAudioBinding {
-    fn visit_heap(&self, budget: &mut HeapBudget) -> Result<(), PlanError> {
-        let Self {
-            lattice,
-            resume,
-            work: _,
-        } = self;
-        budget.visit(lattice)?;
-        budget.visit(resume)
-    }
-}
-impl OwnedHeap for deadpan_core::ResolvedAudioResume {
-    fn visit_heap(&self, _budget: &mut HeapBudget) -> Result<(), PlanError> {
-        let Self {
-            local_boundary: _,
-            reference_local_delta: _,
-        } = self;
-        Ok(())
     }
 }
 

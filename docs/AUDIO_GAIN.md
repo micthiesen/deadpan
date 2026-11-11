@@ -112,9 +112,9 @@ distinct owner from the whole Repeat; it contributes no second node treatment.
 Work and span limits bound large queries;
 a distant play in a compact Repeat must not expand preceding plays.
 
-Bindings retain source/Preserve recipe clocks while independently current outer
-group clocks remain current. Resolving only the root frame, or only a terminal
-Source local time, loses information after an odd-sample insertion or resume.
+Source/Preserve recipe clocks and independently current outer
+group clocks both stay current. Resolving only the root frame, or only a terminal
+Source local time, loses information after an odd-sample insertion.
 Transparent partitions must preserve full underlying envelope origins and curve
 shape, rather than normalizing every fragment. Exhausted support and missing
 retained provenance must be explicit. The separate `audio_gain_owners` query
@@ -320,7 +320,7 @@ the authored bus of an unedited and an edited project and finds the 4,801 muted
 tone samples exactly zero, the 100 stepped samples of the decoded Original click
 exactly -12 dB and every other compared sample bit-identical; the release
 `sample-range` preview/export fixture; and the `wave-range` replay. Owners under
-a retained resumed sample clock follow their retained phase, so a range there is
+a processing stage follow that stage's clock, so a range there is
 exact in the owner's clock rather than at the selected root sample; such
 owners, ranges spanning beats and curved envelopes from a selection remain open.
 

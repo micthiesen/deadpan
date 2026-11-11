@@ -3,7 +3,7 @@
 //! literal right sibling) in the staged document.
 
 use super::*;
-use crate::{AudioTimingId, SourceTrimCapture, SourceTrimIntent, SourceTrimResources};
+use crate::{SourceTrimIntent, SourceTrimResources};
 
 impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
@@ -69,10 +69,6 @@ where
         {
             self.reserve_node(node)?;
         }
-        let timing = (resolved.capture != SourceTrimCapture::None).then(|| AudioTimingId {
-            allocation: new_revision.clone(),
-            ordinal: 0,
-        });
         self.commit_leaf(LeafEdit::new(
             new_revision,
             Command::ApplySourceTrim {
@@ -85,7 +81,6 @@ where
                     right_wrapper,
                     split,
                     fillers,
-                    timing,
                 },
             },
         )?)?;

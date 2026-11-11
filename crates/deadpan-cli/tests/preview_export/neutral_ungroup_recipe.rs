@@ -40,8 +40,6 @@ fn only_wrapper_removed(
     let bindings = before.audio_bindings();
     let after_bindings = after.audio_bindings();
     assert_eq!(after_bindings.timings(), bindings.timings());
-    assert_eq!(after_bindings.bindings(), bindings.bindings());
-    assert_eq!(after_bindings.gap_bindings(), bindings.gap_bindings());
     let mut clocks = bindings.sound_clocks().clone();
     let mut changed = 0;
     for events in clocks.values_mut() {

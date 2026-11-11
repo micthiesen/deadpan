@@ -30,8 +30,6 @@ pub use matroska_input::{
 mod opus_packet;
 mod video_codec;
 
-#[cfg(feature = "fuzzing")]
-pub use input::fuzzing;
 pub use input::{
     Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4HevcConfiguration,
     Mp4HevcPacket, Mp4Inspection, Mp4PacketObservation, Mp4PacketReader, Mp4PresentationTime,
@@ -659,7 +657,10 @@ impl SourceDecoder {
     }
 
     fn require_uninterpreted_inspection(&self) -> Result<(), SourceDecodeError> {
-        if self.interpretation != VideoInterpretation::SOURCE || self.info.range_assumed || self.info.color_assumed {
+        if self.interpretation != VideoInterpretation::SOURCE
+            || self.info.range_assumed
+            || self.info.color_assumed
+        {
             return Err(SourceDecodeError::InvalidConfiguration(
                 "raw export inspection requires a declared, unmodified source interpretation",
             ));

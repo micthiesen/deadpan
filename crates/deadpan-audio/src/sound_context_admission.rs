@@ -1,14 +1,6 @@
 //! Request-local admission for current-sound and actual Original metadata.
 //! Query/capture/probe, caller copies and node storage share the request ledger.
 //! Wider renderer queries and the other Graph containers remain separate work.
-#[cfg(test)]
-use super::intrinsic_preflight_policy_native_trace as native_trace;
-#[cfg(test)]
-use super::read_signal_policy_native_trace as read_signal_trace;
-#[cfg(test)]
-use super::stage_block_policy_native_trace as stage_block_trace;
-#[cfg(test)]
-use super::stage_validation_policy_native_trace as validation_trace;
 use super::*;
 use deadpan_plan::AudioSoundContextAdmission;
 use std::alloc::Layout;
@@ -150,21 +142,7 @@ impl<'work> TileTransfer<'work> {
 impl Drop for Lease<'_> {
     fn drop(&mut self) {
         if self.frames != 0 {
-            #[cfg(test)]
-            let read_signal_release = read_signal_trace::release_begin(self.ledger, self.frames);
-            #[cfg(test)]
-            let validation_release = validation_trace::release_begin(self.ledger, self.frames);
-            #[cfg(test)]
-            let stage_block_release = stage_block_trace::release_begin(self.ledger, self.frames);
             self.ledger.borrow_mut().sound_context_frames -= self.frames;
-            #[cfg(test)]
-            native_trace::released(self.ledger, self.frames);
-            #[cfg(test)]
-            validation_trace::release_result(validation_release, self.ledger);
-            #[cfg(test)]
-            read_signal_trace::release_result(read_signal_release, self.ledger);
-            #[cfg(test)]
-            stage_block_trace::release_result(stage_block_release, self.ledger);
         }
     }
 }
@@ -191,121 +169,11 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
         issuer(self.control)
     }
     fn spend(&mut self, amount: usize) -> Result<(), Self::Error> {
-        #[cfg(test)]
-        let read_signal_attempt = read_signal_trace::spend_begin(self.control, amount);
-        #[cfg(test)]
-        read_signal_attempt.apply_cancellation(self.control);
-        #[cfg(test)]
-        let validation_attempt = validation_trace::spend_begin(self.control, amount);
-        #[cfg(test)]
-        validation_attempt.apply_cancellation(self.control);
-        #[cfg(test)]
-        let attempt = native_trace::spend_begin(self.control, amount);
-        #[cfg(test)]
-        attempt.apply_cancellation(self.control);
-        #[cfg(test)]
-        let stage_block_attempt = stage_block_trace::spend_begin(self.control, amount);
-        #[cfg(test)]
-        stage_block_attempt.apply_cancellation(self.control);
-        #[cfg(test)]
-        if attempt.injected_refusal() {
-            let result = self.control.check().and(Err(StageAudioError::Limit(
-                "test-only intrinsic policy spend refusal",
-            )));
-            native_trace::spend_result(attempt, self.control, &result);
-            #[cfg(test)]
-            validation_trace::spend_result(validation_attempt, self.control, &result);
-            #[cfg(test)]
-            read_signal_trace::spend_result(read_signal_attempt, self.control, &result);
-            stage_block_trace::spend_result(stage_block_attempt, self.control, &result);
-            return result;
-        }
-        #[cfg(test)]
-        if validation_attempt.injected_refusal() {
-            let result = self.control.check().and(Err(StageAudioError::Limit(
-                "test-only stage validation policy spend refusal",
-            )));
-            native_trace::spend_result(attempt, self.control, &result);
-            validation_trace::spend_result(validation_attempt, self.control, &result);
-            #[cfg(test)]
-            read_signal_trace::spend_result(read_signal_attempt, self.control, &result);
-            stage_block_trace::spend_result(stage_block_attempt, self.control, &result);
-            return result;
-        }
-        #[cfg(test)]
-        if read_signal_attempt.injected_refusal() {
-            let result = self.control.check().and(Err(StageAudioError::Limit(
-                "test-only read signal policy spend refusal",
-            )));
-            native_trace::spend_result(attempt, self.control, &result);
-            validation_trace::spend_result(validation_attempt, self.control, &result);
-            read_signal_trace::spend_result(read_signal_attempt, self.control, &result);
-            stage_block_trace::spend_result(stage_block_attempt, self.control, &result);
-            return result;
-        }
-        #[cfg(not(test))]
-        let result = self.control.spend_plan_work(amount);
-        #[cfg(test)]
-        let result = if stage_block_attempt.injected_refusal() {
-            self.control.check().and(Err(StageAudioError::Limit(
-                "test-only stage block policy spend refusal",
-            )))
-        } else {
-            self.control.spend_plan_work(amount)
-        };
-        #[cfg(test)]
-        native_trace::spend_result(attempt, self.control, &result);
-        #[cfg(test)]
-        validation_trace::spend_result(validation_attempt, self.control, &result);
-        #[cfg(test)]
-        read_signal_trace::spend_result(read_signal_attempt, self.control, &result);
-        #[cfg(test)]
-        stage_block_trace::spend_result(stage_block_attempt, self.control, &result);
-        result
+        self.control.spend_plan_work(amount)
     }
     fn reserve(&mut self, layout: Layout) -> Result<Self::Lease, Self::Error> {
-        #[cfg(test)]
-        let read_signal_attempt = read_signal_trace::reserve_begin(self.control, layout);
-        #[cfg(test)]
-        read_signal_attempt.apply_cancellation(self.control);
-        #[cfg(test)]
-        let validation_attempt = validation_trace::reserve_begin(self.control, layout);
-        #[cfg(test)]
-        validation_attempt.apply_cancellation(self.control);
-        #[cfg(test)]
-        let attempt = native_trace::reserve_begin(self.control, layout);
-        #[cfg(test)]
-        attempt.apply_cancellation(self.control);
-        #[cfg(test)]
-        let stage_block_attempt = stage_block_trace::reserve_begin(self.control, layout);
-        #[cfg(test)]
-        stage_block_attempt.apply_cancellation(self.control);
-        let result = (|| {
-            self.control.check()?;
-            #[cfg(test)]
-            if attempt.injected_refusal() {
-                return Err(StageAudioError::Limit(
-                    "test-only intrinsic policy reserve refusal",
-                ));
-            }
-            #[cfg(test)]
-            if validation_attempt.injected_refusal() {
-                return Err(StageAudioError::Limit(
-                    "test-only stage validation policy reserve refusal",
-                ));
-            }
-            #[cfg(test)]
-            if read_signal_attempt.injected_refusal() {
-                return Err(StageAudioError::Limit(
-                    "test-only read signal policy reserve refusal",
-                ));
-            }
-            #[cfg(test)]
-            if stage_block_attempt.injected_refusal() {
-                return Err(StageAudioError::Limit(
-                    "test-only stage block policy reserve refusal",
-                ));
-            }
+        self.control.check()?;
+        {
             let frames = u64::try_from(layout.size())
                 .map_err(|_| StageAudioError::Range)?
                 .div_ceil(std::mem::size_of::<[f32; 2]>() as u64);
@@ -316,123 +184,19 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
                 .sound_context_frames
                 .checked_add(frames)
                 .ok_or(StageAudioError::Range)?;
-            #[cfg(test)]
-            let room = native_trace::room_begin(attempt, self.controller, self.control, frames);
-            #[cfg(test)]
-            let validation_room = validation_trace::room_begin(
-                validation_attempt,
-                self.controller,
-                self.control,
-                frames,
-            );
-            #[cfg(test)]
-            let read_signal_room = read_signal_trace::room_begin(
-                read_signal_attempt,
-                self.controller,
-                self.control,
-                frames,
-            );
-            #[cfg(test)]
-            let stage_block_room = stage_block_trace::room_begin(
-                stage_block_attempt,
-                self.controller,
-                self.control,
-                frames,
-            );
-            let room_result = self.controller.make_room(frames, false, self.control);
-            #[cfg(test)]
-            native_trace::room_result(room, self.controller, self.control, &room_result);
-            #[cfg(test)]
-            validation_trace::room_result(
-                validation_room,
-                self.controller,
-                self.control,
-                &room_result,
-            );
-            #[cfg(test)]
-            read_signal_trace::room_result(
-                read_signal_room,
-                self.controller,
-                self.control,
-                &room_result,
-            );
-            #[cfg(test)]
-            stage_block_trace::room_result(
-                stage_block_room,
-                self.controller,
-                self.control,
-                &room_result,
-            );
-            room_result?;
+            self.controller.make_room(frames, false, self.control)?;
             self.control.work.borrow_mut().sound_context_frames = next;
             Ok(Lease {
                 ledger: self.control.work,
                 frames,
             })
-        })();
-        #[cfg(test)]
-        native_trace::reserve_result(
-            attempt,
-            self.control,
-            result.as_ref().map(|lease| lease.frames),
-        );
-        #[cfg(test)]
-        validation_trace::reserve_result(
-            validation_attempt,
-            self.control,
-            result.as_ref().map(|lease| lease.frames),
-        );
-        #[cfg(test)]
-        read_signal_trace::reserve_result(
-            read_signal_attempt,
-            self.control,
-            result.as_ref().map(|lease| lease.frames),
-        );
-        #[cfg(test)]
-        stage_block_trace::reserve_result(
-            stage_block_attempt,
-            self.control,
-            result.as_ref().map(|lease| lease.frames),
-        );
-        result
+        }
     }
     fn merge(&mut self, target: &mut Self::Lease, source: &mut Self::Lease) {
         // Both were checked against this stable ledger before this callback.
         // The ledger's admitted sum is bounded by the existing u32 frame cap.
-        #[cfg(test)]
-        let validation_merge =
-            validation_trace::merge_begin(self.control, target.frames, source.frames);
-        #[cfg(test)]
-        let read_signal_merge =
-            read_signal_trace::merge_begin(self.control, target.frames, source.frames);
-        #[cfg(test)]
-        let stage_block_merge =
-            stage_block_trace::merge_begin(self.control, target.frames, source.frames);
         target.frames += source.frames;
         source.frames = 0;
-        #[cfg(test)]
-        native_trace::merged(self.control);
-        #[cfg(test)]
-        validation_trace::merge_result(
-            validation_merge,
-            self.control,
-            target.frames,
-            source.frames,
-        );
-        #[cfg(test)]
-        read_signal_trace::merge_result(
-            read_signal_merge,
-            self.control,
-            target.frames,
-            source.frames,
-        );
-        #[cfg(test)]
-        stage_block_trace::merge_result(
-            stage_block_merge,
-            self.control,
-            target.frames,
-            source.frames,
-        );
     }
 }
 

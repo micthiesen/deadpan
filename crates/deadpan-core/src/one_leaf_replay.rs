@@ -23,11 +23,11 @@ impl std::fmt::Debug for OneLeafReplay {
 }
 
 fn eligible_value(document: &ProjectDocument) -> bool {
-    document.derived_clocks().is_empty() && !document.audio_bindings().has_provisional_timings()
+    document.derived_clocks().is_empty()
 }
 
 fn eligible_mode() -> bool {
-    crate::command_work::local() && crate::audio_binding_lifecycle::compact_representation()
+    crate::command_work::local()
 }
 
 pub(crate) fn eligible_compound(request: &CommandRequest) -> bool {
@@ -185,11 +185,6 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
-        assert!(
-            crate::with_reference_timing_representation(|| candidate.reuse(&entry, &request))
-                .unwrap()
-                .is_none()
-        );
         let mut changed = entry.clone();
         changed
             .nodes
@@ -199,14 +194,6 @@ mod tests {
         assert!(candidate.reuse(&changed, &request).unwrap().is_none());
         assert!(
             crate::with_reference_command_work(|| apply_semantic_leaf(
-                &entry, &request, true, serialize
-            ))
-            .unwrap()
-            .1
-            .is_none()
-        );
-        assert!(
-            crate::with_reference_timing_representation(|| apply_semantic_leaf(
                 &entry, &request, true, serialize
             ))
             .unwrap()
@@ -461,19 +448,12 @@ mod tests {
                 assert_eq!(run.observation.full, [1, 1, 1, 1]);
             }
         }
-        for reference in [false, true] {
-            let operation = || {
-                let run = wire_parity(&entry, &request, Some(&candidate), false, false);
-                assert!(run.result.is_ok());
-                assert_eq!(run.observation.full, [1, 1, 1, 1]);
-                assert_eq!(run.observation.reused, [false; 2]);
-            };
-            if reference {
-                crate::with_reference_command_work(operation);
-            } else {
-                crate::with_reference_timing_representation(operation);
-            }
-        }
+        crate::with_reference_command_work(|| {
+            let run = wire_parity(&entry, &request, Some(&candidate), false, false);
+            assert!(run.result.is_ok());
+            assert_eq!(run.observation.full, [1, 1, 1, 1]);
+            assert_eq!(run.observation.reused, [false; 2]);
+        });
         let mut noneligible = request.clone();
         noneligible.command = Command::Compound {
             transaction: crate::ResolvedTransaction::new(0, Default::default(), vec![mark_step(1)])
@@ -588,9 +568,7 @@ mod tests {
                 &entry,
                 &request,
                 |_| {
-                    crate::with_reference_command_work(|| {
-                        crate::with_reference_timing_representation(|| ())
-                    });
+                    crate::with_reference_command_work(|| ());
                     Ok(())
                 },
                 Some(&candidate),
@@ -640,18 +618,11 @@ mod tests {
             );
         });
         assert!(!constructed, "nested observation leaked its selection");
-        for reference in [false, true] {
-            let operation = || {
-                let (actual, constructed) = execute(&entry, &request, Some(&candidate));
-                assert!(!constructed);
-                assert_eq!(actual, execute(&entry, &request, None).0);
-            };
-            if reference {
-                crate::with_reference_command_work(operation);
-            } else {
-                crate::with_reference_timing_representation(operation);
-            }
-        }
+        crate::with_reference_command_work(|| {
+            let (actual, constructed) = execute(&entry, &request, Some(&candidate));
+            assert!(!constructed);
+            assert_eq!(actual, execute(&entry, &request, None).0);
+        });
         let mut changed_entry = entry.clone();
         changed_entry
             .nodes
@@ -714,9 +685,7 @@ mod tests {
                 &request,
                 |_| {
                     visits += 1;
-                    crate::with_reference_command_work(|| {
-                        crate::with_reference_timing_representation(|| ())
-                    });
+                    crate::with_reference_command_work(|| ());
                     Err(refused.clone())
                 },
                 Some(&candidate),

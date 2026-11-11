@@ -5,8 +5,7 @@
 use super::*;
 use crate::stages::controlled_reads::{Provider, fixture_document_at_rate};
 use deadpan_core::{
-    AudioTimingId, ExactFrameRange, FrameRate, NodeId, NodeKind, ProjectDocument,
-    SourceAudioMapping, capture_unbound_audio_bindings,
+    ExactFrameRange, FrameRate, NodeId, NodeKind, ProjectDocument, SourceAudioMapping,
 };
 
 fn fixture(inactive_support: bool) -> (Arc<RenderPlan>, Provider) {
@@ -14,8 +13,7 @@ fn fixture(inactive_support: bool) -> (Arc<RenderPlan>, Provider) {
     if !inactive_support {
         return (Arc::new(RenderPlan::compile(&document).unwrap()), provider);
     }
-    // Use the same real selected-placement/binding construction as the
-    // authored-bus exhausted-bound regression, retaining actual owner support.
+    // A real selected placement whose owner support ends inside the beat.
     let mut wire = serde_json::to_value(&document).unwrap();
     let mut leaf = document.nodes()[&NodeId::new("a").unwrap()].clone();
     let NodeKind::Source { source } = &mut leaf.kind else {
@@ -29,19 +27,7 @@ fn fixture(inactive_support: bool) -> (Arc<RenderPlan>, Provider) {
     };
     wire["nodes"]["a"] = serde_json::to_value(leaf).unwrap();
     let selected = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(
-        capture_unbound_audio_bindings(
-            &selected,
-            AudioTimingId {
-                allocation: RevisionId::new("cached-mask-support").unwrap(),
-                ordinal: 0,
-            },
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    (Arc::new(RenderPlan::compile(&bound).unwrap()), provider)
+    (Arc::new(RenderPlan::compile(&selected).unwrap()), provider)
 }
 
 fn control<'work>(

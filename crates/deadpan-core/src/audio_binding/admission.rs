@@ -2,7 +2,7 @@
 use super::*;
 use std::alloc::Layout;
 
-pub trait AudioBindingAdmission {
+pub(crate) trait AudioBindingAdmission {
     const METERED: bool = true;
     type Error;
     type Issuer: Copy + Eq;
@@ -15,7 +15,7 @@ pub trait AudioBindingAdmission {
     fn merge(&mut self, into: &mut Self::Lease, from: &mut Self::Lease);
 }
 #[derive(Debug)]
-pub enum AudioBindingBuildError<E> {
+pub(crate) enum AudioBindingBuildError<E> {
     Document(DocumentError),
     Policy(E),
 }
@@ -35,11 +35,6 @@ pub(crate) type AdmittedResult<T, P> = BuildResult<
     <P as AudioBindingAdmission>::Error,
 >;
 pub(crate) type ProjectedSupport = (crate::FrozenAudioProjection, std::ops::Range<ExactRatio>);
-pub(crate) type ProjectedAllocation = (
-    crate::FrozenAudioProjection,
-    Option<std::ops::Range<ExactRatio>>,
-);
-
 pub(crate) struct Unmetered;
 impl AudioBindingAdmission for Unmetered {
     const METERED: bool = false;
@@ -64,102 +59,25 @@ pub(crate) fn legacy<T>(value: BuildResult<T, DocumentError>) -> Result<T, Docum
     })
 }
 /// Linear provenance in both modes; false means the host still owes the debit.
-pub struct AudioBindingForwardedWork<I> {
-    issuer: I,
+pub(crate) struct AudioBindingForwardedWork<I> {
     canonical_units: usize,
     additional_units: usize,
-    controller_debited: bool,
+    issuer: std::marker::PhantomData<I>,
 }
 impl<I: Copy> AudioBindingForwardedWork<I> {
-    pub fn issuer(&self) -> I {
-        self.issuer
-    }
-    pub fn canonical_units(&self) -> usize {
-        self.canonical_units
-    }
-    pub fn additional_units(&self) -> usize {
-        self.additional_units
-    }
-    pub fn units(&self) -> usize {
+    pub(crate) fn units(&self) -> usize {
         self.canonical_units + self.additional_units
-    }
-    pub fn was_forwarded(&self) -> bool {
-        self.controller_debited
     }
 }
 /// Owned values drop before their independent resource leases.
-pub struct AudioBindingValue<T, I, L> {
+pub(crate) struct AudioBindingValue<T, I, L> {
     pub(crate) value: Option<T>,
     issuer: I,
-    pub(crate) lease: Option<L>,
-    pub(crate) buffer: Option<L>,
     work: Option<AudioBindingForwardedWork<I>>,
     metered: bool,
-    charge_transferred: bool,
+    lease: std::marker::PhantomData<L>,
 }
-// Both values must precede every independent input charge, including when
-// composition fails before the first merge.
-struct PendingComposition<T, U, L> {
-    value: Option<(T, U)>,
-    lease: Option<L>,
-    buffer: Option<L>,
-    other_lease: Option<L>,
-    other_buffer: Option<L>,
-}
-pub type AdmittedAudioBinding<I, L> = AudioBindingValue<ResolvedAudioBinding, I, L>;
-/// A checked exclusive borrow for one host-owned charge publication.
-/// Dropping an unused token leaves the value and its charges retryable.
-/// The temporary admission-policy borrow does not survive preflight.
-pub struct AudioBindingChargeTransfer<'value, T, I, L> {
-    value: &'value mut AudioBindingValue<T, I, L>,
-}
-impl<T, I, L> AudioBindingChargeTransfer<'_, T, I, L> {
-    /// The same independent value and buffer charges, without taking either.
-    pub fn charges(&self) -> (Option<&L>, Option<&L>) {
-        (self.value.lease.as_ref(), self.value.buffer.as_ref())
-    }
-
-    /// One trusted infallible, non-unwinding, allocation-free publication.
-    /// All host identity, arithmetic and ledger checks must already be done.
-    /// The callback borrows both actual lease fields and may mark their charge
-    /// transferred into its retained-value ledger. Core does not remove them.
-    /// No policy callback, validation, work debit or refund occurs here.
-    pub fn commit(self, publish: impl FnOnce(Option<&mut L>, Option<&mut L>)) {
-        self.value.charge_transferred = true;
-        publish(self.value.lease.as_mut(), self.value.buffer.as_mut());
-    }
-}
-
 impl<T, I: Copy + Eq, L> AudioBindingValue<T, I, L> {
-    pub fn value(&self) -> &T {
-        self.value.as_ref().expect("unmoved binding value")
-    }
-    pub fn issuer(&self) -> I {
-        self.issuer
-    }
-    /// Borrow the actual independent value and buffer charges for host planning.
-    /// This does not validate a policy or grant ancestry/media authority.
-    pub fn charges(&self) -> (Option<&L>, Option<&L>) {
-        (self.lease.as_ref(), self.buffer.as_ref())
-    }
-
-    /// Preflight a single committed handoff without spending or taking charges.
-    /// The returned token borrows only this value, never the admission policy.
-    /// Failed checks and an unused token leave a later valid preflight possible.
-    pub fn preflight_charge_transfer<'value, P>(
-        &'value mut self,
-        policy: &P,
-    ) -> BuildResult<AudioBindingChargeTransfer<'value, T, I, L>, P::Error>
-    where
-        P: AudioBindingAdmission<Issuer = I, Lease = L>,
-    {
-        self.validate(policy)?;
-        if self.charge_transferred {
-            return Err(invalid("binding charge transfer already committed").into());
-        }
-        Ok(AudioBindingChargeTransfer { value: self })
-    }
-
     fn validate<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
         &self,
         p: &P,
@@ -169,7 +87,7 @@ impl<T, I: Copy + Eq, L> AudioBindingValue<T, I, L> {
         }
         Ok(())
     }
-    pub fn take_work<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
+    pub(crate) fn take_work<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
         &mut self,
         p: &P,
     ) -> BuildResult<AudioBindingForwardedWork<I>, P::Error> {
@@ -178,102 +96,8 @@ impl<T, I: Copy + Eq, L> AudioBindingValue<T, I, L> {
             .take()
             .ok_or_else(|| invalid("binding receipt already consumed").into())
     }
-
-    /// Validate composition without consuming the value, work or charge state.
-    /// The caller must take and account each input receipt before composition.
-    pub fn validate_composition<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
-        &self,
-        p: &P,
-    ) -> BuildResult<(), P::Error> {
-        self.validate(p)?;
-        if self.charge_transferred {
-            return Err(invalid("binding charge transfer already committed").into());
-        }
-        if self.work.is_some() {
-            return Err(invalid("binding composition requires consumed work receipt").into());
-        }
-        Ok(())
-    }
-
-    /// Combine guarded values without allocation, debits or charge publication.
-    /// Only the trusted infallible merge may move the independent charges.
-    pub fn zip_value<U, P: AudioBindingAdmission<Issuer = I, Lease = L>>(
-        mut self,
-        mut other: AudioBindingValue<U, I, L>,
-        p: &mut P,
-    ) -> BuildResult<AudioBindingValue<(T, U), I, L>, P::Error> {
-        let mut pending = PendingComposition {
-            value: Some((
-                self.value.take().expect("unmoved binding value"),
-                other.value.take().expect("unmoved binding value"),
-            )),
-            lease: self.lease.take(),
-            buffer: self.buffer.take(),
-            other_lease: other.lease.take(),
-            other_buffer: other.buffer.take(),
-        };
-        let issuers = (self.issuer, other.issuer);
-        let modes = (self.metered, other.metered);
-        let transferred = self.charge_transferred || other.charge_transferred;
-        let pending_work = self.work.is_some() || other.work.is_some();
-        let validate = |p: &P| -> BuildResult<(), P::Error> {
-            let issuer = p.issuer();
-            if issuers.0 != issuer || issuers.1 != issuer || modes != (P::METERED, P::METERED) {
-                return Err(AudioBindingBuildError::Policy(p.issuer_mismatch()));
-            }
-            if transferred {
-                return Err(invalid("binding charge transfer already committed").into());
-            }
-            if pending_work {
-                return Err(invalid("binding composition requires consumed work receipt").into());
-            }
-            Ok(())
-        };
-        validate(p)?;
-        match (&mut pending.lease, &mut pending.other_lease) {
-            (Some(into), Some(from)) => p.merge(into, from),
-            (None, _) => pending.lease = pending.other_lease.take(),
-            _ => {}
-        }
-        validate(p)?;
-        match (&mut pending.buffer, &mut pending.other_buffer) {
-            (Some(into), Some(from)) => p.merge(into, from),
-            (None, _) => pending.buffer = pending.other_buffer.take(),
-            _ => {}
-        }
-        validate(p)?;
-        Ok(AudioBindingValue {
-            value: pending.value.take(),
-            issuer: self.issuer,
-            lease: pending.lease.take(),
-            buffer: pending.buffer.take(),
-            work: None,
-            metered: self.metered,
-            charge_transferred: false,
-        })
-    }
-
-    /// Trusted infallible, non-unwinding and allocation-free ownership move.
-    pub fn map_value<U, P: AudioBindingAdmission<Issuer = I, Lease = L>>(
-        mut self,
-        p: &P,
-        map: impl FnOnce(T) -> U,
-    ) -> BuildResult<AudioBindingValue<U, I, L>, P::Error> {
-        self.validate(p)?;
-        let value = map(self.value.take().expect("unmoved binding value"));
-        let result = AudioBindingValue {
-            value: Some(value),
-            issuer: self.issuer,
-            lease: self.lease.take(),
-            buffer: self.buffer.take(),
-            work: self.work.take(),
-            metered: self.metered,
-            charge_transferred: self.charge_transferred,
-        };
-        result.validate(p)?;
-        Ok(result)
-    }
 }
+
 impl<T> AudioBindingValue<T, (), ()> {
     pub(crate) fn into_legacy(mut self) -> T {
         self.value.take().expect("legacy binding value")
@@ -330,16 +154,6 @@ impl<'a, P: AudioBindingAdmission> Build<'a, P> {
             self.work.spend(n)
         }
     }
-    pub(crate) fn fork(&mut self) -> Build<'_, P> {
-        let mut result = Build::new(self.work, self.extra, self.policy);
-        result.issuer = self.issuer;
-        result.receipt = false;
-        result.projection = self.projection;
-        result
-    }
-    pub(crate) fn policy(&mut self) -> &mut P {
-        self.policy
-    }
     pub(crate) fn validate(&self) -> BuildResult<(), P::Error> {
         if self.issuer != self.policy.issuer() {
             return Err(AudioBindingBuildError::Policy(
@@ -350,9 +164,6 @@ impl<'a, P: AudioBindingAdmission> Build<'a, P> {
     }
     pub(crate) fn used(&self) -> usize {
         self.work.used
-    }
-    pub(crate) fn remaining(&self) -> BuildResult<usize, P::Error> {
-        Ok(self.work.remaining()?)
     }
     pub(crate) fn spend(&mut self, n: usize) -> BuildResult<(), P::Error> {
         self.validate()?;
@@ -377,23 +188,6 @@ impl<'a, P: AudioBindingAdmission> Build<'a, P> {
                 .map_err(AudioBindingBuildError::Policy)?;
             self.validate()?;
         }
-        Ok(())
-    }
-    pub(crate) fn account_child(
-        &mut self,
-        r: AudioBindingForwardedWork<P::Issuer>,
-    ) -> BuildResult<(), P::Error> {
-        self.validate()?;
-        if r.issuer != self.issuer || r.controller_debited != P::METERED {
-            return Err(AudioBindingBuildError::Policy(
-                self.policy.issuer_mismatch(),
-            ));
-        }
-        self.local(r.units())?;
-        *self.extra = self
-            .extra
-            .checked_add(r.additional_units)
-            .ok_or_else(|| limit("binding additional work overflow"))?;
         Ok(())
     }
     pub(crate) fn reserve(&mut self, layout: Layout) -> BuildResult<(), P::Error> {
@@ -462,253 +256,21 @@ impl<'a, P: AudioBindingAdmission> Build<'a, P> {
         }
         Ok(v)
     }
-    pub(crate) fn clock(&mut self, v: &AudioClockRoot) -> BuildResult<AudioClockRoot, P::Error> {
-        self.additional(1)?;
-        Ok(match v {
-            AudioClockRoot::ProjectRootRoundEven => AudioClockRoot::ProjectRootRoundEven,
-            AudioClockRoot::PreserveInputPointCeil { stage } => {
-                AudioClockRoot::PreserveInputPointCeil {
-                    stage: self.node(stage)?,
-                }
-            }
-            AudioClockRoot::DefinitionPointCeil { root } => AudioClockRoot::DefinitionPointCeil {
-                root: self.node(root)?,
-            },
-            AudioClockRoot::GapDefinitionPointCeil { repeat } => {
-                AudioClockRoot::GapDefinitionPointCeil {
-                    repeat: self.node(repeat)?,
-                }
-            }
-        })
-    }
     pub(crate) fn finish<T>(mut self, value: T) -> AudioBindingValue<T, P::Issuer, P::Lease> {
         let units = self.work.used - self.before;
         let extra = *self.extra - self.extra_before;
+        // The construction charge is released with this builder.
+        drop(self.charge.take());
         AudioBindingValue {
             value: Some(value),
             issuer: self.issuer,
-            lease: self.charge.take(),
-            buffer: None,
             work: self.receipt.then_some(AudioBindingForwardedWork {
-                issuer: self.issuer,
                 canonical_units: units - extra,
                 additional_units: extra,
-                controller_debited: P::METERED,
+                issuer: std::marker::PhantomData,
             }),
             metered: P::METERED,
-            charge_transferred: false,
-        }
-    }
-    pub(crate) fn finish_buffer<T>(
-        self,
-        value: Vec<T>,
-        buffer: Option<P::Lease>,
-    ) -> AudioBindingValue<Vec<T>, P::Issuer, P::Lease> {
-        let mut result = self.finish(value);
-        result.buffer = buffer;
-        result
-    }
-    pub(crate) fn merge_value<T>(
-        &mut self,
-        value: &mut AudioBindingValue<T, P::Issuer, P::Lease>,
-    ) -> BuildResult<(), P::Error> {
-        value.validate(self.policy)?;
-        if let Some(mut lease) = value.lease.take() {
-            if let Some(target) = &mut self.charge {
-                self.policy.merge(target, &mut lease);
-            } else {
-                self.charge = Some(lease);
-            }
-            self.validate()?;
-        }
-        Ok(())
-    }
-}
-pub(crate) enum ScratchSet<'a, I, L> {
-    Legacy(BTreeSet<&'a NodeId>),
-    Admitted {
-        values: Vec<&'a NodeId>,
-        issuer: I,
-        charge: Option<L>,
-        capacity: usize,
-    },
-}
-impl<'a, I: Copy + Eq, L> ScratchSet<'a, I, L> {
-    pub(crate) fn new<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
-        b: &Build<'_, P>,
-        capacity: usize,
-    ) -> Self {
-        if P::METERED {
-            Self::Admitted {
-                values: Vec::new(),
-                issuer: b.issuer,
-                charge: None,
-                capacity,
-            }
-        } else {
-            Self::Legacy(BTreeSet::new())
-        }
-    }
-    pub(crate) fn extend_capacity(&mut self, n: usize) {
-        if let Self::Admitted { capacity, .. } = self {
-            *capacity = n;
-        }
-    }
-    fn position<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
-        &self,
-        value: &NodeId,
-        b: &mut Build<'_, P>,
-    ) -> BuildResult<Result<usize, usize>, P::Error> {
-        let Self::Admitted { values, issuer, .. } = self else {
-            unreachable!()
-        };
-        b.validate()?;
-        if *issuer != b.issuer {
-            return Err(AudioBindingBuildError::Policy(b.policy.issuer_mismatch()));
-        }
-        let (mut left, mut right) = (0, values.len());
-        while left < right {
-            b.additional(1)?;
-            let at = left + (right - left) / 2;
-            match values[at].cmp(value) {
-                std::cmp::Ordering::Less => left = at + 1,
-                std::cmp::Ordering::Greater => right = at,
-                std::cmp::Ordering::Equal => return Ok(Ok(at)),
-            }
-        }
-        Ok(Err(left))
-    }
-    pub(crate) fn contains<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
-        &self,
-        v: &NodeId,
-        b: &mut Build<'_, P>,
-    ) -> BuildResult<bool, P::Error> {
-        match self {
-            Self::Legacy(values) => Ok(values.contains(v)),
-            _ => Ok(self.position(v, b)?.is_ok()),
-        }
-    }
-    pub(crate) fn insert<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
-        &mut self,
-        v: &'a NodeId,
-        b: &mut Build<'_, P>,
-    ) -> BuildResult<bool, P::Error> {
-        if let Self::Legacy(values) = self {
-            return Ok(values.insert(v));
-        }
-        let at = match self.position(v, b)? {
-            Ok(_) => return Ok(false),
-            Err(at) => at,
-        };
-        let Self::Admitted {
-            values,
-            charge,
-            capacity,
-            ..
-        } = self
-        else {
-            unreachable!()
-        };
-        if values.len() == values.capacity() {
-            if *capacity <= values.len() {
-                return Err(limit("binding set capacity").into());
-            }
-            let mut storage = b.fork();
-            storage.array::<&NodeId>(*capacity)?;
-            let mut grown = Vec::with_capacity(*capacity);
-            assert_eq!(grown.capacity(), *capacity);
-            storage.additional(values.len())?;
-            grown.append(values);
-            let old = std::mem::replace(values, grown);
-            drop(old);
-            drop(charge.take());
-            let mut guard = storage.finish(());
-            *charge = guard.lease.take();
-        }
-        b.additional(values.len() - at + 1)?;
-        values.insert(at, v);
-        Ok(true)
-    }
-    pub(crate) fn values(&self) -> impl Iterator<Item = &'a NodeId> {
-        enum Iter<'b, 'a> {
-            Legacy(std::collections::btree_set::Iter<'b, &'a NodeId>),
-            Admitted(std::slice::Iter<'b, &'a NodeId>),
-        }
-        impl<'a> Iterator for Iter<'_, 'a> {
-            type Item = &'a NodeId;
-            fn next(&mut self) -> Option<Self::Item> {
-                match self {
-                    Self::Legacy(v) => v.next().copied(),
-                    Self::Admitted(v) => v.next().copied(),
-                }
-            }
-        }
-        match self {
-            Self::Legacy(v) => Iter::Legacy(v.iter()),
-            Self::Admitted { values, .. } => Iter::Admitted(values.iter()),
+            lease: std::marker::PhantomData,
         }
     }
 }
-
-/// Incremental buffer: old+new allocation coexist before the old lease releases.
-pub(crate) struct Growing<T, I, L> {
-    pub(crate) values: Vec<T>,
-    issuer: Option<I>,
-    buffer: Option<L>,
-}
-impl<T, I: Copy + Eq, L> Growing<T, I, L> {
-    pub(crate) fn new() -> Self {
-        Self {
-            values: Vec::new(),
-            issuer: None,
-            buffer: None,
-        }
-    }
-    pub(crate) fn push<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
-        &mut self,
-        value: T,
-        build: &mut Build<'_, P>,
-    ) -> BuildResult<(), P::Error> {
-        if !P::METERED {
-            self.values.push(value);
-            return Ok(());
-        }
-        if self.issuer.is_some_and(|v| v != build.issuer) {
-            return Err(AudioBindingBuildError::Policy(
-                build.policy.issuer_mismatch(),
-            ));
-        }
-        if self.values.len() == self.values.capacity() {
-            let capacity = self.values.capacity().saturating_mul(2).max(4);
-            let mut storage = build.fork();
-            storage.array::<T>(capacity)?;
-            let mut grown = Vec::with_capacity(capacity);
-            assert_eq!(grown.capacity(), capacity);
-            storage.additional(self.values.len())?;
-            grown.append(&mut self.values);
-            let old = std::mem::replace(&mut self.values, grown);
-            drop(old);
-            drop(self.buffer.take());
-            let mut guard = storage.finish(());
-            self.buffer = guard.lease.take();
-            self.issuer = Some(guard.issuer);
-        }
-        self.values.push(value);
-        Ok(())
-    }
-    pub(crate) fn finish<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
-        mut self,
-        build: &mut Build<'_, P>,
-    ) -> BuildResult<(Vec<T>, Option<L>), P::Error> {
-        build.validate()?;
-        if self.issuer.is_some_and(|v| v != build.issuer) {
-            return Err(AudioBindingBuildError::Policy(
-                build.policy.issuer_mismatch(),
-            ));
-        }
-        Ok((std::mem::take(&mut self.values), self.buffer.take()))
-    }
-}
-
-#[cfg(test)]
-mod tests;

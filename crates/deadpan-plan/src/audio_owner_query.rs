@@ -147,7 +147,6 @@ pub(super) fn query_tracked<'plan, S: Copy, A: AudioSoundContextAdmission>(
     limits: AudioQueryLimits,
     seed: State<A::Issuer, A::Lease>,
     label: impl Fn(i64) -> S,
-    retained: Option<&AudioOwnerRetainedInput<'plan>>,
     budget: &mut admission::Budget<'_, A>,
 ) -> Result<Product<'plan, S, A::Issuer, A::Lease>, A> {
     limits.validate()?;
@@ -173,28 +172,15 @@ pub(super) fn query_tracked<'plan, S: Copy, A: AudioSoundContextAdmission>(
             },
             budget.issuer,
         );
-        let retained_origin = retained
-            .map(|input| input.clock_origin_admitted(budget))
-            .transpose()?;
-        let current_origin = AudioOwnerClockOrigin::Current;
-        let origin = retained_origin
-            .as_ref()
-            .map_or(&current_origin, |origin| &origin.value);
         walk_query(
             plan,
             seed.copy(budget)?,
-            match retained {
-                Some(input) => Position {
-                    at: input.reference_at(AudioSample(cursor))?,
-                    step: input.reference_samples_per_output_sample(),
-                },
-                None => Position {
-                    at: ExactRatio::integer(cursor),
-                    step: ExactRatio::ONE,
-                },
+            Position {
+                at: ExactRatio::integer(cursor),
+                step: ExactRatio::ONE,
             },
             &mut output,
-            origin,
+            &AudioOwnerClockOrigin::Current,
             budget,
             0,
         )?;
@@ -288,9 +274,9 @@ pub(super) fn walk_query<A: crate::AudioSoundContextAdmission>(
     if depth > deadpan_core::MAX_DOCUMENT_DEPTH {
         return Err(PlanError::AudioQueryLimit("owner binding depth").into());
     }
-    let mut probe_label =
+    let probe_label =
         AudioSample(i64::try_from(position.at.floor()).map_err(|_| TimeError::Overflow)?);
-    let (mut probe, mut bias) = state.grid.probe(probe_label)?;
+    let (probe, bias) = state.grid.probe(probe_label)?;
     loop {
         budget.canonical(1 + state.repeats.len())?;
         budget.lookup.visited_nodes += 1;
@@ -300,7 +286,7 @@ pub(super) fn walk_query<A: crate::AudioSoundContextAdmission>(
         } else {
             AudioOwnerKind::Node
         };
-        let target = if state.gap.is_some() {
+        let _target = if state.gap.is_some() {
             BindingTarget::Gap(state.node)
         } else {
             BindingTarget::Node(state.node)
@@ -328,33 +314,7 @@ pub(super) fn walk_query<A: crate::AudioSoundContextAdmission>(
         }
         let allocated = state.grid.boundary(state.value.extent.start)?
             ..state.grid.boundary(state.value.extent.end)?;
-        // A retained clock receives this sample's start transferred from its
-        // consumer, for example a RoundEven output allocation that begins a
-        // fraction of an output sample before the owner's exact origin, mapped
-        // onto a Preserve input's PointCeil grid. That first output sample
-        // still overlaps the allocation and belongs to its first sample, as on
-        // the current clock; only a sample wholly before it is outside.
-        // A transferred interval can span more than one reference sample.
-        if probe_label < allocated.start
-            && allocated.start < allocated.end
-            && matches!(origin, AudioOwnerClockOrigin::Retained { .. })
-            && position
-                .at
-                .checked_add(position.step)?
-                .compare_integer(allocated.start.0)
-                .is_gt()
-        {
-            probe_label = allocated.start;
-            (probe, bias) = state.grid.probe(probe_label)?;
-        }
         if !allocated.contains(&probe_label) {
-            if state.allow_inactive && matches!(origin, AudioOwnerClockOrigin::Retained { .. }) {
-                if probe_label < allocated.start {
-                    restrict_end(position, allocated.start.0, output.start, &mut output.end)?;
-                }
-                output.support = AudioOwnerSupport::Inactive;
-                return Ok(());
-            }
             return Err(PlanError::InvalidPlan(
                 "owner coordinate is outside its allocated interval",
             )
@@ -393,89 +353,6 @@ pub(super) fn walk_query<A: crate::AudioSoundContextAdmission>(
             .and_then(|gap| gap.after.as_ref())
             .map(|v| budget.iteration(&mut instance_memory, v))
             .transpose()?;
-        if state.bypass != Some(target) {
-            let transform = SignalTransform {
-                signal_origin: state.binding.placement.origin,
-                signal_frames_per_local_frame: state.binding.placement.scale,
-                grid_origin: state.binding.grid.frame_origin(),
-                signal_frames_per_sample: state.binding.grid.frames_per_sample(),
-            };
-            let binding_frame =
-                |value| state.binding.placement.frame(state.placement.local(value)?);
-            let allocated_start = state
-                .binding
-                .grid
-                .boundary(binding_frame(state.value.extent.start)?)?;
-            let support = state
-                .support
-                .as_ref()
-                .map(|range| {
-                    Ok::<_, TimeError>(binding_frame(range.start)?..binding_frame(range.end)?)
-                })
-                .transpose()?;
-            if let Some(bound) = plan.bound_at_query(
-                state.node,
-                &state.repeats,
-                state.definition.as_ref(),
-                BoundPlacement {
-                    transform,
-                    grid: state.binding.grid.rebrand(),
-                    allocated_start: SignalSample(allocated_start.0),
-                    support: support.as_ref(),
-                    constraints: &[],
-                    gap: state.gap.as_ref(),
-                },
-                budget,
-            )? {
-                let Some(domain) = bound.envelope_domain_query(budget)? else {
-                    if state.allow_inactive {
-                        output.support = AudioOwnerSupport::Inactive;
-                        return Ok(());
-                    }
-                    return Err(PlanError::InvalidPlan(
-                        "owner binding has empty meaningful support",
-                    )
-                    .into());
-                };
-                let physical_at = state
-                    .binding
-                    .placement
-                    .frame(local.at)?
-                    .checked_sub(state.binding.grid.frame_origin())?
-                    .checked_div(state.binding.grid.frames_per_sample())?;
-                let physical_step = local
-                    .step
-                    .checked_mul(state.binding.placement.scale)?
-                    .checked_div(state.binding.grid.frames_per_sample())?;
-                let reference = Position {
-                    at: bound.reference_at_offset(0)?.checked_add(
-                        physical_at
-                            .checked_sub(ExactRatio::integer(allocated_start.0))?
-                            .checked_mul(bound.reference_samples_per_output_sample())?,
-                    )?,
-                    step: physical_step.checked_mul(bound.reference_samples_per_output_sample())?,
-                };
-                let mut retained = State::from_seed(&domain.seed, budget)?;
-                retained.value.allow_inactive = state.allow_inactive;
-                // These moved values are still covered by the enclosing state
-                // and instance scopes until the actual recursive call returns.
-                let next_origin = AudioOwnerClockOrigin::Retained {
-                    definition: state.value.definition.take(),
-                    instance,
-                    kind,
-                    gap_after,
-                };
-                return walk_query(
-                    plan,
-                    retained,
-                    reference,
-                    output,
-                    &next_origin,
-                    budget,
-                    depth + 1,
-                );
-            }
-        }
         budget.canonical(state.definition.is_some() as usize + 1)?;
         let needed = output.value.owners.len() + 1;
         budget.grow(&mut output.value.owners, &mut output.capacity, needed)?;
@@ -645,15 +522,7 @@ pub(in crate::plan) fn root_candidates_query<'plan, A: AudioSoundContextAdmissio
         let mut budget = admission::Budget::new(&mut local, admission);
         let mut seed = State::plain(Walk::root(plan)?, budget.issuer);
         seed.value.allow_inactive = true;
-        query_tracked(
-            plan,
-            at.0..end.0,
-            limits,
-            seed,
-            AudioSample,
-            None,
-            &mut budget,
-        )
+        query_tracked(plan, at.0..end.0, limits, seed, AudioSample, &mut budget)
     })())
 }
 pub(in crate::plan) fn domain_candidates_query<'plan, A: AudioSoundContextAdmission>(
@@ -681,7 +550,6 @@ pub(in crate::plan) fn domain_candidates_query<'plan, A: AudioSoundContextAdmiss
             limits,
             seed,
             AudioSample,
-            None,
             &mut budget,
         )
     })())

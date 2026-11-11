@@ -96,9 +96,8 @@ The first three commit one semantic `SetPlayGap { change }` instruction
 (`Length` or `Audio`). The planner adds one Compound leaf `IsolateGap` (or,
 below enclosing plays, `EditOccurrence { IsolateGap }` sized by
 `occurrence_gap_requirements`) and then the ordinary one-play pause length or
-pause sound leaf on the new Hold, so retained timing follows the existing
-isolated-gap path: the copy binds the old default-gap clock and the length
-change reanchors later owners on their pre-edit entries. One Undo restores the
+pause sound leaf on the new Hold, so the copy is an ordinary isolated gap and the length
+change moves later owners structurally. One Undo restores the
 shared gap. The inspector then selects the new gap pause with the cursor at
 its first frame. Macros record `SetPlayGap` and dot repeats it after the play
 chosen at invocation.
@@ -166,7 +165,7 @@ copy, so other plays keep the shared definition. One Undo restores everything.
   while unnamed gap branches end. Every gap holds the last picture of the
   Repeat's first play in this occurrence, captured through
   `PauseSite::RepeatGap` with only the composition below the Repeat. Later
-  plays and gaps inside the Repeat keep their own pre-edit sample entries as
+  plays and gaps inside the Repeat are sampled from their new positions as
   well. The same plays and gaps refuse ("already has these plays and gaps in
   this play") without saving; a plain beat refuses with "wrap a beat first".
   `gain-step`, `zoom-step` and `speed-step` still refuse inside Repeat
@@ -175,9 +174,8 @@ copy, so other plays keep the shared definition. One Undo restores everything.
 Deletion, Repeat, count and gap changes keep timing exact: every physical owner
 after the change
 (the rest of the play, later plays and gaps of each enclosing Repeat, and
-everything after the outermost one) keeps its own pre-edit sample entry, and a
-wrapped beat's first play keeps its old phase. Shared owners keep their earlier
-occurrences unchanged. Core tests check the retained entries at 30000/1001 fps,
+everything after the outermost one) is sampled from its new position. Shared owners keep their earlier
+occurrences unchanged. Core tests check the placement at 30000/1001 fps,
 where a one-frame move is not a whole number of samples.
 
 These keys refuse, with the earlier structural message, for All plays or
@@ -205,7 +203,7 @@ inside play 2 edits that play only and saves only Split and the beat cut" and
 "@a in play 3 splits and deletes at the new play's cursor and leaves play 2 as
 recorded";
 `project::tests::scoped_structure` and core
-`insert_time::occurrence_structure` cover nested plays, retained clocks and
+`insert_time::occurrence_structure` cover nested plays and
 refusals.
 
 ## Copying and pasting a beat in This play
@@ -228,8 +226,8 @@ register as at the parent.
   and then places the content exactly as the root seam paste does
   (`SpliceSlice`/`SpliceSource`), at the seam after or before the beat in that
   occurrence: every later owner (the rest of the play, later plays and gaps of
-  each enclosing Repeat, and everything after) keeps its own pre-edit sample
-  entry, and the pasted Source starts unbound on the project grid. Other plays
+  each enclosing Repeat, and everything after) is sampled from its new position, and the pasted Source is sampled on the
+  project grid. Other plays
   keep the shared definition. The inspector selects the pasted beat with the
   cursor at its start. One Undo removes it.
 - A copy made in a play also pastes at the parent (`p` outside the contents
@@ -263,7 +261,7 @@ Replace over this play's Time range (`v`, motion, `v`, then `:splice`, then
 "Your edit / Repeat · play N/M · …". Enter commits one `EditOccurrence`
 `PasteSlice`/`PasteSource` with an explicit `at`: the shown plays are isolated
 and the content is placed there only, exactly as at the parent, with every
-later owner on its pre-edit sample entry. The inspector selects the placed beat
+later owner sampled from its new position. The inspector selects the placed beat
 at its start; one Undo restores the shared definition. Move (`m`), group-object
 destinations, destinations inside a speed change in that play, sound-bearing
 documents, All plays and several selected plays refuse readably, and Place
@@ -511,15 +509,14 @@ pending target name. A missing target cannot become valid by naming a temporary
 clone; no legal authored name is reserved for the query. Only the caller's real identity
 pools enter the committed edit.
 
-Selective isolation preserves sparse overrides, retained clocks, concrete and
+Selective isolation preserves sparse overrides, concrete and
 definition marks, and per-play sound permissions. Default ancestors are
 wildcards only for actual uses of their shared definition. Duration and source
 coordinates do not change in the value-edit command family. Scoped pause
 insertion uses `InsertOccurrenceTime` with explicit `target: ScopedNodeTarget`
 authority and a separate `within: InstancePath` presentation;
 its query checks the captured boundary and remaps that instance through
-outside-in isolation before the time insertion. Later allocations retain their
-pre-edit sampling clocks.
+outside-in isolation before the time insertion. Later allocations are sampled from their new positions.
 
 Native requests capture session, project, revision, outer Sequence scope,
 inspected root, authoring target, optional presentation and root cursor. The

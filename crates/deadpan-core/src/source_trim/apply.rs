@@ -1,11 +1,8 @@
-//! One old-tree timing capture and one linked structural edge change.
-
-use std::collections::BTreeSet;
+//! One linked structural edge change.
 
 use crate::{
-    AudioTimingId, Command, EditError, EditErrorCode, ExactRatio, FrameDuration, FramingError,
-    MAX_AUDIO_BINDING_ENTRIES, MAX_DOCUMENT_NODES, NodeKind, PitchPolicy, ProjectDocument,
-    RevisionId, SourceTrimResolution,
+    Command, EditError, EditErrorCode, FrameDuration, FramingError, MAX_DOCUMENT_NODES, NodeKind,
+    PitchPolicy, ProjectDocument, RevisionId,
 };
 
 pub(crate) fn apply(
@@ -51,7 +48,15 @@ pub(crate) fn apply(
         }
     }
 
-    let mut result = capture_timing(document, &resolved, timing)?;
+    if resolved.suffix_timing_window.is_some() {
+        // Refuse a suffix that would cross a Repeat or Retime ancestor.
+        crate::insert_time::composite::shifted_owners(
+            document,
+            &resolved.parent,
+            resolved.slot + 1,
+        )?;
+    }
+    let mut result = document.clone();
     let physical = result
         .nodes
         .get_mut(&resolved.physical_source)
@@ -92,14 +97,6 @@ pub(crate) fn apply(
     physical.kind = NodeKind::Source {
         source: resolved.after.clone(),
     };
-    if resolved.physical_prefix != FrameDuration::ZERO
-        && let Some(binding) = result
-            .audio_bindings
-            .bindings
-            .get_mut(&resolved.physical_source)
-    {
-        *binding = binding.rebase_local(ExactRatio::integer(resolved.physical_prefix.frames()))?;
-    }
 
     if let Some(wrapper) = wrapper {
         let label = &document.nodes()[node].label;
@@ -148,73 +145,8 @@ pub(crate) fn apply(
         &resolved.physical_source,
         resolved.physical_prefix,
     )?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     Ok(result)
-}
-
-fn capture_timing(
-    document: &ProjectDocument,
-    resolved: &SourceTrimResolution,
-    timing: &AudioTimingId,
-) -> Result<ProjectDocument, EditError> {
-    let mut captured =
-        crate::audio_binding_lifecycle::capture_for_composite_insertion(document, timing.clone())?;
-    let mut working = document.clone();
-    working.audio_bindings = captured.state;
-    if let Some(layout) = captured.phase_only_layout {
-        working
-            .audio_bindings
-            .timings
-            .insert(timing.clone(), layout);
-    }
-    let mut entries = 0usize;
-    for (_, _, binding) in working.audio_bindings.owners() {
-        for placement in binding.placements() {
-            entries = entries
-                .checked_add(placement.entry_count())
-                .filter(|count| *count <= MAX_AUDIO_BINDING_ENTRIES)
-                .ok_or_else(|| limit("Source trim audio binding entries"))?;
-        }
-    }
-    if let Some(window) = resolved.target_timing_window
-        && let Some(placement) = captured.node_placements.remove(&resolved.physical_source)
-    {
-        let target = BTreeSet::from([resolved.physical_source.clone()]);
-        crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings,
-            crate::AudioRecipeKind::Node,
-            [(resolved.physical_source.clone(), placement)].into(),
-            &target,
-            window,
-            &mut entries,
-        )?;
-    }
-    if let Some(window) = resolved.suffix_timing_window {
-        let suffix = crate::insert_time::composite::shifted_owners(
-            document,
-            &resolved.parent,
-            resolved.slot + 1,
-        )?;
-        crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings,
-            crate::AudioRecipeKind::Node,
-            captured.node_placements,
-            &suffix,
-            window,
-            &mut entries,
-        )?;
-        crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings,
-            crate::AudioRecipeKind::RepeatGap,
-            captured.gap_placements,
-            &suffix,
-            window,
-            &mut entries,
-        )?;
-    }
-    // Keep the captured layouts until target translation and the complete tree
-    // change are installed. The caller then prunes unreferenced phase-only data.
-    Ok(working)
 }
 
 fn invalid(message: &str) -> EditError {

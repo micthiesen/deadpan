@@ -1,15 +1,14 @@
-//! A resized owned Hold moves surviving audio allocations on their old clocks.
+//! Admission for resizing an owned Hold inside one Repeat play.
 
 use crate::{
-    Anchor, AnchorIndex, AnchorTarget, AudioTimingId, BoundaryAnchor, EditError, ExactRatio,
-    FrameDuration, InsertionBias, InstancePath, NodeKind, ProjectDocument, RevisionId,
+    Anchor, AnchorIndex, AnchorTarget, BoundaryAnchor, EditError, ExactRatio, FrameDuration,
+    InsertionBias, InstancePath, NodeKind, ProjectDocument,
 };
 
 pub(super) fn prepare(
     document: &ProjectDocument,
     instance: &InstancePath,
     duration: FrameDuration,
-    allocation: &RevisionId,
 ) -> Result<ProjectDocument, EditError> {
     // The ordinary reducer retains its historical behavior for an occurrence
     // wrapper without Repeat authority. A repeated duration edit needs the
@@ -23,8 +22,8 @@ pub(super) fn prepare(
             "a duration change applies to a pause (Hold)",
         ));
     };
-    let affected =
-        crate::insert_time::composite::occurrence_owners_after(document, &instance.node)?;
+    // Refuse a suffix that would cross a Retime ancestor.
+    crate::insert_time::composite::occurrence_owners_after(document, &instance.node)?;
     if recipe.duration == duration {
         return Ok(document.clone());
     }
@@ -52,8 +51,8 @@ pub(super) fn prepare(
     };
     if crate::scoped_edit::duration_target_dormant(document, &target, &parents)? {
         // The preceding Play is currently final, or an enclosing definition
-        // is unused. There is no root allocation or suffix clock to capture.
-        // Keep the ordinary recipe/provider/mark reduction after this helper.
+        // is unused. Keep the ordinary recipe/provider/mark reduction after
+        // this helper.
         return Ok(document.clone());
     }
     let end = AnchorIndex::new(document)
@@ -74,21 +73,5 @@ pub(super) fn prepare(
             "changing one play's Hold duration needs an integral root clock",
         ));
     }
-    let total = document.duration()?.frames();
-    if end.frame.0 == total {
-        return Ok(document.clone());
-    }
-    // Isolation has already happened, without moving root time. Capture now
-    // so old default and owned branches keep their concrete placements, and
-    // still-unbound downstream recipes retain their pre-edit phase too.
-    crate::insert_time::composite::prepare_owners(
-        document,
-        &affected,
-        end.frame,
-        total,
-        &AudioTimingId {
-            allocation: allocation.clone(),
-            ordinal: 0,
-        },
-    )
+    Ok(document.clone())
 }

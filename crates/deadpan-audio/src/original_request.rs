@@ -711,22 +711,18 @@ pub(super) fn with_legacy_flattened_queries<T>(action: impl FnOnce() -> T) -> T 
 mod policy_trace;
 
 #[cfg(test)]
-/// Select the literal OLD Original and nested retained constructors.
+/// Select the literal OLD Original constructors.
 pub(super) fn with_legacy_original_queries<T>(action: impl FnOnce() -> T) -> T {
-    super::raw_domain_request::with_legacy_raw_domain(|| {
-        super::retained_request::with_legacy_retained_queries(|| {
-            with_legacy_fade_queries(|| {
-                with_legacy_policy_queries(|| {
-                    with_legacy_processing_queries(|| with_legacy_flattened_queries(action))
-                })
+    super::point_suppression::with_legacy_point_suppression(|| {
+        with_legacy_fade_queries(|| {
+            with_legacy_policy_queries(|| {
+                with_legacy_processing_queries(|| with_legacy_flattened_queries(action))
             })
         })
     })
 }
 #[cfg(test)]
-pub(super) use policy_trace::{
-    domain_policy_trace, reset_domain_policy_trace, with_domain_policy_trace,
-};
+pub(super) use policy_trace::with_domain_policy_trace;
 
 #[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
 #[path = "original_request/tests.rs"]

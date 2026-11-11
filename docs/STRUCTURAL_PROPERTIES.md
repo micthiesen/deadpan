@@ -31,11 +31,8 @@ change cannot silently stop exercising one.
   pastes and duplicates lose no bound mark unless the edit removes a node the
   mark is owned by or hosted in, as Ungroup removes its wrapper.
 - Time-neutral edits (Split, Group, Ungroup, IsolateGap, Explode, scoped and
-  multi-play renames, and marks) keep every retained audio clock. Each
-  surviving unrepeated physical owner resolves the same lattice and resume through `AudioBindingState::resolve`,
-  ignoring work counters and birth indexes. This is the core-level proxy for an
-  unchanged plan sample mapping, because `deadpan-plan` is not a dependency of
-  the core crate.
+  multi-play renames, and marks) change no Original audio placement: placement is derived from the tree, so
+  a time-neutral edit leaves every surviving owner's sample mapping unchanged.
 - A refused command leaves its input unchanged.
 
 After the whole sequence, applying every inverse patch in reverse order

@@ -6,8 +6,8 @@ use std::ops::Range;
 use deadpan_core::{AudioSample, ExactRatio, MAX_DOCUMENT_DEPTH, TimeError};
 
 use super::{
-    AudioBound, AudioBoundDomain, AudioContent, AudioDomain, AudioQueryLimits, AudioRetimeStage,
-    AudioSignal, AudioSignalContent, LookupStats, RenderPlan, SignalSample, SilenceReason,
+    AudioContent, AudioDomain, AudioQueryLimits, AudioRetimeStage, AudioSignal, AudioSignalContent,
+    LookupStats, RenderPlan, SignalSample, SilenceReason,
 };
 use crate::{AudioBoundaryRule, PlanError};
 
@@ -200,26 +200,6 @@ impl AudioDomain<'_> {
     }
 }
 
-/// Only the sealed successful Domain-processing product may supply this tape.
-/// Its first query has already been billed independently by the audio host.
-pub(super) fn domain_policy_with_processing(
-    domain: &AudioDomain<'_>,
-    samples: Range<AudioSample>,
-    limits: AudioQueryLimits,
-    bindings: &[super::AudioProcessingSpan<'_>],
-) -> Result<AudioPolicyQuery<AudioSample>, PlanError> {
-    let mut work = PolicyWork::new(limits)?;
-    let suppressed = domain_policy_inner(
-        domain,
-        samples.start.0..samples.end.0,
-        &mut work,
-        0,
-        true,
-        Some(bindings),
-    )?;
-    Ok(work.result(suppressed, AudioSample))
-}
-
 fn is_suppressed(content: &AudioContent) -> bool {
     matches!(
         content,
@@ -270,7 +250,6 @@ fn signal_policy(
     let current = signal.query_inner(range.clone(), work.limits()?, rule, false, false)?;
     work.observed(current.work, current.lookup)?;
     let mut suppressed = Vec::new();
-    let bindings = signal.has_audio_bindings();
     for span in current.spans {
         let AudioSignalContent::Leaf(content) = span.content else {
             return Err(PlanError::InvalidPlan("current policy retained processing"));
@@ -278,10 +257,7 @@ fn signal_policy(
         if is_suppressed(&content) {
             suppressed.push(span.samples.start.0..span.samples.end.0);
         }
-        if !bindings
-            && is_selected_endpoint(&content)
-            && endpoint_grid(endpoints, &span.retimes, work)?
-        {
+        if is_selected_endpoint(&content) && endpoint_grid(endpoints, &span.retimes, work)? {
             suppressed.push(span.samples.start.0..span.samples.end.0);
         }
         work.content(content)?;
@@ -298,33 +274,6 @@ fn signal_policy(
             suppressed.push(hold.samples.start.0..hold.samples.end.0);
         }
     }
-    if !bindings || samples.is_empty() {
-        return Ok(suppressed);
-    }
-    let bindings = signal.query_inner(range, work.limits()?, rule, false, true)?;
-    work.observed(bindings.work, bindings.lookup)?;
-    for span in bindings.spans {
-        match span.content {
-            AudioSignalContent::Bound(bound) => {
-                let endpoints = endpoint_grid(endpoints, &span.retimes, work)?;
-                suppressed.extend(bound_policy(
-                    &bound,
-                    span.samples.start.0..span.samples.end.0,
-                    span.allocated_samples.start.0,
-                    work,
-                    depth + 1,
-                    endpoints,
-                )?);
-            }
-            AudioSignalContent::Leaf(content)
-                if is_selected_endpoint(&content)
-                    && endpoint_grid(endpoints, &span.retimes, work)? =>
-            {
-                suppressed.push(span.samples.start.0..span.samples.end.0);
-            }
-            _ => {}
-        }
-    }
     Ok(suppressed)
 }
 
@@ -335,7 +284,7 @@ fn domain_policy(
     depth: usize,
     endpoints: bool,
 ) -> Result<Vec<Range<i64>>, PlanError> {
-    domain_policy_inner(domain, samples, work, depth, endpoints, None)
+    domain_policy_inner(domain, samples, work, depth, endpoints)
 }
 
 fn domain_policy_inner(
@@ -344,22 +293,17 @@ fn domain_policy_inner(
     work: &mut PolicyWork,
     depth: usize,
     endpoints: bool,
-    processing_bindings: Option<&[super::AudioProcessingSpan<'_>]>,
 ) -> Result<Vec<Range<i64>>, PlanError> {
     work.enter(depth)?;
     let range = AudioSample(samples.start)..AudioSample(samples.end);
     let current = domain.audio(range.clone(), work.limits()?)?;
     work.observed(current.work, current.lookup)?;
     let mut suppressed = Vec::new();
-    let bindings = domain.has_audio_bindings();
     for span in current.spans {
         if is_suppressed(&span.content) {
             suppressed.push(span.samples.start.0..span.samples.end.0);
         }
-        if !bindings
-            && is_selected_endpoint(&span.content)
-            && endpoint_grid(endpoints, &span.retimes, work)?
-        {
+        if is_selected_endpoint(&span.content) && endpoint_grid(endpoints, &span.retimes, work)? {
             suppressed.push(span.samples.start.0..span.samples.end.0);
         }
         // These are the retained raw operand's meaningful edges, independently
@@ -373,61 +317,6 @@ fn domain_policy_inner(
         }
         work.content(span.content)?;
     }
-    if !bindings || samples.is_empty() {
-        return Ok(suppressed);
-    }
-    if let Some(bindings) = processing_bindings.filter(|spans| spans.len() <= work.maximum_spans) {
-        // The existing first walk proved that stop_at_preserve never affected
-        // a terminal. Both walks stop at bindings. Opaque Bound bodies still
-        // recurse through their ordinary independent policy below.
-        for span in bindings {
-            match &span.content {
-                AudioSignalContent::Bound(bound) => {
-                    let endpoints = endpoint_grid(endpoints, &span.retimes, work)?;
-                    suppressed.extend(bound_policy(
-                        bound,
-                        span.samples.start.0..span.samples.end.0,
-                        span.allocated_samples.start.0,
-                        work,
-                        depth + 1,
-                        endpoints,
-                    )?);
-                }
-                AudioSignalContent::Leaf(content)
-                    if is_selected_endpoint(content)
-                        && endpoint_grid(endpoints, &span.retimes, work)? =>
-                {
-                    suppressed.push(span.samples.start.0..span.samples.end.0);
-                }
-                _ => {}
-            }
-        }
-        return Ok(suppressed);
-    }
-    let bindings = domain.processing_inner(range, work.limits()?, false)?;
-    work.observed(bindings.work, bindings.lookup)?;
-    for span in bindings.spans {
-        match span.content {
-            AudioSignalContent::Bound(bound) => {
-                let endpoints = endpoint_grid(endpoints, &span.retimes, work)?;
-                suppressed.extend(bound_policy(
-                    &bound,
-                    span.samples.start.0..span.samples.end.0,
-                    span.allocated_samples.start.0,
-                    work,
-                    depth + 1,
-                    endpoints,
-                )?);
-            }
-            AudioSignalContent::Leaf(content)
-                if is_selected_endpoint(&content)
-                    && endpoint_grid(endpoints, &span.retimes, work)? =>
-            {
-                suppressed.push(span.samples.start.0..span.samples.end.0);
-            }
-            _ => {}
-        }
-    }
     Ok(suppressed)
 }
 
@@ -438,107 +327,4 @@ fn add_outside(out: &mut Vec<Range<i64>>, samples: Range<i64>, support: Range<i6
     if samples.end > support.end {
         out.push(samples.start.max(support.end)..samples.end);
     }
-}
-
-fn bound_policy(
-    bound: &AudioBound<'_>,
-    samples: Range<i64>,
-    anchor: i64,
-    work: &mut PolicyWork,
-    depth: usize,
-    endpoints: bool,
-) -> Result<Vec<Range<i64>>, PlanError> {
-    work.enter(depth)?;
-    let raw = bound.raw_domain()?;
-    let support = match &raw {
-        AudioBoundDomain::Root(domain) => {
-            let range = domain.root_samples();
-            range.start.0..range.end.0
-        }
-        AudioBoundDomain::Point(domain) => {
-            let range = domain.reference_samples();
-            range.start.0..range.end.0
-        }
-        AudioBoundDomain::Empty => return Ok(if endpoints { vec![samples] } else { Vec::new() }),
-    };
-    if support.is_empty() {
-        return Ok(if endpoints { vec![samples] } else { Vec::new() });
-    }
-    let first = bound.reference_at_wide_offset(i128::from(samples.start) - i128::from(anchor))?;
-    let step = bound.reference_samples_per_output_sample();
-    let last = first.checked_add(
-        ExactRatio::new(i128::from(samples.end) - i128::from(samples.start) - 1, 1)?
-            .checked_mul(step)?,
-    )?;
-    let clipped_start = first.floor().max(i128::from(support.start));
-    let clipped_end = last
-        .floor()
-        .checked_add(1)
-        .ok_or(TimeError::Overflow)?
-        .min(i128::from(support.end));
-    let mut suppressed = Vec::new();
-    let inverse = |at: i64| -> Result<i64, PlanError> {
-        let offset = ExactRatio::integer(at)
-            .checked_sub(first)?
-            .checked_div(step)?
-            .ceil()?;
-        let value = i128::from(samples.start)
-            .checked_add(offset)
-            .ok_or(TimeError::Overflow)?;
-        Ok(
-            i64::try_from(value.clamp(i128::from(samples.start), i128::from(samples.end)))
-                .map_err(|_| TimeError::Overflow)?,
-        )
-    };
-    if endpoints {
-        add_outside(
-            &mut suppressed,
-            samples.clone(),
-            inverse(support.start)?..inverse(support.end)?,
-        );
-    }
-    if clipped_start >= clipped_end {
-        return Ok(suppressed);
-    }
-    let selection = i64::try_from(clipped_start).map_err(|_| TimeError::Overflow)?
-        ..i64::try_from(clipped_end).map_err(|_| TimeError::Overflow)?;
-    let retained = match raw {
-        AudioBoundDomain::Root(domain) => {
-            domain_policy(&domain, selection, work, depth + 1, endpoints)?
-        }
-        AudioBoundDomain::Point(domain) => {
-            let origin = domain.reference_samples().start.0;
-            let range = selection
-                .start
-                .checked_sub(origin)
-                .ok_or(TimeError::Overflow)?
-                ..selection
-                    .end
-                    .checked_sub(origin)
-                    .ok_or(TimeError::Overflow)?;
-            signal_policy(
-                &domain.signal(),
-                range,
-                AudioBoundaryRule::PointCeil,
-                work,
-                depth + 1,
-                endpoints,
-            )?
-            .into_iter()
-            .map(|range| {
-                Ok(range.start.checked_add(origin).ok_or(TimeError::Overflow)?
-                    ..range.end.checked_add(origin).ok_or(TimeError::Overflow)?)
-            })
-            .collect::<Result<Vec<_>, TimeError>>()?
-        }
-        AudioBoundDomain::Empty => unreachable!("empty operand returned before selection"),
-    };
-    for range in retained {
-        work.spend(1)?;
-        let mapped = inverse(range.start)?..inverse(range.end)?;
-        if !mapped.is_empty() {
-            suppressed.push(mapped);
-        }
-    }
-    Ok(suppressed)
 }

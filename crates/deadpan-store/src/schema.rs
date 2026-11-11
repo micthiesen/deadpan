@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 88;
+pub const VERSION: u32 = 89;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -18,6 +18,8 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
+    // Schema 89 uses core 59, which keeps no Original audio bindings: their
+    // placement is derived from the current tree. Prior packages refuse.
     // Schema 88 adds named Original moments with tags outside history.
     // Prior unused development packages need no migration.
     // Schema 87 uses core 58's omitted exact defaults in audio bindings.

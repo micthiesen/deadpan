@@ -15,8 +15,7 @@ use std::num::NonZeroU32;
 use super::*;
 use deadpan_core::{
     GagRecipe, PauseInsertionTarget, PauseLength, PitchPolicy, RepeatEditBranch, RepeatEditStep,
-    ScopedNodeEdit, ScopedNodeTarget, SourceTrimCapture, SourceTrimIntent, SourceTrimPolicy,
-    SourceTrimResources,
+    ScopedNodeEdit, ScopedNodeTarget, SourceTrimIntent, SourceTrimPolicy, SourceTrimResources,
 };
 
 #[path = "section8/scoped_audio.rs"]
@@ -616,7 +615,7 @@ pub fn trim_out(dir: &Path) -> Result<Fixture> {
     let mut project = Project::create(dir, "trim-out")?;
     project.shorten()?;
     project.split_root(15)?;
-    project.apply(|project, document, revision| {
+    project.apply(|project, document, _| {
         let parent = document.root().clone();
         let left = root_child_at(document, 0)?.0;
         let right = root_child_at(document, 15)?.0;
@@ -645,10 +644,6 @@ pub fn trim_out(dir: &Path) -> Result<Fixture> {
                     nodes: project.fresh(resolution.required_split_nodes)?,
                 },
                 fillers: project.fresh(resolution.required_filler_nodes)?,
-                timing: (resolution.capture != SourceTrimCapture::None).then(|| AudioTimingId {
-                    allocation: revision.clone(),
-                    ordinal: 0,
-                }),
             },
         })
     })?;

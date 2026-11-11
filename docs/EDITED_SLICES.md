@@ -74,8 +74,8 @@ contents, a beat inside a speed change or crop in the play, and any other
 selection kind. The result is an ordinary edited copy: it pastes at a seam
 outside the Repeat, or into another play with `OccurrenceEdit::PasteSlice`,
 which isolates the chosen plays and then installs it as `SpliceSlice` does,
-reanchoring every later owner (including later plays and gaps) on its own
-pre-edit clock. `OccurrenceEdit::PasteSource` places an Original moment the
+placing every later owner (including later plays and gaps) by its new
+position. `OccurrenceEdit::PasteSource` places an Original moment the
 same way as `SpliceSource`. See
 [scoped editing](SCOPED_EDITING.md#copying-and-pasting-a-beat-in-this-play).
 
@@ -99,10 +99,8 @@ The temporary peak includes destination, split and imported nodes.
 structural spans without a Split pool. They retain the explicit first slot;
 matching timestamps cannot substitute for child identities.
 
-Capture original sampling lattices before splitting endpoints. Prepare the
-destination suffix on the split, undeleted tree at the original insertion
-boundary or replacement Out. Replace the selected child interval directly with
-the imported root; never construct a shorter deletion-only clock. Existing
+Replace the selected child interval directly with
+the imported root; never construct a shorter deletion-only structure. Existing
 marks and lineage reconcile against the final structure, imported marks finish
 separately, and the outer command transforms root sounds and allowances once.
 Copied Holds receive no new permission to play independent root sounds.
@@ -110,13 +108,13 @@ Copied Holds receive no new permission to play independent root sounds.
 An empty Child or Children capture can insert through `SpliceSlice` at an
 explicit sibling index. It keeps its labels, framing, treatments and owned marks
 under a fresh neutral wrapper without adding frames or samples. A seam insertion
-leaves existing bindings, timing records, lineage, marks, sound events, routes
+leaves existing timing records, lineage, marks, sound events, routes
 and allowances unchanged and allocates no suffix clock or root sound transform.
 It is still one authored revision with an exact inverse.
 
 Exact structural replacement also accepts an empty Edited source. It removes
-the named old owners, applies their mark loss policy and preserves surviving
-suffix clocks; replacing positive time transforms the root sound bus once.
+the named old owners, applies their mark loss policy and leaves surviving
+owners in place; replacing positive time transforms the root sound bus once.
 Zero-time replacement still removes the old identities. Interior insertion,
 time-range replacement and interval Move retain their empty-source refusals.
 
@@ -127,11 +125,11 @@ clock. A freeze retains its captured geometry as well as its independent live
 framing. A copied group remains a group; the new enclosing Sequence adds no
 creative treatment.
 
-Audio capture retains both the sampling lattice and the selected sample entry.
-It preserves existing resume terms and reanchor chronology, complete referenced
-timing layouts and opaque Preserve processing contexts. Selected moving owners
-receive a crop entry while traversal stops at non-unity Preserve stages.
-Destination suffix preparation preserves the old suffix entry independently.
+Audio capture retains the selected sample entry, complete referenced
+timing layouts for sound clocks and opaque Preserve processing contexts.
+Traversal stops at non-unity Preserve stages. Original audio placement is
+derived from the current tree at the destination, so capture stores no lattice
+and no resume or reanchor history (removed 2026-11-11).
 
 The inserted sample allocation remains
 `B(destination + duration) - B(destination)`, where `B` is the origin-based
@@ -155,14 +153,9 @@ Repeats can share old allocation/ordinal values without becoming one family.
 Compact play order and complete birth Run support, including retired plays,
 remain intact. No operation expands every Repeat play to perform this rename.
 
-The command's `timing.allocation` equals its new revision. Positive seam insertion
-retains its reserved destination ordinal; empty structural insertion uses none.
-Strict interior insertion uses a pre-Split
-lattice ordinal, then a suffix ordinal. Replacement uses a pre-Split ordinal
-only when endpoints need splitting and a suffix ordinal only when material
-follows its Out. Imported records follow the used destination ordinals. Check
-only the consumed interval, so whole-range replacement needs no unused suffix
-clock. Combined identity, node, mark, clock, treatment, serialization and work
+The command's `timing.allocation` equals its new revision; it serves independent
+sound clocks only. Imported records follow the used destination ordinals.
+Combined identity, node, mark, clock, treatment, serialization and work
 limits apply before a candidate is admitted. Frozen layout indexes are rebuilt
 after renaming. Ordinary subtree insertion's positional Repeat normalization is
 not a substitute for this path.

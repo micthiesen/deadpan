@@ -136,10 +136,10 @@ fn obsolete_schema_refusal_precedes_writer_lock_and_preserves_live_wal() -> Resu
 }
 
 #[test]
-fn current_schema88_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
+fn current_schema89_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
     use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
 
-    assert_eq!(DATABASE_SCHEMA_VERSION, 88);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 89);
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("current.deadpan");
     let document = ProjectDocument::new(
@@ -157,7 +157,7 @@ fn current_schema88_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     let database = Connection::open(package.join("project.sqlite"))?;
     let before = cells(&database)?;
     let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (88, 88));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (89, 89));
     assert!(outcome.backup.is_none());
     assert_eq!(cells(&database)?, before);
     assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);

@@ -78,7 +78,6 @@ struct State<'plan> {
     work: usize,
     fail_after: Option<usize>,
     domain: Option<Weak<AudioDomain<'plan>>>,
-    retained: Option<Weak<AudioOwnerRetainedInput<'plan>>>,
 }
 struct Policy<'plan>(Rc<RefCell<State<'plan>>>);
 struct Token<'plan> {
@@ -93,9 +92,6 @@ impl Drop for Token<'_> {
         let mut state = self.state.borrow_mut();
         if let Some(value) = &state.domain {
             assert!(value.upgrade().is_none(), "Domain before lease");
-        }
-        if let Some(value) = &state.retained {
-            assert!(value.upgrade().is_none(), "Retained before lease");
         }
         state.live -= self.bytes;
     }

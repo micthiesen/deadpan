@@ -65,7 +65,7 @@ older schema declarations reject EQ rather than adopting new semantics.
 `authored_eq` chooses the outermost remaining EQ in an owner's program, evaluates
 its complete input prefix recursively and applies its suffix afterwards. Each
 checked context owns its raw time/pitch processor. Captured domain queries can
-resolve children outside current delivery; retained contexts keep their exact
+resolve children outside current delivery; contexts keep their exact
 consumer map. All temporal intermediates remain stereo f64. Explicit silence
 and exhaustion gate each output; authored mute stays at its program position.
 
@@ -127,7 +127,7 @@ plays and incompatible clocks. A Sequence or whole Repeat keeps its complete
 subtree, including hidden siblings behind a transparent Partition, on the
 original absolute sample grid.
 
-The first enclosing Preserve or retained binding remains opaque. The handle
+The first enclosing Preserve remains opaque. The handle
 reports `EnclosingProcessor` when its output also contains other descendant
 owners. Its output must not be mistaken for the requested owner's isolated
 contribution, and the effect must not move into that processor's input.
@@ -135,27 +135,12 @@ contribution, and the effect must not move into that processor's input.
 existing bounded time/pitch, policy and creative-edge path. It does not sum
 independent sounds or apply authored treatments.
 
-A resumed binding's current delivery interval can hide earlier reference
-history. `AudioOwnerInput::retained_at` separately exposes its checked full
-`AudioBoundDomain` and exact consumer-to-reference sample map. RootRoundEven
-and PointCeil labels remain distinct. The existing domain/point readers and
-domain transfer evaluate that history without looking up the same positions
-through an unrelated current-root sibling. The handle now also queries creative
-fades and owner clocks on the consumer grid, including positions before current
-delivery. `read_retained_owner_input` evaluates time/pitch and transported edges;
-`read_retained_owner_treatments` additionally applies the operand's current
-gain/mute, saturation and balance, excluding exterior owners and independent
-sounds. The latter evaluates the complete current treatment chain. A temporal
-graph must choose explicit stage boundaries before using it as filter input.
-
 Owner-input tests compare
-cold reads against uncropped PCM, feeds a cropped group's complete history into
-the actual EQ processor, and verifies retained history before current delivery.
-It does not qualify authored EQ, mixed-voice permissions or the editor workflow.
-Retained-treatment tests
-check transported fades, reference-clock gain/mute and ordered memoryless
-treatments. The stored recursive path described above extends that foundation
-to authored EQ; the later shared graph now consumes independent sound input.
+cold reads against uncropped PCM and feed a cropped group's complete history into
+the actual EQ processor. They do not qualify authored EQ, mixed-voice permissions
+or the editor workflow. The stored recursive path described above extends that
+foundation to authored EQ; the later shared graph now consumes independent sound
+input.
 
 ## Ordered owner evaluation
 
@@ -172,8 +157,7 @@ escalation belongs to the prefix. Exterior owners and independent sounds remain
 outside this Original-only operand. The result stays signed stereo f64.
 
 Each 1,024-sample tile reads its 2,048-sample past and future context. A checked
-retained operand supplies history before current delivery; an unbound domain
-supplies its full support, including hidden group children. Only positions
+domain supplies its full support, including hidden group children. Only positions
 outside meaningful support are zero padded. Silent-Hold and exhausted-support
 masks apply after filtering. An authored mute instead applies at its explicit
 position: pre-EQ mute shapes history, while post-EQ mute zeros output.
@@ -183,7 +167,7 @@ the shared residency limit, and returns dependencies covering every halo.
 Construction opens no media. Every read admits its sources, including muted
 input and warm Preserve caches. EQ tiles are currently recomputed; no filtered
 tile cache or realtime latency claim exists. Ordered-owner tests
-cover direct-convolution, cold partition, retained-clock and policy checks on decoded
+cover direct-convolution, cold partition, clock and policy checks on decoded
 fixture audio. This is one owner evaluation, not the recursive authored graph.
 
 ## Recipe
@@ -239,7 +223,7 @@ while still admitting both complete input channels and honoring cancellation.
 
 ## Integration still owed
 
-Extend qualification across the remaining nested bindings, copies, Repeats and
+Extend qualification across the remaining nested owners, copies, Repeats and
 time/pitch interactions, and complete arbitrary sends with incoming-tail policy.
 Request-local filtering is implemented; persistent cache reuse across preview,
 cold seeks, loops and export, and measured interactive latency remain required.

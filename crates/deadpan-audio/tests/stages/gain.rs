@@ -1206,19 +1206,6 @@ fn exhausted_bound_original_keeps_independent_sound_and_current_root_gain() {
             .unwrap(),
     };
     wire["nodes"]["source"] = serde_json::to_value(leaf).unwrap();
-    let selected = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let mut wire = serde_json::to_value(&selected).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(
-        capture_unbound_audio_bindings(
-            &selected,
-            AudioTimingId {
-                allocation: RevisionId::new("gain-binding").unwrap(),
-                ordinal: 0,
-            },
-        )
-        .unwrap(),
-    )
-    .unwrap();
     let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let mut provider = FixtureProvider::new();
     let neutral = authored_all(&bound, &mut provider, &[256]);

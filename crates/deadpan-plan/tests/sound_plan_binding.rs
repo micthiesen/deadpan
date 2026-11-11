@@ -115,8 +115,6 @@ fn fixture(padding: usize) -> ProjectDocument {
             id: timing.clone(),
             layout: FrozenAudioLayout::capture(&before).unwrap(),
         }],
-        BTreeMap::new(),
-        BTreeMap::new(),
         BTreeMap::from([(
             id("owner"),
             BTreeMap::from([(

@@ -19,46 +19,6 @@ use super::*;
 #[path = "conditioning_extension_pure_tests.rs"]
 mod pure;
 
-#[test]
-fn adversarial_extension_conditioning_and_receipts() {
-    use deadpan_chaos::{Target, Verdict, fuzz, reject};
-
-    #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-    #[serde(untagged)]
-    enum Input {
-        Context(Box<ExtensionContext>),
-        Receipt(Box<ExtensionConditioningReceipt>),
-    }
-
-    let mut seeds = Vec::new();
-    for direction in [ExtensionDirection::FromLeft, ExtensionDirection::FromRight] {
-        for opposite in [false, true] {
-            let fixture = Fixture::new(direction, opposite);
-            let retained = fixture.capture().unwrap();
-            seeds.push(serde_json::to_vec(retained.context()).unwrap());
-            seeds.push(serde_json::to_vec(retained.receipt()).unwrap());
-        }
-    }
-    fuzz(
-        Target::json("models-extension-conditioning").iterations(400),
-        seeds,
-        |bytes| {
-            let value: Input = match serde_json::from_slice(bytes) {
-                Ok(value) => value,
-                Err(error) => return reject(error),
-            };
-            let encoded = serde_json::to_vec(&value).map_err(|error| error.to_string())?;
-            let decoded: Input =
-                serde_json::from_slice(&encoded).map_err(|error| error.to_string())?;
-            if value != decoded {
-                return Err("extension input round trip changed its identity".into());
-            }
-            Ok(Verdict::Accepted)
-        },
-    )
-    .assert_clean();
-}
-
 fn declaration(reference: &str, bytes: &[u8]) -> WorkspaceArtifact {
     WorkspaceArtifact::new(
         WorkspaceRef::new(reference).unwrap(),

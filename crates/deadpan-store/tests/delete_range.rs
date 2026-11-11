@@ -225,7 +225,7 @@ fn invalid_range_split_ids_and_timing_fail_without_partial_history() -> Result {
         match case {
             0 => identities.nodes.clear(),
             1 => identities.nodes[0] = node("tail"),
-            _ => timing.ordinal = u32::MAX,
+            _ => timing.allocation = RevisionId::new("wrong-timing").unwrap(),
         }
         assert!(store.preview(&invalid).is_err());
         assert!(store.commit(&invalid).is_err());

@@ -547,7 +547,7 @@ pub(crate) fn apply_captured(
     target.validate(&result)?;
     result.validate_isolated_context()?;
     if let OccurrenceEdit::SetHoldDuration { duration } = edit {
-        result = hold_duration::prepare(&result, &target, *duration, allocation)?;
+        result = hold_duration::prepare(&result, &target, *duration)?;
     }
     match edit {
         OccurrenceEdit::DeleteRipple { timing } => {
@@ -888,7 +888,6 @@ fn clone_nodes_inner(
         }
     }
     crate::audio_lineage::inherit(document, mapping, allocation);
-    crate::audio_binding_lifecycle::inherit(document, mapping);
     Ok(())
 }
 

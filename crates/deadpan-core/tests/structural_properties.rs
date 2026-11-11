@@ -26,7 +26,7 @@ use deadpan_core::*;
 use proptest::prelude::*;
 use proptest::strategy::ValueTree;
 use proptest::test_runner::Config;
-use serde_json::{Value, json};
+use serde_json::json;
 
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
@@ -1116,32 +1116,6 @@ impl With for Command {
     }
 }
 
-/// Resolved clocks of unrepeated physical owners, without work counters or
-/// birth indexes (which describe evaluation, not the resulting clock).
-fn clocks(document: &ProjectDocument) -> BTreeMap<NodeId, Value> {
-    let bindings = document.audio_bindings();
-    bindings
-        .bindings()
-        .keys()
-        .filter_map(|owner| {
-            let instance = InstancePath {
-                node: owner.clone(),
-                repeats: Vec::new(),
-            };
-            instance.validate(document).ok()?;
-            let resolved = bindings.resolve(owner, &instance, 100_000).ok()?;
-            let mut lattice = serde_json::to_value(&resolved.lattice).unwrap();
-            let object = lattice.as_object_mut().unwrap();
-            object.remove("work");
-            object.remove("birth");
-            Some((
-                owner.clone(),
-                json!({"lattice": lattice, "resume": resolved.resume}),
-            ))
-        })
-        .collect()
-}
-
 fn bound(mark: &Mark) -> bool {
     mark.bindings()
         .any(|binding| binding.state == MarkState::Bound)
@@ -1231,21 +1205,6 @@ fn check(
         );
         prop_assert_eq!(after.marks().len(), before.marks().len());
         prop_assert_eq!(after.beat_sounds().len(), before.beat_sounds().len());
-    }
-    if time_neutral(op) {
-        let old = clocks(before);
-        let new = clocks(after);
-        for (owner, clock) in &old {
-            if let Some(result) = new.get(owner) {
-                prop_assert_eq!(
-                    result,
-                    clock,
-                    "{:?}: retained clock of {} changed",
-                    op,
-                    owner
-                );
-            }
-        }
     }
     Ok(())
 }

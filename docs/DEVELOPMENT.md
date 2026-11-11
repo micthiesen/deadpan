@@ -94,8 +94,7 @@ three tiers in `AGENTS.md`.
 cargo xtask gate
 ```
 
-The adversarial tests (`adversarial_*`) run in deterministic regression mode
-within these workspace tests.
+The adversarial suite and the `deadpan-chaos` crate were removed on 2026-11-11.
 
 The gate runs build-directory hygiene, then `cargo fmt --all -- --check`, workspace
 Clippy with `-D warnings`, `deadpan-app` Clippy with `ui-harness`, and the
@@ -615,37 +614,18 @@ root-to-point reads with materialized masked PCM and canonical DSP. The `stages`
 suite adds decoded-source integration, preparation-budget and provenance checks
 across the complete transfer halo. See [signal transfer](AUDIO_SIGNAL_TRANSFER.md).
 
-`cargo test --locked -p deadpan-core --test audio_binding_capture` checks compact
-capture, existing-binding preservation and configured Repeat-gap ownership.
-`cargo test --locked -p deadpan-plan --test audio_fades` checks retained virtual
-fade clocks without media. `cargo test --locked -p deadpan-audio --lib bound_reads`
-compares actual decoded PCM through moved/resumed bindings, stable Repeat scope,
-current Edit support, Preserve input/output policies and shared preparation
-limits. See [owned audio bindings](OWNED_AUDIO_BINDINGS.md). These are engine
-tests. [Pause insertion](INSERT_TIME.md) connects retained clocks to a native
+`cargo test --locked -p deadpan-plan --test audio_fades` checks virtual fade
+clocks without media. `cargo test --locked -p deadpan-audio --test derived_timing`
+compares decoded PCM from the placement derived from the current tree with the
+renders the removed stored clocks produced (identical at 48 kHz, at most one
+sample at 30000/1001), including Repeat plays, gaps, Preserve input and output
+policies and shared preparation limits. See [sampling clocks](AUDIO_SAMPLING.md).
+These are engine tests. [Pause insertion](INSERT_TIME.md) connects them to a native
 command; playback and listening remain separate work.
-
-`cargo test --locked -p deadpan-core --test allocation_projection --test audio_bindings`
-checks retained visible allocation and chronological reanchors, including hidden
-occurrences, nested birth scopes and bounded billion-play layouts. The
-`deadpan-audio` integration test `reanchors` uses decoded 44.1 kHz PCM to check
-first/later NTSC plays, subsequent pause insertion, fresh seeks and opaque
-Preserve preparation. Store migration tests replay the actual core-20/database-26
-fixture through core 21/database 27. See [compact audio reanchors](AUDIO_REANCHORS.md)
-for the contract and retained verification logs.
-
-`cargo test --locked -p deadpan-core --test audio_bindings --test audio_binding_capture`
-checks gap ownership, survival/birth, copied scopes and bounded admission.
-The `gap_bindings` integration suites in `deadpan-plan` and `deadpan-audio`
-exercise exact root/point clocks, actual decoded PCM, current gap policies and
-fresh seeks. Store migration tests replay actual core-21/database-27 history
-through core 22/database 28 and reject new vocabulary in frozen histories.
-CLI `audio_inspection` checks the same gap path with qualified managed originals.
-See [authored Repeat-gap bindings](GAP_AUDIO_BINDINGS.md).
 
 `cargo test --locked -p deadpan-core --test repeat_gap_layout --test gap_overrides`
 checks sparse gap geometry, identity lifetime, occurrence isolation, marks and
-inverse patches. Plan `gap_branches` and audio `gap_bindings` cover current
+inverse patches. Plan `gap_branches` and audio `gap_definition` cover current
 picture/audio paths and decoded PCM after materialization, including canonical
 born gaps and a real Preserve stage. See [editable Repeat gaps](REPEAT_GAP_BRANCHES.md).
 

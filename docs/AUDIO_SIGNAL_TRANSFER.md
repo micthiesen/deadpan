@@ -4,7 +4,7 @@
 explicit `SignalSample` grid. `StageAudio::read_transferred` supplies that PCM
 from one immutable plan and its qualified source provider. This implements the
 bounded conversion needed when retained audio enters a new Preserve input.
-It does not persist continuity bindings, author a Hold insertion, or connect
+It does not persist continuity state, author a Hold insertion, or connect
 that operation to application playback. This conversion introduced no authored
 state change; current core 15/database 21 also retain separate audio copy lineage.
 
@@ -97,7 +97,7 @@ qualified source PCM, root silence, room-tone/Preserve context reuse, shared
 work exhaustion and a source-layout change between halo reads.
 
 The [splice design](STRUCTURAL_SPLICE_DESIGN.md)
-still requires authored live-to-frozen domain bindings, compact Repeat lifecycle,
-composed resume anchors, edited-policy replacement, new seam envelopes, strict
+still requires compact Repeat lifecycle,
+edited-policy replacement, new seam envelopes, strict
 history migration and the atomic inserted-time command. This adapter provides
 the PCM conversion boundary; it does not establish those semantics by itself.

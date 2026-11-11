@@ -6,8 +6,8 @@ use crate::project::trim::{
     Prepared, Proposal, ProposalId, ProposalUpdate, Target,
 };
 use deadpan_core::{
-    AudioTimingId, ProjectFrame, SourceTrimAdjustment, SourceTrimCapture, SourceTrimEditResolution,
-    SourceTrimIntent, SourceTrimPolicy, SourceTrimResources, SplitIdentities,
+    ProjectFrame, SourceTrimAdjustment, SourceTrimEditResolution, SourceTrimIntent,
+    SourceTrimPolicy, SourceTrimResources, SplitIdentities,
 };
 
 struct Ready {
@@ -141,7 +141,7 @@ impl Service {
             )
             .map_err(display)?;
         let new_revision = revision();
-        let resources = resources(&preflight, &new_revision);
+        let resources = resources(&preflight);
         let request = CommandRequest {
             project_id: draft.target.project.clone(),
             expected_revision: draft.target.base_revision.clone(),
@@ -338,7 +338,7 @@ impl Service {
     }
 }
 
-fn resources(plan: &SourceTrimEditResolution, revision: &RevisionId) -> SourceTrimResources {
+fn resources(plan: &SourceTrimEditResolution) -> SourceTrimResources {
     SourceTrimResources {
         target_wrapper: plan.required_target_wrapper.then(node),
         right_wrapper: plan.required_right_wrapper.then(node),
@@ -346,10 +346,6 @@ fn resources(plan: &SourceTrimEditResolution, revision: &RevisionId) -> SourceTr
             nodes: (0..plan.required_split_nodes).map(|_| node()).collect(),
         },
         fillers: (0..plan.required_filler_nodes).map(|_| node()).collect(),
-        timing: (plan.capture != SourceTrimCapture::None).then(|| AudioTimingId {
-            allocation: revision.clone(),
-            ordinal: 0,
-        }),
     }
 }
 

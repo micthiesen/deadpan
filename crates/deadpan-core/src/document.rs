@@ -10,7 +10,7 @@ use crate::{
     SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 58;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 59;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -1183,24 +1183,13 @@ impl ProjectDocument {
         context_limit: usize,
         gain_limit: usize,
     ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
-        self.validated_with_context_limits(context_limit, gain_limit, None, None)
-            .map(|(durations, _)| durations)
+        self.validated_with_context_limits(context_limit, gain_limit, None)
     }
 
-    /// Complete validation of this document. With `previous`, the audio
-    /// binding owners that the patch left unchanged reuse their proved
-    /// placement checks (see `AudioBindingState::validation_work`); every
-    /// other invariant is checked over the complete document.
-    /// Complete validation, retaining the per-owner binding proof.
-    pub(crate) fn validated_with_proof(
+    /// Complete validation of this document.
+    pub(crate) fn validated_durations(
         &self,
-    ) -> Result<
-        (
-            BTreeMap<NodeId, FrameDuration>,
-            crate::audio_binding::BindingProof,
-        ),
-        DocumentError,
-    > {
+    ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         self.validated_with_structure(None)
     }
 
@@ -1210,53 +1199,10 @@ impl ProjectDocument {
     pub(crate) fn validated_with_structure(
         &self,
         structure: Option<crate::command::SharedDurations>,
-    ) -> Result<
-        (
-            BTreeMap<NodeId, FrameDuration>,
-            crate::audio_binding::BindingProof,
-        ),
-        DocumentError,
-    > {
+    ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         self.validated_with_context_limits(
             crate::MAX_CAPTURED_FRAMING_RECORDS,
             crate::MAX_GAIN_RECORDS,
-            None,
-            structure,
-        )
-    }
-
-    pub(crate) fn validate_after(
-        &self,
-        previous: &ValidatedDocument,
-        bindings: Option<&crate::AudioBindingPatch>,
-    ) -> Result<
-        (
-            BTreeMap<NodeId, FrameDuration>,
-            crate::audio_binding::BindingProof,
-        ),
-        DocumentError,
-    > {
-        self.validate_after_with(previous, bindings, None)
-    }
-
-    /// [`Self::validate_after`], given known structural durations as in
-    /// [`Self::validated_with_structure`].
-    pub(crate) fn validate_after_with(
-        &self,
-        previous: &ValidatedDocument,
-        bindings: Option<&crate::AudioBindingPatch>,
-        structure: Option<crate::command::SharedDurations>,
-    ) -> Result<
-        (
-            BTreeMap<NodeId, FrameDuration>,
-            crate::audio_binding::BindingProof,
-        ),
-        DocumentError,
-    > {
-        self.validated_with_context_limits(
-            crate::MAX_CAPTURED_FRAMING_RECORDS,
-            crate::MAX_GAIN_RECORDS,
-            Some((&previous.bindings, bindings)),
             structure,
         )
     }
@@ -1265,18 +1211,8 @@ impl ProjectDocument {
         &self,
         context_limit: usize,
         gain_limit: usize,
-        previous: Option<(
-            &crate::audio_binding::BindingProof,
-            Option<&crate::AudioBindingPatch>,
-        )>,
         structure: Option<crate::command::SharedDurations>,
-    ) -> Result<
-        (
-            BTreeMap<NodeId, FrameDuration>,
-            crate::audio_binding::BindingProof,
-        ),
-        DocumentError,
-    > {
+    ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         // The structural pass is a pure function of the nodes, overrides,
         // assets, basis and root; a caller that computed it for exactly
         // these hands over its result.
@@ -1317,9 +1253,9 @@ impl ProjectDocument {
         crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
         self.validate_basis_state(&durations)?;
         crate::audio_lineage::validate(self)?;
-        let bindings = self.audio_bindings.validate_for_after(self, previous)?;
+        self.audio_bindings.validate_for(self)?;
         crate::marks::validate_marks(self, &durations)?;
-        Ok((durations, bindings))
+        Ok(durations)
     }
 
     /// A continuous ramp's quadratic clock has no exact inverse, and its
@@ -2577,36 +2513,30 @@ where
 pub struct ValidatedDocument {
     document: Arc<ProjectDocument>,
     durations: Arc<BTreeMap<NodeId, FrameDuration>>,
-    /// Retained per-owner audio binding work, for the next validation.
-    bindings: Arc<crate::audio_binding::BindingProof>,
 }
 
 impl ValidatedDocument {
     /// Validate a document once.
     pub fn new(document: Arc<ProjectDocument>) -> Result<Self, DocumentError> {
-        let (durations, bindings) = document.validated_with_context_limits(
+        let durations = document.validated_with_context_limits(
             crate::MAX_CAPTURED_FRAMING_RECORDS,
             crate::MAX_GAIN_RECORDS,
-            None,
             None,
         )?;
         Ok(Self {
             document,
             durations: Arc::new(durations),
-            bindings: Arc::new(bindings),
         })
     }
 
-    /// A result whose complete validation produced `durations` and `bindings`.
+    /// A result whose complete validation produced `durations`.
     pub(crate) fn from_validation(
         document: ProjectDocument,
         durations: BTreeMap<NodeId, FrameDuration>,
-        bindings: crate::audio_binding::BindingProof,
     ) -> Self {
         Self {
             document: Arc::new(document),
             durations: Arc::new(durations),
-            bindings: Arc::new(bindings),
         }
     }
 
@@ -2614,13 +2544,11 @@ impl ValidatedDocument {
         &self.document
     }
 
-    /// Apply a guarded patch and validate the result once. A stored patch
-    /// names every binding owner and timing table it changes, so unchanged
-    /// owners reuse their proved checks (see `AudioBindingState`).
+    /// Apply a guarded patch and validate the result once.
     pub fn apply_patch(&self, patch: &crate::DocumentPatch) -> Result<Self, crate::EditError> {
         let next = patch.apply_stored(&self.document)?;
-        let (durations, bindings) = next.validate_after(self, patch.audio_bindings.as_ref())?;
-        Ok(Self::from_validation(next, durations, bindings))
+        let durations = next.validated_durations()?;
+        Ok(Self::from_validation(next, durations))
     }
 
     /// Recompute this document's validation from scratch, outside any
@@ -2628,23 +2556,18 @@ impl ValidatedDocument {
     /// this in debug builds to check that reused validation matched the
     /// complete one.
     pub fn check_against_complete_validation(&self) -> Result<(), DocumentError> {
-        let (durations, bindings) = self.document.validated_with_context_limits(
+        let durations = self.document.validated_with_context_limits(
             crate::MAX_CAPTURED_FRAMING_RECORDS,
             crate::MAX_GAIN_RECORDS,
             None,
-            None,
         )?;
-        if durations != *self.durations || bindings != *self.bindings {
+        if durations != *self.durations {
             return Err(DocumentError::new(
                 DocumentErrorCode::InvalidTree,
                 "retained validation differs from complete validation",
             ));
         }
         Ok(())
-    }
-
-    pub(crate) fn binding_proof(&self) -> &crate::audio_binding::BindingProof {
-        &self.bindings
     }
 
     pub(crate) fn into_document(self) -> Arc<ProjectDocument> {
@@ -2662,58 +2585,12 @@ impl ValidatedDocument {
 
     /// Run `f` with this document's validation retained for queries on it.
     pub fn scope<R>(&self, f: impl FnOnce() -> R) -> R {
-        let _guard = validated::enter(&self.document, &self.durations, &self.bindings);
+        let _guard = validated::enter(&self.document, &self.durations);
         f()
     }
 }
 
 impl ProjectDocument {
-    /// Complete validation of an intermediate edit result. Inside a validated
-    /// document's scope, binding owners unchanged from that document reuse
-    /// its proof exactly as a committed result does (`validate_after`): the
-    /// reused checks are pure functions of the binding and the immutable
-    /// tables it names, so the outcome equals [`Self::validated_with_proof`].
-    pub(crate) fn validated_in_scope(
-        &self,
-    ) -> Result<
-        (
-            BTreeMap<NodeId, FrameDuration>,
-            crate::audio_binding::BindingProof,
-        ),
-        DocumentError,
-    > {
-        match validated::innermost_proof().filter(|_| crate::command_work::local()) {
-            Some((head, proof)) => {
-                let patch =
-                    crate::AudioBindingPatch::between(&head.audio_bindings, &self.audio_bindings);
-                self.validated_with_context_limits(
-                    crate::MAX_CAPTURED_FRAMING_RECORDS,
-                    crate::MAX_GAIN_RECORDS,
-                    Some((&proof, patch.as_ref())),
-                    None,
-                )
-            }
-            None => self.validated_with_proof(),
-        }
-    }
-
-    /// `state.validate_for(self)`, reusing the scoped proof as
-    /// [`Self::validated_in_scope`] does.
-    pub(crate) fn validate_bindings_in_scope(
-        &self,
-        state: &crate::AudioBindingState,
-    ) -> Result<(), DocumentError> {
-        match validated::innermost_proof().filter(|_| crate::command_work::local()) {
-            Some((head, proof)) => {
-                let patch = crate::AudioBindingPatch::between(&head.audio_bindings, state);
-                state
-                    .validate_for_after(self, Some((&proof, patch.as_ref())))
-                    .map(|_| ())
-            }
-            None => state.validate_for(self),
-        }
-    }
-
     /// The durations retained for this exact document by an enclosing
     /// validation scope, shared rather than copied.
     pub(crate) fn retained_durations(&self) -> Option<Arc<BTreeMap<NodeId, FrameDuration>>> {
@@ -2723,10 +2600,7 @@ impl ProjectDocument {
     /// Run `f` with `self` treated as validated with `durations`.
     ///
     /// Callers prove that complete validation of `self` would succeed and
-    /// return exactly `durations`; the usual proof is that `self` differs
-    /// from a validated document only in its audio binding state, which
-    /// `AudioBindingState::validate_for` accepted against that document (no
-    /// other invariant reads the binding state, and none of them reads it).
+    /// return exactly `durations`.
     /// The borrow keeps `self` unchanged while the scope exists.
     pub(crate) fn with_proved_durations<R>(
         &self,
@@ -2781,17 +2655,8 @@ mod validated {
     use super::*;
     use std::cell::RefCell;
 
-    /// A scoped document, its durations, and for a [`ValidatedDocument`] the
-    /// shared document with its binding proof.
-    type Entry = (
-        *const ProjectDocument,
-        Arc<BTreeMap<NodeId, FrameDuration>>,
-        Option<Proved>,
-    );
-    pub(super) type Proved = (
-        Arc<ProjectDocument>,
-        Arc<crate::audio_binding::BindingProof>,
-    );
+    /// A scoped document and its durations.
+    type Entry = (*const ProjectDocument, Arc<BTreeMap<NodeId, FrameDuration>>);
 
     thread_local! {
         static SCOPES: RefCell<Vec<Entry>> = const { RefCell::new(Vec::new()) };
@@ -2813,27 +2678,13 @@ mod validated {
     pub(super) fn enter(
         document: &Arc<ProjectDocument>,
         durations: &Arc<BTreeMap<NodeId, FrameDuration>>,
-        bindings: &Arc<crate::audio_binding::BindingProof>,
     ) -> Guard {
         SCOPES.with(|scopes| {
-            scopes.borrow_mut().push((
-                Arc::as_ptr(document),
-                Arc::clone(durations),
-                Some((Arc::clone(document), Arc::clone(bindings))),
-            ));
+            scopes
+                .borrow_mut()
+                .push((Arc::as_ptr(document), Arc::clone(durations)));
         });
         Guard
-    }
-
-    /// The innermost validated document in scope and its binding proof.
-    pub(super) fn innermost_proof() -> Option<Proved> {
-        SCOPES.with(|scopes| {
-            scopes
-                .borrow()
-                .iter()
-                .rev()
-                .find_map(|(_, _, proved)| proved.clone())
-        })
     }
 
     /// [`enter`] for a document borrowed for the guard's whole lifetime.
@@ -2844,7 +2695,7 @@ mod validated {
         SCOPES.with(|scopes| {
             scopes
                 .borrow_mut()
-                .push((std::ptr::from_ref(document), durations, None));
+                .push((std::ptr::from_ref(document), durations));
         });
         Guard
     }
@@ -2857,8 +2708,8 @@ mod validated {
                 .borrow()
                 .iter()
                 .rev()
-                .find(|(pointer, _, _)| std::ptr::eq(*pointer, document))
-                .map(|(_, durations, _)| Arc::clone(durations))
+                .find(|(pointer, _)| std::ptr::eq(*pointer, document))
+                .map(|(_, durations)| Arc::clone(durations))
         })
     }
 }

@@ -460,20 +460,6 @@ fn selected_sends_keep_repeat_gap_and_split_tail_phase() {
     assert_pcm_close(&read_document(&selected), &expected);
     let split = split_command(&selected, &id("pause"), 1000, "split-send-tail");
     assert_pcm_close(&read_document(&split), &expected);
-    let mut wire = serde_json::to_value(&split).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(
-        capture_unbound_audio_bindings(
-            &split,
-            AudioTimingId {
-                allocation: RevisionId::new("send-bound").unwrap(),
-                ordinal: 0,
-            },
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    assert_pcm_close(&read_document(&bound), &expected);
 }
 
 #[test]

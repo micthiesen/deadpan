@@ -380,15 +380,13 @@ fn target(before: &ProjectDocument) -> ProjectDocument {
                 layout: layout.clone(),
             })
             .collect(),
-        before.audio_bindings().bindings().clone(),
-        before.audio_bindings().gap_bindings().clone(),
         expected_clocks,
     )
     .unwrap();
     assert_eq!(
         after.audio_bindings(),
         &expected_bindings,
-        "only the introduced-group relation changes; scopes, recipes, timings and physical bindings stay exact"
+        "only the introduced-group relation changes; scopes, recipes and timings stay exact"
     );
     after
 }

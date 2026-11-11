@@ -57,7 +57,6 @@ image = { version = "=0.25.10", default-features = false, features = ["png", "jp
 ureq = { version = "=3.4.2", default-features = false, features = ["rustls", "platform-verifier"] }
 
 [dev-dependencies]
-deadpan-chaos.workspace = true
 tempfile.workspace = true
 rusqlite.workspace = true
 deadpan-native-process.workspace = true

@@ -917,7 +917,6 @@ dependencies = [
 name = "deadpan-analysis"
 version = "0.1.0"
 dependencies = [
- "deadpan-chaos",
  "deadpan-core",
  "proptest",
  "serde",
@@ -933,7 +932,6 @@ dependencies = [
  "blake3",
  "deadpan-analysis",
  "deadpan-audio",
- "deadpan-chaos",
  "deadpan-cli",
  "deadpan-core",
  "deadpan-diagnostics",
@@ -987,20 +985,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "deadpan-chaos"
-version = "0.1.0"
-dependencies = [
- "serde_json",
-]
-
-[[package]]
 name = "deadpan-cli"
 version = "0.1.0"
 dependencies = [
  "blake3",
  "deadpan-analysis",
  "deadpan-audio",
- "deadpan-chaos",
  "deadpan-core",
  "deadpan-diagnostics",
  "deadpan-encode",
@@ -1035,7 +1025,6 @@ dependencies = [
 name = "deadpan-core"
 version = "0.1.0"
 dependencies = [
- "deadpan-chaos",
  "deadpan-core",
  "proptest",
  "serde",
@@ -1092,7 +1081,6 @@ name = "deadpan-jobs"
 version = "0.1.0"
 dependencies = [
  "deadpan-analysis",
- "deadpan-chaos",
  "deadpan-core",
  "deadpan-diagnostics",
  "deadpan-native-process",
@@ -1119,7 +1107,6 @@ name = "deadpan-media"
 version = "0.1.0"
 dependencies = [
  "blake3",
- "deadpan-chaos",
  "deadpan-core",
  "deadpan-diagnostics",
  "deadpan-native-process",
@@ -1140,7 +1127,6 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "cc",
- "deadpan-chaos",
  "deadpan-cli",
  "deadpan-core",
  "deadpan-jobs",
@@ -1162,7 +1148,6 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "deadpan-analysis",
- "deadpan-chaos",
  "deadpan-core",
  "deadpan-jobs",
  "deadpan-media",
@@ -1251,7 +1236,6 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "cc",
- "deadpan-chaos",
  "deadpan-core",
  "deadpan-diagnostics",
  "tempfile",
@@ -1272,7 +1256,6 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "deadpan-analysis",
- "deadpan-chaos",
  "deadpan-core",
  "deadpan-diagnostics",
  "deadpan-fileclone",

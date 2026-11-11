@@ -387,16 +387,15 @@ fn scroll_top(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 /// Parameter invocations allocate fresh timing IDs. Compare every frozen
-/// layout and placement exactly after a bijection of those IDs alone.
+/// layout and sound clock exactly after a bijection of those IDs alone.
 pub(super) fn same_audio_clock_intent(
     actual: &deadpan_core::AudioBindingState,
     expected: &deadpan_core::AudioBindingState,
 ) -> bool {
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeSet;
     if actual.timings().len() != expected.timings().len() {
         return false;
     }
-    let mut mapping = BTreeMap::new();
     let mut used = BTreeSet::new();
     for (id, layout) in actual.timings() {
         let candidate = expected
@@ -412,28 +411,7 @@ pub(super) fn same_audio_clock_intent(
         let Some((candidate, _)) = candidate else {
             return false;
         };
-        mapping.insert(id.clone(), candidate.clone());
         used.insert(candidate.clone());
     }
-    let remap = |bindings: &BTreeMap<_, deadpan_core::OwnedAudioBinding>| {
-        let mut result = bindings.clone();
-        for binding in result.values_mut() {
-            let placements = std::iter::once(&mut binding.lattice)
-                .chain(binding.resume.iter_mut().flat_map(|resume| {
-                    resume
-                        .phase
-                        .terms
-                        .iter_mut()
-                        .map(|term| &mut term.placement)
-                }))
-                .chain(binding.reanchors.iter_mut().map(|step| &mut step.placement));
-            for placement in placements {
-                placement.reference.timing = mapping.get(&placement.reference.timing)?.clone();
-            }
-        }
-        Some(result)
-    };
-    remap(actual.bindings()).as_ref() == Some(expected.bindings())
-        && remap(actual.gap_bindings()).as_ref() == Some(expected.gap_bindings())
-        && actual.sound_clocks() == expected.sound_clocks()
+    actual.sound_clocks() == expected.sound_clocks()
 }

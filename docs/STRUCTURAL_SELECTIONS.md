@@ -22,7 +22,7 @@ capture forms.
 
 Serialized Children captures require matching first/last parts, distinct whole
 roots and exact contiguous output windows. A zero-duration capture contains
-only Sequence nodes with no physical audio bindings. Store admission recaptures
+only Sequence nodes with no physical audio. Store admission recaptures
 the exact selector at its immutable revision. Removing or reordering an interior
 empty child may preserve the displayed range, but cannot preserve that proof.
 

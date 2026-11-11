@@ -83,13 +83,14 @@ fn interior_identity_and_timing_exhaustion_leave_the_input_unchanged() {
     let Command::InsertTime { timing, .. } = &mut exhausted.command else {
         panic!()
     };
-    timing.ordinal = u32::MAX;
+    timing.allocation = RevisionId::new("wrong-timing").unwrap();
     assert_eq!(
         apply(&before, &exhausted).unwrap_err().code,
-        EditErrorCode::LimitExceeded
+        EditErrorCode::InvalidCommand
     );
     assert_eq!(before.to_json().unwrap(), saved);
     // A legacy-admitted seam needs only the caller's one timing identity.
+    let mut exhausted = insertion(&before, "exhausted", 1, 1);
     if let Command::InsertTime { at, .. } = &mut exhausted.command {
         *at = ProjectFrame(2);
     }

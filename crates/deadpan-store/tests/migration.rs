@@ -10,10 +10,6 @@ use std::{
 };
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
-#[path = "migration/audio_gap_bindings.rs"]
-mod audio_gap_bindings;
-#[path = "migration/audio_reanchors.rs"]
-mod audio_reanchors;
 #[path = "migration/automatic_render.rs"]
 mod automatic_render;
 #[path = "migration/current_authoring.rs"]

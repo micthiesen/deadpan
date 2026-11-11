@@ -208,7 +208,7 @@ pub(super) fn for_authority(
     target.scope = Some(scope);
     check_node_count(document, &target)?;
     if super::is_shared(&target) {
-        super::all_plays_site(document, &target, at)?;
+        super::all_plays_site(document, &target)?;
     }
     Ok(target)
 }

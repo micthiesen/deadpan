@@ -54,8 +54,8 @@ mod audio_domain;
 pub use audio_domain::{
     AdmittedAudioDomainPolicy, AdmittedAudioDomainProcessing, AdmittedAudioDomainProcessingPolicy,
     AdmittedOriginalContext, AudioDomain, AudioDomainProcessing, AudioDomainProcessingPolicy,
-    AudioRootPlacement, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
-    preflight_context_transfer, transfer_context_charges,
+    AudioRootPlacement, ContextChargeTransfer, preflight_context_transfer,
+    transfer_context_charges,
 };
 #[path = "audio_point_domain.rs"]
 mod audio_point_domain;
@@ -76,15 +76,14 @@ mod audio_context;
 #[path = "audio_intrinsic_preparation.rs"]
 mod audio_intrinsic_preparation;
 pub use audio_intrinsic_preparation::AudioIntrinsicPreparation;
+#[path = "audio_policy.rs"]
+mod audio_policy;
 #[path = "audio_preserve_input.rs"]
 mod audio_preserve_input;
 #[path = "sound_clock_cache.rs"]
 mod sound_clock_cache;
 #[path = "sound_delivery_forest.rs"]
 mod sound_delivery_forest;
-pub use audio_bound::{AdmittedAudioBoundDomain, AudioBound, AudioBoundDomain};
-#[path = "audio_policy.rs"]
-mod audio_policy;
 pub use audio_policy::{
     AdmittedAudioPolicyQuery, AdmittedSignalPolicyQuery, AudioPolicyQuery,
     AudioSignalPolicyMaskHandoff, SignalPolicyMaskRef, SignalPolicyView,
@@ -101,9 +100,8 @@ mod audio_owner_input;
 mod audio_owners;
 pub use audio_owner_input::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,
-    AdmittedAudioOwnerRetainedProbe, AdmittedAudioOwnerSpanStartCandidates,
-    AdmittedAudioSpanStartInputCapture, AudioOwnerInput, AudioOwnerInputCandidates,
-    AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
+    AdmittedAudioOwnerSpanStartCandidates, AdmittedAudioSpanStartInputCapture, AudioOwnerInput,
+    AudioOwnerInputCandidates, AudioOwnerInputCapture, AudioOwnerInputScope,
     AudioOwnerSpanStartRequest, SharedAudioOwnerQueryWork,
 };
 pub use audio_owners::{
@@ -1095,7 +1093,7 @@ impl RenderPlan {
                 extents.is_some(),
             ))),
             reused_fragments: fragments::ReuseCount(reused_fragments),
-            audio_bindings: document.audio_bindings().sound_clocks_only(),
+            audio_bindings: document.audio_bindings().clone(),
             sound_clock_layout: if document.audio_bindings().sound_clocks().is_empty() {
                 None
             } else {

@@ -128,14 +128,14 @@ fn success_work<const M: bool>() {
     let probe_work = old["retained_probe_work"].as_u64().unwrap() as usize;
     assert_eq!(probe_work, 9);
     if M {
-        // Q/C/P and final sharing now reach the same policy at their actual
-        // sites. The positive None probe is included, never dropped or doubled.
+        // Q/C and final sharing reach the same policy at their actual sites.
         assert_eq!(work.borrow().plan_work, policy.forwarded);
     } else {
         assert_eq!(policy.forwarded, 0);
+        // The frozen total includes the removed retained-input probe.
         assert_eq!(
             work.borrow().plan_work,
-            old["expected_success_receipt_total"].as_u64().unwrap() as usize
+            old["expected_success_receipt_total"].as_u64().unwrap() as usize - probe_work
         );
     }
     drop(resolved);
@@ -144,69 +144,4 @@ fn success_work<const M: bool>() {
 fn numerical_original_capture_work_reaches_controller_once_in_both_modes() {
     success_work::<true>();
     success_work::<false>();
-}
-
-#[test]
-fn numerical_probe_refusal_matches_the_same_actual_query_capture_and_probe_prefix() {
-    let plan = fixture::fixture();
-    let owner = fixture::owner(&plan);
-    let key = OwnerKey::new(&owner);
-    let cancelled = AtomicBool::new(false);
-    let expected_work = RefCell::new(ReadWork::default());
-    let expected_control = fixture::control(&cancelled, &expected_work);
-    let mut expected = Counting::<true>::new(expected_control);
-    let candidates = plan
-        .audio_owner_input_candidates_at_admitted(
-            AudioSample(128),
-            expected_control.query_limits().unwrap(),
-            &mut expected,
-        )
-        .unwrap();
-    let selected = candidates.query().spans()[0]
-        .owners()
-        .iter()
-        .position(|clock| OwnerKey::new(clock) == key)
-        .unwrap();
-    let capture = candidates
-        .capture(
-            selected,
-            expected_control.query_limits().unwrap(),
-            &mut expected,
-        )
-        .unwrap();
-    let first_probe_reservation = expected.reservations + 1;
-    expected.fail_on = Some(first_probe_reservation);
-    assert!(matches!(
-        capture.input().unwrap().retained_probe_at_admitted(
-            AudioSample(128),
-            expected_control.query_limits().unwrap(),
-            &mut expected,
-        ),
-        Err(StageAudioError::Limit("capture allocation sentinel"))
-    ));
-    assert_eq!(expected.reservations, first_probe_reservation);
-    drop(capture);
-
-    let actual_work = RefCell::new(ReadWork::default());
-    let actual_control = fixture::control(&cancelled, &actual_work);
-    let mut actual = Counting::<true>::new(actual_control);
-    actual.fail_on = Some(first_probe_reservation);
-    assert!(matches!(
-        original_context_admitted(
-            &plan,
-            &Context::Root,
-            &key,
-            AudioSample(128)..AudioSample(129),
-            AudioSample(128),
-            actual_control,
-            &mut actual,
-        ),
-        Err(StageAudioError::Limit("capture allocation sentinel"))
-    ));
-    assert_eq!(actual.reservations, first_probe_reservation);
-    assert_eq!(actual.forwarded, expected.forwarded);
-    assert_eq!(
-        actual_work.borrow().plan_work,
-        expected_work.borrow().plan_work
-    );
 }

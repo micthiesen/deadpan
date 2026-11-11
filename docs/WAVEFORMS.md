@@ -8,7 +8,7 @@ evidence.
 ## Meaning and exact coverage
 
 The measurement uses the canonical `definition_output_pcm_before_effects`
-reader. It includes the selected definition's timing, pitch, retained bindings,
+reader. It includes the selected definition's timing, pitch,
 room tone and structural silence. It excludes creative edges, gain, mastering,
 enclosing occurrence processing and independent placed sounds. Before/Draft
 continues to audition the full edited mix. Those are deliberately different

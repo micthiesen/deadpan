@@ -4,7 +4,6 @@ Introduced in core schema 38/database 47, retained effect clocks preserve camera
 paths and audio treatments when an existing physical Source gains earlier or
 later context. These operations are
 prerequisites for atomic Trim authoring; they add no Trim command or native mode.
-Combine them with [retained audio origins](SOURCE_ORIGINS.md).
 
 ## Physical owner policy
 
@@ -14,8 +13,8 @@ where `p` is a nonnegative whole-frame duration. Tail growth keeps local zero.
 An inverse document patch restores the original owner exactly. These helpers do
 not implement destructive removal of a physical owner's leading context.
 
-The caller must update media placement, selected windows, duration, retained
-audio bindings and effects in one validated transaction. A successful helper
+The caller must update media placement, selected windows, duration
+and effects in one validated transaction. A successful helper
 does not establish media handles or authorize a partially updated document.
 Before growth, any `FitBeat` media mapping must become an equivalent explicit
 mapping using qualified context, or the operation must reject it. Leaving

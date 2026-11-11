@@ -66,15 +66,6 @@ fn every_single_source_range_keeps_exact_fragments_and_one_inverse() {
                     assert_eq!(*purpose, RetimePurpose::Partition);
                     assert_eq!(after.nodes()[physical], before.nodes()[&id("whole")]);
                 }
-                if end == length {
-                    assert!(
-                        after
-                            .audio_bindings()
-                            .bindings()
-                            .values()
-                            .all(|b| b.reanchors.is_empty())
-                    );
-                }
             }
         }
     }
@@ -120,23 +111,12 @@ fn invalid_selection_identities_and_timing_fail_without_mutation() {
         identities.nodes = nodes;
         assert!(apply(&before, &request).is_err());
     }
-    for timing in [
-        AudioTimingId {
-            allocation: revision("wrong"),
-            ordinal: 0,
-        },
-        AudioTimingId {
-            allocation: revision("deleted"),
-            ordinal: u32::MAX,
-        },
-    ] {
-        let mut request = deletion(&before, "root", 1, 3, "deleted");
-        let Command::DeleteRange { timing: target, .. } = &mut request.command else {
-            panic!()
-        };
-        *target = timing;
-        assert!(apply(&before, &request).is_err());
-    }
+    let mut request = deletion(&before, "root", 1, 3, "deleted");
+    let Command::DeleteRange { timing, .. } = &mut request.command else {
+        panic!()
+    };
+    timing.allocation = revision("wrong");
+    assert!(apply(&before, &request).is_err());
     assert_eq!(before.to_json().unwrap(), initial);
 }
 

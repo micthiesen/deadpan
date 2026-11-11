@@ -298,15 +298,6 @@ fn source_document() -> ProjectDocument {
         .unwrap(),
     );
     document.validate().unwrap();
-    document.audio_bindings = capture_unbound_audio_bindings(
-        &document,
-        AudioTimingId {
-            allocation: revision("retained"),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    document.validate().unwrap();
     document
 }
 

@@ -4,8 +4,6 @@
 //! the common saturation drive from all permitted inputs.
 
 use super::authored_eq::Context;
-#[cfg(test)]
-use super::shared_mix::MixedSuppression;
 use super::shared_mix::{
     AdmittedStop, Boundary, Contribution, OwnerKey, Permissions, SharedMix, Temporal,
 };
@@ -46,9 +44,6 @@ pub(super) mod original_inputs;
 #[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
 #[path = "shared_eq/cached_prediction_baseline.rs"]
 mod cached_prediction_baseline;
-#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
-#[path = "shared_eq/cached_prediction_tests.rs"]
-mod cached_prediction_tests;
 #[cfg(test)]
 #[path = "shared_eq/cached_prediction_trace.rs"]
 mod cached_prediction_trace;
@@ -545,8 +540,8 @@ impl StageAudio {
         let admitted = |id| {
             program.allowed.is_none_or(|mask| mask.contains(id)) || allowed_aliases.contains(id)
         };
-        let predict = mix.uses_components()
-            && policy_prediction::available(&program.context.original, &roots, &beats, control)?;
+        let predict =
+            mix.uses_components() && policy_prediction::available(&roots, &beats, control)?;
         if predict {
             // Routes have not allocated policy or PCM. This only installs an
             // empty prediction carrier; the fallible query factories do not
@@ -600,11 +595,6 @@ impl StageAudio {
                         control,
                         true,
                     )?,
-                    Context::Retained(_) => {
-                        return Err(StageAudioError::Unsupported(
-                            "retained Original policy prediction",
-                        ));
-                    }
                 })
             } else {
                 None
@@ -869,51 +859,14 @@ impl StageAudio {
             #[cfg(test)]
             let component_mask_frames =
                 component_mask_frames.filter(|_| !super::components_mask_request::legacy());
-            #[cfg(test)]
-            let components_receipt = component_mask_frames.and_then(|frames| {
-                if !super::components_mask_trace::is_enabled() {
-                    return None;
-                }
-                let work = control.work.borrow();
-                super::components_mask_trace::begin_request(super::components_mask_trace::Request {
-                    start: mix.start.0,
-                    program_depth: program.depth,
-                    frames,
-                    active_frames: self.active_frames,
-                    source_reservation_frames: reservation,
-                    account_live_frames: self.owned_suppression.live_frames(),
-                    plan_work_before: work.plan_work,
-                    cache_work_before: work.cache_plan_work,
-                })
-            });
             let component_marks_result = if let Some(frames) = component_mask_frames {
                 shared_components::ComponentMarks::new(frames, control).map(Some)
             } else {
                 Ok(None)
             };
-            #[cfg(test)]
-            if let Some(receipt) = components_receipt {
-                let work = control.work.borrow();
-                super::components_mask_trace::source_initialized(
-                    receipt,
-                    &component_marks_result,
-                    work.plan_work,
-                    work.cache_plan_work,
-                );
-            }
             let component_marks = match component_marks_result {
                 Ok(flags) => flags,
                 Err(error) => {
-                    #[cfg(test)]
-                    if let Some(receipt) = components_receipt {
-                        super::components_mask_trace::source_init_failure_complete(
-                            receipt,
-                            &error,
-                            self.active_frames,
-                            self.owned_suppression.live_frames(),
-                            control,
-                        );
-                    }
                     return Err(error);
                 }
             };
@@ -921,8 +874,6 @@ impl StageAudio {
                 control,
                 component_marks,
                 |owner, stage, at, permissions, voice| {
-                    #[cfg(test)]
-                    super::components_mask_trace::callback();
                     let id = self.shared_eq_node(graph, program, owner, at, stage, control)?;
                     let width = stage.output_frames();
                     let tile =
@@ -945,19 +896,6 @@ impl StageAudio {
             let mixed = match mixed_result {
                 Ok(mixed) => mixed,
                 Err(error) => {
-                    #[cfg(test)]
-                    if let Some(receipt) = components_receipt {
-                        super::components_mask_trace::source_account_after(
-                            self.owned_suppression.live_frames(),
-                        );
-                        super::components_mask_trace::complete_failure(
-                            receipt,
-                            &error,
-                            self.active_frames,
-                            self.owned_suppression.live_frames(),
-                            control,
-                        );
-                    }
                     return Err(error);
                 }
             };
@@ -966,87 +904,10 @@ impl StageAudio {
                 .checked_add(relative_depth)
                 .is_none_or(|depth| depth > self.limits.maximum_depth)
             {
-                #[cfg(test)]
-                if let Some(receipt) = components_receipt
-                    && let MixedSuppression::PendingMarks { marks, .. } = &mixed.suppressed
-                {
-                    super::components_mask_trace::inline_source_snapshot(marks);
-                    drop(mixed.suppressed);
-                    super::components_mask_trace::inline_source_closed();
-                    super::components_mask_trace::source_account_after(
-                        self.owned_suppression.live_frames(),
-                    );
-                    let error = StageAudioError::Limit("nested stage depth");
-                    super::components_mask_trace::complete_failure(
-                        receipt,
-                        &error,
-                        self.active_frames,
-                        self.owned_suppression.live_frames(),
-                        control,
-                    );
-                    return Err(error);
-                }
                 return Err(StageAudioError::Limit("nested stage depth"));
             }
             // Keep the moved permission grid funded until projection drops it.
-            #[cfg(test)]
-            let pending_source = match &mixed.suppressed {
-                MixedSuppression::Pending { start, permissions } => Some(
-                    super::shared_mix_mask_trace::pending_source(*start, permissions),
-                ),
-                MixedSuppression::Ordinary(_) | MixedSuppression::PendingMarks { .. } => None,
-            };
-            #[cfg(test)]
-            let permission_receipt = pending_source.and_then(|source| {
-                super::shared_mix_mask_trace::begin(
-                    source,
-                    reservation,
-                    self.active_frames,
-                    self.owned_suppression.live_frames(),
-                    control,
-                )
-            });
-            #[cfg(test)]
-            if components_receipt.is_some() {
-                super::components_mask_trace::projection_begin();
-            }
-            let projection = {
-                #[cfg(test)]
-                {
-                    mixed
-                        .suppressed
-                        .finish(&mut self.masks(control), permission_receipt)
-                }
-                #[cfg(not(test))]
-                {
-                    mixed.suppressed.finish(&mut self.masks(control))
-                }
-            };
-            #[cfg(test)]
-            if let Some(receipt) = components_receipt {
-                super::components_mask_trace::projection_end();
-                super::components_mask_trace::source_account_after(
-                    self.owned_suppression.live_frames(),
-                );
-                super::components_mask_trace::complete(
-                    receipt,
-                    &projection,
-                    self.active_frames,
-                    self.owned_suppression.live_frames(),
-                    control,
-                );
-            }
-            #[cfg(test)]
-            if let Some(receipt) = permission_receipt {
-                super::shared_mix_mask_trace::complete(
-                    receipt,
-                    &projection,
-                    self.active_frames,
-                    self.owned_suppression.live_frames(),
-                    control,
-                );
-            }
-            let suppressed = projection?;
+            let suppressed = mixed.suppressed.finish(&mut self.masks(control))?;
             Ok(WideBlock {
                 samples: mixed.samples,
                 suppressed,

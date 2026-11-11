@@ -1,5 +1,5 @@
 //! Injective typed renaming of current owners and complete historical layouts.
-//! Repeat families are joined only by explicit binding relationships.
+//! Repeat families are joined only by explicit sound-clock relationships.
 
 use super::*;
 
@@ -52,33 +52,6 @@ impl Inventory {
                 .chain(layout.gap_overrides().values())
             {
                 result.charge(entries.len())?;
-            }
-        }
-        for (_, _, binding) in slice.audio_bindings.owners() {
-            for placement in binding.placements() {
-                result.charge(placement.entry_count())?;
-                let timing = &placement.reference.timing;
-                for argument in &placement.arguments {
-                    result.value(timing, &argument.reference_repeat, &argument.value)?;
-                }
-                if let Some(value) = &placement.gap_after {
-                    result.value(timing, &placement.reference.physical, value)?;
-                }
-                for clause in &placement.births {
-                    let live = result.key(&RepeatKey::Live(clause.repeat.clone()))?;
-                    match &clause.survivors {
-                        AudioBirthSurvivors::CapturedRepeat { repeat } => {
-                            let historical = result
-                                .key(&RepeatKey::Historical(timing.clone(), repeat.clone()))?;
-                            result.join(live, historical);
-                        }
-                        AudioBirthSurvivors::Run {
-                            allocation,
-                            first,
-                            count,
-                        } => result.interval(live, allocation, *first, *count)?,
-                    }
-                }
             }
         }
         if !slice.audio_bindings.sound_clocks.is_empty() {
@@ -250,24 +223,6 @@ impl Inventory {
             self.sizes[a] += self.sizes[b];
         }
     }
-    fn value(
-        &mut self,
-        timing: &AudioTimingId,
-        reference: &NodeId,
-        value: &AudioRepeatValue,
-    ) -> Result<(), EditError> {
-        let historical = self.key(&RepeatKey::Historical(timing.clone(), reference.clone()))?;
-        match value {
-            AudioRepeatValue::Live { repeat } => {
-                let live = self.key(&RepeatKey::Live(repeat.clone()))?;
-                self.join(live, historical);
-            }
-            AudioRepeatValue::Captured { iteration } => {
-                self.interval(historical, &iteration.allocation, iteration.ordinal, 1)?
-            }
-        }
-        Ok(())
-    }
     pub(super) fn alias_count(&self) -> usize {
         self.aliases.len() + self.lineages.len()
     }
@@ -426,89 +381,6 @@ impl Renamer {
                         .cloned()
                         .ok_or_else(|| invalid("slice lineage pair missing"))?,
                 ))
-            })
-            .collect()
-    }
-    fn value(
-        &self,
-        timing: &AudioTimingId,
-        reference: &NodeId,
-        value: &mut AudioRepeatValue,
-    ) -> Result<(), EditError> {
-        match value {
-            AudioRepeatValue::Live { repeat } => *repeat = self.live(repeat)?,
-            AudioRepeatValue::Captured { iteration } => {
-                *iteration = self.play(
-                    RepeatKey::Historical(timing.clone(), reference.clone()),
-                    iteration,
-                )?
-            }
-        }
-        Ok(())
-    }
-    fn placement(&self, value: &mut AudioPlacementTemplate) -> Result<(), EditError> {
-        let timing = value.reference.timing.clone();
-        for argument in &mut value.arguments {
-            self.value(&timing, &argument.reference_repeat, &mut argument.value)?;
-            argument.reference_repeat = self.historical(&timing, &argument.reference_repeat)?;
-        }
-        if let Some(gap) = &mut value.gap_after {
-            self.value(&timing, &value.reference.physical, gap)?;
-        }
-        for clause in &mut value.births {
-            match &mut clause.survivors {
-                AudioBirthSurvivors::CapturedRepeat { repeat } => {
-                    *repeat = self.historical(&timing, repeat)?
-                }
-                AudioBirthSurvivors::Run {
-                    allocation, first, ..
-                } => {
-                    let play = self.play(
-                        RepeatKey::Live(clause.repeat.clone()),
-                        &IterationId {
-                            allocation: allocation.clone(),
-                            ordinal: *first,
-                        },
-                    )?;
-                    *allocation = play.allocation;
-                    *first = play.ordinal;
-                }
-            }
-            clause.repeat = self.live(&clause.repeat)?;
-            clause.definition_root = self.historical(&timing, &clause.definition_root)?;
-        }
-        match &mut value.reference.root {
-            AudioClockRoot::ProjectRootRoundEven => {}
-            AudioClockRoot::PreserveInputPointCeil { stage } => {
-                *stage = self.historical(&timing, stage)?
-            }
-            AudioClockRoot::DefinitionPointCeil { root } => {
-                *root = self.historical(&timing, root)?
-            }
-            AudioClockRoot::GapDefinitionPointCeil { repeat } => {
-                *repeat = self.historical(&timing, repeat)?
-            }
-        }
-        value.reference.physical = self.historical(&timing, &value.reference.physical)?;
-        value.reference.timing = self
-            .timings
-            .get(&timing)
-            .cloned()
-            .ok_or_else(|| invalid("slice timing missing"))?;
-        Ok(())
-    }
-    fn bindings(
-        &self,
-        input: &BTreeMap<NodeId, OwnedAudioBinding>,
-    ) -> Result<BTreeMap<NodeId, OwnedAudioBinding>, EditError> {
-        input
-            .iter()
-            .map(|(owner, binding)| {
-                let mut binding = binding.clone();
-                for placement in binding.placements_mut() {
-                    self.placement(placement)?;
-                }
-                Ok((self.live(owner)?, binding))
             })
             .collect()
     }
@@ -684,8 +556,6 @@ impl Imported {
     pub(super) fn install(self, document: &mut ProjectDocument) -> Result<(), EditError> {
         let mut bindings = document.audio_bindings.clone();
         bindings.timings.extend(self.bindings.timings);
-        bindings.bindings.extend(self.bindings.bindings);
-        bindings.gap_bindings.extend(self.bindings.gap_bindings);
         bindings.sound_clocks.extend(self.bindings.sound_clocks);
         // Validate aggregate historical work and serialized bounds before graph changes.
         bindings.to_json()?;
@@ -1007,8 +877,6 @@ pub(super) fn prepare(
         lineage: rename.lineage(&slice.audio_lineage, None)?,
         bindings: AudioBindingState {
             timings,
-            bindings: rename.bindings(&slice.audio_bindings.bindings)?.into(),
-            gap_bindings: rename.bindings(&slice.audio_bindings.gap_bindings)?.into(),
             sound_clocks,
         },
         beat_sounds,

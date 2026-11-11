@@ -8,6 +8,8 @@ specification or migrations, that process was dropped and the brief wins.
 Links to deleted documents are dead; git history has them. Read the
 paragraphs for the code you are changing, not the whole file.
 
+Audio bindings were removed on 2026-11-11; this file's paragraphs about them no longer apply.
+
 Deadpan is a native macOS structural editor for massaging one original video into a weird YTP, built around editable beats and a keyboard-first workflow.
 
 ## Product authority and current scope

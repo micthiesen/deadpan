@@ -71,29 +71,14 @@ fn admitted_bound_domain_keeps_canonical_receipts_policy_and_actual_wav_output_l
             current.processing.spans.len(),
             previous.processing.spans.len()
         );
-        // Full private Bound history is covered by Plan's paired constructor
-        // proof; this real WAV boundary checks the receipt split and PCM.
+        // This real WAV boundary checks the receipt split and PCM.
         for (current, previous) in current
             .processing
             .spans
             .iter()
             .zip(&previous.processing.spans)
         {
-            match (&current.content, &previous.content) {
-                (AudioSignalContent::Bound(_), AudioSignalContent::Bound(_)) => {
-                    assert_eq!(current.definition, previous.definition);
-                    assert_eq!(current.samples, previous.samples);
-                    assert_eq!(current.allocated_samples, previous.allocated_samples);
-                    assert_eq!(current.project_extent, previous.project_extent);
-                    assert_eq!(current.instance, previous.instance);
-                    assert_eq!(current.gap_after, previous.gap_after);
-                    assert_eq!(current.transform, previous.transform);
-                    assert_eq!(current.grid, previous.grid);
-                    assert_eq!(current.sampling, previous.sampling);
-                    assert_eq!(current.retimes, previous.retimes);
-                }
-                _ => assert_eq!(current, previous),
-            }
+            assert_eq!(current, previous);
         }
         assert_eq!(current.flattened, previous.flattened);
         assert_eq!(current.policy.suppressed, previous.policy.suppressed);

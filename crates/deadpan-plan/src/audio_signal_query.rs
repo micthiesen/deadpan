@@ -82,7 +82,7 @@ impl<'plan> AudioSignal<'plan> {
         sample: SignalSample,
         grid: AudioSampleGrid<SignalSample>,
         stop_at_preserve: bool,
-        stop_at_bindings: bool,
+        _stop_at_bindings: bool,
         budget: &mut QueryBudget<'_, A>,
     ) -> QueryResult<GuardedBound<AudioSignalSpan<'plan>, A::Issuer, A::Lease>, A> {
         let mut transform = self.transform()?;
@@ -116,35 +116,7 @@ impl<'plan> AudioSignal<'plan> {
                 };
                 let gap_extent = transform.signal_origin
                     ..transform.signal_from_local(ExactRatio::integer(gap.duration.frames()))?;
-                extent = intersect(extent, gap_extent.clone())?;
-                sampling_extent = Some(match sampling_extent {
-                    Some(previous) => intersect(previous, gap_extent)?,
-                    None => gap_extent,
-                });
-                if stop_at_bindings
-                    && self.bypass_binding != Some(BindingTarget::Gap(current))
-                    && let Some(bound) = self.plan.bound_at_query(
-                        current,
-                        &repeats,
-                        self.definition.as_ref(),
-                        crate::plan::audio_bound::BoundPlacement {
-                            transform,
-                            grid,
-                            allocated_start: grid.boundary(extent.start)?,
-                            support: sampling_extent.as_ref(),
-                            constraints: &[],
-                            gap: Some(&gap),
-                        },
-                        budget,
-                    )?
-                {
-                    break (
-                        bound
-                            .boxed(budget)?
-                            .map(budget, AudioSignalContent::Bound)?,
-                        gap.after,
-                    );
-                }
+                extent = intersect(extent, gap_extent)?;
                 break (
                     Content::plain(
                         AudioSignalContent::Leaf(storage::hold(
@@ -180,30 +152,6 @@ impl<'plan> AudioSignal<'plan> {
                     Some(previous) => intersect(previous, node_extent)?,
                     None => node_extent,
                 });
-            }
-            if stop_at_bindings
-                && self.bypass_binding != Some(BindingTarget::Node(current))
-                && let Some(bound) = self.plan.bound_at_query(
-                    current,
-                    &repeats,
-                    self.definition.as_ref(),
-                    crate::plan::audio_bound::BoundPlacement {
-                        transform,
-                        grid,
-                        allocated_start: grid.boundary(extent.start)?,
-                        support: sampling_extent.as_ref(),
-                        constraints: &[],
-                        gap: None,
-                    },
-                    budget,
-                )?
-            {
-                break (
-                    bound
-                        .boxed(budget)?
-                        .map(budget, AudioSignalContent::Bound)?,
-                    None,
-                );
             }
             let local = transform.local_at_signal_frame(probe)?;
             match &node.kind {

@@ -224,12 +224,12 @@ pub(in crate::plan) fn domain_query<'plan, A: AudioSoundContextAdmission>(
     samples: Range<AudioSample>,
     limits: AudioQueryLimits,
     mut local: Budget,
-    stops: (bool, Option<&mut capture::ProcessingStops>),
+    stop_at_preserve: bool,
     admission: &mut A,
 ) -> std::result::Result<AdmittedAudioProcessingQuery<'plan, A::Issuer, A::Lease>, A::Error> {
     let mut budget = QueryBudget::new(&mut local, admission);
     admission::outer::<_, A>((|| {
-        let value = assemble_domain(plan, seed, samples, limits, stops, &mut budget)?;
+        let value = assemble_domain(plan, seed, samples, limits, stop_at_preserve, &mut budget)?;
         let canonical = budget.canonical_used;
         let additional = budget.additional_used;
         let work = canonical
@@ -253,7 +253,7 @@ pub(in crate::plan) fn domain_query<'plan, A: AudioSoundContextAdmission>(
     })())
 }
 
-pub(in crate::plan) fn child_domain_query<'plan, A: AudioSoundContextAdmission>(
+fn assemble_domain<'plan, A: AudioSoundContextAdmission>(
     plan: &'plan RenderPlan,
     seed: &AudioWalkSeed,
     samples: Range<AudioSample>,
@@ -261,29 +261,10 @@ pub(in crate::plan) fn child_domain_query<'plan, A: AudioSoundContextAdmission>(
     stop_at_preserve: bool,
     budget: &mut QueryBudget<'_, A>,
 ) -> Result<ProcessingChild<'plan, A>, A> {
-    assemble_domain(
-        plan,
-        seed,
-        samples,
-        limits,
-        (stop_at_preserve, None),
-        budget,
-    )
-}
-
-fn assemble_domain<'plan, A: AudioSoundContextAdmission>(
-    plan: &'plan RenderPlan,
-    seed: &AudioWalkSeed,
-    samples: Range<AudioSample>,
-    limits: AudioQueryLimits,
-    stops: (bool, Option<&mut capture::ProcessingStops>),
-    budget: &mut QueryBudget<'_, A>,
-) -> Result<ProcessingChild<'plan, A>, A> {
     let start = budget.checkpoint();
     if limits.maximum_work != start.remaining() {
         return Err(PlanError::InvalidPlan("processing query work provenance mismatch").into());
     }
-    let (stop_at_preserve, mut stops) = stops;
     let mut accumulator = empty(budget);
     let mut cursor = samples.start;
     while cursor < samples.end {
@@ -296,7 +277,7 @@ fn assemble_domain<'plan, A: AudioSoundContextAdmission>(
             Some(seed),
             stop_at_preserve,
             true,
-            (None, None, None, stops.as_deref_mut()),
+            (None, None, None),
         )?;
         let value = walk.value.adopt_memory(walk.memory, budget)?;
         let end = match &*value {

@@ -6,7 +6,6 @@ use super::*;
 enum Destination<'a> {
     Seam {
         index: usize,
-        boundary: ProjectFrame,
     },
     Interior {
         target: &'a NodeId,
@@ -53,19 +52,13 @@ impl<'a> Placement<'a> {
                 slice,
                 identities,
                 timing,
-            } => (
-                parent,
-                slice,
-                identities,
-                timing,
-                None,
-                Destination::Seam {
-                    index: *index,
-                    boundary: crate::insert_time::source_splice::boundary_in(
-                        document, parent, *index, occurrence,
-                    )?,
-                },
-            ),
+            } => (parent, slice, identities, timing, None, {
+                // Admits the seam's complete ancestry.
+                crate::insert_time::source_splice::boundary_in(
+                    document, parent, *index, occurrence,
+                )?;
+                Destination::Seam { index: *index }
+            }),
             Command::SpliceSliceAt {
                 parent,
                 target,
@@ -280,29 +273,20 @@ fn apply_inner(
     check_combined(document, placement.slice)?;
     let imported = rename::prepare(&placement.slice.0, placement.identities, &timings.imported)?;
 
-    let mut working = match (&placement.destination, &timings.split) {
-        (Destination::Interior { target, at, .. }, Some(timing)) => {
-            let mut working = document.clone();
-            working.audio_bindings =
-                crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
-                    document,
-                    timing.clone(),
-                )?;
-            crate::split::apply(
-                &working,
-                target,
-                *at,
-                placement.splits.expect("interior pools"),
-                context,
-            )?
-        }
-        (Destination::Replacement { range, .. }, Some(timing)) => {
+    let working = match (&placement.destination, &timings.split) {
+        (Destination::Interior { target, at, .. }, Some(_)) => crate::split::apply(
+            document,
+            target,
+            *at,
+            placement.splits.expect("interior pools"),
+            context,
+        )?,
+        (Destination::Replacement { range, .. }, Some(_)) => {
             crate::insert_time::sequence_range::split_endpoints_in(
                 document,
                 placement.parent,
                 *range,
                 placement.splits.expect("replacement pools"),
-                timing,
                 context,
                 placement.occurrence,
             )?
@@ -312,14 +296,11 @@ fn apply_inner(
     // Split can duplicate retained mark fragments and owner treatments. Charge
     // those actual bounded results together with the import before installation.
     check_combined(&working, placement.slice)?;
-    let (first, end, removed, suffix_boundary) = match &placement.destination {
-        Destination::Seam { index, boundary } => (*index, *index, Vec::new(), *boundary),
-        Destination::Interior { resolved, .. } => (
-            resolved.index + 1,
-            resolved.index + 1,
-            Vec::new(),
-            resolved.boundary,
-        ),
+    let (first, end, removed) = match &placement.destination {
+        Destination::Seam { index } => (*index, *index, Vec::new()),
+        Destination::Interior { resolved, .. } => {
+            (resolved.index + 1, resolved.index + 1, Vec::new())
+        }
         Destination::Replacement { range, .. } => {
             let selected = crate::insert_time::sequence_range::selected_children_in(
                 &working,
@@ -327,7 +308,7 @@ fn apply_inner(
                 *range,
                 placement.occurrence,
             )?;
-            (selected.first, selected.end, selected.nodes, range.end())
+            (selected.first, selected.end, selected.nodes)
         }
         Destination::Children { resolved } => {
             let NodeKind::Sequence { children } = &working.nodes()[placement.parent].kind else {
@@ -337,37 +318,22 @@ fn apply_inner(
                 resolved.first,
                 resolved.end,
                 children[resolved.first..resolved.end].to_vec(),
-                resolved.range.end(),
             )
         }
     };
-    if let Some(timing) = &timings.suffix {
-        working = if placement.occurrence.is_some() {
-            let affected = crate::insert_time::composite::occurrence_shifted_owners(
+    // Refuse a suffix that would cross a Repeat or Retime ancestor.
+    if timings.suffix.is_some() {
+        if placement.occurrence.is_some() {
+            crate::insert_time::composite::occurrence_shifted_owners(
                 &working,
                 placement.parent,
                 end,
             )?;
-            crate::insert_time::composite::prepare_owners(
-                &working,
-                &affected,
-                suffix_boundary,
-                total,
-                timing,
-            )?
         } else {
-            crate::insert_time::composite::prepare_suffix(
-                &working,
-                placement.parent,
-                end,
-                suffix_boundary,
-                total,
-                timing,
-            )?
-        };
+            crate::insert_time::composite::check_suffix(&working, placement.parent, end)?;
+        }
     }
-    // All clocks above refer to the unchanged-duration split tree. Replace its
-    // child interval directly; no shorter deletion-only clock is ever observed.
+    // Replace the split tree's child interval directly.
     let mut result = working.clone();
     imported.install(&mut result)?;
     let NodeKind::Sequence { children } = &mut result
@@ -410,7 +376,7 @@ fn apply_inner(
         result.marks.extend(copied);
         BTreeMap::new()
     };
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     result.validate()?;
     Ok((result, detached))
 }

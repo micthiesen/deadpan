@@ -322,29 +322,10 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
             .clocks()
             .iter()
             .any(|reference| reference.timing() == capture);
-        let original_consumers = born
-            .audio_bindings()
-            .bindings()
-            .iter()
-            .chain(born.audio_bindings().gap_bindings())
-            .filter_map(|(owner, binding)| {
-                let uses = binding.lattice.reference.timing == *capture
-                    || binding
-                        .resume
-                        .iter()
-                        .flat_map(|resume| &resume.phase.terms)
-                        .any(|term| term.placement.reference.timing == *capture)
-                    || binding
-                        .reanchors
-                        .iter()
-                        .any(|step| step.placement.reference.timing == *capture);
-                uses.then_some(owner.clone())
-            })
-            .collect::<Vec<_>>();
         require(
-            sound_referenced || !original_consumers.is_empty(),
+            sound_referenced,
             "later pad capture consumers",
-            "additional table has no sound or Original binding consumer",
+            "additional table has no sound journal consumer",
         )?;
         if sound_referenced {
             // Sound journals need the actual pre-pad G/owner placement. An
@@ -371,7 +352,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
             }
         }
         added_tables.push(serde_json::json!({"timing":capture,"layout":layout,
-            "sound_journal_referenced":sound_referenced,"original_binding_consumers":original_consumers}));
+            "sound_journal_referenced":sound_referenced}));
     }
     let pad_evidence = serde_json::json!({"before_frames":16,"after_frames":17,
         "placements":pad_placements,"previous_journal":prior_journal,"padded_journal":padded_journal,

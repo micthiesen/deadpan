@@ -52,10 +52,10 @@ fn record(
 }
 
 /// Prefix pause, a shifted stage over a 4-frame source and a 2-frame suffix
-/// at an exact 1,600-sample frame, with every unbound clock captured.
+/// at an exact 1,600-sample frame.
 fn shifted_document(frames: i64, pitch: PitchPolicy) -> ProjectDocument {
     let rate = FrameRate::new(30, 1).unwrap();
-    let document = document_with_asset(
+    document_with_asset(
         rate,
         &["prefix", "rate", "suffix"],
         [
@@ -66,18 +66,7 @@ fn shifted_document(frames: i64, pitch: PitchPolicy) -> ProjectDocument {
         ],
         BTreeMap::new(),
         audio(0, 8197).span,
-    );
-    let state = capture_unbound_audio_bindings(
-        &document,
-        AudioTimingId {
-            allocation: document.revision_id().clone(),
-            ordinal: 0,
-        },
     )
-    .unwrap();
-    let mut wire = serde_json::to_value(document).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(state).unwrap();
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 
 #[test]

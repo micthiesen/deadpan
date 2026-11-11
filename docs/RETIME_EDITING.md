@@ -38,13 +38,10 @@ undo paths. An unresolved active generation request still requires real host
 relevance observations; the native service does not invent them.
 
 A changed Retime processing output is newly authored on its current output
-allocation. Its own retained output binding is removed; its descendant input
-bindings and unrelated ancestor/sibling bindings remain. Unused clocks are
-pruned through normal binding lifecycle. An identical duration and pitch retain
-the binding exactly. Undo restores the complete prior binding state. This is
-necessary when changing from a physical pitch-preserving stage to tape speed or
-unity, or shortening beyond a retained output resume entry. It does not clear
-source phase or the history needed by a retained child stage.
+allocation; the stage is sampled from its current position and nothing about
+its previous placement is stored (audio bindings were removed on 2026-11-11).
+An identical duration and pitch change nothing. Undo restores the prior
+document. A retained child stage keeps its processing history.
 
 Core schema 28 and database schema 34 freeze the previous core-27 command
 vocabulary. Database 33 history replays through `legacy_v27`; new speed commands
@@ -73,15 +70,12 @@ sample clocks. This occurrence path still refuses Retime ancestry and external
 sound events. See [scoped editing](SCOPED_EDITING.md) and
 [one-play Hold length](SEMANTIC_MACROS.md#one-play-hold-length).
 
-The ordinary `SetHoldDuration` path also retains old downstream Source, Repeat
-gap and owned-play sample clocks when the root duration changes, including
-initially unbound owners. Undo restores the complete binding state.
-For fixed affine windows, movement capture stays inside the window; the Retime
+The ordinary `SetHoldDuration` path changes structure only: downstream Source,
+Repeat gap and owned-play owners are sampled from their new positions when the
+root duration changes. For fixed affine windows, the Retime
 recipe, outer siblings and outer Repeat placements stay fixed.
-Unused Repeat defaults preserve the entire binding state without captures.
-Ordinary Hold resizing also retains moved physical owners beneath Preserve/Shift
-on the correct processing-input PointCeil clock. Its current operand rebuilds
-DSP while existing output bindings and fractional resumes remain unchanged.
+Moved physical owners beneath Preserve/Shift are sampled on the correct
+processing-input PointCeil clock, and the current operand rebuilds DSP.
 An independent sound on the fixed Retime output keeps its exact source phase,
 sample offset and journal when an interior Hold changes. Its proof checks the
 unchanged output owner and placement ancestry; the current physical operand
@@ -103,11 +97,9 @@ input stretched to 24 frames and then given a three-frame pause has an exact
 frames. The inspector then shows and pre-fills `9/10`, its effective speed.
 Macros resolve each staged update against the same exact input.
 
-Existing interior audio bindings remain unchanged. Missing bindings capture
-their visible entries on the pre-edit clock, and moved outside owners retain
-their own entry phases. Audio still uses native-source preparation followed by
+Audio still uses native-source preparation followed by
 retained-domain transfer; multiplying the coordinate slopes does not replace
-these two filtering stages. Admission checks the actual historical lattice's
+these two filtering stages. Admission checks the derived placement's
 transfer against the inclusive `1/64..64` range, including successive changes.
 For an ordinary nonrepeated carrier, no allocated output samples imposes no
 transfer bound.
@@ -120,7 +112,7 @@ One inner Repeat level is also supported, including owned plays and independent
 gaps. Every physical carrier retains its own clock and filtering stage. Admission
 checks all historical rate classes, including born PointCeil plays beside older
 root-clock plays, with bounded work over authored runs and sparse overrides.
-Missing carriers capture their pre-edit entries once. A representative play
+A representative play
 cannot prove its whole class empty, so repeated classes receive no empty-carrier
 exception. Default gaps, including silent gaps, retain transfer checks.
 
@@ -138,18 +130,13 @@ canonical Signalsmith adapter), independent of the duration. Every place that
 asked whether a Retime is a "nonunity Preserve" stage now asks
 `PitchPolicy::processes(unity_rate)`: pitch-preserving with a nonunity rate or a
 nonzero shift. So a unity-speed shifted Retime is a real processing stage for
-planning, owned audio bindings (including the Preserve-input point clock),
+planning, derived placement (including the Preserve-input point clock),
 frozen contexts and reference clocks, definition placements, composite
 insertion, moves and slice capture, and the stage descriptor passes its
 semitones to `CanonicalRecipe::with_rate`, which keeps them in the preparation
-cache identity. A first version missed five hardcoded `Preserve` matches
-(binding clock admission, reference clocks and processing domains, binding
-scope crossing and definition placement), so any edit that captured audio
-clocks in a project with a shift failed; they now use the same predicate, and
-`shifted_stages_keep_their_bound_pcm_through_insert_split_and_move` (decoded
-PCM, unity and nonunity shifts) and
-`split_edits_capture_clocks_beside_a_pitch_shifted_stage` cover InsertTime,
-Split, MoveRange and a J-cut's Roll. The remaining literal `Preserve` patterns
+cache identity. A first version missed five hardcoded `Preserve` matches; every remaining place
+uses the same predicate. Decoded-PCM tests with unity and nonunity shifts cover
+InsertTime, Split, MoveRange and a J-cut's Roll. The remaining literal `Preserve` patterns
 construct test fixtures, Partitions (which never shift) or UI text.
 Partitions cannot carry a shift; a hanging tail inside a shifted stage is invalid,
 as inside a speed change.
@@ -161,7 +148,7 @@ unity-speed Retime. `:pitch 0` returns a stage to plain `Preserve`.
 `:retime 0.75 pitch=-2st` combines a speed and a shift. The inspector shows
 "Shifted +3 semitones". Evidence:
 `pitch_shift_is_a_bounded_pitch_preserving_stage_independent_of_duration`, real
-PCM in `rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm`
+PCM tests
 (unity +12 and nonunity −5 shifts against an independently rebuilt stage), the
 `audio-treatments` replay and the `pitch-shift` preview/export fixture, which
 measures a 1 kHz tone pause shifted an octave at about 4,000 zero crossings per

@@ -10,8 +10,8 @@ use super::audio::{AudioWalkSpan, Budget, EditorialCapture, EnvelopeConstraint};
 use super::audio_boundary::BoundaryOwner;
 use super::audio_domain::AudioWalkSeed;
 use super::{
-    AudioBoundaries, AudioBoundaryOrigin, AudioDomain, AudioProcessingSpan, AudioQueryLimits,
-    AudioSignalContent, AudioSpan, LookupStats, PlanError, RenderPlan,
+    AudioBoundaries, AudioBoundaryOrigin, AudioDomain, AudioQueryLimits, AudioSignalContent,
+    AudioSpan, LookupStats, PlanError, RenderPlan,
 };
 
 #[path = "audio_fades_query.rs"]
@@ -117,9 +117,6 @@ fn fade_query(
                 span
             }
             AudioWalkSpan::Stage(processing) => match &processing.content {
-                AudioSignalContent::Bound(_) => {
-                    bound_fade(processing, cursor, samples.end, captured, &mut budget)?
-                }
                 AudioSignalContent::Stage(_) | AudioSignalContent::ProjectedStage(_) => {
                     // The first opaque output owns creative fades. Flatten its
                     // current geometry in this output grid, retaining ancestor
@@ -179,175 +176,6 @@ fn ordinary(
         leaf.envelope_extent,
         leaf.boundaries,
     )
-}
-
-fn bound_fade(
-    processing: AudioProcessingSpan<'_>,
-    start: AudioSample,
-    end: AudioSample,
-    outer: EditorialCapture,
-    budget: &mut Budget,
-) -> Result<AudioFadeSpan, PlanError> {
-    let end = end.min(processing.allocated_samples.end);
-    retained_bound_fade(processing, start, end, outer, budget)
-}
-
-/// Evaluate a checked binding's history beyond its current delivery allocation.
-/// The original allocated start remains the reference-map anchor.
-pub(super) fn retained_bound_fade(
-    processing: AudioProcessingSpan<'_>,
-    start: AudioSample,
-    end: AudioSample,
-    outer: EditorialCapture,
-    budget: &mut Budget,
-) -> Result<AudioFadeSpan, PlanError> {
-    let AudioSignalContent::Bound(bound) = processing.content else {
-        return Err(PlanError::InvalidPlan("fade has no bound output"));
-    };
-    let q = bound.reference_at_wide_offset(
-        i128::from(start.0) - i128::from(processing.allocated_samples.start.0),
-    )?;
-    let step = bound.reference_samples_per_output_sample();
-    if step.compare_integer(0).is_le() {
-        return Err(PlanError::InvalidPlan(
-            "fade reference rate must be positive",
-        ));
-    }
-    let Some(mut domain) = bound.envelope_domain(budget)? else {
-        return Ok(empty(start..end));
-    };
-    let origin = bound.lattice_origin();
-    let scale = bound.envelope_scale();
-    if scale.compare_integer(0).is_le() {
-        return Err(PlanError::InvalidPlan(
-            "fade virtual scale must be positive",
-        ));
-    }
-    // Follow the actual retained voice, including resumed phases which straddle
-    // a current structural seam. Carry only outer creative candidates into this
-    // inspection domain; raw binding support and evaluation remain untouched.
-    budget.spend(outer.editorial.len())?;
-    let to_retained = |at: ExactRatio| {
-        origin.checked_add(
-            at.checked_sub(processing.transform.project_origin)?
-                .checked_div(scale)?,
-        )
-    };
-    for mut marker in outer.editorial {
-        if marker.boundary.node == domain.seed.node
-            && marker.boundary.repeat_count == domain.seed.repeats.len()
-            && marker.boundary.gap_after.is_none()
-        {
-            budget.spend(marker.boundary.repeat_count)?;
-            if outer.repeats.get(..marker.boundary.repeat_count)
-                == Some(domain.seed.repeats.as_slice())
-            {
-                domain.seed.suppress_entry_editorial.start |= marker.edges.start;
-                domain.seed.suppress_entry_editorial.end |= marker.edges.end;
-            }
-        }
-        let first = processing.grid.boundary(marker.boundary.range.start)?;
-        let last = processing.grid.boundary(marker.boundary.range.end)?;
-        marker.incident_samples = Some((
-            bound.reference_at_wide_offset(
-                i128::from(first.0) - i128::from(processing.allocated_samples.start.0),
-            )?,
-            bound.reference_at_wide_offset(
-                i128::from(last.0) - 1 - i128::from(processing.allocated_samples.start.0),
-            )?,
-        ));
-        marker.boundary.range =
-            to_retained(marker.boundary.range.start)?..to_retained(marker.boundary.range.end)?;
-        domain.seed.editorial.push(marker);
-    }
-    let support = domain.root_samples();
-    if q.compare_integer(support.start.0).is_lt() {
-        return Ok(empty(
-            start..inverse_end(start, end, q, step, support.start)?,
-        ));
-    }
-    if q.compare_integer(support.end.0).is_ge() {
-        return Ok(empty(start..end));
-    }
-    // The floor chooses a discrete reference interval only. Its fractional
-    // phase remains exact below; no sample-by-sample traversal is needed.
-    let probe = AudioSample(i64::try_from(q.floor()).map_err(|_| TimeError::Overflow)?);
-    let mut captured = EditorialCapture::default();
-    let walked = if domain.plan.has_audio_editorial_edges {
-        domain.plan.audio_walk_editorial(
-            probe,
-            budget,
-            Some(&domain.seed),
-            (false, false),
-            &mut captured,
-        )?
-    } else {
-        domain
-            .plan
-            .audio_walk(probe, budget, Some(&domain.seed), false, false, None)?
-    };
-    let AudioWalkSpan::Leaf(leaf) = walked else {
-        return Err(PlanError::InvalidPlan("bound fade retained a stage"));
-    };
-    let end = inverse_end(start, end, q, step, leaf.allocated_samples.end)?;
-    let virtual_start = virtual_position(leaf.envelope_extent.start, origin, scale)?;
-    let virtual_end = virtual_position(leaf.envelope_extent.end, origin, scale)?;
-    let first = leaf.grid.boundary(virtual_start)?;
-    let last = leaf.grid.boundary(virtual_end)?;
-    let length =
-        u64::try_from(i128::from(last.0) - i128::from(first.0)).map_err(|_| TimeError::Overflow)?;
-    let project = |at: ExactRatio| {
-        processing
-            .transform
-            .project_origin
-            .checked_add(at.checked_sub(origin)?.checked_mul(scale)?)
-    };
-    let output = |sample: ExactRatio| {
-        ExactRatio::integer(start.0).checked_add(sample.checked_sub(q)?.checked_div(step)?)
-    };
-    // New edge width follows the delivered voice interval, independently of
-    // the retained envelope's historical, separately rounded virtual width.
-    let voice_samples = output(ExactRatio::integer(leaf.envelope_samples.start.0))?
-        ..output(ExactRatio::integer(leaf.envelope_samples.end.0))?;
-    let mut span = retained(
-        start..end,
-        length,
-        q.checked_sub(ExactRatio::integer(leaf.envelope_samples.start.0))?
-            .checked_div(step)?,
-        project(leaf.envelope_extent.start)?..project(leaf.envelope_extent.end)?,
-        leaf.boundaries,
-    )?;
-    budget.spend(captured.editorial.len() + captured.constraints.len())?;
-    for constraint in captured.constraints.iter_mut().chain(
-        captured
-            .editorial
-            .iter_mut()
-            .map(|marker| &mut marker.boundary),
-    ) {
-        constraint.range = project(constraint.range.start)?..project(constraint.range.end)?;
-    }
-    for marker in &mut captured.editorial {
-        if let Some((first, last)) = marker.incident_samples {
-            marker.incident_samples = Some((output(first)?, output(last)?));
-        }
-    }
-    add_editorial(
-        domain.plan,
-        &mut span,
-        processing.grid,
-        voice_samples,
-        captured,
-        budget,
-    )?;
-    Ok(span)
-}
-
-fn empty(samples: Range<AudioSample>) -> AudioFadeSpan {
-    AudioFadeSpan {
-        samples,
-        start: Vec::new(),
-        end: Vec::new(),
-    }
 }
 
 fn retained(
@@ -520,40 +348,4 @@ fn merge_edge(
         edges.push(new);
     }
     Ok(())
-}
-
-fn virtual_position(
-    position: ExactRatio,
-    origin: ExactRatio,
-    scale: ExactRatio,
-) -> Result<ExactRatio, TimeError> {
-    origin.checked_add(position.checked_sub(origin)?.checked_mul(scale)?)
-}
-
-/// First output sample whose reference position reaches the next interval.
-/// Ceil preserves half-open ownership even for signed or fractional phases.
-fn inverse_end(
-    start: AudioSample,
-    end: AudioSample,
-    reference: ExactRatio,
-    step: ExactRatio,
-    reference_end: AudioSample,
-) -> Result<AudioSample, PlanError> {
-    let count = ExactRatio::integer(reference_end.0)
-        .checked_sub(reference)?
-        .checked_div(step)?
-        .ceil()?;
-    if count <= 0 {
-        return Err(PlanError::InvalidPlan(
-            "fade reference interval did not advance",
-        ));
-    }
-    // Clamp before converting so a bounded query can inspect a wide domain.
-    let remaining = i128::from(end.0) - i128::from(start.0);
-    let next = i128::from(start.0)
-        .checked_add(count.min(remaining))
-        .ok_or(TimeError::Overflow)?;
-    Ok(AudioSample(
-        i64::try_from(next).map_err(|_| TimeError::Overflow)?,
-    ))
 }

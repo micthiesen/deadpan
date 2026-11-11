@@ -2,9 +2,7 @@
 use super::*;
 use crate::audio_allocated::admission::{array, identity};
 use crate::{AudioSoundContextAdmission, PlanError};
-use deadpan_core::{
-    AudioBindingAdmission, AudioBindingBuildError, AudioBindingForwardedWork, NodeId, RevisionId,
-};
+use deadpan_core::{NodeId, RevisionId};
 use std::alloc::Layout;
 
 #[derive(Debug)]
@@ -37,14 +35,6 @@ pub(in crate::plan) fn outer<T, A: AudioSoundContextAdmission>(
         Error::Policy(e) => e,
     })
 }
-pub(in crate::plan) fn core<T, A: AudioSoundContextAdmission>(
-    value: std::result::Result<T, AudioBindingBuildError<A::Error>>,
-) -> Result<T, A> {
-    value.map_err(|e| match e {
-        AudioBindingBuildError::Document(e) => Error::Plan(e.into()),
-        AudioBindingBuildError::Policy(e) => Error::Policy(e),
-    })
-}
 pub(in crate::plan) struct Unmetered;
 impl AudioSoundContextAdmission for Unmetered {
     const METERED: bool = false;
@@ -59,30 +49,6 @@ impl AudioSoundContextAdmission for Unmetered {
         Ok(())
     }
     fn merge(&mut self, _: &mut (), _: &mut ()) {}
-}
-pub(in crate::plan) struct CoreAdmission<'a, A> {
-    pub(in crate::plan) outer: &'a mut A,
-}
-impl<A: AudioSoundContextAdmission> AudioBindingAdmission for CoreAdmission<'_, A> {
-    const METERED: bool = A::METERED;
-    type Error = A::Error;
-    type Issuer = A::Issuer;
-    type Lease = A::Lease;
-    fn issuer(&self) -> Self::Issuer {
-        self.outer.issuer()
-    }
-    fn issuer_mismatch(&self) -> Self::Error {
-        PlanError::AudioMetadataIssuerMismatch.into()
-    }
-    fn spend(&mut self, n: usize) -> std::result::Result<(), Self::Error> {
-        self.outer.spend(n)
-    }
-    fn reserve(&mut self, layout: Layout) -> std::result::Result<Self::Lease, Self::Error> {
-        self.outer.reserve(layout)
-    }
-    fn merge(&mut self, a: &mut Self::Lease, b: &mut Self::Lease) {
-        self.outer.merge(a, b)
-    }
 }
 pub(in crate::plan) struct Memory<I, L> {
     pub(in crate::plan) issuer: I,
@@ -263,25 +229,6 @@ impl<'a, A: AudioSoundContextAdmission> Budget<'a, A> {
             .ok_or(TimeError::Overflow)?;
         self.admission.spend(n).map_err(Error::Policy)?;
         self.check()
-    }
-    pub(in crate::plan) fn account_core(
-        &mut self,
-        work: AudioBindingForwardedWork<A::Issuer>,
-    ) -> Result<(), A> {
-        self.check()?;
-        if work.issuer() != self.issuer || work.was_forwarded() != A::METERED {
-            return Err(PlanError::AudioMetadataIssuerMismatch.into());
-        }
-        self.local.spend(work.units())?;
-        self.canonical_used = self
-            .canonical_used
-            .checked_add(work.canonical_units())
-            .ok_or(TimeError::Overflow)?;
-        self.additional_used = self
-            .additional_used
-            .checked_add(work.additional_units())
-            .ok_or(TimeError::Overflow)?;
-        Ok(())
     }
     pub(in crate::plan) fn reserve(
         &mut self,
@@ -602,29 +549,6 @@ impl<'a, A: AudioSoundContextAdmission> Budget<'a, A> {
         self.additional(1)?;
         match v {
             AudioOwnerClockOrigin::Current => Ok(AudioOwnerClockOrigin::Current),
-            AudioOwnerClockOrigin::Retained {
-                definition,
-                instance,
-                kind,
-                gap_after,
-            } => {
-                // No later growth: capacity can join this fixed origin's payload.
-                let mut cap = self.memory();
-                let definition = self.definition(m, definition)?;
-                let instance = self.instance(m, &mut cap, instance)?;
-                self.check_memory(m)?;
-                self.check_memory(&cap)?;
-                self.merge_checked(m, &mut cap)?;
-                Ok(AudioOwnerClockOrigin::Retained {
-                    definition,
-                    instance,
-                    kind: *kind,
-                    gap_after: gap_after
-                        .as_ref()
-                        .map(|v| self.iteration(m, v))
-                        .transpose()?,
-                })
-            }
         }
     }
     pub(in crate::plan) fn constraint(

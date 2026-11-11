@@ -357,10 +357,11 @@ fn sequence_padding_and_nonzero_preserve_selection_keep_exact_source_phase() {
         source.source_point(SignalSample(3)).unwrap().ticks,
         q(10, 1)
     );
-    assert!(raw.spans.iter().all(|span| !matches!(
-        span.content,
-        AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_)
-    )));
+    assert!(
+        raw.spans
+            .iter()
+            .all(|span| !matches!(span.content, AudioSignalContent::Stage(_)))
+    );
     assert!(
         projection
             .output_policy()

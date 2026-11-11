@@ -192,7 +192,6 @@ fn query_oracle<'plan>(
         Context::Domain(domain) => {
             renderer.prepare_original_domain(domain, start, frames, control, true)
         }
-        Context::Retained(_) => unreachable!("retained prediction is outside this corpus"),
     })
     .unwrap();
     let construction_work = work.borrow().plan_work;
@@ -255,7 +254,6 @@ fn query_oracle<'plan>(
         "processing": queries.processing.spans.iter().map(|span| match &span.content {
             AudioSignalContent::Leaf(_) => "leaf",
             AudioSignalContent::Stage(_) => "stage",
-            AudioSignalContent::Bound(_) => "bound",
             AudioSignalContent::ProjectedStage(_) => "projected_stage",
         }).collect::<Vec<_>>(),
         "events": events,

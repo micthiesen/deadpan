@@ -79,15 +79,6 @@ impl<'plan> AudioPointDomain<'plan> {
         })
     }
 
-    pub(super) fn set_evaluation(
-        &mut self,
-        definition: Option<AudioDefinitionSelector>,
-        repeats: Vec<deadpan_core::RepeatInstance>,
-        bypass_binding: Option<super::audio_bound::BindingTarget>,
-    ) {
-        self.signal
-            .set_evaluation(definition, repeats, bypass_binding);
-    }
     pub(super) fn new(
         definition: &AudioDefinition<'plan>,
         placement: AudioRootPlacement,
@@ -216,15 +207,6 @@ impl<'plan> AudioPointDomain<'plan> {
     /// Use signal() when an independent owned signal copy is required.
     pub fn signal_ref(&self) -> &AudioSignal<'plan> {
         &self.signal
-    }
-    pub(in crate::plan) fn signal_admitted<A: crate::AudioSoundContextAdmission>(
-        &self,
-        budget: &mut crate::plan::audio_owners::admission::Budget<'_, A>,
-    ) -> crate::plan::audio_owners::admission::Result<
-        crate::plan::audio_owners::admission::Owned<AudioSignal<'plan>, A::Issuer, A::Lease>,
-        A,
-    > {
-        self.signal.point_signal_clone_admitted(budget)
     }
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
         std::ptr::eq(self.plan, plan)

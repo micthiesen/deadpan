@@ -249,28 +249,14 @@ pub(crate) fn apply_interior_in_occurrence(
     let resolved = document.splice_interior(parent, target, at, 1, false, Some(origin))?;
     super::validate_identities(document, Some(insertion.id), insertion.identities)?;
     super::validate_split_budget(document, Some(target), insertion.identities)?;
-    let placement_timing =
-        AudioTimingId {
-            allocation: insertion.timing.allocation.clone(),
-            ordinal: insertion.timing.ordinal.checked_add(1).ok_or_else(|| {
-                super::limit("interior source splice needs a second timing identity")
-            })?,
-        };
     let allocation = context.allocation;
-    let mut working = document.clone();
-    working.audio_bindings = crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
-        document,
-        insertion.timing.clone(),
-    )?;
-    working = crate::split::apply(&working, target, at, insertion.identities, context)?;
+    let working = crate::split::apply(document, target, at, insertion.identities, context)?;
     super::splice_source_in_occurrence(
         &working,
         parent,
         resolved.index + 1,
-        resolved.boundary,
         insertion.id,
         insertion.node,
-        &placement_timing,
         allocation,
     )
 }
@@ -307,36 +293,19 @@ pub(crate) fn apply_interior(
     let resolved = document.source_splice_interior(parent, target, at)?;
     super::validate_identities(document, Some(insertion.id), insertion.identities)?;
     super::validate_split_budget(document, Some(target), insertion.identities)?;
-    let placement_timing =
-        AudioTimingId {
-            allocation: insertion.timing.allocation.clone(),
-            ordinal: insertion.timing.ordinal.checked_add(1).ok_or_else(|| {
-                super::limit("interior source splice needs a second timing identity")
-            })?,
-        };
     let total = document.duration()?.frames();
     total
         .checked_add(source.duration.frames())
         .ok_or_else(super::overflow)?;
     let allocation = context.allocation;
-    let mut working = document.clone();
-    // Both retained copies must inherit the original sample lattice. Capture
-    // before Split and pass the outer allowance relation through exactly once.
-    working.audio_bindings = crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
-        document,
-        insertion.timing.clone(),
-    )?;
-    working = crate::split::apply(&working, target, at, insertion.identities, context)?;
+    let working = crate::split::apply(document, target, at, insertion.identities, context)?;
     super::composite::apply_at(
         &working,
         parent,
         resolved.index + 1,
         super::composite::Insertion {
-            at: resolved.boundary,
-            total,
             node: insertion.node,
             id: insertion.id,
-            timing: &placement_timing,
             allocation,
         },
     )
@@ -371,25 +340,20 @@ pub(crate) fn apply(
             "source splice identity must be fresh",
         ));
     }
-    let at = document.source_splice_boundary(parent, index)?;
+    document.source_splice_boundary(parent, index)?;
     let total = document.duration()?.frames();
     total
         .checked_add(source.duration.frames())
         .ok_or_else(super::overflow)?;
-    // Capture only pre-existing owners. The new Source starts on the normal
-    // zero-origin project grid, including its fractional first-sample phase.
-    // The shared insertion path shifts each old owner's entry independently,
-    // reconciles lineage and marks, and returns one unpublished candidate.
+    // The shared insertion path reconciles lineage and marks and returns one
+    // unpublished candidate.
     super::composite::apply_at(
         document,
         parent,
         index,
         super::composite::Insertion {
-            at,
-            total,
             node,
             id,
-            timing,
             allocation,
         },
     )

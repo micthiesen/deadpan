@@ -2,9 +2,19 @@
 
 The plan separates three quantities: structural sample allocation, exact PCM
 lookup, and envelope progress. These values are used by the source and continuous
-stage readers. They are derived from existing authored structure; this increment
-does not persist resume intent or implement an inserted-time command. Core 14 and
-database 20 are unchanged.
+stage readers. They are derived from the current authored tree and nothing
+about Original audio phase is stored (core 59/database 89; the stored
+sampling bindings were removed on 2026-11-11).
+
+## Derived placement
+
+Each Source, Hold and processing owner is sampled on the root RoundEven grid
+(or a Preserve stage's PointCeil input grid) from its current position, so an
+insertion, deletion or move changes structure only. A whole-source-sample snap
+keeps unity-rate Sources on exact source samples. Against the old stored
+clocks the derived placement renders identically at 48 kHz and differs by at
+most one sample at 30000/1001 fps (`crates/deadpan-audio/tests/derived_timing.rs`).
+Cut edges are derived from the tree too; see [audio edges](AUDIO_EDGES.md).
 
 `AudioSampleGrid<S>` records the frame origin, positive exact spacing and boundary
 rule of the owning grid. Root `AudioSample` allocation uses ties-to-even. Prepared
@@ -33,7 +43,8 @@ partitioning changes neither map nor allocated extent.
 
 ## Resume composition
 
-For a current map q and an insertion of N frames at f:
+This map operation serves independent beat-sound clocks and projected roots,
+not Original audio placement. For a current map q and an insertion of N frames at f:
 
 ```text
 cut    = B(f)
@@ -50,9 +61,7 @@ old picture frame. The old/new suffix counts may differ; neither operation
 rescales the rate to make them equal.
 
 This map operation is a plan value, not an authored edit. Editing a returned
-inspection span does not change the immutable plan. Persisted domain identities,
-reference placements, compact repeated-play phase, relevance, mark transforms
-and atomic command construction remain necessary for actual Hold insertion.
+inspection span does not change the immutable plan.
 
 ## Envelope progress and audibility
 
@@ -87,15 +96,14 @@ root suppression starts at 3203. After inserting 1f at f=1, new sample 4804 maps
 to old prepared sample 3203, but current structural silence starts at 4805.
 Without the retained root policy, previously muted audio can become audible.
 The opposite rounding phase requires current structural silence to win too.
-The [frozen reference policy APIs](AUDIO_REFERENCE.md) now capture the old timing
-layout and apply its root silence alongside current suppression. The sampled
-values alone do not encode it; authored persistence and command binding remain
-open.
+The [frozen reference policy APIs](AUDIO_REFERENCE.md) capture the old timing
+layout and apply its root silence alongside current suppression for sound
+clocks. The sampled values alone do not encode it.
 
-Compact Repeat phase must follow stable play identity and retained reference
-placement, not live ordinal or a per-play expansion. A later reordered/deleted
-play must not rewrite another play's old rounding phase. Full Preserve input
-preparation remains separate from output resume. Current caches are scoped to
+Repeat plays are sampled from their current position, so reordering or
+deleting a play changes the later plays' placement only through their new
+positions. Full Preserve input preparation remains separate from output
+placement. Current caches are scoped to
 an immutable plan and complete instance; future cross-context sharing must also
 identify intrinsic input maps, grids, support and nested processing, not only
 source fingerprints.

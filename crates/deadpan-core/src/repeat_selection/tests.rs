@@ -438,17 +438,6 @@ fn invalid_identity_context_counts_and_wire_are_atomic() {
         }
         assert!(crate::apply(&document, &request(&document, command)).is_err());
     }
-    let mut command = wrapped(&document, "root", child("a"), 2);
-    let Command::RepeatSelection { timing, .. } = &mut command else {
-        panic!()
-    };
-    timing.ordinal = u32::MAX;
-    assert_eq!(
-        crate::apply(&document, &request(&document, command))
-            .unwrap_err()
-            .code,
-        EditErrorCode::LimitExceeded
-    );
     let huge = tree(&["a"], vec![("a", hold(i64::MAX))]);
     assert!(
         huge.repeat_selection(&node("root"), &child("a"), 2)

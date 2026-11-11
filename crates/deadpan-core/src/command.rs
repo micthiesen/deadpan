@@ -771,7 +771,7 @@ pub struct DocumentPatch {
         deserialize_with = "unique_map"
     )]
     pub derived_clocks: BTreeMap<NodeId, ValueChange<crate::DerivedRetimeClock>>,
-    /// Guarded changed timing tables and owner bindings, applied atomically
+    /// Guarded changed timing tables and sound clocks, applied atomically
     /// with the rest of the patch; the complete result is validated together.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub audio_bindings: Option<crate::AudioBindingPatch>,
@@ -1087,10 +1087,10 @@ pub fn apply_validated(
 ) -> Result<(EditTransaction, crate::ValidatedDocument), EditError> {
     document
         .scope(|| apply_with_durations(document.document(), request, Some(document)))
-        .map(|(edit, result, (durations, bindings))| {
+        .map(|(edit, result, durations)| {
             (
                 edit,
-                crate::ValidatedDocument::from_validation(result, durations, bindings),
+                crate::ValidatedDocument::from_validation(result, durations),
             )
         })
 }
@@ -1110,7 +1110,7 @@ pub fn apply_with_result(
 }
 
 pub(crate) type Durations = BTreeMap<NodeId, crate::FrameDuration>;
-pub(crate) type Validation = (Durations, crate::audio_binding::BindingProof);
+pub(crate) type Validation = Durations;
 /// Structural durations computed once for one exact structure and shared by
 /// the steps that read that structure.
 pub(crate) type SharedDurations = std::sync::Arc<Durations>;
@@ -1275,10 +1275,7 @@ fn apply_with_durations_captured(
             isolation.as_deref_mut(),
         )?;
         let validated = crate::ValidatedDocument::new(std::sync::Arc::new(outcome.document))?;
-        let validation = (
-            validated.recipe_durations().clone(),
-            validated.binding_proof().clone(),
-        );
+        let validation = validated.recipe_durations().clone();
         let document = std::sync::Arc::unwrap_or_clone(validated.into_document());
         return Ok((outcome.edit, document, validation));
     }
@@ -1461,53 +1458,19 @@ fn apply_with_durations_captured(
                     "an AI pause requires a silent deterministic fallback",
                 ));
             }
-            // A beat sound clock installs the complete pre-edit layout under
-            // this command's timing identity, so its table must stay complete.
-            let scoped = beat_sound_edit.is_none();
-            let saved_allowances = scoped.then(|| allowance_edit.clone()).flatten();
-            let scoped_result = crate::command_work::with_scoped_timing_captures(scoped, || {
-                crate::insert_time::apply_known(
-                    input,
-                    *at,
-                    hold,
-                    id,
-                    identities,
-                    timing,
-                    EditContext {
-                        allocation: &request.new_revision,
-                        allowances: allowance_edit.as_mut(),
-                        sound_clocks: beat_sound_edit.as_mut(),
-                    },
-                )
-            })?;
-            // Both insertion paths extend a provisional table to every alias
-            // their templates read. Should one ever not, repeat the leaf with
-            // complete captures rather than refuse what that path accepts.
-            let (result, structure) = if scoped
-                && !crate::audio_binding_lifecycle::provisional_tables_project_references(
-                    &scoped_result.0.audio_bindings,
-                ) {
-                debug_assert!(
-                    false,
-                    "a provisional timing table missed a referenced alias"
-                );
-                allowance_edit = saved_allowances;
-                crate::insert_time::apply_known(
-                    input,
-                    *at,
-                    hold,
-                    id,
-                    identities,
-                    timing,
-                    EditContext {
-                        allocation: &request.new_revision,
-                        allowances: allowance_edit.as_mut(),
-                        sound_clocks: beat_sound_edit.as_mut(),
-                    },
-                )?
-            } else {
-                scoped_result
-            };
+            let (result, structure) = crate::insert_time::apply_known(
+                input,
+                *at,
+                hold,
+                id,
+                identities,
+                timing,
+                EditContext {
+                    allocation: &request.new_revision,
+                    allowances: allowance_edit.as_mut(),
+                    sound_clocks: beat_sound_edit.as_mut(),
+                },
+            )?;
             if let Some(structure) = structure {
                 known = KnownValidation::Structure(structure);
             }
@@ -1518,13 +1481,7 @@ fn apply_with_durations_captured(
             duration,
             pitch,
         } if crate::insert_time::retimed::clocked_retime_target(input, node) => {
-            crate::insert_time::retimed::set_retime(
-                input,
-                node,
-                *duration,
-                *pitch,
-                &request.new_revision,
-            )?
+            crate::insert_time::retimed::set_retime(input, node, *duration, *pitch)?
         }
         Command::SetHoldDuration { node, duration }
             if crate::insert_time::retimed::inside_clocked(input, node) =>
@@ -1817,30 +1774,21 @@ fn apply_with_durations_captured(
     if !crate::insert_time::retimed::take_exact_edit() {
         crate::derived_clock::sealed_preserved(document, &result)?;
     }
-    // Pruning only removes entries and compaction only rewrites tables new
-    // in this transaction, so equal counts and no new table mean neither
-    // changed anything. Neither touches the structure.
+    // Pruning only removes entries, so equal counts and no new table mean
+    // it changed nothing. It never touches the structure.
     let counts = binding_entry_counts(&result.audio_bindings);
     let new_tables = result
         .audio_bindings
         .timings
         .keys()
         .any(|timing| !document.audio_bindings.timings.contains_key(timing));
-    crate::audio_binding_lifecycle::prune(&mut result);
-    crate::audio_binding_lifecycle::compact_new_timings(
-        &document.audio_bindings,
-        &mut result.audio_bindings,
-    )?;
-    // Original audio placement is derived from the current tree, so a saved
-    // revision keeps only the independent sound clocks and the timing tables
-    // they name; owner bindings from an older revision are dropped.
-    result.audio_bindings = result.audio_bindings.sound_clocks_only();
+    crate::audio_binding::prune(&mut result);
     let basis = result.basis_state.clone();
     result.lock_timed_basis(document)?;
     result.revision_id = request.new_revision.clone();
     // Validation reads neither the revision identity nor anything the
     // unchanged steps above could have changed.
-    if let KnownValidation::Complete((durations, _)) = &known
+    if let KnownValidation::Complete(durations) = &known
         && (new_tables
             || counts != binding_entry_counts(&result.audio_bindings)
             || basis != result.basis_state)
@@ -1879,9 +1827,7 @@ pub(crate) fn net_transaction(
     net_transaction_with_durations(document, result, description, None).map(|(edit, _)| edit)
 }
 
-/// [`net_transaction`], also returning the result's validation. With the
-/// validated `previous` input, binding owners the patch leaves unchanged reuse
-/// their proved checks; the result is otherwise validated completely.
+/// [`net_transaction`], also returning the result's validation.
 fn net_transaction_with_durations(
     document: &ProjectDocument,
     result: &ProjectDocument,
@@ -1898,10 +1844,8 @@ fn net_transaction_with_durations(
 }
 
 /// Entry counts of every binding collection pruning can shrink.
-fn binding_entry_counts(state: &crate::AudioBindingState) -> [usize; 5] {
+fn binding_entry_counts(state: &crate::AudioBindingState) -> [usize; 3] {
     [
-        state.bindings.len(),
-        state.gap_bindings.len(),
         state.sound_clocks.len(),
         state.sound_clocks.values().map(BTreeMap::len).sum(),
         state.timings.len(),
@@ -1965,7 +1909,7 @@ fn net_transaction_known(
         KnownValidation::Complete(validation) => {
             #[cfg(debug_assertions)]
             assert!(
-                result.validated_with_proof().as_ref() == Ok(&validation),
+                result.validated_durations().as_ref() == Ok(&validation),
                 "a reused leaf validation differs from complete validation"
             );
             Some(Err(validation))
@@ -1975,16 +1919,10 @@ fn net_transaction_known(
     };
     let validation = match (structure, previous) {
         (Some(Err(validation)), _) => validation,
-        (structure, Some(previous)) => result.validate_after_with(
-            previous,
-            forward.audio_bindings.as_ref(),
-            structure.and_then(Result::ok),
-        )?,
-        (structure, None) => result.validated_with_structure(structure.and_then(Result::ok))?,
+        (structure, _) => result.validated_with_structure(structure.and_then(Result::ok))?,
     };
     let after_duration = if result.derived_clocks.is_empty() {
         validation
-            .0
             .get(result.root())
             .copied()
             .ok_or_else(|| EditError::new(EditErrorCode::InvalidCommand, "result root is missing"))?
@@ -1992,12 +1930,6 @@ fn net_transaction_known(
     } else {
         result.structural_duration()?.frames()
     };
-    let binding_changed_ids =
-        changed_audio_binding_owners_in(&document.audio_bindings, forward.audio_bindings.as_ref());
-    debug_assert_eq!(
-        binding_changed_ids,
-        changed_audio_binding_owners(&document.audio_bindings, &result.audio_bindings)
-    );
     let edit = EditTransaction {
         changed_ids: forward
             .nodes
@@ -2007,7 +1939,6 @@ fn net_transaction_known(
             .chain(forward.audio_lineage.keys())
             .chain(forward.derived_clocks.keys())
             .chain(forward.beat_sounds.keys())
-            .chain(binding_changed_ids.iter())
             .chain(
                 forward
                     .sound_routes
@@ -2056,77 +1987,6 @@ pub(crate) struct EditContext<'a> {
     pub(crate) allocation: &'a RevisionId,
     pub(crate) allowances: Option<&'a mut crate::sound_allowance::SoundAllowanceEdit>,
     pub(crate) sound_clocks: Option<&'a mut crate::sound_clock::edit::SoundClockEditCapture>,
-}
-
-/// [`changed_audio_binding_owners`] from the exact binding patch between the
-/// two states: its changed owners, and owners whose binding names a changed
-/// timing table. An owner whose binding is unchanged names the same tables in
-/// both states, so scanning the previous owners suffices.
-fn changed_audio_binding_owners_in(
-    before: &crate::AudioBindingState,
-    patch: Option<&crate::AudioBindingPatch>,
-) -> BTreeSet<NodeId> {
-    let Some(patch) = patch else {
-        return BTreeSet::new();
-    };
-    let mut changed: BTreeSet<NodeId> = patch
-        .bindings
-        .keys()
-        .chain(patch.gap_bindings.keys())
-        .cloned()
-        .collect();
-    if !patch.timings.is_empty() {
-        let timings: BTreeSet<_> = patch.timings.iter().map(|change| &change.id).collect();
-        for (_, owner, binding) in before.owners() {
-            if binding
-                .placements()
-                .any(|template| timings.contains(&template.reference.timing))
-            {
-                changed.insert(owner.clone());
-            }
-        }
-    }
-    changed
-}
-
-fn changed_audio_binding_owners(
-    before: &crate::AudioBindingState,
-    after: &crate::AudioBindingState,
-) -> BTreeSet<NodeId> {
-    // Compare each retained layout once; many owners can share a large clock.
-    let changed_timings: BTreeSet<_> = before
-        .timings()
-        .iter()
-        .filter(|(timing, layout)| Some(*layout) != after.timings().get(*timing))
-        .map(|(timing, _)| timing)
-        .chain(
-            after
-                .timings()
-                .keys()
-                .filter(|timing| !before.timings().contains_key(*timing)),
-        )
-        .collect();
-    before
-        .owners()
-        .chain(after.owners())
-        .filter(|(kind, owner, _)| {
-            let (before, after) = match kind {
-                crate::AudioRecipeKind::Node => (before.bindings(), after.bindings()),
-                crate::AudioRecipeKind::RepeatGap => (before.gap_bindings(), after.gap_bindings()),
-            };
-            let previous = before.get(*owner);
-            let next = after.get(*owner);
-            if previous != next {
-                return true;
-            }
-            previous.is_some_and(|binding| {
-                binding
-                    .placements()
-                    .any(|template| changed_timings.contains(&template.reference.timing))
-            })
-        })
-        .map(|(_, owner, _)| owner.clone())
-        .collect()
 }
 
 pub(crate) fn check_revision(
@@ -2574,15 +2434,8 @@ pub(crate) fn reduce(
                     "set-retime updates an ordinary Retime; wrap a transparent partition to preserve its retained context",
                 ));
             };
-            if *current_duration != *duration || *current_pitch != *pitch {
-                *current_duration = *duration;
-                *current_pitch = *pitch;
-                // The changed processing output starts on its current clock.
-                // Retained child recipes keep their own sampling lattices and
-                // resumes; an old output binding must not turn a policy change
-                // into reuse of the previous processing output's phase.
-                document.audio_bindings.bindings.remove(node);
-            }
+            *current_duration = *duration;
+            *current_pitch = *pitch;
         }
         Command::InsertPlays { node, index, count } => {
             let iterations = iterations_mut(document, node)?;
@@ -3801,255 +3654,4 @@ pub(crate) fn check_preserve_bound(
         ));
     }
     Ok(())
-}
-
-#[cfg(test)]
-mod binding_patch_tests {
-    use super::*;
-
-    fn bound_document() -> ProjectDocument {
-        let mut document = ProjectDocument::new(
-            ProjectId::new("bound-patch").unwrap(),
-            RevisionId::new("initial").unwrap(),
-            crate::PresentationBasis {
-                width: 16,
-                height: 16,
-                frame_rate: crate::FrameRate::new(30, 1).unwrap(),
-                color_policy: crate::ColorPolicy::SdrRec709,
-            },
-            NodeId::new("root").unwrap(),
-        )
-        .unwrap();
-        let owners: Vec<_> = ["first", "second"]
-            .into_iter()
-            .map(|name| NodeId::new(name).unwrap())
-            .collect();
-        for owner in &owners {
-            document.nodes.insert(
-                owner.clone(),
-                BeatNode::hold(
-                    "Pause",
-                    HoldRecipe {
-                        picture_context: None,
-                        duration: FrameDuration::new(4).unwrap(),
-                        video: crate::HoldVideo::Background,
-                        audio: crate::HoldAudio::Silence,
-                    },
-                ),
-            );
-        }
-        document.nodes.insert(
-            document.root.clone(),
-            BeatNode::sequence("Root", owners.clone()),
-        );
-        let layout = crate::FrozenAudioLayout::capture(&document).unwrap();
-        let records = owners
-            .iter()
-            .map(|owner| crate::AudioTimingRecord {
-                id: crate::AudioTimingId {
-                    allocation: RevisionId::new(owner.as_str()).unwrap(),
-                    ordinal: 0,
-                },
-                layout: layout.clone(),
-            })
-            .collect::<Vec<_>>();
-        let bindings = owners
-            .into_iter()
-            .zip(&records)
-            .map(|(owner, record)| {
-                (
-                    owner.clone(),
-                    crate::OwnedAudioBinding {
-                        reanchors: Vec::new(),
-                        lattice: crate::AudioPlacementTemplate {
-                            reference_local_offset: crate::ExactRatio::ZERO,
-                            gap_after: None,
-                            reference: crate::AudioReferenceClock {
-                                recipe: crate::AudioRecipeKind::Node,
-                                timing: record.id.clone(),
-                                root: crate::AudioClockRoot::ProjectRootRoundEven,
-                                physical: owner,
-                            },
-                            arguments: vec![],
-                            births: vec![],
-                        },
-                        resume: None,
-                    },
-                )
-            })
-            .collect();
-        document.audio_bindings = crate::AudioBindingState::new(records, bindings).unwrap();
-        document.validate().unwrap();
-        document
-    }
-
-    #[test]
-    fn changed_binding_owners_exclude_untouched_values_and_clocks() {
-        let document = bound_document();
-        let before = document.audio_bindings();
-        let first = NodeId::new("first").unwrap();
-        assert!(changed_audio_binding_owners(before, before).is_empty());
-        let mut changed = before.clone();
-        changed.bindings.get_mut(&first).unwrap().resume = Some(crate::AudioResume {
-            local_boundary: crate::ExactRatio::ZERO,
-            phase: crate::AudioLocalPhase::default(),
-        });
-        assert_eq!(
-            changed_audio_binding_owners(before, &changed),
-            BTreeSet::from([first.clone()])
-        );
-        let mut changed_document = document.clone();
-        let NodeKind::Hold { recipe } = &mut changed_document.nodes.get_mut(&first).unwrap().kind
-        else {
-            panic!("fixture is a Hold");
-        };
-        recipe.duration = FrameDuration::new(5).unwrap();
-        let mut changed_clock = before.clone();
-        let timing = before.bindings()[&first].lattice.reference.timing.clone();
-        changed_clock.timings.insert(
-            timing,
-            crate::FrozenAudioLayout::capture(&changed_document).unwrap(),
-        );
-        assert_eq!(
-            changed_audio_binding_owners(before, &changed_clock),
-            BTreeSet::from([first])
-        );
-    }
-
-    #[test]
-    fn changed_step_only_clock_marks_its_owner_as_changed() {
-        let document = bound_document();
-        let first = NodeId::new("first").unwrap();
-        let second = NodeId::new("second").unwrap();
-        let mut before = document.audio_bindings().clone();
-        let placement = before.bindings[&second].lattice.clone();
-        before
-            .bindings
-            .get_mut(&first)
-            .unwrap()
-            .reanchors
-            .push(crate::AudioReanchorStep {
-                anchor: Default::default(),
-                placement: placement.clone(),
-                window: None,
-            });
-        let mut changed_document = document.clone();
-        let NodeKind::Hold { recipe } = &mut changed_document.nodes.get_mut(&second).unwrap().kind
-        else {
-            panic!("fixture is a Hold");
-        };
-        recipe.duration = FrameDuration::new(5).unwrap();
-        let mut after = before.clone();
-        after.timings.insert(
-            placement.reference.timing,
-            crate::FrozenAudioLayout::capture(&changed_document).unwrap(),
-        );
-        assert_eq!(
-            changed_audio_binding_owners(&before, &after),
-            BTreeSet::from([first, second])
-        );
-    }
-
-    #[test]
-    fn binding_patch_rejects_stale_before_state_without_mutation() {
-        let document = bound_document();
-        let tx = apply(
-            &document,
-            &CommandRequest {
-                project_id: document.project_id().clone(),
-                expected_revision: document.revision_id().clone(),
-                new_revision: RevisionId::new("renamed").unwrap(),
-                command: Command::Rename {
-                    node: document.root().clone(),
-                    label: "Renamed".into(),
-                },
-            },
-        )
-        .unwrap();
-        let mut forged = tx.forward;
-        forged.audio_bindings = crate::AudioBindingPatch::between(
-            &crate::AudioBindingState::default(),
-            document.audio_bindings(),
-        );
-        assert_eq!(
-            forged.apply(&document).unwrap_err().code,
-            EditErrorCode::PatchConflict
-        );
-        assert_eq!(document, bound_document());
-    }
-
-    #[test]
-    fn binding_patch_records_only_changed_entries_and_roundtrips() {
-        let bound = bound_document();
-        let empty = crate::AudioBindingState::default();
-        let first = NodeId::new("first").unwrap();
-        // An empty change is never a valid transaction entry.
-        let mut patch = DocumentPatch {
-            project_id: bound.project_id().clone(),
-            from_revision: bound.revision_id().clone(),
-            to_revision: RevisionId::new("next").unwrap(),
-            presentation: None,
-            nodes: BTreeMap::new(),
-            assets: BTreeMap::new(),
-            marks: BTreeMap::new(),
-            sounds: BTreeMap::new(),
-            beat_sounds: BTreeMap::new(),
-            sound_routes: BTreeMap::new(),
-            sound_allowances: BTreeMap::new(),
-            targets: BTreeMap::new(),
-            source_interpretations: BTreeMap::new(),
-            overrides: BTreeMap::new(),
-            gap_overrides: BTreeMap::new(),
-            audio_lineage: BTreeMap::new(),
-            derived_clocks: BTreeMap::new(),
-            audio_bindings: Some(crate::AudioBindingPatch::default()),
-        };
-        assert_eq!(
-            patch.apply(&bound).unwrap_err().code,
-            EditErrorCode::InvalidCommand
-        );
-        assert!(
-            serde_json::from_str::<crate::AudioBindingPatch>("{}").is_err(),
-            "an empty wire patch is rejected"
-        );
-        // Changing one owner's resume records that owner alone, with no
-        // timing table and no other binding.
-        let mut changed = bound.audio_bindings().clone();
-        changed.bindings.get_mut(&first).unwrap().resume = Some(crate::AudioResume {
-            local_boundary: crate::ExactRatio::ZERO,
-            phase: crate::AudioLocalPhase::default(),
-        });
-        let single = crate::AudioBindingPatch::between(bound.audio_bindings(), &changed).unwrap();
-        assert!(single.timings.is_empty());
-        assert_eq!(single.bindings.keys().collect::<Vec<_>>(), vec![&first]);
-        patch.audio_bindings = Some(single.clone());
-        let after = patch.apply(&bound).unwrap();
-        assert_eq!(after.audio_bindings(), &changed);
-        assert_eq!(patch.inverse().apply(&after).unwrap(), bound);
-        // A complete installation still round-trips through the bounded wire.
-        let install = crate::AudioBindingPatch::between(&empty, bound.audio_bindings()).unwrap();
-        assert_eq!(
-            install.timings.len(),
-            bound.audio_bindings().timings().len()
-        );
-        assert_eq!(install.apply(&empty).unwrap(), *bound.audio_bindings());
-        assert_eq!(
-            install.inverse().apply(bound.audio_bindings()).unwrap(),
-            empty
-        );
-        let wire = serde_json::to_string(&install).unwrap();
-        assert_eq!(
-            serde_json::from_str::<crate::AudioBindingPatch>(&wire).unwrap(),
-            install
-        );
-        // Every before-value is a guard.
-        assert_eq!(
-            single.apply(&empty).unwrap_err().code,
-            EditErrorCode::PatchConflict
-        );
-        assert_eq!(
-            install.apply(bound.audio_bindings()).unwrap_err().code,
-            EditErrorCode::PatchConflict
-        );
-    }
 }

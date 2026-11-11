@@ -41,24 +41,6 @@ fn isolating_one_gap_keeps_every_ntsc_sample_around_a_repeated_preserve() {
     same_pcm(&original, &isolated);
 }
 
-/// Bind every implicit clock without changing structure: equal PCM.
-fn captured(original: &ProjectDocument) -> ProjectDocument {
-    let mut wire = serde_json::to_value(original).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(
-        capture_unbound_audio_bindings(
-            original,
-            AudioTimingId {
-                allocation: revision("captured"),
-                ordinal: 0,
-            },
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    wire["revision_id"] = serde_json::json!("captured");
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
-}
-
 fn trimmed_preserve_repeat() -> ProjectDocument {
     let mut p = preserve("b", 3, 4);
     p.audio_treatments = AudioTreatments::from_clip_gain(
@@ -77,20 +59,9 @@ fn trimmed_preserve_repeat() -> ProjectDocument {
     )
 }
 
-/// The authored-gain owner walk enters a bound Preserve's input clock. At
-/// 30000/1001 the third play's first output sample starts 0.2 sample before
-/// the play's exact origin, which maps to a fraction before input point 0.
-/// It must still be attributed to that input domain, as unbound playback is.
+/// Ordinary edits to unrelated owners keep the limited bus readable.
 #[test]
-fn bound_repeated_preserve_keeps_its_gain_owners_at_a_rounded_down_start() {
-    for original in [trimmed_preserve_repeat(), repeated_preserve()] {
-        same_pcm(&original, &captured(&original));
-    }
-}
-
-/// Ordinary edits that bind unrelated owners keep the limited bus readable.
-#[test]
-fn edits_binding_unrelated_owners_keep_a_gained_preserve_repeat_playable() {
+fn edits_to_unrelated_owners_keep_a_gained_preserve_repeat_playable() {
     let original = trimmed_preserve_repeat();
     let paused = insert_pause(&original, 1, 2, "pause");
     let selection = SliceCaptureSelection::Child { node: id("tail") };

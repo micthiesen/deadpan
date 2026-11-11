@@ -3,10 +3,6 @@
 //! be reconstructed from node IDs or nominal automation coordinates alone.
 
 #[cfg(test)]
-#[path = "authored_eq/legacy_tile_baseline.rs"]
-mod legacy_tile_baseline;
-
-#[cfg(test)]
 #[path = "authored_eq/wide_query_tests.rs"]
 mod wide_query_tests;
 
@@ -19,10 +15,7 @@ use deadpan_dsp::{
     FINITE_FILTER_INPUT_FRAMES as INPUT, FINITE_FILTER_OUTPUT_FRAMES as OUTPUT,
     FINITE_FILTER_RADIUS as RADIUS,
 };
-use deadpan_plan::{
-    AudioOwnerClock, AudioOwnerQuery, AudioOwnerRetainedInput, AudioOwnerSupport,
-    SharedAudioOwnerRetainedInput,
-};
+use deadpan_plan::{AudioOwnerClock, AudioOwnerQuery, AudioOwnerSupport};
 
 use super::*;
 
@@ -55,161 +48,6 @@ pub(super) mod eq_admission_fixture;
 pub(super) enum Context<'plan> {
     Root,
     Domain(Arc<AudioDomain<'plan>>),
-    Retained(SharedAudioOwnerRetainedInput<'plan>),
-}
-
-trait FinalOriginalSharing<'plan> {
-    type Output;
-    type Probe;
-    type Owners;
-
-    fn probe(
-        &mut self,
-        input: &deadpan_plan::AudioOwnerInput<'plan>,
-        at: AudioSample,
-        limits: deadpan_plan::AudioQueryLimits,
-    ) -> Result<Self::Probe, StageAudioError>;
-    fn probe_input(probe: &Self::Probe) -> Option<&AudioOwnerRetainedInput<'plan>>;
-    fn probe_work(probe: &Self::Probe) -> usize;
-    fn probe_was_forwarded(probe: &Self::Probe) -> bool;
-    fn owners(
-        &mut self,
-        retained: &AudioOwnerRetainedInput<'plan>,
-        samples: Range<AudioSample>,
-        limits: deadpan_plan::AudioQueryLimits,
-    ) -> Result<Self::Owners, StageAudioError>;
-    fn owners_query(owners: &Self::Owners) -> &AudioOwnerQuery<'plan>;
-    fn owners_work(owners: &Self::Owners) -> usize;
-    fn owners_was_forwarded(owners: &Self::Owners) -> bool;
-    fn retained(self, probe: Self::Probe) -> Result<Self::Output, StageAudioError>;
-    fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError>;
-}
-
-struct LegacyOriginalSharing;
-impl<'plan> FinalOriginalSharing<'plan> for LegacyOriginalSharing {
-    type Output = Context<'plan>;
-    type Probe = deadpan_plan::AudioOwnerRetainedProbe<'plan>;
-    type Owners = AudioOwnerQuery<'plan>;
-
-    fn probe(
-        &mut self,
-        input: &deadpan_plan::AudioOwnerInput<'plan>,
-        at: AudioSample,
-        limits: deadpan_plan::AudioQueryLimits,
-    ) -> Result<Self::Probe, StageAudioError> {
-        Ok(input.retained_probe_at(at, limits)?)
-    }
-    fn probe_input(probe: &Self::Probe) -> Option<&AudioOwnerRetainedInput<'plan>> {
-        probe.input()
-    }
-    fn probe_work(probe: &Self::Probe) -> usize {
-        probe.work()
-    }
-    fn probe_was_forwarded(_: &Self::Probe) -> bool {
-        false
-    }
-    fn owners(
-        &mut self,
-        retained: &AudioOwnerRetainedInput<'plan>,
-        samples: Range<AudioSample>,
-        limits: deadpan_plan::AudioQueryLimits,
-    ) -> Result<Self::Owners, StageAudioError> {
-        Ok(retained.owners(samples, limits)?)
-    }
-    fn owners_query(owners: &Self::Owners) -> &AudioOwnerQuery<'plan> {
-        owners
-    }
-    fn owners_work(owners: &Self::Owners) -> usize {
-        owners.work()
-    }
-    fn owners_was_forwarded(_: &Self::Owners) -> bool {
-        false
-    }
-    fn retained(self, probe: Self::Probe) -> Result<Self::Output, StageAudioError> {
-        Ok(Context::Retained(
-            probe
-                .into_input()
-                .expect("accepted retained probe")
-                .into_shared(),
-        ))
-    }
-    fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError> {
-        Ok(Context::Domain(Arc::new(value.clone())))
-    }
-}
-
-struct AdmittedOriginalSharing<'admission, 'work, A> {
-    control: WorkControl<'work>,
-    admission: &'admission mut A,
-}
-impl<A> AdmittedOriginalSharing<'_, '_, A>
-where
-    A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
-{
-    fn limits(&self) -> Result<deadpan_plan::AudioQueryLimits, StageAudioError> {
-        if A::METERED {
-            self.control.query_limits()
-        } else {
-            Ok(deadpan_plan::AudioQueryLimits::default())
-        }
-    }
-}
-impl<'plan, A> FinalOriginalSharing<'plan> for AdmittedOriginalSharing<'_, '_, A>
-where
-    A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
-{
-    type Output = deadpan_plan::AdmittedOriginalContext<'plan, A::Issuer, A::Lease>;
-    type Probe = deadpan_plan::AdmittedAudioOwnerRetainedProbe<'plan, A::Issuer, A::Lease>;
-    type Owners = deadpan_plan::AdmittedAudioOwnerQuery<'plan, A::Issuer, A::Lease>;
-
-    fn probe(
-        &mut self,
-        input: &deadpan_plan::AudioOwnerInput<'plan>,
-        at: AudioSample,
-        limits: deadpan_plan::AudioQueryLimits,
-    ) -> Result<Self::Probe, StageAudioError> {
-        let probe = input.retained_probe_at_admitted(at, limits, self.admission)?;
-        if probe.was_forwarded() != A::METERED {
-            return Err(PlanError::InvalidPlan("retained probe accounting mode differs").into());
-        }
-        Ok(probe)
-    }
-    fn probe_input(probe: &Self::Probe) -> Option<&AudioOwnerRetainedInput<'plan>> {
-        probe.input()
-    }
-    fn probe_work(probe: &Self::Probe) -> usize {
-        probe.work()
-    }
-    fn probe_was_forwarded(probe: &Self::Probe) -> bool {
-        probe.was_forwarded()
-    }
-    fn owners(
-        &mut self,
-        retained: &AudioOwnerRetainedInput<'plan>,
-        samples: Range<AudioSample>,
-        limits: deadpan_plan::AudioQueryLimits,
-    ) -> Result<Self::Owners, StageAudioError> {
-        let owners = retained.owners_admitted(samples, limits, self.admission)?;
-        if owners.was_forwarded() != A::METERED {
-            return Err(PlanError::InvalidPlan("retained owners accounting mode differs").into());
-        }
-        Ok(owners)
-    }
-    fn owners_query(owners: &Self::Owners) -> &AudioOwnerQuery<'plan> {
-        owners.query()
-    }
-    fn owners_work(owners: &Self::Owners) -> usize {
-        owners.work()
-    }
-    fn owners_was_forwarded(owners: &Self::Owners) -> bool {
-        owners.was_forwarded()
-    }
-    fn retained(self, probe: Self::Probe) -> Result<Self::Output, StageAudioError> {
-        probe.into_shared_admitted(self.limits()?, self.admission)
-    }
-    fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError> {
-        value.clone_shared_admitted(self.limits()?, self.admission)
-    }
 }
 
 impl<'plan> Context<'plan> {
@@ -221,7 +59,6 @@ impl<'plan> Context<'plan> {
         let support = match self {
             Self::Root => AudioSample(0)..plan.audio_duration()?,
             Self::Domain(domain) => domain.root_samples(),
-            Self::Retained(_) => return Ok(range),
         };
         Ok(range.start.max(support.start)..range.end.min(support.end))
     }
@@ -259,7 +96,6 @@ impl<'plan> Context<'plan> {
         let query = match self {
             Self::Root => plan.audio_gain_owners_admitted(range, limits, admission)?,
             Self::Domain(domain) => domain.gain_owners_admitted(range, limits, admission)?,
-            Self::Retained(input) => input.owners_admitted(range, limits, admission)?,
         };
         if query.was_forwarded() != A::METERED {
             return Err(PlanError::InvalidPlan("wide owner query accounting mode differs").into());
@@ -280,7 +116,6 @@ impl<'plan> Context<'plan> {
         let query = match self {
             Self::Root => plan.audio_gain_owners(range, control.query_limits()?)?,
             Self::Domain(domain) => domain.gain_owners(range, control.query_limits()?)?,
-            Self::Retained(input) => input.owners(range, control.query_limits()?)?,
         };
         Self::admit_owner_query(&query, control)?;
         Ok(query)
@@ -306,6 +141,7 @@ impl<'plan> Context<'plan> {
         Ok(())
     }
 
+    #[cfg(test)]
     pub(super) fn owner_context(
         &self,
         plan: &'plan RenderPlan,
@@ -316,9 +152,6 @@ impl<'plan> Context<'plan> {
         let input = match self {
             Self::Root => plan.audio_owner_input(owner, at, control.query_limits()?)?,
             Self::Domain(domain) => domain.owner_input(owner, at, control.query_limits()?)?,
-            // An enclosing retained processor must stay on its exact consumer
-            // grid. Owner membership is checked by this context's query.
-            Self::Retained(input) => return Ok(Self::Retained(input.clone())),
         };
         control.spend_plan_work(input.work())?;
         Self::finish_paid_owner_input(&input, owner, at, control)
@@ -326,65 +159,32 @@ impl<'plan> Context<'plan> {
 
     /// Input construction has already been billed, either in full by
     /// owner_context or as query plus capture by the candidate consumer.
+    #[cfg(test)]
     pub(super) fn finish_paid_owner_input(
         input: &deadpan_plan::AudioOwnerInput<'plan>,
-        owner: &AudioOwnerClock<'plan>,
-        at: AudioSample,
-        control: WorkControl<'_>,
+        _owner: &AudioOwnerClock<'plan>,
+        _at: AudioSample,
+        _control: WorkControl<'_>,
     ) -> Result<Self, StageAudioError> {
-        Self::finish_paid_owner_input_with(input, owner, at, control, LegacyOriginalSharing)
+        Ok(Self::Domain(Arc::new(input.context().clone())))
     }
 
     pub(super) fn finish_paid_owner_input_admitted<A>(
         input: &deadpan_plan::AudioOwnerInput<'plan>,
-        owner: &AudioOwnerClock<'plan>,
-        at: AudioSample,
+        _owner: &AudioOwnerClock<'plan>,
+        _at: AudioSample,
         control: WorkControl<'_>,
         admission: &mut A,
     ) -> Result<deadpan_plan::AdmittedOriginalContext<'plan, A::Issuer, A::Lease>, StageAudioError>
     where
         A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
     {
-        Self::finish_paid_owner_input_with(
-            input,
-            owner,
-            at,
-            control,
-            AdmittedOriginalSharing { control, admission },
-        )
-    }
-
-    // Both strategies use the same actual probe, owners and boundary decision.
-    // The admitted strategy keeps its real probe guarded through final sharing.
-    fn finish_paid_owner_input_with<S: FinalOriginalSharing<'plan>>(
-        input: &deadpan_plan::AudioOwnerInput<'plan>,
-        owner: &AudioOwnerClock<'plan>,
-        at: AudioSample,
-        control: WorkControl<'_>,
-        mut share: S,
-    ) -> Result<S::Output, StageAudioError> {
-        let probe = share.probe(input, at, control.query_limits()?)?;
-        if !S::probe_was_forwarded(&probe) {
-            control.spend_plan_work(S::probe_work(&probe))?;
-        }
-        if let Some(retained) = S::probe_input(&probe) {
-            let end = AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?);
-            let owners = share.owners(retained, at..end, control.query_limits()?)?;
-            if !S::owners_was_forwarded(&owners) {
-                control.spend_plan_work(S::owners_work(&owners))?;
-            }
-            if S::owners_query(&owners).spans().iter().any(|span| {
-                span.owners()
-                    .iter()
-                    .any(|candidate| owner.matches_treatment_owner(candidate))
-            }) {
-                return share.retained(probe);
-            }
-        }
-        // Rejected Some and positive-work None release their actual probe
-        // before the existing fallback Domain copy begins.
-        drop(probe);
-        share.domain(input.context())
+        let limits = if A::METERED {
+            control.query_limits()?
+        } else {
+            deadpan_plan::AudioQueryLimits::default()
+        };
+        input.context().clone_shared_admitted(limits, admission)
     }
 }
 
@@ -610,14 +410,6 @@ impl StageAudio {
                     count,
                     control,
                     (program.depth, true),
-                )?,
-                Context::Retained(input) => self.read_retained_controlled(
-                    provider,
-                    input,
-                    range.start,
-                    count,
-                    control,
-                    (program.depth, false),
                 )?,
             };
             result.dependencies.extend(raw.dependencies);

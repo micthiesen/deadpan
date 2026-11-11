@@ -95,13 +95,11 @@ pub(crate) fn delete(
     validate_timing(document, timing, allocation)?;
     let site = site(document, instance)?;
     let total = document.duration()?.frames();
-    let working = if site.start == site.end || site.end == total {
-        // No surviving time moves. Avoid retaining an unused sampling layout.
-        document.clone()
-    } else {
-        let affected = composite::occurrence_shifted_owners(document, &site.parent, site.slot + 1)?;
-        composite::prepare_owners(document, &affected, ProjectFrame(site.end), total, timing)?
-    };
+    if site.start != site.end && site.end != total {
+        // Refuse a suffix that would cross a Retime ancestor.
+        composite::occurrence_shifted_owners(document, &site.parent, site.slot + 1)?;
+    }
+    let working = document.clone();
     let mut result = working.clone();
     crate::command::reduce(
         &mut result,
@@ -116,7 +114,7 @@ pub(crate) fn delete(
     };
     crate::audio_lineage::reconcile(&working, &mut result, &command)?;
     result.marks = crate::marks::transform_marks(&working, &result, &command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     result.validate()?;
     Ok(result)
 }
@@ -291,21 +289,22 @@ pub(crate) fn paste_source(
     let resolved = resolve(document, instance, destination, splits)?;
     let node = crate::insert_time::source_leaf(label, source.clone());
     match resolved.kind {
-        ResolvedKind::Seam(index) => crate::insert_time::splice_source_in_occurrence(
-            document,
-            &resolved.parent,
-            index,
+        ResolvedKind::Seam(index) => {
             crate::insert_time::source_splice::boundary_in(
                 document,
                 &resolved.parent,
                 index,
                 Some(resolved.origin),
-            )?,
-            id,
-            node,
-            timing,
-            allocation,
-        ),
+            )?;
+            crate::insert_time::splice_source_in_occurrence(
+                document,
+                &resolved.parent,
+                index,
+                id,
+                node,
+                allocation,
+            )
+        }
         ResolvedKind::Interior { target, at } => {
             crate::insert_time::source_splice::apply_interior_in_occurrence(
                 document,
@@ -387,14 +386,10 @@ pub(crate) fn wrap_repeat(
         .checked_sub(site.end - site.start)
         .and_then(|frames| frames.checked_add(output.frames()))
         .ok_or_else(overflow)?;
-    let mut working = document.clone();
-    // The first play retains the old root phase and established birth scopes.
-    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
+    let working = document.clone();
     if plays > 1 && site.end < total {
-        let suffix = next_timing(&working, timing)?;
-        let affected = composite::occurrence_shifted_owners(&working, &site.parent, site.slot + 1)?;
-        working =
-            composite::prepare_owners(&working, &affected, ProjectFrame(site.end), total, &suffix)?;
+        // Refuse a suffix that would cross a Retime ancestor.
+        composite::occurrence_shifted_owners(&working, &site.parent, site.slot + 1)?;
     }
     let mut result = working.clone();
     let mut repeat = BeatNode::sequence("Repeat", Vec::new());
@@ -425,7 +420,7 @@ pub(crate) fn wrap_repeat(
     };
     crate::audio_lineage::reconcile(&working, &mut result, &command)?;
     result.marks = crate::marks::transform_marks(&working, &result, &command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     result.validate()?;
     Ok(result)
 }
@@ -474,20 +469,17 @@ pub(crate) fn set_repeat_plays(
         gap,
     };
     let total = document.duration()?.frames();
-    let mut working = document.clone();
-    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
+    let working = document.clone();
     // A Repeat child has positive duration, so any new count moves the end.
     if site.end < total {
-        let suffix = next_timing(&working, timing)?;
-        let affected = composite::occurrence_shifted_owners(&working, &site.parent, site.slot + 1)?;
-        working =
-            composite::prepare_owners(&working, &affected, ProjectFrame(site.end), total, &suffix)?;
+        // Refuse a suffix that would cross a Retime ancestor.
+        composite::occurrence_shifted_owners(&working, &site.parent, site.slot + 1)?;
     }
     let mut result = working.clone();
     crate::command::reduce(&mut result, &command, allocation)?;
     crate::audio_lineage::reconcile(&working, &mut result, &command)?;
     result.marks = crate::marks::transform_marks(&working, &result, &command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     result.validate()?;
     Ok(result)
 }
@@ -548,34 +540,17 @@ pub(crate) fn set_repeat_gaps(
     };
     let mut trial = document.clone();
     reduce(&mut trial)?;
-    crate::audio_binding_lifecycle::prune(&mut trial);
+    crate::audio_binding::prune(&mut trial);
     let duration = trial.durations()?[node].frames();
     let total = document.duration()?.frames();
-    let mut working = document.clone();
-    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
-    // Later plays and gaps move with the gaps before them; each keeps its
-    // own pre-edit clock, captured once before the tree changes.
-    let first_end =
-        crate::repeat_selection::first_play_end(document, node, ProjectFrame(site.start))?;
-    if first_end.0 < site.end {
-        let interior = next_timing(&working, timing)?;
-        working = composite::prepare_owners(
-            &working,
-            &composite::repeat_interior_owners(&working, node)?,
-            first_end,
-            site.end,
-            &interior,
-        )?;
-    }
+    let working = document.clone();
     if duration != site.end - site.start && site.end < total {
-        let suffix = next_timing(&working, timing)?;
-        let affected = composite::occurrence_shifted_owners(&working, &site.parent, site.slot + 1)?;
-        working =
-            composite::prepare_owners(&working, &affected, ProjectFrame(site.end), total, &suffix)?;
+        // Refuse a suffix that would cross a Retime ancestor.
+        composite::occurrence_shifted_owners(&working, &site.parent, site.slot + 1)?;
     }
     let mut result = working.clone();
     reduce(&mut result)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     let command = Command::SetRepeat {
         node: node.clone(),
         plays,
@@ -583,7 +558,7 @@ pub(crate) fn set_repeat_gaps(
     };
     crate::audio_lineage::reconcile(&working, &mut result, &command)?;
     result.marks = crate::marks::transform_marks(&working, &result, &command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     result.validate()?;
     Ok(result)
 }
@@ -650,25 +625,6 @@ fn validate_timing(
         ));
     }
     Ok(())
-}
-
-fn next_timing(
-    document: &ProjectDocument,
-    base: &AudioTimingId,
-) -> Result<AudioTimingId, EditError> {
-    // Reserve the base identity even when capture omitted it.
-    let mut next = base.clone();
-    loop {
-        next.ordinal = next.ordinal.checked_add(1).ok_or_else(|| {
-            EditError::new(
-                EditErrorCode::LimitExceeded,
-                "one-play Repeat requires another timing identity",
-            )
-        })?;
-        if !document.audio_bindings().timings.contains_key(&next) {
-            return Ok(next);
-        }
-    }
 }
 
 fn invalid(message: &str) -> EditError {

@@ -340,15 +340,6 @@ fn dormant(outer: bool) -> ProjectDocument {
             .insert(iteration("inner", 0), node("inner-hidden"));
     }
     document.validate().unwrap();
-    document.audio_bindings = crate::capture_unbound_audio_bindings(
-        &document,
-        AudioTimingId {
-            allocation: revision("dormant-clock"),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    document.validate().unwrap();
     document
 }
 

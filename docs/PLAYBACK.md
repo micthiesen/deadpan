@@ -76,7 +76,7 @@ Navigation discards the paused delivery coordinate. A fault never restarts a loo
 
 This is **limited audition**, with the full preview/export audio contract still open.
 It uses canonical source audio, structural Repeat/Retime/Hold semantics, room
-tone, authored bindings, edge fades and exact owner-clock
+tone, derived cut edges, edge fades and exact owner-clock
 [node gain/mute](AUDIO_GAIN.md). Gain follows complete time/pitch mapping and
 edges. Persisted
 [sound events](SOUND_EVENTS.md) enter this same bus with independent treatments,

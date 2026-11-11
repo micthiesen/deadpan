@@ -59,22 +59,6 @@ fn fixture(
     )
 }
 
-fn capture(document: &ProjectDocument) -> ProjectDocument {
-    let mut wire = serde_json::to_value(document).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(
-        capture_unbound_audio_bindings(
-            document,
-            AudioTimingId {
-                allocation: RevisionId::new("selected-capture").unwrap(),
-                ordinal: 0,
-            },
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
-}
-
 #[test]
 fn selected_empty_host_intersections_and_zero_point_windows_do_not_read_media() {
     let rate = FrameRate::new(48_000, 1).unwrap();
@@ -83,12 +67,12 @@ fn selected_empty_host_intersections_and_zero_point_windows_do_not_read_media() 
         ExactFrameRange::new(ExactRatio::integer(1000), ExactRatio::integer(1200)).unwrap(),
         ExactFrameRange::new(ratio(1, 10), ratio(1, 5)).unwrap(),
     ] {
-        let (unbound, mut provider) = fixture(
+        let (doc, mut provider) = fixture(
             48_000,
             selected(rate, 48_000, 400, ExactRatio::integer(-3), window, 0),
             rate,
         );
-        for doc in [unbound.clone(), capture(&unbound)] {
+        {
             let plan = Arc::new(RenderPlan::compile(&doc).unwrap());
             let definition = plan
                 .audio_definition(AudioDefinitionSelector::Node { node: id("source") })
@@ -183,21 +167,6 @@ fn selected_source_follow_speed_uses_exact_window_on_its_retained_physical_grid(
             .chain(&actual[256..])
             .all(|v| *v == [0.; 2])
     );
-    let mut wire = serde_json::to_value(&doc).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(
-        capture_unbound_audio_bindings(
-            &doc,
-            AudioTimingId {
-                allocation: RevisionId::new("selected-tape-clock").unwrap(),
-                ordinal: 0,
-            },
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let mut renderer = StageAudio::new(Arc::new(RenderPlan::compile(&bound).unwrap()));
-    assert_eq!(read_all(&mut renderer, &mut provider, &[7, 127]), actual);
 }
 
 #[test]
@@ -399,20 +368,4 @@ fn selection_masks_physical_transfer_but_preserve_retains_its_decay() {
         actual[3072..].iter().any(|v| *v != [0.; 2]),
         "a selection endpoint must not become a silent Hold after Preserve"
     );
-    let bindings = capture_unbound_audio_bindings(
-        &stretched,
-        AudioTimingId {
-            allocation: RevisionId::new("selection-capture").unwrap(),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(&stretched).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-    let captured = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let mut captured_renderer = StageAudio::new(Arc::new(RenderPlan::compile(&captured).unwrap()));
-    let captured_pcm = read_all(&mut captured_renderer, &mut provider, &[17, 256]);
-    for (index, (actual, expected)) in captured_pcm.iter().zip(&expected).enumerate() {
-        assert_eq!(actual, expected, "captured Preserve output sample {index}");
-    }
 }

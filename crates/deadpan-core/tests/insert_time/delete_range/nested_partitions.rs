@@ -159,10 +159,10 @@ fn nested_deletion_identity_bounds_and_timing_rejections_are_atomic() {
     let Command::DeleteRange { timing, .. } = &mut exhausted.command else {
         unreachable!()
     };
-    timing.ordinal = u32::MAX;
+    timing.allocation = RevisionId::new("wrong-timing").unwrap();
     assert_eq!(
         apply(&before, &exhausted).unwrap_err().code,
-        EditErrorCode::LimitExceeded
+        EditErrorCode::InvalidCommand
     );
     assert_eq!(before.to_json().unwrap(), original);
 }

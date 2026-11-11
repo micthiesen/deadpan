@@ -439,18 +439,6 @@ fn temporal_and_occurrence_edits_fail_before_transforming_retained_context() {
             .message
             .contains("sound events")
     );
-    assert!(
-        capture_unbound_audio_bindings(
-            &document,
-            AudioTimingId {
-                allocation: RevisionId::new("capture").unwrap(),
-                ordinal: 0,
-            }
-        )
-        .unwrap_err()
-        .message
-        .contains("sound events")
-    );
     let (renamed, _) = edit(
         &document,
         Command::Rename {

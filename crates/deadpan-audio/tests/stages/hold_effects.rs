@@ -429,23 +429,7 @@ fn tails_in_repeats_splits_and_bound_clocks_render_and_the_original_after_them_r
     let split = split_command(&document, &id("pause"), 1_000, "split-pause");
     let split = split_command(&split, &id("after"), 1_000, "split-after");
     assert_pcm_close(&read_document(&split), &whole);
-    // Retained (bound) clocks read the same PCM, tails included.
-    let bound = {
-        let mut wire = serde_json::to_value(&split).unwrap();
-        wire["audio_bindings"] = serde_json::to_value(
-            capture_unbound_audio_bindings(
-                &split,
-                AudioTimingId {
-                    allocation: RevisionId::new("bound").unwrap(),
-                    ordinal: 0,
-                },
-            )
-            .unwrap(),
-        )
-        .unwrap();
-        ProjectDocument::from_json(&wire.to_string()).unwrap()
-    };
-    assert_pcm_close(&read_document(&bound), &whole);
+    let bound = split;
     // Point-grid definition reads never fail: the played group's tail has no
     // edit position there and is silent, and the Original after it reads.
     let planned = Arc::new(RenderPlan::compile(&bound).unwrap());

@@ -30950,7 +30950,7 @@
         "project_id": "owner-clocks",
         "revision_id": "current",
         "root": "root",
-        "schema_version": 58
+        "schema_version": 59
       },
       "fixture": "unbound_sequence_tone_and_actual_domain",
       "witnesses": {
@@ -38577,7 +38577,7 @@
         "project_id": "owner-clocks",
         "revision_id": "current",
         "root": "root",
-        "schema_version": 58
+        "schema_version": 59
       },
       "fixture": "stable_repeat_plays_default_gap_and_overrides",
       "witnesses": {
@@ -40934,110 +40934,6 @@
       ],
       "document": {
         "assets": {},
-        "audio_bindings": {
-          "bindings": {
-            "stage": {
-              "lattice": {
-                "reference": {
-                  "physical": "stage",
-                  "timing": {
-                    "allocation": "retained-clock",
-                    "ordinal": 0
-                  }
-                }
-              },
-              "resume": {
-                "phase": {
-                  "constant": {
-                    "denominator": "1",
-                    "numerator": "3"
-                  },
-                  "terms": []
-                }
-              }
-            }
-          },
-          "timings": [
-            {
-              "id": {
-                "allocation": "retained-clock",
-                "ordinal": 0
-              },
-              "layout": {
-                "nodes": {
-                  "a": {
-                    "duration": 2,
-                    "editorial_edges": {
-                      "end": true,
-                      "start": true
-                    },
-                    "kind": {
-                      "audio": {
-                        "frequency_hz": 440,
-                        "level": -6000,
-                        "type": "tone"
-                      },
-                      "type": "hold"
-                    }
-                  },
-                  "b": {
-                    "duration": 2,
-                    "editorial_edges": {
-                      "end": true,
-                      "start": true
-                    },
-                    "kind": {
-                      "audio": {
-                        "frequency_hz": 440,
-                        "level": -6000,
-                        "type": "tone"
-                      },
-                      "type": "hold"
-                    }
-                  },
-                  "group": {
-                    "duration": 4,
-                    "kind": {
-                      "children": [
-                        "a",
-                        "b"
-                      ],
-                      "type": "sequence"
-                    }
-                  },
-                  "root": {
-                    "duration": 8,
-                    "kind": {
-                      "children": [
-                        "stage"
-                      ],
-                      "type": "sequence"
-                    }
-                  },
-                  "stage": {
-                    "duration": 8,
-                    "kind": {
-                      "child": "group",
-                      "mapping": {
-                        "end": 4,
-                        "start": 0
-                      },
-                      "pitch": "preserve",
-                      "purpose": "edit",
-                      "type": "retime"
-                    }
-                  }
-                },
-                "overrides": {},
-                "rate": {
-                  "denominator": 1,
-                  "numerator": 48000
-                },
-                "root": "root"
-              }
-            }
-          ]
-        },
         "basis_state": {
           "geometry_origin": "explicit",
           "primary": null,
@@ -41155,7 +41051,7 @@
         "project_id": "owner-clocks",
         "revision_id": "current",
         "root": "root",
-        "schema_version": 58
+        "schema_version": 59
       },
       "fixture": "hidden_resumed_retained_domain_vs_live_root",
       "witnesses": {
@@ -41358,7 +41254,7 @@
           "project_id": "owner-clocks",
           "revision_id": "current",
           "root": "root",
-          "schema_version": 58
+          "schema_version": 59
         },
         "incorrect_root_query": {
           "belongs_to_expected_plan": true,
@@ -42409,114 +42305,6 @@
             "video": null
           }
         },
-        "audio_bindings": {
-          "bindings": {
-            "voice": {
-              "lattice": {
-                "reference": {
-                  "physical": "voice",
-                  "root": {
-                    "stage": "stage",
-                    "type": "preserve_input_point_ceil"
-                  },
-                  "timing": {
-                    "allocation": "retained-clock",
-                    "ordinal": 0
-                  }
-                }
-              }
-            }
-          },
-          "timings": [
-            {
-              "id": {
-                "allocation": "retained-clock",
-                "ordinal": 0
-              },
-              "layout": {
-                "nodes": {
-                  "group": {
-                    "duration": 3,
-                    "kind": {
-                      "children": [
-                        "prefix",
-                        "voice"
-                      ],
-                      "type": "sequence"
-                    }
-                  },
-                  "prefix": {
-                    "duration": 1,
-                    "editorial_edges": {
-                      "end": true,
-                      "start": true
-                    },
-                    "kind": {
-                      "audio": {
-                        "frequency_hz": 440,
-                        "level": -6000,
-                        "type": "tone"
-                      },
-                      "type": "hold"
-                    }
-                  },
-                  "root": {
-                    "duration": 6,
-                    "kind": {
-                      "children": [
-                        "stage"
-                      ],
-                      "type": "sequence"
-                    }
-                  },
-                  "stage": {
-                    "duration": 6,
-                    "kind": {
-                      "child": "group",
-                      "mapping": {
-                        "end": 3,
-                        "start": 0
-                      },
-                      "pitch": {
-                        "shift": {
-                          "semitones": 3
-                        }
-                      },
-                      "purpose": "edit",
-                      "type": "retime"
-                    }
-                  },
-                  "voice": {
-                    "duration": 2,
-                    "editorial_edges": {
-                      "end": true,
-                      "start": true
-                    },
-                    "kind": {
-                      "placement": {
-                        "end": {
-                          "denominator": "1",
-                          "numerator": "2"
-                        },
-                        "start": {
-                          "denominator": "1",
-                          "numerator": "0"
-                        }
-                      },
-                      "type": "source"
-                    }
-                  }
-                },
-                "overrides": {},
-                "rate": {
-                  "denominator": 1,
-                  "numerator": 32000
-                },
-                "root": "root"
-              }
-            }
-          ]
-        },
         "basis_state": {
           "geometry_origin": "explicit",
           "primary": null,
@@ -42590,7 +42378,7 @@
         "project_id": "owner-source-baseline",
         "revision_id": "current",
         "root": "root",
-        "schema_version": 58
+        "schema_version": 59
       },
       "fixture": "nonunity_shift_fractional_point_ceil_source44100",
       "witnesses": {
@@ -42741,7 +42529,7 @@
           "project_id": "owner-source-baseline",
           "revision_id": "current",
           "root": "root",
-          "schema_version": 58
+          "schema_version": 59
         },
         "media_opened": false,
         "qualified_provider_admission_claimed": false,
@@ -44674,79 +44462,6 @@
             "video": null
           }
         },
-        "audio_bindings": {
-          "bindings": {
-            "baseline-cut-2": {
-              "lattice": {
-                "reference": {
-                  "physical": "voice",
-                  "timing": {
-                    "allocation": "baseline-pre-split-lattice",
-                    "ordinal": 0
-                  }
-                }
-              }
-            },
-            "voice": {
-              "lattice": {
-                "reference": {
-                  "physical": "voice",
-                  "timing": {
-                    "allocation": "baseline-pre-split-lattice",
-                    "ordinal": 0
-                  }
-                }
-              }
-            }
-          },
-          "timings": [
-            {
-              "id": {
-                "allocation": "baseline-pre-split-lattice",
-                "ordinal": 0
-              },
-              "layout": {
-                "nodes": {
-                  "root": {
-                    "duration": 6,
-                    "kind": {
-                      "children": [
-                        "voice"
-                      ],
-                      "type": "sequence"
-                    }
-                  },
-                  "voice": {
-                    "duration": 6,
-                    "editorial_edges": {
-                      "end": true,
-                      "start": true
-                    },
-                    "kind": {
-                      "placement": {
-                        "end": {
-                          "denominator": "1",
-                          "numerator": "6"
-                        },
-                        "start": {
-                          "denominator": "1",
-                          "numerator": "0"
-                        }
-                      },
-                      "type": "source"
-                    }
-                  }
-                },
-                "overrides": {},
-                "rate": {
-                  "denominator": 1,
-                  "numerator": 48000
-                },
-                "root": "root"
-              }
-            }
-          ]
-        },
         "audio_lineage": {
           "baseline-cut-2": {
             "allocation": "baseline-split",
@@ -44902,7 +44617,7 @@
         "project_id": "owner-source-baseline",
         "revision_id": "baseline-split",
         "root": "root",
-        "schema_version": 58
+        "schema_version": 59
       },
       "fixture": "actual_source_split_with_preexisting_lattice_retained_root_round_even_clipped_window",
       "witnesses": {
@@ -46067,68 +45782,6 @@
               "video": null
             }
           },
-          "audio_bindings": {
-            "bindings": {
-              "voice": {
-                "lattice": {
-                  "reference": {
-                    "physical": "voice",
-                    "timing": {
-                      "allocation": "baseline-pre-split-lattice",
-                      "ordinal": 0
-                    }
-                  }
-                }
-              }
-            },
-            "timings": [
-              {
-                "id": {
-                  "allocation": "baseline-pre-split-lattice",
-                  "ordinal": 0
-                },
-                "layout": {
-                  "nodes": {
-                    "root": {
-                      "duration": 6,
-                      "kind": {
-                        "children": [
-                          "voice"
-                        ],
-                        "type": "sequence"
-                      }
-                    },
-                    "voice": {
-                      "duration": 6,
-                      "editorial_edges": {
-                        "end": true,
-                        "start": true
-                      },
-                      "kind": {
-                        "placement": {
-                          "end": {
-                            "denominator": "1",
-                            "numerator": "6"
-                          },
-                          "start": {
-                            "denominator": "1",
-                            "numerator": "0"
-                          }
-                        },
-                        "type": "source"
-                      }
-                    }
-                  },
-                  "overrides": {},
-                  "rate": {
-                    "denominator": 1,
-                    "numerator": 48000
-                  },
-                  "root": "root"
-                }
-              }
-            ]
-          },
           "basis_state": {
             "geometry_origin": "explicit",
             "primary": null,
@@ -46202,7 +45855,7 @@
           "project_id": "owner-source-baseline",
           "revision_id": "current",
           "root": "root",
-          "schema_version": 58
+          "schema_version": 59
         },
         "current_variant_label_required": true,
         "explicit_pre_split_lattice_capture": true,
@@ -46308,7 +45961,7 @@
           "project_id": "owner-source-baseline",
           "revision_id": "current",
           "root": "root",
-          "schema_version": 58
+          "schema_version": 59
         }
       }
     }
@@ -47365,7 +47018,7 @@
         "project_id": "owner-source-baseline",
         "revision_id": "current",
         "root": "root",
-        "schema_version": 58
+        "schema_version": 59
       }
     },
     {
@@ -48107,7 +47760,7 @@
         "project_id": "owner-source-baseline",
         "revision_id": "current",
         "root": "root",
-        "schema_version": 58
+        "schema_version": 59
       }
     }
   ],

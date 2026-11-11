@@ -260,19 +260,4 @@ fn speed_update_rate_preflight_skips_positive_interval_with_no_new_mix_samples()
     let after = transaction.forward.apply(&before).unwrap();
     assert_eq!(after.exact_durations().unwrap()[after.root()], ratio(5, 1));
     assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
-    // At1000 output frames that same fragment receives samples, but the
-    // historical transfer100003/1000 is still above64 and must refuse.
-    let snapshot = before.to_json().unwrap();
-    for result in [
-        before.validate_retime_update(&id("slow"), duration(1000), PitchPolicy::FollowSpeed),
-        apply(&before, &update(&before, "nonempty-transfer-refused", 1000)).map(|_| ()),
-    ] {
-        assert!(
-            result
-                .unwrap_err()
-                .message
-                .contains("retained audio transfer")
-        );
-    }
-    assert_eq!(before.to_json().unwrap(), snapshot);
 }

@@ -445,18 +445,17 @@ impl CapturedEditSlice {
         let state = if range.duration() == FrameDuration::ZERO {
             // A validated zero-duration owned tree can contain only Sequences.
             // Prove this rather than discarding a physical owner's clock.
-            if selected.iter().any(|id| {
-                !matches!(document.nodes()[id].kind, NodeKind::Sequence { .. })
-                    || document.audio_bindings.bindings.contains_key(id)
-                    || document.audio_bindings.gap_bindings.contains_key(id)
-            }) {
+            if selected
+                .iter()
+                .any(|id| !matches!(document.nodes()[id].kind, NodeKind::Sequence { .. }))
+            {
                 return Err(invalid(
-                    "empty structural capture requires a Sequence-only forest without physical audio bindings",
+                    "empty structural capture requires a Sequence-only forest",
                 ));
             }
             AudioBindingState::default()
         } else {
-            capture_audio(document, &parts, &selected, range, plays, &timing)?
+            capture_audio(document, &parts, &selected, &timing)?
         };
         let nodes: BTreeMap<_, _> = selected
             .iter()
@@ -951,90 +950,22 @@ fn capture_audio(
     document: &ProjectDocument,
     parts: &[SlicePart],
     selected: &BTreeSet<NodeId>,
-    range: FrameRange,
-    plays: &[crate::RepeatInstance],
     timing: &AudioTimingId,
 ) -> Result<AudioBindingState, EditError> {
-    // Check before detaching voices: pruning can remove a clock-only record,
-    // but its identity must not be reused for the capture-time layout.
+    // The capture-time layout needs a fresh identity.
     if document.audio_bindings.timings.contains_key(timing) {
         return Err(invalid("slice capture timing identity already exists"));
     }
-    // The independent root bus is outside this ownership selection. Only a
-    // private structural view is detached; the source document is unchanged.
-    let mut structural = document.clone();
-    structural.sounds.clear();
-    structural.sound_routes.clear();
-    structural.sound_allowances.clear();
-    // Independent voices are captured separately from physical source bindings.
-    structural.audio_bindings.sound_clocks.clear();
-    crate::audio_binding_lifecycle::prune(&mut structural);
-    let captured = crate::audio_binding_lifecycle::capture_for_composite_insertion(
-        &structural,
-        timing.clone(),
-    )?;
-    let mut state = captured.state;
-    if let Some(layout) = captured.phase_only_layout {
-        state.timings.insert(timing.clone(), layout);
-    }
-    let mut affected = BTreeSet::new();
-    let mut pending: Vec<_> = parts.iter().map(|part| &part.root).collect();
-    while let Some(id) = pending.pop() {
-        affected.insert(id.clone());
-        if !matches!(&document.nodes()[id].kind,
-                NodeKind::Retime { duration, mapping, pitch, .. }
-                if pitch.processes(*duration == mapping.duration()))
-        {
-            pending.extend(document.children(id));
-        }
-    }
-    let window = ExactFrameRange::new(
-        ExactRatio::integer(range.start().0),
-        ExactRatio::integer(range.end().0),
-    )?;
-    let mut entries = state
-        .owners()
-        .flat_map(|(_, _, binding)| binding.placements())
-        .try_fold(0usize, |count, placement| {
-            count
-                .checked_add(placement.entry_count())
-                .ok_or_else(|| limit("slice audio entries overflow"))
-        })?;
-    crate::insert_time::composite::append_steps(
-        &mut state,
-        crate::AudioRecipeKind::Node,
-        captured.node_placements,
-        &affected,
-        window,
-        &mut entries,
-    )?;
-    crate::insert_time::composite::append_steps(
-        &mut state,
-        crate::AudioRecipeKind::RepeatGap,
-        captured.gap_placements,
-        &affected,
-        window,
-        &mut entries,
-    )?;
-    state.bindings.retain(|id, _| selected.contains(id));
-    state.gap_bindings.retain(|id, _| selected.contains(id));
-    // A copy from one play keeps that play's clocks without the enclosing
-    // Repeats, which the copy does not contain.
-    for play in plays {
-        for owner in selected {
-            crate::explode::close_bindings(&mut state, owner, &play.node, &play.iteration)?;
-        }
-    }
+    let mut state = AudioBindingState::default();
     sound_clocks::capture(document, parts, selected, timing, &mut state)?;
     let retained: BTreeSet<_> = state
-        .owners()
-        .flat_map(|(_, _, binding)| binding.placements())
-        .map(|placement| placement.reference.timing.clone())
-        .chain(state.sound_clocks.values().flat_map(|events| {
+        .sound_clocks
+        .values()
+        .flat_map(|events| {
             events
                 .values()
                 .flat_map(|journal| journal.clocks().iter().map(|clock| clock.timing().clone()))
-        }))
+        })
         .collect();
     state.timings.retain(|id, _| retained.contains(id));
     Ok(state)
@@ -1042,8 +973,8 @@ fn capture_audio(
 
 /// A private view of `document` in which `beat`'s subtree carries no owned
 /// temporal attachments: captions, cutaways, beat-owned sounds and their
-/// retained clocks. Marks are excluded by the caller. Effects, structure,
-/// physical audio bindings and the independent root bus are unchanged.
+/// retained clocks. Marks are excluded by the caller. Effects, structure and
+/// the independent root bus are unchanged.
 fn without_attachments(
     document: &ProjectDocument,
     beat: &NodeId,
@@ -1060,7 +991,7 @@ fn without_attachments(
         stripped.beat_sounds.remove(id);
         stripped.audio_bindings.sound_clocks.remove(id);
     }
-    crate::audio_binding_lifecycle::prune(&mut stripped);
+    crate::audio_binding::prune(&mut stripped);
     stripped.validate()?;
     Ok(stripped)
 }

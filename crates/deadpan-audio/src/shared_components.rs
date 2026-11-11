@@ -435,13 +435,7 @@ impl<'plan> Components<'plan> {
                 samples,
                 suppressed: MixedSuppression::PendingMarks { start, marks },
             }),
-            Err(error) => {
-                #[cfg(test)]
-                super::components_mask_trace::inline_source_snapshot(&marks);
-                #[cfg(test)]
-                super::components_mask_trace::inline_source_closed();
-                Err(error)
-            }
+            Err(error) => Err(error),
         }
     }
 
@@ -489,12 +483,8 @@ impl<'plan> Components<'plan> {
             .iter()
             .all(|route| route.event_gain.is_none() || route.program.is_some())
         {
-            #[cfg(test)]
-            super::components_mask_trace::driver("constant");
             return self.finish_constant_into(outputs, control, equalize);
         }
-        #[cfg(test)]
-        super::components_mask_trace::driver("dynamic");
         let owners = policy::ordered_owners(&self.owners);
         let mut gains = vec![authored_gain::GainSum::default(); self.routes.len()];
         for at in 0..self.frames {

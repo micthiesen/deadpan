@@ -20,19 +20,10 @@ pub(crate) fn apply(
     }
     let selected = document.sequence_children(parent, first, last)?;
     let total = document.duration()?.frames();
-    let working =
-        if selected.range.duration() == FrameDuration::ZERO || selected.range.end().0 == total {
-            document.clone()
-        } else {
-            super::composite::prepare_suffix(
-                document,
-                parent,
-                selected.end,
-                selected.range.end(),
-                total,
-                timing,
-            )?
-        };
+    if selected.range.duration() != FrameDuration::ZERO && selected.range.end().0 != total {
+        super::composite::check_suffix(document, parent, selected.end)?;
+    }
+    let working = document;
     let mut result = working.clone();
     let NodeKind::Sequence { children } = &mut result.nodes.get_mut(parent).unwrap().kind else {
         unreachable!("exact child query admitted an ordinary Sequence")
@@ -47,8 +38,8 @@ pub(crate) fn apply(
         last: last.clone(),
         timing: timing.clone(),
     };
-    crate::audio_lineage::reconcile(&working, &mut result, &command)?;
-    result.marks = crate::marks::transform_marks(&working, &result, &command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_lineage::reconcile(working, &mut result, &command)?;
+    result.marks = crate::marks::transform_marks(working, &result, &command)?;
+    crate::audio_binding::prune(&mut result);
     Ok(result)
 }

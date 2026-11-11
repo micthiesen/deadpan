@@ -308,8 +308,6 @@ fn prior_journal_inventory_is_complete_borrowed_and_cannot_be_replaced() {
     let journal = SoundClockJournal::new(id("top"), references).unwrap();
     before.audio_bindings = AudioBindingState::new_with_sound_clocks(
         layouts,
-        BTreeMap::new(),
-        BTreeMap::new(),
         BTreeMap::from([(id("owner"), BTreeMap::from([(sound("owner"), journal)]))]),
     )
     .unwrap();

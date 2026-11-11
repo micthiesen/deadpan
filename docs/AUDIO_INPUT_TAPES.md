@@ -3,7 +3,7 @@
 `AudioSignalTape` is a borrowed preparation view of one immutable render plan.
 It projects exact windows of current structural signals or projected intrinsic
 Preserve output onto one preparation clock. `StageAudio::read_tape` consumes it
-through the existing Source, RoomTone, binding and Preserve renderer. A checked
+through the existing Source, RoomTone and Preserve renderer. A checked
 `AudioStageProjection` supplies separate intrinsic input and output-policy tapes.
 These views supply actual PCM without authoring a splice or allocating final
 timeline samples.
@@ -40,7 +40,7 @@ separate absolute RoundEven grid.
 Queries retain the underlying span's sampling anchor, allocation and complete
 filter support. Only the requested sample interval is restricted by a run.
 Definition-relative and actual occurrence identities remain distinct. Source
-lookup, retained bindings and compact Repeat traversal use the selected current
+lookup and compact Repeat traversal use the selected current
 signal; a tape does not graft an unscoped node into another occurrence.
 
 Dispatch comparisons and underlying traversal share the query's work allowance.
@@ -113,7 +113,7 @@ dependency identity. No route is persisted or accepted by an edit command yet.
 The borrowed projection supplies intrinsic preparation and a PointCeil output
 schedule. [Projected root placement](AUDIO_PROJECTED_ROOT.md) separately evaluates
 one physical projection on the absolute RoundEven timeline grid, retaining
-sampling phase, root policy and explicit exhaustion across crops and resumes.
+sampling phase, root policy and explicit exhaustion across crops.
 Fractional effective owner extents, persistent route identity, edit transforms,
 aggregate output scheduling and normal root-plan integration remain open.
 A document compiler must derive these views from validated authored intent

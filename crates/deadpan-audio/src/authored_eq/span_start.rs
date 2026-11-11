@@ -4,7 +4,6 @@ use super::*;
 
 pub(super) enum OwnerQuery<'context, 'plan, I, L> {
     SpanStart(deadpan_plan::AdmittedAudioOwnerSpanStartCandidates<'context, 'plan, I, L>),
-    Retained(deadpan_plan::AdmittedAudioOwnerQuery<'plan, I, L>),
     #[cfg(test)]
     Reference(deadpan_plan::AdmittedAudioOwnerQuery<'plan, I, L>),
 }
@@ -13,7 +12,6 @@ impl<'context, 'plan, I: Copy + Eq, L> OwnerQuery<'context, 'plan, I, L> {
     pub(super) fn query(&self) -> &AudioOwnerQuery<'plan> {
         match self {
             Self::SpanStart(value) => value.query(),
-            Self::Retained(value) => value.query(),
             #[cfg(test)]
             Self::Reference(value) => value.query(),
         }
@@ -25,7 +23,6 @@ impl<'context, 'plan, I: Copy + Eq, L> OwnerQuery<'context, 'plan, I, L> {
     ) -> node_description::Source<'_, 'context, 'plan, I, L> {
         match self {
             Self::SpanStart(candidates) => node_description::Source::SpanStart { candidates, span },
-            Self::Retained(_) => node_description::Source::Direct,
             #[cfg(test)]
             Self::Reference(_) => node_description::Source::Direct,
         }
@@ -56,16 +53,12 @@ impl<'plan> Context<'plan> {
             Self::Domain(domain) => OwnerQuery::SpanStart(
                 domain.owner_span_start_candidates_admitted(range, limits, admission)?,
             ),
-            Self::Retained(input) => {
-                OwnerQuery::Retained(input.owners_admitted(range, limits, admission)?)
-            }
         };
         let (forwarded, work) = match &query {
             OwnerQuery::SpanStart(value) => {
                 let receipt = value.shared_query_work();
                 (receipt.was_forwarded(), receipt.work())
             }
-            OwnerQuery::Retained(value) => (value.was_forwarded(), value.work()),
             #[cfg(test)]
             OwnerQuery::Reference(_) => unreachable!("reference query returned above"),
         };

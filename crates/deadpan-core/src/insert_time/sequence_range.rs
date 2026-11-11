@@ -1,8 +1,8 @@
 //! Shared admission and endpoint splitting for one ordinary Sequence interval.
 
 use crate::{
-    AudioTimingId, EditError, FrameDuration, FrameRange, MAX_DOCUMENT_NODES, NodeId, NodeKind,
-    ProjectDocument, ProjectFrame, SplitIdentities,
+    EditError, FrameDuration, FrameRange, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument,
+    ProjectFrame, SplitIdentities,
 };
 
 /// Structural preflight only; no identities or mutation authority are allocated.
@@ -244,10 +244,9 @@ pub(crate) fn split_endpoints(
     parent: &NodeId,
     range: FrameRange,
     identities: &SplitIdentities,
-    timing: &AudioTimingId,
     context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
-    split_endpoints_in(document, parent, range, identities, timing, context, None)
+    split_endpoints_in(document, parent, range, identities, context, None)
 }
 
 /// [`split_endpoints`] for a group whose start in one isolated Repeat play
@@ -257,16 +256,11 @@ pub(crate) fn split_endpoints_in(
     parent: &NodeId,
     range: FrameRange,
     identities: &SplitIdentities,
-    timing: &AudioTimingId,
     context: crate::command::EditContext<'_>,
     origin: Option<ProjectFrame>,
 ) -> Result<ProjectDocument, EditError> {
-    let mut working = document.clone();
-    // Capture sampling lattices BEFORE copying retained physical owners.
-    working.audio_bindings =
-        crate::audio_binding_lifecycle::capture_unbound_audio_bindings(document, timing.clone())?;
     split_prepared_in(
-        &working,
+        document,
         parent,
         &[range.start(), range.end()],
         identities,
@@ -276,8 +270,8 @@ pub(crate) fn split_endpoints_in(
     .map(|(document, _)| document)
 }
 
-/// Refine already captured full contexts without observing a new audio clock.
-/// Mark fragments, copied bindings and allowances are those produced by Split
+/// Refine already captured full contexts.
+/// Mark fragments and allowances are those produced by Split
 /// itself. The caller retains this document as its final-loss baseline.
 pub(crate) fn split_prepared(
     document: &ProjectDocument,

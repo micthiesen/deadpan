@@ -1,7 +1,7 @@
 //! Granular guarded changes to retained audio timing state.
 //!
-//! A transaction records only the timing tables, owner bindings and sound
-//! journals it changes, each with its exact before-value. Storing the complete
+//! A transaction records only the timing tables and sound journals it
+//! changes, each with its exact before-value. Storing the complete
 //! binding state in both directions of every history entry made each edit's
 //! history row proportional to every retained clock in the project.
 
@@ -11,11 +11,10 @@ use serde::de::{self, Deserializer, SeqAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
 
-use crate::document::unique_map;
 use crate::sound_clock::SoundClocks;
 use crate::{
     AudioBindingState, AudioTimingId, DocumentError, EditError, EditErrorCode, FrozenAudioLayout,
-    MAX_AUDIO_BINDING_ENTRIES, NodeId, OwnedAudioBinding, ValueChange,
+    MAX_AUDIO_BINDING_ENTRIES, ValueChange,
 };
 
 /// One timing table's guarded replacement. Tables are immutable once named,
@@ -34,10 +33,6 @@ pub struct AudioBindingPatch {
     /// Sorted by identity and unique.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub timings: Vec<AudioTimingChange>,
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub bindings: BTreeMap<NodeId, ValueChange<OwnedAudioBinding>>,
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub gap_bindings: BTreeMap<NodeId, ValueChange<OwnedAudioBinding>>,
     /// Sound journals are small and bounded as a whole relation.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sound_clocks: Option<ValueChange<SoundClocks>>,
@@ -64,8 +59,6 @@ impl AudioBindingPatch {
             .collect();
         let patch = Self {
             timings,
-            bindings: diff(&before.bindings, &after.bindings),
-            gap_bindings: diff(&before.gap_bindings, &after.gap_bindings),
             sound_clocks: (before.sound_clocks != after.sound_clocks).then(|| ValueChange {
                 before: Some(before.sound_clocks.clone()),
                 after: Some(after.sound_clocks.clone()),
@@ -76,30 +69,14 @@ impl AudioBindingPatch {
 
     /// `self == other.inverse()`, without building the reversed patch.
     pub(crate) fn is_reverse_of(&self, other: &Self) -> bool {
-        fn swapped<K: Eq, V: Eq>(
-            reversed: &BTreeMap<K, ValueChange<V>>,
-            forward: &BTreeMap<K, ValueChange<V>>,
-        ) -> bool {
-            reversed.len() == forward.len()
-                && reversed
-                    .iter()
-                    .zip(forward)
-                    .all(|((key, back), (other, change))| {
-                        key == other && back.before == change.after && back.after == change.before
-                    })
-        }
         let Self {
             timings,
-            bindings,
-            gap_bindings,
             sound_clocks,
         } = self;
         timings.len() == other.timings.len()
             && timings.iter().zip(&other.timings).all(|(back, change)| {
                 back.id == change.id && back.before == change.after && back.after == change.before
             })
-            && swapped(bindings, &other.bindings)
-            && swapped(gap_bindings, &other.gap_bindings)
             && match (sound_clocks, &other.sound_clocks) {
                 (None, None) => true,
                 (Some(back), Some(change)) => {
@@ -120,8 +97,6 @@ impl AudioBindingPatch {
                     after: change.before.clone(),
                 })
                 .collect(),
-            bindings: invert(&self.bindings),
-            gap_bindings: invert(&self.gap_bindings),
             sound_clocks: self.sound_clocks.as_ref().map(|change| ValueChange {
                 before: change.after.clone(),
                 after: change.before.clone(),
@@ -130,10 +105,7 @@ impl AudioBindingPatch {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.timings.is_empty()
-            && self.bindings.is_empty()
-            && self.gap_bindings.is_empty()
-            && self.sound_clocks.is_none()
+        self.timings.is_empty() && self.sound_clocks.is_none()
     }
 
     /// Guarded application. Structural and live-owner validity belongs to the
@@ -158,8 +130,6 @@ impl AudioBindingPatch {
                 }
             }
         }
-        apply_owner_changes(&mut result.bindings, &self.bindings)?;
-        apply_owner_changes(&mut result.gap_bindings, &self.gap_bindings)?;
         if let Some(change) = &self.sound_clocks {
             if Some(&result.sound_clocks) != change.before.as_ref() {
                 return Err(conflict());
@@ -205,8 +175,6 @@ impl AudioBindingPatch {
             }
             timings.insert(&change.id, change.after.as_ref());
         }
-        check_owner_changes(&state.bindings, &self.bindings)?;
-        check_owner_changes(&state.gap_bindings, &self.gap_bindings)?;
         let sound_clocks = match &self.sound_clocks {
             Some(change) => {
                 if Some(&state.sound_clocks) != change.before.as_ref() {
@@ -233,8 +201,6 @@ impl AudioBindingPatch {
         }
         let AudioBindingState {
             timings: expected_timings,
-            bindings: expected_bindings,
-            gap_bindings: expected_gaps,
             sound_clocks: expected_clocks,
         } = expected;
         let timings_equal = timings
@@ -245,71 +211,8 @@ impl AudioBindingPatch {
                 |id| timings.contains_key(id),
                 expected_timings,
             );
-        Ok(timings_equal
-            && crate::command::patched_equals(&state.bindings, &self.bindings, expected_bindings)
-            && crate::command::patched_equals(
-                &state.gap_bindings,
-                &self.gap_bindings,
-                expected_gaps,
-            )
-            && sound_clocks == expected_clocks)
+        Ok(timings_equal && sound_clocks == expected_clocks)
     }
-}
-
-fn check_owner_changes(
-    values: &BTreeMap<NodeId, OwnedAudioBinding>,
-    changes: &BTreeMap<NodeId, ValueChange<OwnedAudioBinding>>,
-) -> Result<(), EditError> {
-    for (owner, change) in changes {
-        if values.get(owner) != change.before.as_ref() {
-            return Err(conflict());
-        }
-    }
-    Ok(())
-}
-
-fn diff(
-    before: &BTreeMap<NodeId, OwnedAudioBinding>,
-    after: &BTreeMap<NodeId, OwnedAudioBinding>,
-) -> BTreeMap<NodeId, ValueChange<OwnedAudioBinding>> {
-    crate::command::diff(before, after)
-}
-
-fn invert(
-    changes: &BTreeMap<NodeId, ValueChange<OwnedAudioBinding>>,
-) -> BTreeMap<NodeId, ValueChange<OwnedAudioBinding>> {
-    changes
-        .iter()
-        .map(|(owner, change)| {
-            (
-                owner.clone(),
-                ValueChange {
-                    before: change.after.clone(),
-                    after: change.before.clone(),
-                },
-            )
-        })
-        .collect()
-}
-
-fn apply_owner_changes(
-    values: &mut BTreeMap<NodeId, OwnedAudioBinding>,
-    changes: &BTreeMap<NodeId, ValueChange<OwnedAudioBinding>>,
-) -> Result<(), EditError> {
-    for (owner, change) in changes {
-        if values.get(owner) != change.before.as_ref() {
-            return Err(conflict());
-        }
-        match &change.after {
-            Some(binding) => {
-                values.insert(owner.clone(), binding.clone());
-            }
-            None => {
-                values.remove(owner);
-            }
-        }
-    }
-    Ok(())
 }
 
 impl<'de> Deserialize<'de> for AudioBindingPatch {
@@ -319,10 +222,6 @@ impl<'de> Deserialize<'de> for AudioBindingPatch {
         struct Wire {
             #[serde(default)]
             timings: Option<Box<RawValue>>,
-            #[serde(default, deserialize_with = "unique_map")]
-            bindings: BTreeMap<NodeId, ValueChange<OwnedAudioBinding>>,
-            #[serde(default, deserialize_with = "unique_map")]
-            gap_bindings: BTreeMap<NodeId, ValueChange<OwnedAudioBinding>>,
             #[serde(default)]
             sound_clocks: Option<Box<RawValue>>,
         }
@@ -339,11 +238,6 @@ impl<'de> Deserialize<'de> for AudioBindingPatch {
             .transpose()
             .map_err(de::Error::custom)?
             .unwrap_or_default();
-        for change in wire.bindings.values().chain(wire.gap_bindings.values()) {
-            for binding in change.before.iter().chain(change.after.iter()) {
-                crate::audio_binding::binding_wire_size(binding).map_err(de::Error::custom)?;
-            }
-        }
         let sound_clocks = wire
             .sound_clocks
             .map(|raw| {
@@ -362,8 +256,6 @@ impl<'de> Deserialize<'de> for AudioBindingPatch {
             .map_err(de::Error::custom)?;
         let patch = Self {
             timings,
-            bindings: wire.bindings,
-            gap_bindings: wire.gap_bindings,
             sound_clocks,
         };
         if patch.is_empty() {

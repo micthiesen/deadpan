@@ -56,7 +56,6 @@ impl<'work> AudioSignalPolicyMaskHandoff for Admission<'_, 'work> {
         &mut self,
         source: SignalPolicyMaskRef<'_, Self::Issuer, Self::Lease>,
     ) -> Result<Self::PreparedMask, Self::Error> {
-        #[cfg(not(test))]
         {
             #[cfg(test)]
             crate::stages::routed::projected_tape_source_trace::prepare_mask(
@@ -123,115 +122,6 @@ impl<'work> AudioSignalPolicyMaskHandoff for Admission<'_, 'work> {
                 ledger: self.control.work,
                 remaining,
             })
-        }
-        #[cfg(test)]
-        {
-            let result = (|| {
-                #[cfg(test)]
-                crate::stages::routed::projected_tape_source_trace::prepare_mask(
-                    self.controller,
-                    self.control,
-                    source.capacity(),
-                    source.lease().map(Lease::frames),
-                );
-                read_signal_policy_native_trace::prepare_entry(
-                    self.controller,
-                    self.control,
-                    source.capacity(),
-                    source.lease().map(Lease::frames),
-                    source.issuer() == issuer(self.control)
-                        && source
-                            .lease()
-                            .is_none_or(|lease| std::ptr::eq(lease.ledger, self.control.work)),
-                );
-                read_signal_policy_native_trace::prepare_cancel(
-                    self.control,
-                    read_signal_policy_native_trace::UsePoint::PrepareInitialCheck,
-                );
-                self.control.check()?;
-                let current_issuer = issuer(self.control);
-                if source.issuer() != current_issuer {
-                    return Err(PlanError::AudioMetadataIssuerMismatch.into());
-                }
-
-                let capacity = source.capacity();
-                if capacity == 0 {
-                    if source.lease().is_some() {
-                        return Err(
-                            PlanError::InvalidPlan("Point policy mask capacity lease").into()
-                        );
-                    }
-                    return Ok(PreparedPolicyMask::Empty(
-                        crate::stages::point_suppression::policy_handoff::prepare_policy_mask(
-                            self.controller,
-                            0,
-                            self.control,
-                        )?,
-                    ));
-                }
-
-                let lease = source
-                    .lease()
-                    .ok_or(PlanError::InvalidPlan("Point policy mask capacity lease"))?;
-                let vector_frames =
-                    crate::stages::point_suppression::policy_handoff::vector_frames(capacity)?;
-                if lease.frames != vector_frames || !std::ptr::eq(lease.ledger, self.control.work) {
-                    return Err(PlanError::AudioMetadataIssuerMismatch.into());
-                }
-
-                let destination =
-                    crate::stages::point_suppression::policy_handoff::prepare_policy_mask(
-                        self.controller,
-                        capacity,
-                        self.control,
-                    )?;
-
-                // Reservations may evict cached metadata. Revalidate the source and
-                // compute the exact remaining ledger only after all native admission.
-                read_signal_policy_native_trace::prepare_cancel(
-                    self.control,
-                    read_signal_policy_native_trace::UsePoint::PrepareRecheck,
-                );
-                self.control.check()?;
-                if source.capacity() != capacity || destination.vector_frames() != vector_frames {
-                    return Err(PlanError::AudioMetadataIssuerMismatch.into());
-                }
-
-                read_signal_policy_native_trace::pre_exclusive(
-                    self.controller,
-                    self.control,
-                    vector_frames,
-                    source.capacity(),
-                    destination.vector_frames(),
-                    source.lease().is_some_and(|current| {
-                        std::ptr::eq(current, lease)
-                            && current.frames == vector_frames
-                            && std::ptr::eq(current.ledger, self.control.work)
-                    }),
-                );
-                let remaining = preflight_source_lease(
-                    self.control,
-                    source.issuer(),
-                    current_issuer,
-                    source.capacity(),
-                    source.lease(),
-                    lease,
-                    vector_frames,
-                )?;
-
-                Ok(PreparedPolicyMask::Transfer {
-                    destination,
-                    ledger: self.control.work,
-                    remaining,
-                })
-            })();
-            match result {
-                Ok(prepared) => Ok(prepared),
-                Err(error) => {
-                    read_signal_policy_native_trace::prepare_error(self.control, &error);
-                    Err(error)
-                }
-            }
         }
     }
 

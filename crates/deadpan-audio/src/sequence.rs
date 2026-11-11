@@ -127,12 +127,6 @@ impl SequenceAudio {
         cancelled: &AtomicBool,
     ) -> Result<SourceStageBlock, SequenceAudioError> {
         check_cancel(cancelled)?;
-        if self.plan.has_audio_bindings() {
-            return Err(SequenceAudioError::Unsupported {
-                node: self.plan.metadata().root.clone(),
-                feature: "owned audio timing bindings; use StageAudio",
-            });
-        }
         let end = start
             .0
             .checked_add(i64::from(frames))

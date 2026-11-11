@@ -42,7 +42,6 @@ pub(super) fn validate_original(
     let matches = match context {
         Context::Root => request.matches_root(plan, start, frames, true),
         Context::Domain(domain) => request.matches_domain(plan, domain, start, frames, true),
-        Context::Retained(_) => false,
     };
     if !matches {
         return Err(StageAudioError::ForeignDomain);
@@ -52,15 +51,11 @@ pub(super) fn validate_original(
 }
 
 pub(super) fn available(
-    original: &Context<'_>,
     roots: &[sound_events::PreparedSoundQuery<'_>],
     beats: &[beat_sounds::PreparedBeatSound<'_, '_>],
     control: WorkControl<'_>,
 ) -> Result<bool, StageAudioError> {
     control.spend_plan_work(1)?;
-    if matches!(original, Context::Retained(_)) {
-        return Ok(false);
-    }
     for root in roots {
         control.spend_plan_work(1)?;
         if root.input.policy_support() != policy_ranges::Support::Complete {

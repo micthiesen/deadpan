@@ -10,9 +10,7 @@ use crate::plan::audio_owners::admission::{
     Budget as QueryBudget, Memory, Owned, Result as QueryResult, outer,
 };
 use crate::plan::audio_signal::processing_query::{SignalBuffer, SignalValue};
-use crate::plan::{
-    AudioDefinitionSelector, AudioProcessingSpan, AudioSignalQuery, AudioSignalSpan,
-};
+use crate::plan::{AudioDefinitionSelector, AudioSignalQuery, AudioSignalSpan};
 use deadpan_core::{ProjectId, RevisionId};
 
 #[path = "audio_point_policy_query.rs"]
@@ -146,7 +144,6 @@ impl AudioDomain<'_> {
             self,
             samples,
             limits,
-            None,
             &mut budget,
         ))
     }
@@ -157,18 +154,11 @@ pub(in crate::plan) fn domain_query_with_processing<'plan, A: AudioSoundContextA
     domain: &AudioDomain<'plan>,
     samples: Range<AudioSample>,
     limits: AudioQueryLimits,
-    bindings: Option<&[AudioProcessingSpan<'plan>]>,
     budget: &mut QueryBudget<'_, A>,
 ) -> QueryResult<AdmittedAudioPolicyQuery<A::Issuer, A::Lease>, A> {
     limits.validate()?;
     if !A::METERED {
-        let query = match bindings {
-            Some(bindings) => {
-                super::domain_policy_with_processing(domain, samples, limits, bindings)?
-            }
-            None => domain.policy(samples, limits)?,
-        };
-        return ordinary(query, budget.admission);
+        return ordinary(domain.policy(samples, limits)?, budget.admission);
     }
     if limits.maximum_work != budget.remaining
         || budget.canonical_used != 0
@@ -185,7 +175,6 @@ pub(in crate::plan) fn domain_query_with_processing<'plan, A: AudioSoundContextA
         budget,
         0,
         true,
-        bindings,
     )?;
     finish(state, ranges, limits, budget)
 }
@@ -370,7 +359,6 @@ struct SignalDrain<'plan, I, L> {
 
 fn signal_current<'plan, A: AudioSoundContextAdmission>(
     current: SignalValue<'plan, A>,
-    bindings: bool,
     state: &mut State<A>,
     budget: &mut QueryBudget<'_, A>,
     endpoints: bool,
@@ -411,10 +399,7 @@ fn signal_current<'plan, A: AudioSoundContextAdmission>(
                 budget,
             )?;
         }
-        if !bindings
-            && is_selected_endpoint(content)
-            && endpoint_grid(endpoints, &span.retimes, budget)?
-        {
+        if is_selected_endpoint(content) && endpoint_grid(endpoints, &span.retimes, budget)? {
             push_range(
                 &mut suppressed,
                 span.samples.start.0..span.samples.end.0,
@@ -449,7 +434,6 @@ struct FlatDrain<I, L> {
 
 fn domain_current<A: AudioSoundContextAdmission>(
     current: crate::plan::audio::flattened_query::FlatValue<A>,
-    bindings: bool,
     state: &mut State<A>,
     budget: &mut QueryBudget<'_, A>,
     endpoints: bool,
@@ -488,10 +472,7 @@ fn domain_current<A: AudioSoundContextAdmission>(
                 budget,
             )?;
         }
-        if !bindings
-            && is_selected_endpoint(&span.content)
-            && endpoint_grid(endpoints, &span.retimes, budget)?
-        {
+        if is_selected_endpoint(&span.content) && endpoint_grid(endpoints, &span.retimes, budget)? {
             push_range(
                 &mut suppressed,
                 span.samples.start.0..span.samples.end.0,
@@ -541,8 +522,7 @@ fn signal_policy<A: AudioSoundContextAdmission>(
         (false, false),
         budget,
     )?;
-    let bindings = signal.has_audio_bindings();
-    let mut suppressed = signal_current(current, bindings, state, budget, endpoints)?;
+    let mut suppressed = signal_current(current, state, budget, endpoints)?;
 
     // The current voice inventory is complete before its optional output-Hold
     // carrier is queried. The carrier remains borrowed and never enters it.
@@ -573,80 +553,7 @@ fn signal_policy<A: AudioSoundContextAdmission>(
         }
     }
 
-    if !bindings || samples.is_empty() {
-        return Ok(suppressed);
-    }
-    let bindings = signal.structural_child_query(
-        range,
-        child_limits(state, budget)?,
-        rule,
-        (false, true),
-        budget,
-    )?;
-    for span in &bindings.query.spans {
-        match &span.content {
-            AudioSignalContent::Bound(bound) => {
-                let endpoints = endpoint_grid(endpoints, &span.retimes, budget)?;
-                let retained = bound_policy(
-                    bound,
-                    span.samples.start.0..span.samples.end.0,
-                    span.allocated_samples.start.0,
-                    state,
-                    budget,
-                    depth + 1,
-                    endpoints,
-                )?;
-                extend_ranges(&mut suppressed, retained, budget)?;
-            }
-            AudioSignalContent::Leaf(content)
-                if is_selected_endpoint(content)
-                    && endpoint_grid(endpoints, &span.retimes, budget)? =>
-            {
-                push_range(
-                    &mut suppressed,
-                    span.samples.start.0..span.samples.end.0,
-                    budget,
-                )?;
-            }
-            _ => {}
-        }
-    }
     Ok(suppressed)
-}
-
-fn binding_policy<A: AudioSoundContextAdmission>(
-    bindings: &[AudioProcessingSpan<'_>],
-    suppressed: &mut Ranges<A>,
-    state: &mut State<A>,
-    budget: &mut QueryBudget<'_, A>,
-    depth: usize,
-    endpoints: bool,
-) -> QueryResult<(), A> {
-    for span in bindings {
-        match &span.content {
-            AudioSignalContent::Bound(bound) => {
-                let endpoints = endpoint_grid(endpoints, &span.retimes, budget)?;
-                let retained = bound_policy(
-                    bound,
-                    span.samples.start.0..span.samples.end.0,
-                    span.allocated_samples.start.0,
-                    state,
-                    budget,
-                    depth + 1,
-                    endpoints,
-                )?;
-                extend_ranges(suppressed, retained, budget)?;
-            }
-            AudioSignalContent::Leaf(content)
-                if is_selected_endpoint(content)
-                    && endpoint_grid(endpoints, &span.retimes, budget)? =>
-            {
-                push_range(suppressed, span.samples.start.0..span.samples.end.0, budget)?;
-            }
-            _ => {}
-        }
-    }
-    Ok(())
 }
 
 fn domain_policy_inner<A: AudioSoundContextAdmission>(
@@ -656,170 +563,11 @@ fn domain_policy_inner<A: AudioSoundContextAdmission>(
     budget: &mut QueryBudget<'_, A>,
     depth: usize,
     endpoints: bool,
-    processing_bindings: Option<&[AudioProcessingSpan<'_>]>,
 ) -> QueryResult<Ranges<A>, A> {
     enter(budget, depth)?;
     let range = AudioSample(samples.start)..AudioSample(samples.end);
     let current = domain.audio_child_query(range.clone(), child_limits(state, budget)?, budget)?;
-    let bindings = domain.has_audio_bindings();
-    let mut suppressed = domain_current(current, bindings, state, budget, endpoints)?;
-    if !bindings || samples.is_empty() {
-        return Ok(suppressed);
-    }
-    if let Some(bindings) = processing_bindings.filter(|spans| spans.len() <= state.maximum_spans) {
-        binding_policy(bindings, &mut suppressed, state, budget, depth, endpoints)?;
-        return Ok(suppressed);
-    }
-    let bindings =
-        domain.processing_child_query(range, child_limits(state, budget)?, false, budget)?;
-    binding_policy(
-        &bindings.query.spans,
-        &mut suppressed,
-        state,
-        budget,
-        depth,
-        endpoints,
-    )?;
-    Ok(suppressed)
-}
-
-fn offset_ranges<A: AudioSoundContextAdmission>(
-    ranges: Ranges<A>,
-    origin: i64,
-    budget: &mut QueryBudget<'_, A>,
-) -> QueryResult<Ranges<A>, A> {
-    let mut input = Owned {
-        value: ranges.value.into_iter(),
-        memory: ranges.memory,
-    };
-    let mut output = empty_ranges(budget);
-    while let Some(range) = input.value.as_slice().first() {
-        let mapped = range.start.checked_add(origin).ok_or(TimeError::Overflow)?
-            ..range.end.checked_add(origin).ok_or(TimeError::Overflow)?;
-        push_range(&mut output, mapped, budget)?;
-        input.value.next().expect("observed Point offset range");
-    }
-    Ok(output)
-}
-
-fn bound_policy<A: AudioSoundContextAdmission>(
-    bound: &AudioBound<'_>,
-    samples: Range<i64>,
-    anchor: i64,
-    state: &mut State<A>,
-    budget: &mut QueryBudget<'_, A>,
-    depth: usize,
-    endpoints: bool,
-) -> QueryResult<Ranges<A>, A> {
-    enter(budget, depth)?;
-    let raw = bound.raw_domain_admitted(budget)?;
-    let support = match &raw.value {
-        AudioBoundDomain::Root(domain) => {
-            let range = domain.root_samples();
-            range.start.0..range.end.0
-        }
-        AudioBoundDomain::Point(domain) => {
-            let range = domain.reference_samples();
-            range.start.0..range.end.0
-        }
-        AudioBoundDomain::Empty => {
-            let mut ranges = empty_ranges(budget);
-            if endpoints {
-                push_range(&mut ranges, samples, budget)?;
-            }
-            return Ok(ranges);
-        }
-    };
-    if support.is_empty() {
-        let mut ranges = empty_ranges(budget);
-        if endpoints {
-            push_range(&mut ranges, samples, budget)?;
-        }
-        return Ok(ranges);
-    }
-    let first = bound.reference_at_wide_offset(i128::from(samples.start) - i128::from(anchor))?;
-    let step = bound.reference_samples_per_output_sample();
-    let last = first.checked_add(
-        ExactRatio::new(i128::from(samples.end) - i128::from(samples.start) - 1, 1)?
-            .checked_mul(step)?,
-    )?;
-    let clipped_start = first.floor().max(i128::from(support.start));
-    let clipped_end = last
-        .floor()
-        .checked_add(1)
-        .ok_or(TimeError::Overflow)?
-        .min(i128::from(support.end));
-    let mut suppressed = empty_ranges(budget);
-    let inverse = |at: i64| -> Result<i64, PlanError> {
-        let offset = ExactRatio::integer(at)
-            .checked_sub(first)?
-            .checked_div(step)?
-            .ceil()?;
-        let value = i128::from(samples.start)
-            .checked_add(offset)
-            .ok_or(TimeError::Overflow)?;
-        Ok(
-            i64::try_from(value.clamp(i128::from(samples.start), i128::from(samples.end)))
-                .map_err(|_| TimeError::Overflow)?,
-        )
-    };
-    if endpoints {
-        add_outside(
-            &mut suppressed,
-            samples.clone(),
-            inverse(support.start)?..inverse(support.end)?,
-            budget,
-        )?;
-    }
-    if clipped_start >= clipped_end {
-        return Ok(suppressed);
-    }
-    let selection = i64::try_from(clipped_start).map_err(|_| TimeError::Overflow)?
-        ..i64::try_from(clipped_end).map_err(|_| TimeError::Overflow)?;
-    let retained = match &raw.value {
-        AudioBoundDomain::Root(domain) => {
-            domain_policy_inner(domain, selection, state, budget, depth + 1, endpoints, None)?
-        }
-        AudioBoundDomain::Point(domain) => {
-            let origin = domain.reference_samples().start.0;
-            let range = selection
-                .start
-                .checked_sub(origin)
-                .ok_or(TimeError::Overflow)?
-                ..selection
-                    .end
-                    .checked_sub(origin)
-                    .ok_or(TimeError::Overflow)?;
-            let signal = domain.signal_admitted(budget)?;
-            let ranges = signal_policy(
-                &signal.value,
-                range,
-                AudioBoundaryRule::PointCeil,
-                state,
-                budget,
-                depth + 1,
-                endpoints,
-            )?;
-            offset_ranges(ranges, origin, budget)?
-        }
-        AudioBoundDomain::Empty => unreachable!("empty operand returned before selection"),
-    };
-    let mut retained = Owned {
-        value: retained.value.into_iter(),
-        memory: retained.memory,
-    };
-    while let Some(range) = retained.value.as_slice().first() {
-        spend(budget, 1)?;
-        let mapped = inverse(range.start)?..inverse(range.end)?;
-        if !mapped.is_empty() {
-            push_range(&mut suppressed, mapped, budget)?;
-        }
-        retained
-            .value
-            .next()
-            .expect("observed retained policy range");
-    }
-    Ok(suppressed)
+    domain_current(current, state, budget, endpoints)
 }
 
 fn finish<A: AudioSoundContextAdmission>(

@@ -233,8 +233,6 @@ fn document_with_sound_clock(
             id: timing.clone(),
             layout: layout.clone(),
         }],
-        BTreeMap::new(),
-        BTreeMap::new(),
         BTreeMap::from([(
             owner,
             BTreeMap::from([(

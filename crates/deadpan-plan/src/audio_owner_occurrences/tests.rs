@@ -91,48 +91,6 @@ fn play(ordinal: u32) -> IterationId {
         ordinal,
     }
 }
-fn bind_clock(current: &ProjectDocument, old: &ProjectDocument, owner: &str) -> ProjectDocument {
-    let timing = AudioTimingId {
-        allocation: revision("retained-clock"),
-        ordinal: 0,
-    };
-    let bindings = AudioBindingState::new(
-        vec![AudioTimingRecord {
-            id: timing.clone(),
-            layout: FrozenAudioLayout::capture(old).unwrap(),
-        }],
-        BTreeMap::from([(
-            id(owner),
-            OwnedAudioBinding {
-                reanchors: vec![],
-                lattice: AudioPlacementTemplate {
-                    reference_local_offset: ExactRatio::ZERO,
-                    gap_after: None,
-                    reference: AudioReferenceClock {
-                        recipe: AudioRecipeKind::Node,
-                        timing,
-                        root: AudioClockRoot::ProjectRootRoundEven,
-                        physical: id(owner),
-                    },
-                    arguments: vec![],
-                    births: vec![],
-                },
-                resume: Some(AudioResume {
-                    local_boundary: ExactRatio::ZERO,
-                    phase: AudioLocalPhase {
-                        constant: q(1, 3),
-                        terms: vec![],
-                    },
-                }),
-            },
-        )]),
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(current).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
-}
-
 #[test]
 fn nested_repeats_return_concrete_stable_paths_and_exact_maps() {
     let plan = plan(document(
@@ -265,33 +223,6 @@ fn preserve_voice_survives_a_later_crop_that_removes_its_geometric_interval() {
     assert_eq!(
         occurrence.influence_root_samples,
         AudioSample(0)..AudioSample(2)
-    );
-}
-
-#[test]
-fn occurrence_query_uses_current_structure_not_retained_original_bindings() {
-    let old = document(&["owner"], vec![("owner", hold(3))]);
-    let current = document(
-        &["prefix", "owner"],
-        vec![("prefix", hold(1)), ("owner", hold(3))],
-    );
-    let current = bind_clock(&current, &old, "owner");
-    let plan = plan(current);
-    let occurrence = plan
-        .audio_owner_occurrences(
-            &id("owner"),
-            AudioSample(2)..AudioSample(3),
-            Default::default(),
-        )
-        .unwrap();
-    assert_eq!(occurrence.occurrences().len(), 1);
-    assert_eq!(
-        occurrence.occurrences()[0].visible_root_frames,
-        q(1, 1)..q(4, 1)
-    );
-    assert_eq!(
-        occurrence.occurrences()[0].map.root_frame_at_local_zero,
-        q(1, 1)
     );
 }
 

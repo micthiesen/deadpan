@@ -25,8 +25,6 @@ pub(in crate::stages) fn spend_work(
     units: usize,
 ) -> Result<(), StageAudioError> {
     let result = control.spend_plan_work(units);
-    #[cfg(test)]
-    crate::stages::shared_mix_mask_trace::work(phase, units, result.is_ok());
     result?;
     #[cfg(test)]
     crate::stages::native_query_interval_trace::accepted_work(control);

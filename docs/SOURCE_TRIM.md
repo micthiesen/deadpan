@@ -79,13 +79,11 @@ envelopes and delivered-interval fade widths.
 
 ## Timing, sounds and marks
 
-Capture audio clocks from the unchanged tree before altering maps, duration or
-crop. Existing lattices, resumes and chronological reanchors remain. In trims
-capture the retained target entry; both edges capture each shifted suffix owner,
-including later ordinary ancestors' siblings, compact Repeat/gap owners and
-opaque Preserve outputs. Target and suffix share one capture and entry budget.
-Append old-coordinate reanchor steps before applying any target-only physical
-prefix. Absolute sample counts remain `B(end)-B(start)`.
+Trim changes structure only: no audio clock is captured or appended
+(bindings and reanchors were removed on 2026-11-11). The target and every
+shifted suffix owner, including later ordinary ancestors' siblings, compact
+Repeat/gap owners and opaque Preserve outputs, are sampled from their new
+positions. Absolute sample counts remain `B(end)-B(start)`.
 
 The independent root sound bus receives exactly one insertion or deletion at
 the edited output edge. It is detached for structural timing capture and restored

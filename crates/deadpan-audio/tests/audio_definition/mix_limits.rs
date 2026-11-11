@@ -38,7 +38,7 @@ impl AudioSourceProvider for CountingProvider {
     }
 }
 
-fn dependency_document(count: usize, bound: bool) -> ProjectDocument {
+fn dependency_document(count: usize) -> ProjectDocument {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let initial = document(
         rate,
@@ -77,32 +77,6 @@ fn dependency_document(count: usize, bound: bool) -> ProjectDocument {
     .unwrap();
     wire["nodes"]["root"] =
         serde_json::to_value(BeatNode::sequence("Root", vec![id("first"), id("inner")])).unwrap();
-    let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    if !bound {
-        return doc;
-    }
-    let captured = capture_unbound_audio_bindings(
-        &doc,
-        AudioTimingId {
-            allocation: RevisionId::new("dependency-bindings").unwrap(),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let bindings = AudioBindingState::new(
-        captured
-            .timings()
-            .iter()
-            .map(|(id, layout)| AudioTimingRecord {
-                id: id.clone(),
-                layout: layout.clone(),
-            })
-            .collect(),
-        BTreeMap::from([(id("inner"), captured.bindings()[&id("inner")].clone())]),
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(doc).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 
@@ -167,7 +141,7 @@ fn mix(plan: &RenderPlan) -> AudioSignalMix<'_> {
 
 #[test]
 fn exactly_1024_distinct_dependencies_are_admitted_with_duplicate_and_gated_voices() {
-    let doc = dependency_document(1024, false);
+    let doc = dependency_document(1024);
     let plan = compile(&doc, false);
     let mix = mix(&plan);
     let mut provider = CountingProvider::new();

@@ -153,8 +153,6 @@ fn document(event_assets: &[&str], clocks_per_event: usize) -> ProjectDocument {
     }
     let bindings = AudioBindingState::new_with_sound_clocks(
         timing_records,
-        BTreeMap::new(),
-        BTreeMap::new(),
         BTreeMap::from([(owner, clocks_by_sound)]),
     )
     .unwrap();
@@ -438,8 +436,6 @@ fn shared_first_clock_retains_every_event_asset_across_cached_reads() {
         .collect();
     let bindings = AudioBindingState::new_with_sound_clocks(
         clocks,
-        BTreeMap::new(),
-        BTreeMap::new(),
         BTreeMap::from([(
             id("owner"),
             (0..3)

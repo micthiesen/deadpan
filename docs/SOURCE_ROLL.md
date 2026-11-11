@@ -44,11 +44,8 @@ selection padding and hidden filtering context follow the shared Trim geometry.
 
 ## Audio, sounds and marks
 
-Capture previously unbound audio clocks once from the unchanged document before
-installing either candidate. The pair's surviving material keeps its absolute
-placement, so Roll adds no ripple reanchor. Existing sample lattices, symbolic
-resumes and chronological reanchors remain. Right-prefix translation rebases its
-owned binding once. Independent offsets are subtracted only at their declared
+Roll changes structure only and stores no audio clock. The pair's surviving
+material keeps its absolute placement. Independent offsets are subtracted only at their declared
 mapping boundary. Exposed sample counts use absolute `B(end)-B(start)` intervals.
 
 Record editorial audio edges on the two sides of the changed seam. Preserve the

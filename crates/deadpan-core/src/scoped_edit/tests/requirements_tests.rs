@@ -106,50 +106,6 @@ fn allocation_query_avoids_live_lineage_origins() {
 }
 
 #[test]
-fn allocation_query_avoids_retained_timing_node_names() {
-    let mut document = fixture();
-    // A historical root no longer needs a live node with that identity.
-    let root = document.nodes.remove(&node("root")).unwrap();
-    document.root = node(COLLISION);
-    document.nodes.insert(node(COLLISION), root);
-    document.audio_bindings = capture_unbound_audio_bindings(
-        &document,
-        AudioTimingId {
-            allocation: revision("capture"),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let root = document.nodes.remove(&node(COLLISION)).unwrap();
-    document.root = node("root");
-    document.nodes.insert(node("root"), root);
-    assert!(!document.nodes.contains_key(&node(COLLISION)));
-    check(document, false);
-}
-
-#[test]
-fn allocation_query_avoids_retained_timing_lineage_origins() {
-    let mut document = fixture();
-    document.audio_lineage.insert(
-        node("a"),
-        AudioLineageId {
-            allocation: revision("historical"),
-            origin: node(COLLISION),
-        },
-    );
-    document.audio_bindings = capture_unbound_audio_bindings(
-        &document,
-        AudioTimingId {
-            allocation: revision("capture"),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    document.audio_lineage.clear();
-    check(document, false);
-}
-
-#[test]
 fn allocation_query_avoids_mark_names() {
     let mut document = fixture();
     add_owned_mark(

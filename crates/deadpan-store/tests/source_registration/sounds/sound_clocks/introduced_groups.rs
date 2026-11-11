@@ -313,14 +313,6 @@ fn assert_group(before: &ProjectDocument, grouped: &ProjectDocument) -> Result {
         grouped.audio_bindings().timings(),
         before.audio_bindings().timings()
     );
-    assert_eq!(
-        grouped.audio_bindings().bindings(),
-        before.audio_bindings().bindings()
-    );
-    assert_eq!(
-        grouped.audio_bindings().gap_bindings(),
-        before.audio_bindings().gap_bindings()
-    );
     for name in ["owner", "tail", "lead", "prefix"] {
         assert_eq!(grouped.nodes()[&node(name)], before.nodes()[&node(name)]);
     }

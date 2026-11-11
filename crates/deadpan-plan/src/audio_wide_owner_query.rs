@@ -70,7 +70,6 @@ fn run<'plan, A: AudioSoundContextAdmission>(
         limits,
         seed,
         AudioSample,
-        None,
         budget,
     )?;
     AdmittedAudioOwnerQuery::checked(product, budget)

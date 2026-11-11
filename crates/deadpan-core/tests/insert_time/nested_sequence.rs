@@ -122,7 +122,7 @@ fn nested_insertion_failures_do_not_publish_intermediate_copies_or_clocks() {
         };
         match mode {
             "pool" => identities.nodes.truncate(2),
-            "timing" => timing.ordinal = u32::MAX,
+            "timing" => timing.allocation = RevisionId::new("wrong-timing").unwrap(),
             "collision" => *hold = id("inner"),
             _ => unreachable!(),
         }

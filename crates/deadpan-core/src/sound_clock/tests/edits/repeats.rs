@@ -22,10 +22,7 @@ fn wrap(document: &ProjectDocument, name: &str) -> ProjectDocument {
 
 #[test]
 fn partially_repeating_a_sound_owner_keeps_fragments_and_exact_clock_births() {
-    let mut before = edit(&fixture(), "prefix", insert("prefix", 0, 1));
-    // With no unbound physical recipe, Repeat's structural capture omits its
-    // base timing. Its suffix capture must not claim the sound journal's ID.
-    before.audio_bindings = capture_unbound_audio_bindings(&before, timing("bind-all")).unwrap();
+    let before = edit(&fixture(), "prefix", insert("prefix", 0, 1));
     let selection = SliceCaptureSelection::Range { range: range(3, 5) };
     let plan = before
         .repeat_selection(&node("top"), &selection, 2)

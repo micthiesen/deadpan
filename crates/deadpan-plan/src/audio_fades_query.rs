@@ -2,8 +2,8 @@
 use super::*;
 use crate::AudioSoundContextAdmission;
 use crate::audio_allocated::admission::array;
+use crate::plan::audio::Budget as LocalBudget;
 use crate::plan::audio::processing_query as collection;
-use crate::plan::audio::{Budget as LocalBudget, EditorialConstraint};
 use crate::plan::audio_bound::query::GuardedBound;
 use crate::plan::audio_owners::admission::{
     Budget as QueryBudget, Memory, Owned, Result as QueryResult, outer,
@@ -147,7 +147,6 @@ fn construct<A: AudioSoundContextAdmission>(
                     None,
                     plan.has_audio_editorial_edges.then_some(&mut captured),
                     None,
-                    None,
                 ),
             )?;
             let value = walked.value.adopt_memory(walked.memory, &mut budget)?;
@@ -160,9 +159,6 @@ fn construct<A: AudioSoundContextAdmission>(
                     add_editorial(plan, span, grid, voice, &captured, &mut budget)?
                 }
                 AudioWalkSpan::Stage(processing) => match &processing.content {
-                    AudioSignalContent::Bound(_) => {
-                        bound_fade(value, cursor, samples.end, captured, &mut budget)?
-                    }
                     AudioSignalContent::Stage(_) | AudioSignalContent::ProjectedStage(_) => {
                         let allocated_end = processing.allocated_samples.end;
                         let flat = plan.audio_walk_inner_admitted(
@@ -174,7 +170,6 @@ fn construct<A: AudioSoundContextAdmission>(
                             (
                                 None,
                                 plan.has_audio_editorial_edges.then_some(&mut captured),
-                                None,
                                 None,
                             ),
                         )?;
@@ -281,16 +276,6 @@ impl<I: Copy + Eq, L> SpanWork<I, L> {
             start_capacity: self.start_capacity,
             end_capacity: self.end_capacity,
         })
-    }
-}
-fn empty<A: AudioSoundContextAdmission>(
-    samples: Range<AudioSample>,
-    budget: &QueryBudget<'_, A>,
-) -> SpanWork<A::Issuer, A::Lease> {
-    SpanWork {
-        value: GuardedBound::plain(super::empty(samples), budget.issuer),
-        start_capacity: budget.memory(),
-        end_capacity: budget.memory(),
     }
 }
 fn ordinary_leaf<A: AudioSoundContextAdmission>(
@@ -405,240 +390,6 @@ fn retained_span<A: AudioSoundContextAdmission>(
         start_capacity: start.memory,
         end_capacity: end.memory,
     })
-}
-
-struct EnvelopeValue<'plan> {
-    domain: AudioDomain<'plan>,
-    remaining: Option<std::vec::IntoIter<EditorialConstraint>>,
-    _constraints: Vec<EnvelopeConstraint>,
-    repeats: Vec<deadpan_core::RepeatInstance>,
-    pending: Option<EditorialConstraint>,
-}
-struct EnvelopeWork<'plan, I, L> {
-    value: EnvelopeValue<'plan>,
-    memory: Memory<I, L>,
-    outer_memory: Memory<I, L>,
-    editorial_capacity: Memory<I, L>,
-}
-
-fn bound_fade<A: AudioSoundContextAdmission>(
-    primary: Guard<AudioWalkSpan<'_>, A>,
-    start: AudioSample,
-    end: AudioSample,
-    outer: Kept<EditorialCapture, A>,
-    budget: &mut QueryBudget<'_, A>,
-) -> QueryResult<SpanWork<A::Issuer, A::Lease>, A> {
-    let AudioWalkSpan::Stage(processing) = &*primary else {
-        return Err(PlanError::InvalidPlan("fade has no bound output").into());
-    };
-    let end = end.min(processing.allocated_samples.end);
-    bound_fade_untrimmed(primary, start, end, outer, budget)
-}
-
-pub(in crate::plan) fn retained_bound_span_admitted<A: AudioSoundContextAdmission>(
-    primary: Guard<AudioWalkSpan<'_>, A>,
-    start: AudioSample,
-    end: AudioSample,
-    outer: Kept<EditorialCapture, A>,
-    budget: &mut QueryBudget<'_, A>,
-) -> QueryResult<Guard<AudioFadeSpan, A>, A> {
-    bound_fade_untrimmed(primary, start, end, outer, budget)?.finish(budget)
-}
-
-fn bound_fade_untrimmed<A: AudioSoundContextAdmission>(
-    primary: Guard<AudioWalkSpan<'_>, A>,
-    start: AudioSample,
-    end: AudioSample,
-    outer: Kept<EditorialCapture, A>,
-    budget: &mut QueryBudget<'_, A>,
-) -> QueryResult<SpanWork<A::Issuer, A::Lease>, A> {
-    let AudioWalkSpan::Stage(processing) = &*primary else {
-        return Err(PlanError::InvalidPlan("fade has no bound output").into());
-    };
-
-    let AudioSignalContent::Bound(bound) = &processing.content else {
-        return Err(PlanError::InvalidPlan("fade has no bound output").into());
-    };
-    let q = bound.reference_at_wide_offset(
-        i128::from(start.0) - i128::from(processing.allocated_samples.start.0),
-    )?;
-    let step = bound.reference_samples_per_output_sample();
-    if step.compare_integer(0).is_le() {
-        return Err(PlanError::InvalidPlan("fade reference rate must be positive").into());
-    }
-    let Some(domain) = bound.envelope_domain_query(budget)? else {
-        return empty(start..end, budget).keep(primary, budget);
-    };
-    let origin = bound.lattice_origin();
-    let scale = bound.envelope_scale();
-    if scale.compare_integer(0).is_le() {
-        return Err(PlanError::InvalidPlan("fade virtual scale must be positive").into());
-    }
-    budget.canonical(outer.editorial.len())?;
-    let to_retained = |at: ExactRatio| {
-        origin.checked_add(
-            at.checked_sub(processing.transform.project_origin)?
-                .checked_div(scale)?,
-        )
-    };
-    let EditorialCapture {
-        editorial,
-        constraints,
-        repeats,
-    } = outer.value;
-    let mut envelope = EnvelopeWork {
-        value: EnvelopeValue {
-            domain: domain.value,
-            remaining: Some(editorial.into_iter()),
-            _constraints: constraints,
-            repeats,
-            pending: None,
-        },
-        memory: domain.memory,
-        outer_memory: outer.memory,
-        editorial_capacity: budget.memory(),
-    };
-    budget.check_memory(&envelope.memory)?;
-    budget.check_memory(&envelope.outer_memory)?;
-    budget.merge_checked(&mut envelope.memory, &mut envelope.outer_memory)?;
-    budget.check_memory(&envelope.memory)?;
-    loop {
-        envelope.value.pending = envelope
-            .value
-            .remaining
-            .as_mut()
-            .expect("outer editorial iterator")
-            .next();
-        let state = &mut envelope.value;
-        let Some(marker) = state.pending.as_mut() else {
-            break;
-        };
-        if marker.boundary.node == state.domain.seed.node
-            && marker.boundary.repeat_count == state.domain.seed.repeats.len()
-            && marker.boundary.gap_after.is_none()
-        {
-            budget.canonical(marker.boundary.repeat_count)?;
-            if state.repeats.get(..marker.boundary.repeat_count)
-                == Some(state.domain.seed.repeats.as_slice())
-            {
-                state.domain.seed.suppress_entry_editorial.start |= marker.edges.start;
-                state.domain.seed.suppress_entry_editorial.end |= marker.edges.end;
-            }
-        }
-        let first = processing.grid.boundary(marker.boundary.range.start)?;
-        let last = processing.grid.boundary(marker.boundary.range.end)?;
-        marker.incident_samples = Some((
-            bound.reference_at_wide_offset(
-                i128::from(first.0) - i128::from(processing.allocated_samples.start.0),
-            )?,
-            bound.reference_at_wide_offset(
-                i128::from(last.0) - 1 - i128::from(processing.allocated_samples.start.0),
-            )?,
-        ));
-        marker.boundary.range =
-            to_retained(marker.boundary.range.start)?..to_retained(marker.boundary.range.end)?;
-        let needed = state
-            .domain
-            .seed
-            .editorial
-            .len()
-            .checked_add(1)
-            .ok_or(TimeError::Overflow)?;
-        budget.grow(
-            &mut state.domain.seed.editorial,
-            &mut envelope.editorial_capacity,
-            needed,
-        )?;
-        state
-            .domain
-            .seed
-            .editorial
-            .push(state.pending.take().expect("transformed editorial marker"));
-    }
-    drop(envelope.value.remaining.take());
-    let domain = &envelope.value.domain;
-    let support = domain.root_samples();
-    if q.compare_integer(support.start.0).is_lt() {
-        let end = inverse_end(start, end, q, step, support.start)?;
-        return empty(start..end, budget).keep(primary, budget);
-    }
-    if q.compare_integer(support.end.0).is_ge() {
-        return empty(start..end, budget).keep(primary, budget);
-    }
-    let probe = AudioSample(i64::try_from(q.floor()).map_err(|_| TimeError::Overflow)?);
-    let mut captured = Owned {
-        value: EditorialCapture::default(),
-        memory: budget.memory(),
-    };
-    let walked = domain.plan.audio_walk_inner_admitted(
-        probe,
-        budget,
-        Some(&domain.seed),
-        false,
-        false,
-        (
-            None,
-            domain
-                .plan
-                .has_audio_editorial_edges
-                .then_some(&mut captured),
-            None,
-            None,
-        ),
-    )?;
-    if !matches!(&*walked.value, AudioWalkSpan::Leaf(_)) {
-        return Err(PlanError::InvalidPlan("bound fade retained a stage").into());
-    }
-    let leaf = walked.flattened_leaf(budget)?;
-    let end = inverse_end(start, end, q, step, leaf.allocated_samples.end)?;
-    let virtual_start = virtual_position(leaf.envelope_extent.start, origin, scale)?;
-    let virtual_end = virtual_position(leaf.envelope_extent.end, origin, scale)?;
-    let first = leaf.grid.boundary(virtual_start)?;
-    let last = leaf.grid.boundary(virtual_end)?;
-    let length =
-        u64::try_from(i128::from(last.0) - i128::from(first.0)).map_err(|_| TimeError::Overflow)?;
-    let project = |at: ExactRatio| {
-        processing
-            .transform
-            .project_origin
-            .checked_add(at.checked_sub(origin)?.checked_mul(scale)?)
-    };
-    let output = |sample: ExactRatio| {
-        ExactRatio::integer(start.0).checked_add(sample.checked_sub(q)?.checked_div(step)?)
-    };
-    let voice = output(ExactRatio::integer(leaf.envelope_samples.start.0))?
-        ..output(ExactRatio::integer(leaf.envelope_samples.end.0))?;
-    let progress = q
-        .checked_sub(ExactRatio::integer(leaf.envelope_samples.start.0))?
-        .checked_div(step)?;
-    let extent = project(leaf.envelope_extent.start)?..project(leaf.envelope_extent.end)?;
-    let leaf = GuardedBound::plain(leaf.value, budget.issuer).adopt_memory(leaf.memory, budget)?;
-    let retained = leaf.map(budget, move |leaf| Retained {
-        samples: start..end,
-        length,
-        progress,
-        extent,
-        boundaries: leaf.boundaries,
-    })?;
-    let span = retained_span(retained, budget)?;
-    budget.canonical(captured.editorial.len() + captured.constraints.len())?;
-    for constraint in captured.value.constraints.iter_mut().chain(
-        captured
-            .value
-            .editorial
-            .iter_mut()
-            .map(|marker| &mut marker.boundary),
-    ) {
-        constraint.range = project(constraint.range.start)?..project(constraint.range.end)?;
-    }
-    for marker in &mut captured.value.editorial {
-        if let Some((first, last)) = marker.incident_samples {
-            marker.incident_samples = Some((output(first)?, output(last)?));
-        }
-    }
-    let grid = processing.grid;
-    let span = add_editorial(domain.plan, span, grid, voice, &captured, budget)?;
-    span.keep(primary, budget)
 }
 
 struct OriginList<I, L> {

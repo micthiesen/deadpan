@@ -44,11 +44,11 @@ obsolete development packages are refused without writes.
 ## Provider constraints
 
 Why a Hold provider rather than a Retime direction: reversing a Retime would
-make every audio binding, reanchor, frozen-context and Split rule that stops at
+make every frozen-context and Split rule that stops at
 a nonunity Preserve treat a second opaque stage kind, and composite children
 (groups, Repeats) would need whole-subtree reversal. A reversed Hold is a leaf
 whose sound is one self-contained recipe, like room tone, so the existing
-binding and reanchor machinery stays untouched, and the picture is an ordinary
+split machinery stays untouched, and the picture is an ordinary
 `Picture::Source` that every decoder, cache and export path already admits.
 The captured providers above cover one continuous Original passage at its
 natural speed.
@@ -308,8 +308,7 @@ a `Tail of: Live 2 s before` row.
   against the reference block over the preceding authored bus, a -6 dB trim
   scaling and a mute silencing the tail, a pause at the start staying silent,
   a tail not feeding the next one, shared-group trim, envelope and mute
-  applying once, a Repeat with pause and gap tails split and re-read through
-  retained clocks with identical PCM and the Original after them unchanged,
+  applying once, a Repeat with pause and gap tails split and re-read with identical PCM and the Original after them unchanged,
   point-grid definition, gap and tape reads that are silent rather than
   failing, the source-stage message, and a mid-Hold read. Core refuses
   wrapping a tail in a Retime, speeding up a unity Retime around one and

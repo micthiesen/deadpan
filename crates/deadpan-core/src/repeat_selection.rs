@@ -259,12 +259,8 @@ fn wrap(
     let plan = document.repeat_selection(parent, selection, plays)?;
     validate_timing(document, timing, context.allocation)?;
     validate_identities(document, identities, &plan)?;
-    let mut working = document.clone();
-    // Even a whole child needs its pre-wrap lattice: the first play must retain
-    // the old root phase, and established inner birth scopes remain intrinsic.
-    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
-    let (mut working, consumed) = sequence_range::split_prepared(
-        &working,
+    let (working, consumed) = sequence_range::split_prepared(
+        document,
         parent,
         &[plan.range.start(), plan.range.end()],
         &identities.split,
@@ -299,15 +295,7 @@ fn wrap(
         }
     };
     if plays > 1 && plan.range.end().0 < document.duration()?.frames() {
-        let suffix_timing = next_timing(&working, timing)?;
-        working = composite::prepare_suffix(
-            &working,
-            parent,
-            end,
-            plan.range.end(),
-            document.duration()?.frames(),
-            &suffix_timing,
-        )?;
+        composite::check_suffix(&working, parent, end)?;
     }
     let mut result = working.clone();
     let child = if let Some(group) = &identities.group {
@@ -372,20 +360,11 @@ fn set_plays(
     if plays == iterations.len() {
         return Ok(document.clone());
     }
-    let mut working = document.clone();
-    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
+    let working = document.clone();
     if plan.output_duration != plan.range.duration()
         && plan.range.end().0 < document.duration()?.frames()
     {
-        let suffix_timing = next_timing(&working, timing)?;
-        working = composite::prepare_suffix(
-            &working,
-            &plan.parent,
-            plan.slot + 1,
-            plan.range.end(),
-            document.duration()?.frames(),
-            &suffix_timing,
-        )?;
+        composite::check_suffix(&working, &plan.parent, plan.slot + 1)?;
     }
     let mut result = working.clone();
     let command = Command::SetRepeat {
@@ -425,7 +404,7 @@ fn gaps_plan(
     trial.sound_routes.clear();
     trial.sound_allowances.clear();
     reduce_gaps(&mut trial, node, gap, branches, allocation)?;
-    crate::audio_binding_lifecycle::prune(&mut trial);
+    crate::audio_binding::prune(&mut trial);
     let output_duration = trial.durations()?[node];
     checked_total(document, range.duration(), output_duration)?;
     Ok((
@@ -561,40 +540,6 @@ pub(crate) fn reduce_gaps(
     Ok(())
 }
 
-/// Absolute end of `repeat`'s first play, which no gap change can move.
-pub(crate) fn first_play_end(
-    document: &ProjectDocument,
-    repeat: &NodeId,
-    start: ProjectFrame,
-) -> Result<ProjectFrame, EditError> {
-    let NodeKind::Repeat {
-        child,
-        iterations,
-        gap,
-        ..
-    } = &document.nodes()[repeat].kind
-    else {
-        unreachable!("gap plan admitted a Repeat")
-    };
-    let durations = document.durations()?;
-    let layout = RepeatLayout::compile_with_gap_overrides(
-        iterations,
-        child,
-        document.overrides().get(repeat),
-        gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
-        document.gap_overrides().get(repeat),
-        &durations,
-    )?;
-    let first = iterations.at(0).expect("positive Repeat plays");
-    let play = layout.play(&first).expect("validated Repeat layout");
-    start
-        .0
-        .checked_add(play.start)
-        .and_then(|value| value.checked_add(play.duration.frames()))
-        .map(ProjectFrame)
-        .ok_or_else(overflow)
-}
-
 impl ProjectDocument {
     /// Whether `SetRepeatGaps` would leave `node`'s gaps exactly as they are:
     /// the same default recipe and, after each named play, an existing
@@ -650,39 +595,15 @@ fn set_gaps(
         unreachable!()
     };
     let iterations = iterations.clone();
-    let mut working = document.clone();
-    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
-    // Later plays and gaps inside the Repeat move with the gaps before them.
-    // Like the suffix, each keeps its own pre-edit sample clock: capture every
-    // interior entry after the first play once, before the tree changes.
-    let first_end = first_play_end(document, node, plan.range.start())?;
-    if first_end < plan.range.end() {
-        let interior_timing = next_timing(&working, timing)?;
-        working = composite::prepare_owners(
-            &working,
-            &composite::repeat_interior_owners(&working, node)?,
-            first_end,
-            plan.range.end().0,
-            &interior_timing,
-        )?;
-    }
+    let working = document.clone();
     if plan.output_duration != plan.range.duration()
         && plan.range.end().0 < document.duration()?.frames()
     {
-        let suffix_timing = next_timing(&working, timing)?;
-        working = composite::prepare_suffix(
-            &working,
-            &plan.parent,
-            plan.slot + 1,
-            plan.range.end(),
-            document.duration()?.frames(),
-            &suffix_timing,
-        )?;
+        composite::check_suffix(&working, &plan.parent, plan.slot + 1)?;
     }
     let mut result = working.clone();
     reduce_gaps(&mut result, node, gap, branches, context.allocation)?;
-    // A replaced branch takes its captured clock with it.
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     if let Some(allowances) = context.allowances {
         // Permissions for a default gap end when that gap stops being the
         // default: when it is removed or replaced by an independent Hold.
@@ -706,7 +627,7 @@ fn finish(
 ) -> Result<ProjectDocument, EditError> {
     crate::audio_lineage::reconcile(before, &mut result, command)?;
     result.marks = crate::marks::transform_marks(before, &result, command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     result.validate()?;
     Ok(result)
 }
@@ -807,25 +728,6 @@ fn validate_timing(
         ));
     }
     Ok(())
-}
-
-fn next_timing(
-    document: &ProjectDocument,
-    base: &AudioTimingId,
-) -> Result<AudioTimingId, EditError> {
-    // The command's base identity belongs to its pre-edit layout, including
-    // attached-sound clocks restored after the structural reducer. Reserve it
-    // even when every physical recipe was already bound and capture omitted it.
-    let mut next = base.clone();
-    loop {
-        next.ordinal = next
-            .ordinal
-            .checked_add(1)
-            .ok_or_else(|| limit("Repeat requires another timing identity"))?;
-        if !document.audio_bindings().timings.contains_key(&next) {
-            return Ok(next);
-        }
-    }
 }
 
 fn invalid(message: &str) -> EditError {

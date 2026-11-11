@@ -391,23 +391,12 @@ fn root_total_reconciles_independent_canonical_receipts_and_additional_fees() {
         input.work(),
         canonical_input.checked_add(additional_input).unwrap()
     );
-    let probe = input
-        .input()
-        .unwrap()
-        .retained_probe_at_admitted(at, control.query_limits().unwrap(), &mut admission)
-        .unwrap();
-    assert!(probe.input().is_none(), "actual positive None fallback");
-    let canonical = canonical_input
-        .checked_add(probe.canonical_units())
-        .unwrap();
-    let additional = additional_input
-        .checked_add(probe.additional_units())
-        .unwrap();
+    let canonical = canonical_input;
+    let additional = additional_input;
     assert_eq!(
         work.borrow().plan_work,
         canonical.checked_add(additional).unwrap()
     );
-    drop(probe);
     let before_sharing = work.borrow().plan_work;
     let shared = input
         .input()
@@ -436,8 +425,10 @@ fn root_total_reconciles_independent_canonical_receipts_and_additional_fees() {
     assert_eq!(work.borrow().sound_context_frames, 0);
     let frozen = golden();
     let old = &frozen["cases"][0]["observation"];
+    // The frozen total includes the retained-input probe (9) removed with
+    // Original audio bindings.
     assert_eq!(
-        old["controller_plan_work"].as_u64().unwrap() as usize,
+        old["controller_plan_work"].as_u64().unwrap() as usize - 9,
         canonical
             .checked_add(deadpan_dsp::FINITE_FILTER_TAPS)
             .unwrap()

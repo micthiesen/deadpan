@@ -667,41 +667,6 @@ fn partitions_clip_rules_without_restarting_identity_and_share_query_limits() {
 }
 
 #[test]
-fn retained_timing_does_not_invent_an_old_silent_hold_rule() {
-    let doc = document(&["hold"], [("hold", hold(4))]);
-    let bindings = capture_unbound_audio_bindings(
-        &doc,
-        AudioTimingId {
-            allocation: RevisionId::new("capture").unwrap(),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(doc).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-    wire["nodes"]["hold"] = serde_json::to_value(BeatNode::hold(
-        "Room tone",
-        recipe(4, HoldAudio::RoomTone { source: audio() }),
-    ))
-    .unwrap();
-    let plan =
-        RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap();
-    assert!(
-        plan.audio_hold_policy(samples(0, 4), Default::default())
-            .unwrap()
-            .rules
-            .is_empty()
-    );
-    assert!(
-        plan.audio_signal()
-            .hold_policy(points(0, 4), Default::default())
-            .unwrap()
-            .rules
-            .is_empty()
-    );
-}
-
-#[test]
 fn narrow_billion_repeat_lookup_keeps_gap_and_hold_identity_without_expansion() {
     let plan = compile(
         &["repeat"],

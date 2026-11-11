@@ -37,38 +37,14 @@ pub(crate) fn apply(
     }
     let total = document.duration()?.frames();
     let splits = preflight.required_ids != 0;
-    let suffix_timing = if range.end().0 < total {
-        Some(AudioTimingId {
-            allocation: timing.allocation.clone(),
-            ordinal: if splits {
-                timing
-                    .ordinal
-                    .checked_add(1)
-                    .ok_or_else(|| super::limit("range deletion needs a second timing identity"))?
-            } else {
-                timing.ordinal
-            },
-        })
-    } else {
-        None
-    };
-    let mut working = if splits {
-        super::sequence_range::split_endpoints(
-            document, parent, range, identities, timing, context,
-        )?
+    let working = if splits {
+        super::sequence_range::split_endpoints(document, parent, range, identities, context)?
     } else {
         document.clone()
     };
     let removed = super::sequence_range::selected_children(&working, parent, range)?;
-    if let Some(suffix_timing) = suffix_timing {
-        working = super::composite::prepare_suffix(
-            &working,
-            parent,
-            removed.end,
-            range.end(),
-            total,
-            &suffix_timing,
-        )?;
+    if range.end().0 < total {
+        super::composite::check_suffix(&working, parent, removed.end)?;
     }
     let mut result = working.clone();
     let NodeKind::Sequence { children } =
@@ -88,6 +64,6 @@ pub(crate) fn apply(
     };
     crate::audio_lineage::reconcile(&working, &mut result, &command)?;
     result.marks = crate::marks::transform_marks(&working, &result, &command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     Ok(result)
 }

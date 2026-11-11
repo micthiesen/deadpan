@@ -134,85 +134,6 @@ fn empty_original_support_keeps_current_sound_fallback_and_missing_error() {
     ));
 }
 
-fn retained_plan() -> Arc<RenderPlan> {
-    retained_plan_with_treatments(None)
-}
-
-fn retained_plan_with_treatments(treatments: Option<AudioTreatments>) -> Arc<RenderPlan> {
-    let id = |name: &str| NodeId::new(name).unwrap();
-    let revision = |name: &str| RevisionId::new(name).unwrap();
-    let document = ProjectDocument::new(
-        ProjectId::new("node-description-retained").unwrap(),
-        revision("current"),
-        PresentationBasis {
-            width: 16,
-            height: 16,
-            frame_rate: FrameRate::new(48_000, 1).unwrap(),
-            color_policy: ColorPolicy::SdrRec709,
-        },
-        id("root"),
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(document).unwrap();
-    wire["nodes"] = serde_json::to_value(BTreeMap::from([
-        (id("root"), BeatNode::sequence("Root", vec![id("tone")])),
-        (
-            id("tone"),
-            BeatNode::hold(
-                "Tone",
-                HoldRecipe {
-                    picture_context: None,
-                    duration: FrameDuration::new(512).unwrap(),
-                    video: HoldVideo::Background,
-                    audio: HoldAudio::Tone {
-                        frequency_hz: 440,
-                        level: GainDb::new(-6000).unwrap(),
-                    },
-                },
-            ),
-        ),
-    ]))
-    .unwrap();
-    if let Some(treatments) = treatments {
-        wire["nodes"]["tone"]["audio_treatments"] = serde_json::to_value(treatments).unwrap();
-    }
-    let old = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let timing = AudioTimingId {
-        allocation: revision("saved"),
-        ordinal: 0,
-    };
-    wire["audio_bindings"] = serde_json::to_value(
-        AudioBindingState::new(
-            vec![AudioTimingRecord {
-                id: timing.clone(),
-                layout: FrozenAudioLayout::capture(&old).unwrap(),
-            }],
-            BTreeMap::from([(
-                id("tone"),
-                OwnedAudioBinding {
-                    reanchors: vec![],
-                    lattice: AudioPlacementTemplate {
-                        reference_local_offset: ExactRatio::ZERO,
-                        gap_after: None,
-                        reference: AudioReferenceClock {
-                            recipe: AudioRecipeKind::Node,
-                            timing,
-                            root: AudioClockRoot::ProjectRootRoundEven,
-                            physical: id("tone"),
-                        },
-                        arguments: vec![],
-                        births: vec![],
-                    },
-                    resume: None,
-                },
-            )]),
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    Arc::new(RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap())
-}
-
 #[test]
 fn metadata_query_work_removes_one_actual_membership_query() {
     let plan = fixture::fixture();
@@ -224,21 +145,14 @@ fn metadata_query_work_removes_one_actual_membership_query() {
     let kind = Temporal::Equalizer(fixture::stage(&owner));
     let cancelled = AtomicBool::new(false);
     // Independent legacy query oracle measures the actual removed query.
-    // Qualified predecessor total 28 and final None probe 9 remain the anchors.
+    // Qualified predecessor total 28 included a retained-input probe of 9,
+    // removed with Original audio bindings; 19 remains the anchor.
     let removed = plan
         .audio_gain_owners(AudioSample(128)..AudioSample(129), Default::default())
         .unwrap()
         .work();
-    let input = plan
-        .audio_owner_input(&owner, AudioSample(128), Default::default())
-        .unwrap();
-    let probe = input
-        .retained_probe_at(AudioSample(128), Default::default())
-        .unwrap();
-    assert!(probe.input().is_none());
-    assert_eq!(probe.work(), 9);
     assert!(removed > 0 && removed < 19);
-    let needed = 28 - removed;
+    let needed = 19 - removed;
     for shortage in [0, 1] {
         let remaining = needed - shortage;
         let work = RefCell::new(ReadWork::default());
@@ -251,7 +165,7 @@ fn metadata_query_work_removes_one_actual_membership_query() {
         );
         if shortage == 0 {
             assert!(result.is_ok());
-            assert_eq!(work.borrow().plan_work - before + removed, 28);
+            assert_eq!(work.borrow().plan_work - before + removed, 19);
             assert_eq!(work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
         } else {
             assert!(matches!(
@@ -260,8 +174,8 @@ fn metadata_query_work_removes_one_actual_membership_query() {
                     "structural work"
                 )))
             ));
-            assert_eq!(work.borrow().plan_work - before + removed, 19);
-            assert_eq!(MAX_PLAN_WORK_PER_READ - work.borrow().plan_work, 8);
+            assert_eq!(work.borrow().plan_work - before + removed, 11);
+            assert_eq!(MAX_PLAN_WORK_PER_READ - work.borrow().plan_work, 7);
         }
     }
 }
@@ -434,9 +348,6 @@ fn candidate_root_and_domain_contexts_match_legacy_and_save_only_query_work() {
 
 #[path = "original_sharing_tests.rs"]
 mod original_sharing;
-
-#[path = "legacy_query_receipts.rs"]
-mod legacy_query_receipts;
 
 #[path = "query_admission_tests.rs"]
 mod query_admission;

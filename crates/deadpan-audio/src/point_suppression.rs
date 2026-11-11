@@ -35,7 +35,6 @@ impl Handle {
 }
 impl Drop for Handle {
     fn drop(&mut self) {
-        #[cfg(not(test))]
         {
             if let Some(handle) = self.0.take()
                 && let Some(data) = Arc::into_inner(handle)
@@ -45,24 +44,6 @@ impl Drop for Handle {
                     frames_for(Layout::new::<ArcShell>()).expect("qualified Arc shell size");
                 let previous = data.live_frames.fetch_sub(shell, Ordering::AcqRel);
                 debug_assert_eq!(previous, shell, "all payload charges precede their handles");
-            }
-        }
-        #[cfg(test)]
-        if let Some(handle) = self.0.take() {
-            let identity = Arc::as_ptr(&handle) as usize;
-            if let Some(data) = Arc::into_inner(handle) {
-                // into_inner has freed the Arc allocation before returning its data.
-                let shell =
-                    frames_for(Layout::new::<ArcShell>()).expect("qualified Arc shell size");
-                let previous = data.live_frames.fetch_sub(shell, Ordering::AcqRel);
-                debug_assert_eq!(previous, shell, "all payload charges precede their handles");
-                read_signal_policy_native_trace::account_event(
-                    identity,
-                    "LastHandleDrop",
-                    previous,
-                    previous.wrapping_sub(shell),
-                    shell,
-                );
             }
         }
     }
@@ -84,23 +65,6 @@ impl Account {
         self.handle = Some(Handle(Some(Arc::new(AccountData {
             live_frames: AtomicU64::new(shell),
         }))));
-        #[cfg(test)]
-        {
-            let data = self
-                .handle
-                .as_ref()
-                .expect("initialized account")
-                .0
-                .as_ref()
-                .expect("account handle");
-            read_signal_policy_native_trace::account_event(
-                Arc::as_ptr(data) as usize,
-                "ShellInitialized",
-                0,
-                shell,
-                shell,
-            );
-        }
     }
 
     fn charge_after_admission(&mut self, frames: u64) -> Result<Charge, StageAudioError> {
@@ -112,26 +76,10 @@ impl Account {
             .load(Ordering::Acquire)
             .checked_add(frames)
             .ok_or(StageAudioError::Range)?;
-        #[cfg(not(test))]
         handle
             .data()
             .live_frames
             .fetch_add(frames, Ordering::AcqRel);
-        #[cfg(test)]
-        {
-            let previous = handle
-                .data()
-                .live_frames
-                .fetch_add(frames, Ordering::AcqRel);
-            let identity = Arc::as_ptr(handle.0.as_ref().expect("live account handle")) as usize;
-            read_signal_policy_native_trace::account_event(
-                identity,
-                "ChargeAccepted",
-                previous,
-                previous.wrapping_add(frames),
-                frames,
-            );
-        }
         Ok(Charge {
             handle: handle.duplicate(),
             frames,
@@ -173,14 +121,6 @@ impl Drop for Charge {
             .live_frames
             .fetch_sub(self.frames, Ordering::AcqRel);
         debug_assert!(previous >= self.frames);
-        #[cfg(test)]
-        read_signal_policy_native_trace::account_event(
-            Arc::as_ptr(self.handle.0.as_ref().expect("live charge handle")) as usize,
-            "ChargeDrop",
-            previous,
-            previous.wrapping_sub(self.frames),
-            self.frames,
-        );
     }
 }
 
@@ -361,10 +301,6 @@ pub(super) fn payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
 #[cfg(test)]
 pub(in crate::stages) fn audio_payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
     payload_frames_for::<AudioSample>(capacity)
-}
-#[cfg(test)]
-pub(in crate::stages) fn signal_payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
-    payload_frames_for::<SignalSample>(capacity)
 }
 fn payload_frames_for<S: MaskSample>(capacity: usize) -> Result<u64, StageAudioError> {
     let vector = Layout::array::<Range<S>>(capacity).map_err(|_| StageAudioError::Range)?;
@@ -790,51 +726,4 @@ mod tests {
         drop(reference);
         assert_eq!(observer.live_frames(), 3);
     }
-}
-
-#[cfg(test)]
-pub(in crate::stages) fn read_signal_native_mask_snapshot(
-    mask: &SignalSuppressionMask,
-) -> serde_json::Value {
-    match &mask.value {
-        Value::Plain(ranges) => read_signal_policy_native_trace::mask_scalar(
-            "Plain",
-            None,
-            None,
-            None,
-            ranges.len(),
-            ranges.capacity(),
-        ),
-        Value::Owned(owner) => {
-            let storage = owner.storage.as_ref().expect("live native mask storage");
-            let account = storage
-                .charge
-                .handle
-                .0
-                .as_ref()
-                .expect("live native mask account");
-            read_signal_policy_native_trace::mask_scalar(
-                "Owned",
-                Some(Arc::as_ptr(account) as usize),
-                Some(account.live_frames.load(Ordering::Acquire)),
-                Some(storage.charge.frames),
-                storage.ranges.len(),
-                storage.ranges.capacity(),
-            )
-        }
-    }
-}
-#[cfg(test)]
-pub(in crate::stages) fn read_signal_native_account_snapshot(
-    renderer: &StageAudio,
-) -> serde_json::Value {
-    let account = renderer
-        .owned_suppression
-        .handle
-        .as_ref()
-        .and_then(|h| h.0.as_ref());
-    read_signal_policy_native_trace::account_scalar(
-        account.map(|a| Arc::as_ptr(a) as usize),
-        account.map_or(0, |a| a.live_frames.load(Ordering::Acquire)),
-    )
 }

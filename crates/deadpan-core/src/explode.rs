@@ -8,21 +8,15 @@
 //! the first default play keeps the authored definition, and every other
 //! default play receives a fresh copy that shares immutable media. Gaps become
 //! explicit Holds and per-play escalation becomes an explicit group per play.
-//!
-//! Retained audio clocks are closed, never recomputed: a placement argument or
-//! birth clause naming the exploded Repeat is resolved for its concrete play,
-//! which yields exactly the clock the play already used.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Serialize;
 
 use crate::{
-    AnchorLossPolicy, AudioBirthSurvivors, AudioClockRoot, AudioEdgePolicy, AudioPlacementTemplate,
-    AudioRepeatValue, AudioTimingId, BeatNode, EditError, EditErrorCode, FrozenAudioKind,
-    FrozenAudioLayout, IterationId, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId,
-    MarkLossReason, MarkState, NodeId, NodeKind, OccurrenceIdentities, ProjectDocument,
-    RepeatInstance,
+    AnchorLossPolicy, AudioEdgePolicy, AudioTimingId, BeatNode, EditError, EditErrorCode,
+    IterationId, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark, MarkId, MarkLossReason, MarkState,
+    NodeId, NodeKind, OccurrenceIdentities, ProjectDocument, RepeatInstance,
 };
 
 /// Fresh identities a host must supply for [`crate::Command::Explode`].
@@ -307,16 +301,11 @@ pub(crate) fn apply(
     let mut pool = Pool::new(document, supplied)?;
     let edges = document.nodes()[repeat].audio_edges;
     let mut result = document.clone();
-    if requirements.captures_timing {
-        if document.audio_bindings().timings().contains_key(timing) {
-            return Err(EditError::new(
-                EditErrorCode::IdentityConflict,
-                "explode timing identity already exists",
-            ));
-        }
-        // Only the Repeat's own gap clock is needed. Other unbound owners keep
-        // their implicit clocks, which explode leaves at the same positions.
-        crate::gap_override::capture_gap_clock(&mut result, repeat, timing)?;
+    if requirements.captures_timing && document.audio_bindings().timings().contains_key(timing) {
+        return Err(EditError::new(
+            EditErrorCode::IdentityConflict,
+            "explode timing identity already exists",
+        ));
     }
     let mut allowances = context.allowances;
     let mut plays = Vec::with_capacity(plan.plays.len());
@@ -385,16 +374,6 @@ pub(crate) fn apply(
         plays.push((iteration.clone(), root, gap, wrapper));
     }
 
-    // Close every retained clock that names this Repeat for its concrete play.
-    for (iteration, root, gap, _) in &plays {
-        for owned in std::iter::once(root).chain(gap) {
-            for node in crate::occurrence_edit::subtree_order(&result, owned)? {
-                close_owner(&mut result, &node, repeat, iteration)?;
-            }
-        }
-    }
-    result.audio_bindings.gap_bindings.remove(repeat);
-
     // Explicit gap branches previously carried the Repeat's gap boundaries.
     for (_, _, gap, _) in &plays {
         // A zero-duration branch had no gap extent, so no gap constraint.
@@ -457,8 +436,6 @@ pub(crate) fn apply(
         result.overrides.remove(node);
         result.gap_overrides.remove(node);
         result.audio_lineage.remove(node);
-        result.audio_bindings.bindings.remove(node);
-        result.audio_bindings.gap_bindings.remove(node);
     }
     result.overrides.remove(repeat);
     result.gap_overrides.remove(repeat);
@@ -480,152 +457,6 @@ fn hard_union(left: AudioEdgePolicy, right: AudioEdgePolicy) -> AudioEdgePolicy 
     } else {
         left
     }
-}
-
-fn close_owner(
-    result: &mut ProjectDocument,
-    node: &NodeId,
-    repeat: &NodeId,
-    iteration: &IterationId,
-) -> Result<(), EditError> {
-    close_bindings(&mut result.audio_bindings, node, repeat, iteration)
-}
-
-/// Close one owner's retained clocks for a concrete play of `repeat`, as if
-/// that play no longer had the Repeat around it. An occurrence copy uses
-/// this for every enclosing Repeat of the copied play.
-pub(crate) fn close_bindings(
-    state: &mut crate::AudioBindingState,
-    node: &NodeId,
-    repeat: &NodeId,
-    iteration: &IterationId,
-) -> Result<(), EditError> {
-    let timings = &state.timings;
-    for bindings in [&mut state.bindings, &mut state.gap_bindings] {
-        let Some(binding) = bindings.get_mut(node) else {
-            continue;
-        };
-        close(&mut binding.lattice, timings, repeat, iteration)?;
-        if let Some(resume) = &mut binding.resume {
-            for term in &mut resume.phase.terms {
-                close(&mut term.placement, timings, repeat, iteration)?;
-            }
-        }
-        for step in &mut binding.reanchors {
-            let captured = step.placement.reference.root.clone();
-            if close(&mut step.placement, timings, repeat, iteration)? && step.window.is_some() {
-                // The exploded play was born on the Repeat's definition, which
-                // already discarded a window authored in the enclosing captured
-                // scope. An inner birth selecting that old captured root would
-                // still have kept it, which a single root cannot express.
-                if step.placement.births.iter().any(|clause| {
-                    captured
-                        == AudioClockRoot::DefinitionPointCeil {
-                            root: clause.definition_root.clone(),
-                        }
-                }) {
-                    return Err(invalid(
-                        "explode cannot yet preserve this retained reanchor window",
-                    ));
-                }
-                step.window = None;
-            }
-        }
-    }
-    Ok(())
-}
-
-/// Resolve one placement's dependence on `repeat` for `iteration`. Returns
-/// true when the clock root changes to the Repeat's definition birth.
-fn close(
-    template: &mut AudioPlacementTemplate,
-    timings: &BTreeMap<AudioTimingId, FrozenAudioLayout>,
-    repeat: &NodeId,
-    iteration: &IterationId,
-) -> Result<bool, EditError> {
-    if matches!(&template.gap_after, Some(AudioRepeatValue::Live { repeat: live }) if live == repeat)
-    {
-        return Err(invalid(
-            "explode found an unmaterialized gap clock for its Repeat",
-        ));
-    }
-    let clause = template
-        .births
-        .iter()
-        .position(|clause| &clause.repeat == repeat);
-    let argument = template.arguments.iter().position(
-        |argument| matches!(&argument.value, AudioRepeatValue::Live { repeat: live } if live == repeat),
-    );
-    if clause.is_none() && argument.is_none() {
-        return Ok(false);
-    }
-    let layout = timings
-        .get(&template.reference.timing)
-        .ok_or_else(|| invalid("audio timing identity is missing"))?;
-    let born = match clause {
-        None => false,
-        Some(index) => !survives(&template.births[index].survivors, layout, iteration)?,
-    };
-    if !born {
-        if let Some(index) = argument {
-            template.arguments[index].value = AudioRepeatValue::Captured {
-                iteration: iteration.clone(),
-            };
-        }
-        if let Some(index) = clause {
-            template.births.remove(index);
-        }
-        return Ok(false);
-    }
-    let index = clause.expect("born through a clause");
-    let definition = template.births[index].definition_root.clone();
-    let (required, _) = layout
-        .scoped_repeats(
-            &definition,
-            &template.reference.physical,
-            MAX_DOCUMENT_NODES,
-        )
-        .map_err(EditError::from)?;
-    template
-        .arguments
-        .retain(|argument| required.contains(&argument.reference_repeat));
-    template.births.drain(..=index);
-    let root = AudioClockRoot::DefinitionPointCeil { root: definition };
-    let changed = template.reference.root != root;
-    template.reference.root = root;
-    Ok(changed)
-}
-
-fn survives(
-    survivors: &AudioBirthSurvivors,
-    layout: &FrozenAudioLayout,
-    iteration: &IterationId,
-) -> Result<bool, EditError> {
-    Ok(match survivors {
-        AudioBirthSurvivors::CapturedRepeat { repeat } => {
-            let Some(crate::FrozenAudioNode {
-                kind: FrozenAudioKind::Repeat { iterations, .. },
-                ..
-            }) = layout.nodes().get(repeat)
-            else {
-                return Err(invalid("birth survivors require a captured Repeat"));
-            };
-            iterations.position(iteration).is_some()
-                && layout
-                    .overrides()
-                    .get(repeat)
-                    .is_none_or(|overrides| overrides.get(iteration).is_none())
-        }
-        AudioBirthSurvivors::Run {
-            allocation,
-            first,
-            count,
-        } => {
-            &iteration.allocation == allocation
-                && iteration.ordinal >= *first
-                && u64::from(iteration.ordinal) < u64::from(*first) + u64::from(*count)
-        }
-    })
 }
 
 /// Captions on nodes whose innermost enclosing Repeat is the exploded one.

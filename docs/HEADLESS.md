@@ -167,20 +167,18 @@ shows. [Parity](PARITY.md) maps every GUI action to its headless form.
 
 `delete` takes `node` and resolves to `DeleteRipple` before preview or dispatch,
 with timing allocation equal to the new revision and ordinal zero. Explicit
-`delete_ripple` takes `node` and `timing`. Both retain the old sample entry of
-downstream audio through ordinary Sequence ancestors. Empty and terminal
+`delete_ripple` takes `node` and `timing`. Both change structure only; downstream
+audio is sampled from its new position through ordinary Sequence ancestors. Empty and terminal
 children are supported; Repeat/Retime ancestors require separate occurrence
 work. Saved core `Delete` requests retain their historical replay semantics.
-See [ripple deletion](AUDIO_REANCHORS.md#ripple-deletion).
+See [ripple deletion](AUDIO_EDGES.md).
 
 `delete_range` takes `parent`, a global nonempty half-open `range`, fresh Split
 `identities`, and `timing`. Both endpoint cuts and removal form one transaction.
 `ProjectDocument::range_deletion` returns the required Split identity count.
-The timing allocation equals the new revision. An interior deletion with a
-surviving suffix uses two consecutive ordinals for the original and split suffix
-clocks; operations needing only one clock use the supplied ordinal. The same
+The timing allocation equals the new revision. The same
 command supports dry-run, commit and durable Undo/Redo.
-See [selected ranges](AUDIO_REANCHORS.md#selected-ranges).
+See [selected ranges](STRUCTURAL_SELECTIONS.md).
 
 `move_range` takes the current `source_revision`, `source_parent`, a nonempty
 global `range`, `destination`, fresh Split `identities`, and `timing` allocated
@@ -276,7 +274,7 @@ See [room-tone authoring](ROOM_TONE_AUDIO.md#authored-policy-changes).
 
 `set_repeat_gap_audio` takes the same `node` (a Repeat) and `audio` and changes
 that Repeat's default gap recipe, heard in every gap without its own branch
-Hold. Gap duration and picture, plays, branches and retained gap clocks stay
+Hold. Gap duration and picture, plays and branches stay
 unchanged; only that Repeat's default-gap sound permissions are retired. A
 split Hold fragment is an ordinary `set_hold_audio` on the Hold inside its
 Partitions. The `set_hold_audio` and `set_room_tone` macro instructions resolve
@@ -316,7 +314,7 @@ the full voice graph and remaining structural sound transforms stay open. See
 
 Sparse [gap branches](REPEAT_GAP_BRANCHES.md) retain an
 independent subtree after a stable Repeat play. `isolate_gap` copies the current
-rendered default into a Hold while preserving its audio clock; it requires fresh
+rendered default into a Hold with the same audio position; it requires fresh
 node and timing identities. `set_gap_override` replaces a gap with a supplied
 subtree, while `clear_gap_override` exposes the current default. Each has an
 occurrence form. A final play retains its branch without rendering a trailing
@@ -324,18 +322,17 @@ gap. These commands do not yet plan insertion at an arbitrary cursor position.
 
 `insert_time` admits existing root Sequence seams before composite suffixes,
 including partially selected Repeats and owned gap branches. The new Hold,
-current placement reanchors, mark transforms and history commit are atomic.
+mark transforms and history commit are atomic.
 Root Source/ordinary Hold interiors and supported transparent fragments also
-admit composite suffixes. This branch reserves the supplied timing ordinal and
-its checked successor for pre-Split sampling and post-Split placement. These
+admit composite suffixes. These
 cuts also descend into unretimed Sequence groups and keep their actual parent
 live. Repeat/Retime interiors remain unsupported. See [pause insertion](INSERT_TIME.md).
 
 `splice_source` accepts `parent`, `index`, `source`, `id`, `label` and `timing`
 (`allocation` equal to the new revision and an ordinal). It inserts the supplied
 Source at an explicit ordinary Sequence child slot and preserves each shifted
-physical audio entry. The newly inserted Source starts on the canonical unbound
-project grid. Repeat/Retime ancestors are rejected. This generic command can
+physical audio owner structurally. The newly inserted Source is sampled on the
+canonical project grid. Repeat/Retime ancestors are rejected. This generic command can
 reuse an existing asset offline; the native host instead derives the Source
 through prepared-receipt admission. See [Original moments](SOURCE_MOMENTS.md).
 
@@ -343,9 +340,8 @@ through prepared-receipt admission. See [Original moments](SOURCE_MOMENTS.md).
 strict local `at` frame duration, and also requires `identities` for Split. The
 named `parent` must be an ordinary Sequence; supported targets are Source,
 ordinary Hold and transparent fragments. It splits and inserts in one reversible
-command, retaining the original audio clocks and transforming placed sounds
-once. `timing.ordinal` and its checked successor cover pre-Split sampling and
-post-Split placement. It never descends a child group or resolves a Repeat/Retime
+command, transforming placed sounds
+once. It never descends a child group or resolves a Repeat/Retime
 occurrence. Native [Place slice](SLICE_PLACEMENT.md) previews the complete command
 through exact prepared Original evidence before committing.
 
@@ -355,7 +351,7 @@ in one reversible command. Endpoint interiors use the same physical admission
 as `splice_source_at`; whole intervening children may be composite structures.
 Zero-duration children at either endpoint survive; those strictly inside the
 range are removed. Both retained fragments keep their context. Suffix audio
-maps directly from its old entry to its final placement, and root sounds gain
+is sampled from its final placement, and root sounds gain
 one Replace operation without a shorter intermediate clock. Native preview
 and fast Visual paste derive the Source from qualified Original evidence.
 
@@ -377,7 +373,7 @@ omitted from canonical JSON. `partition` retains child audio context at unity
 speed and requires automatic edges; see [the partition contract](AUDIO_PARTITIONS.md).
 `split` retains editable child context through transparent partitions.
 `insert_time` atomically inserts a positive Background or Freeze Hold into the
-supported root sequence and preserves downstream audio clocks. Its current scope,
+supported root sequence; downstream audio is sampled from its new position. Its current scope,
 identity parameters, zero-duration refusal and migration contract are documented
 in [Insert Time](INSERT_TIME.md). Arbitrary nested insertion remains open.
 Marks may retain multiple physical bindings under one logical ID. Named queries
@@ -743,7 +739,7 @@ identifies `physical_domain_pcm_before_effects`, the captured occurrence and bot
 meaningful and visible sample ranges. It uses qualified historical media and
 does not mutate the project. See [physical domains](AUDIO_PHYSICAL_DOMAINS.md)
 for exact phase, policy and transfer semantics. This is context inspection,
-not a final mix, export or an authored resume binding.
+not a final mix, export or an authored placement.
 
 ## Audio definition inspection
 

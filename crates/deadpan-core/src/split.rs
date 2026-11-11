@@ -309,7 +309,7 @@ pub(crate) fn apply_validated(
         children.splice(slot..=slot, [left, right]);
     }
     result.marks = marks;
-    let validation = result.validated_in_scope()?;
+    let validation = result.validated_durations()?;
     Ok((result, validation))
 }
 

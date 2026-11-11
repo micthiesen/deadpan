@@ -72,13 +72,6 @@ pub(crate) fn validate_source_trim_edit(
     // candidate validation. The no-op preview needs equivalent empty-pool
     // admission even though it intentionally creates no transaction.
     resolution.result_identities(resources)?;
-    if let Some(timing) = &resources.timing
-        && timing.allocation != request.new_revision
-    {
-        return Err(invalid(
-            "combined Trim timing must belong to its new revision",
-        ));
-    }
     if intent.is_zero() && next != current {
         return Err(invalid("zero combined Trim must preserve the document"));
     }

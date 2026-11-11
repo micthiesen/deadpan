@@ -11,6 +11,7 @@ pub(super) struct Request<'request, 'plan> {
 }
 
 pub(super) enum Source<'query, 'context, 'plan, I, L> {
+    #[cfg(test)]
     Direct,
     SpanStart {
         candidates:
@@ -89,14 +90,10 @@ where
         stage,
     } = request;
     let original = match incoming {
-        // Preserve the actual retained consumer and the old no-query path.
-        Context::Retained(input) => ResolvedOriginal {
-            context: Context::Retained(input.clone()),
-            carrier: None,
-        },
         Context::Root | Context::Domain(_) => {
             let limits = control.query_limits()?;
             match source {
+                #[cfg(test)]
                 Source::Direct => {
                     let capture = match incoming {
                         Context::Root => {
@@ -105,7 +102,6 @@ where
                         Context::Domain(domain) => {
                             domain.owner_input_admitted(owner, at, limits, admission)?
                         }
-                        Context::Retained(_) => unreachable!(),
                     };
                     if capture.was_forwarded() != A::METERED {
                         return Err(PlanError::InvalidPlan(
@@ -136,7 +132,6 @@ where
                         Context::Domain(domain) => {
                             candidates.capture_domain(domain, request, limits, admission)?
                         }
-                        Context::Retained(_) => unreachable!(),
                     };
                     if capture.was_forwarded() != A::METERED {
                         return Err(PlanError::InvalidPlan(
@@ -199,11 +194,9 @@ where
         control.spend_plan_work(input.work())?;
     }
     let carrier = Context::finish_paid_owner_input_admitted(input, owner, at, control, admission)?;
-    let context = if let Some(domain) = carrier.domain() {
-        Context::Domain(Arc::clone(domain))
-    } else {
-        Context::Retained(carrier.retained().expect("shared retained").clone())
-    };
+    let context = Context::Domain(Arc::clone(carrier.domain().ok_or(
+        PlanError::InvalidPlan("shared Original context has no domain"),
+    )?));
     Ok(ResolvedOriginal {
         context,
         carrier: Some(carrier),

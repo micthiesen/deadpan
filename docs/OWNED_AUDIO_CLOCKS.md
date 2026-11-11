@@ -3,13 +3,14 @@
 `AudioDefinition::in_root_clock` evaluates a Source, Hold, Repeat gap or nonunity Preserve
 definition from one immutable plan in an explicit root placement. The selected
 plan supplies the current recipe, media contracts and policies. A placement
-supplies coordinates only. It is not a frozen raw body, an authored binding,
+supplies coordinates only. It is not a frozen raw body, a stored clock,
 or permission to read media.
 
 This provides a tested evaluation boundary for the owned-tree approach to
-inserted-time audio. Split retains full editable child contexts. The separate
-[binding representation and renderer](OWNED_AUDIO_BINDINGS.md) preserve their
-evaluation clocks without adding a second graph of historical raw recipes.
+inserted-time audio. Split retains full editable child contexts. Original audio
+placement is derived from the current tree (see
+[sampling clocks](AUDIO_SAMPLING.md)); no second graph of historical raw
+recipes is stored.
 Core 17/database 23 add [atomic root-sequence insertion](INSERT_TIME.md).
 The complete edit lifecycle and arbitrary nested Hold insertion remain open.
 
@@ -51,15 +52,15 @@ Preserve stage's original intrinsic clocks. Its output is still a preparation
 domain: a parent may consume it directly, and a separate PointCeil tape may
 schedule it around a pause. [Projected root placement](AUDIO_PROJECTED_ROOT.md)
 supplies the separate absolute RoundEven allocation and phase continuation for
-one such physical domain. It does not persist a new owned-tree binding or
+one such physical domain. It does not persist a new stored clock or
 install a route into ordinary root-plan evaluation.
 
 A Sequence, Repeat or transparent Retime cannot be treated as one physical
 domain. Each genuine domain needs its own placement. In an NTSC `A2f, B2f`
-sequence, inserting 1f at frame 1 requires A to resume new sample 3203 from old
-1602, while B starts at new 4805 from old 3203. One suffix offset cannot express
-both. `RepeatDefault` may select a physical default directly, including an
-unplayed default, but it does not invent an enclosing play or a birth binding.
+sequence, inserting 1f at frame 1 places A and B at different new sample
+origins (3203 and 4805), each derived from its own current position. One suffix
+offset cannot express both. `RepeatDefault` may select a physical default directly, including an
+unplayed default, but it does not invent an enclosing play or a stored clock.
 `RepeatGap` similarly selects the configured positive gap recipe, even when the
 Repeat has only one play. Its intrinsic extent is the gap duration, independently
 of the Repeat's output duration. Explicit gap definitions have no preceding-play
@@ -120,19 +121,13 @@ Invalid sample intervals return `AudioRangeOutOfRange`.
 
 ## Remaining authored semantics
 
-The evaluation boundary does not select or persist bindings automatically.
-That model must separately retain owned local anchors, active-cut phase,
-independent later-domain starts and compact stable-play placement. Existing
-Repeat plays retain their previous phase after movement; new plays need an
-explicit canonical definition environment that replaces enclosing placement
-while retaining intrinsic edits. A flattened absolute offset cannot encode
-that distinction. Split and occurrence copying must remap live owners while
-preserving clock relationships, and changed raw contributions must replace
+The evaluation boundary does not select or persist anything. Original audio
+placement is derived from the current tree, so Repeat plays, new plays and
+moved owners are sampled from where they now sit; there are no stored
+local anchors or active-cut phase terms (removed 2026-11-11). Split and
+occurrence copying remap live owners, and changed raw contributions replace
 their old policy and invalidate affected opaque preparations.
 
 Historical timing layouts may supply bounded placement indexes. Historical raw
 bodies remain useful for explicit revision inspection, but are not required by
-this owned-recipe reader. Neither this API nor the timing-only proposal proves
-the complete binding lifecycle. The separate persisted representation now has
-[policy and PCM consumers](OWNED_AUDIO_BINDINGS.md) that honor authored clocks;
-its remaining lifecycle and insertion limits are recorded there.
+this owned-recipe reader.

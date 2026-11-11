@@ -3,9 +3,8 @@ use super::roll::{hosted, ready, same_content, typed};
 use super::*;
 use deadpan_cli::live_project::{HistoryDirection, ShortOperation, execute_short};
 use deadpan_core::{
-    AudioTimingId, CommandRequest, EditTransaction, FrameRange, ProjectDocument, ProjectFrame,
-    RevisionId, SourceTrimCapture, SourceTrimIntent, SourceTrimPolicy, SourceTrimResources,
-    SplitIdentities,
+    CommandRequest, EditTransaction, FrameRange, ProjectDocument, ProjectFrame, RevisionId,
+    SourceTrimIntent, SourceTrimPolicy, SourceTrimResources, SplitIdentities,
 };
 
 fn mixed(policy: SourceTrimPolicy) -> SourceTrimIntent {
@@ -46,9 +45,6 @@ fn envelope(before: &ProjectDocument, next: &str, intent: SourceTrimIntent) -> R
                 },
                 fillers: (0..resolution.required_filler_nodes)
                     .map(|n| NodeId::new(format!("filler-{n}")).unwrap()).collect(),
-                timing: (resolution.capture != SourceTrimCapture::None).then(|| AudioTimingId {
-                    allocation: RevisionId::new(next).unwrap(), ordinal: 0,
-                }),
             },
         }
     }))
@@ -309,7 +305,6 @@ fn combined_zero_and_invalid_resources_preserve_nonempty_redo_and_all_rows() -> 
         cold["source_trim_edit"]["geometry"]["intent"],
         serde_json::to_value(SourceTrimIntent::default())?
     );
-    assert_eq!(cold["source_trim_edit"]["capture"], "none");
     assert!(hosted(&mut writer, &zero, false).is_err());
     assert_eq!(stored(&database)?, rows);
     drop(writer);
@@ -323,7 +318,6 @@ fn combined_zero_and_invalid_resources_preserve_nonempty_redo_and_all_rows() -> 
         "b-wrapper",
         "split",
         "filler",
-        "timing",
         "stale",
         "reused",
     ] {
@@ -333,9 +327,6 @@ fn combined_zero_and_invalid_resources_preserve_nonempty_redo_and_all_rows() -> 
             "b-wrapper" => bad["command"]["resources"]["right_wrapper"] = json!("unexpected"),
             "split" => bad["command"]["resources"]["split"]["nodes"] = json!(["unexpected"]),
             "filler" => bad["command"]["resources"]["fillers"] = json!(["unexpected"]),
-            "timing" => {
-                bad["command"]["resources"]["timing"] = json!({"allocation":"unused","ordinal":0})
-            }
             "stale" => bad["expected_revision"] = json!("ready"),
             "reused" => bad["new_revision"] = json!("renamed"),
             _ => unreachable!(),
@@ -355,24 +346,9 @@ fn combined_zero_and_invalid_resources_preserve_nonempty_redo_and_all_rows() -> 
         assert_eq!(stored(&database)?, rows, "{fault}");
     }
     let good = envelope(&before, "unused", mixed(SourceTrimPolicy::Overwrite))?;
-    for fault in [
-        "timing-allocation",
-        "wrapper-collision",
-        "extra-filler",
-        "stale-pair",
-    ] {
-        // Ripple I=1 necessarily captures a target reanchor. Make the timing
-        // case exercise allocation admission rather than an absent timing role
-        // or a malformed optional JSON object on a fully bound Overwrite.
-        let mut bad = if fault == "timing-allocation" {
-            envelope(&before, "unused", mixed(SourceTrimPolicy::Ripple))?
-        } else {
-            good.clone()
-        };
+    for fault in ["wrapper-collision", "extra-filler", "stale-pair"] {
+        let mut bad = good.clone();
         match fault {
-            "timing-allocation" => {
-                bad["command"]["resources"]["timing"]["allocation"] = json!("wrong")
-            }
             "wrapper-collision" => bad["command"]["resources"]["target_wrapper"] = json!("left"),
             "extra-filler" => bad["command"]["resources"]["fillers"] = json!(["filler-0", "extra"]),
             "stale-pair" => bad["command"]["right"] = json!("left"),

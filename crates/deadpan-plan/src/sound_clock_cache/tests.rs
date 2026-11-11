@@ -122,8 +122,6 @@ fn fixture() -> ProjectDocument {
             id: timing,
             layout: FrozenAudioLayout::capture(&document).unwrap(),
         }],
-        BTreeMap::new(),
-        BTreeMap::new(),
         journals,
     )
     .unwrap();
@@ -179,8 +177,6 @@ fn replace_second_reference(plan: &RenderPlan, reference: SoundClockReference) -
                 layout: layout.clone(),
             })
             .collect(),
-        BTreeMap::new(),
-        BTreeMap::new(),
         journals,
     )
     .unwrap();
@@ -688,8 +684,6 @@ fn sound_processing_inventory_fixture()
                 layout,
             },
         ],
-        BTreeMap::new(),
-        BTreeMap::new(),
         journals,
     )
     .unwrap();

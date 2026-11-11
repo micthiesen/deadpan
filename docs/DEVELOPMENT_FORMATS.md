@@ -50,34 +50,35 @@ not infer historical aliases for newly born groups. See
 Schema 86 uses core 57's compact frozen audio nodes. All-Automatic edge policies
 are omitted and decode to the same six Automatic values; any explicit policy
 still stores the complete closed object. The exact wire-size counter follows
-the same rule. Lattices, timing tables, round-trip checks and history validation
+the same rule. Timing tables, round-trip checks and history validation
 retain their semantics. Standalone FrozenAudioContext schemas 1 through 12
 keep their original explicit edge objects and canonical encoding; only the
 versioned project and history layout uses this compact representation.
 
-Schema 87 uses core 58's compact owned audio bindings. The project-root clock,
-empty argument and birth paths, absent resume, and exact zero resume boundary
-and phase constant are omitted and restore their original values. Nondefault
-values remain explicit. The independent raw preflight treats absent paths as
-zero entries while enforcing the same limits on present paths; null vectors,
-duplicates and unknown fields remain invalid. Standalone binding JSON has no
-independent version header and adopts this current vocabulary. Frozen audio
-contexts and sound-clock records retain their separate existing formats.
+Schema 87 used core 58's compact owned audio bindings. They no longer exist:
+see schema 89 below.
+
+Schema 89 (core 59, 2026-11-11) removes Original-audio bindings. Commands no
+longer store retained sampling clocks, lattices, resume phase terms or
+chronological reanchor steps, and Repeat-gap bindings are gone. Original audio
+placement and cut edges are derived from the current tree
+([sampling clocks](AUDIO_SAMPLING.md), [audio edges](AUDIO_EDGES.md)).
+`AudioBindingState` (the document field `audio_bindings`) keeps only the
+independent beat-sound clock journals and the frozen timing tables they name.
+Root sound routes, sound allowances and audio lineage are unchanged. A project
+saved by an earlier build refuses to open with "This project was made by an
+earlier development build of Deadpan (format N) and cannot be opened; nothing
+in it was changed".
 
 Under the 2026-09-30 development-format authorization, this build refuses
-schemas 1 through 86 as `UnsupportedSchema` without changes. The retained
-66-to-67 and 67-to-68 migration steps do not form a complete chain to schema 87.
+schemas 1 through 88 as `UnsupportedSchema` without changes. The retained
+66-to-67 and 67-to-68 migration steps do not form a complete chain to schema 89.
 The [release migration runner](BACKUPS.md#release-migration-policy) remains
 implemented and tested; this development build does not invent missing steps.
-A schema *above* 87 is refused by writers as `NewerSchema` and opens read-only
+A schema *above* 89 is refused by writers as `NewerSchema` and opens read-only
 for viewing.
 
-History patches now record retained audio timing as granular
-`AudioBindingPatch` entries rather than two complete binding states, and new
-timing tables are sliced to the aliases their placements name. Both are
-breaking changes to the history and document representation of new edits.
-Stored literal fixtures that embedded complete binding states were converted.
-It refuses schemas 1 through 86 with the
+The build refuses schemas 1 through 88 with the
 store's `UnsupportedSchema` error (`SchemaUnsupported` over the CLI) before obtaining
 a writer lock, creating a backup, enabling WAL, repairing directories or parsing
 authored documents. The old package remains intact. Create a current project to

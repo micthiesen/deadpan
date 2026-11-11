@@ -397,8 +397,7 @@ fn replay_compound_inner<E: From<EditError>>(
     // post-leaf value whose only subsequent authored change is its header.
     let reuse_wire = isolation.is_none()
         && crate::one_leaf_replay::eligible_compound(request)
-        && crate::command_work::local()
-        && crate::audio_binding_lifecycle::compact_representation();
+        && crate::command_work::local();
     #[cfg(test)]
     let reuse_wire = reuse_wire && !wire_reuse_test::force_full();
     #[cfg(test)]

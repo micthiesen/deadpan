@@ -339,29 +339,6 @@ fn check_plan(document: &ProjectDocument, source: &Fixture, inserted: i64) -> Re
             "edit {inserted}, flattened structural source phase at output {sample}"
         );
     }
-    // Canonical StageAudio uses this retained binding, not the flattened source
-    // span above. InsertTime resumes old B(50)=80080 at new B(50+i); changing
-    // the Hold duration retains that phase and the complete original lattice.
-    let processing = plan.audio_processing(
-        AudioSample(resume)..AudioSample(total),
-        AudioQueryLimits {
-            maximum_spans: 8,
-            maximum_work: 256,
-        },
-    )?;
-    assert_eq!(processing.spans.len(), 1, "edit {inserted}: bound suffix");
-    let span = &processing.spans[0];
-    let AudioSignalContent::Bound(bound) = &span.content else {
-        panic!("edit {inserted}: suffix lost its retained audio binding");
-    };
-    assert_eq!(bound.reference_samples_per_output_sample(), ExactRatio::ONE);
-    for sample in [resume, resume + 17, total - 1] {
-        assert_eq!(
-            bound.reference_at_offset(sample - span.allocated_samples.start.0)?,
-            ExactRatio::integer(CUT_SAMPLE + sample - resume),
-            "edit {inserted}, retained PCM reference at output {sample}"
-        );
-    }
     for frame in [0, 49, 50, 49 + inserted, 50 + inserted, 99 + inserted] {
         check_picture(&plan, source, inserted, frame)?;
     }

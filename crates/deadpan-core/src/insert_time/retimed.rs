@@ -6,7 +6,7 @@
 //! Neither value is rounded: fractional windows become derived clocks, while
 //! integral results keep ordinary recipes.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use crate::{
     BeatNode, Command, DerivedRetimeClock, DocumentError, EditError, ExactRatio, FrameDuration,
@@ -204,8 +204,6 @@ struct Plan {
     /// Ordinary Sequences from the root through the Retime's ancestors, each
     /// with the slot of the child that leads to the pause.
     outer: Vec<(NodeId, usize)>,
-    /// Ordinary Sequences inside the Retime down to the site's parent.
-    inner: Vec<(NodeId, usize)>,
     /// Transparent windows above the Retime, innermost first. Each shows the
     /// pause, so each grows by its length.
     windows: Vec<NodeId>,
@@ -442,7 +440,6 @@ impl Plan {
             slope,
             site,
             outer,
-            inner,
             windows,
             processing,
         })
@@ -586,18 +583,12 @@ fn ceil_frames(value: ExactRatio) -> Result<i64, EditError> {
     i64::try_from(value.max(1)).map_err(|_| super::overflow())
 }
 
-#[expect(
-    clippy::too_many_arguments,
-    reason = "the InsertTime command fields plus its allocation"
-)]
 pub(crate) fn apply(
     document: &ProjectDocument,
     target: &RetimedTarget,
-    at: ProjectFrame,
     hold: &HoldRecipe,
     id: &NodeId,
     identities: &crate::SplitIdentities,
-    timing: &crate::AudioTimingId,
     allocation: &crate::RevisionId,
 ) -> Result<ProjectDocument, EditError> {
     supported(document)?;
@@ -612,7 +603,6 @@ pub(crate) fn apply(
         ));
     }
     let extents = document.exact_durations()?;
-    let total = extents[document.root()];
     let plan = Plan::new(document, &extents, target)?;
     let required = plan.required_ids(document)?;
     if identities.nodes.len() < required {
@@ -658,30 +648,12 @@ pub(crate) fn apply(
             ));
         }
     }
-    let placement_timing = crate::AudioTimingId {
-        allocation: timing.allocation.clone(),
-        ordinal: timing
-            .ordinal
-            .checked_add(1)
-            .ok_or_else(|| super::limit("pause needs a second timing identity"))?,
-    };
-
-    // Capture sampling lattices before copying any physical owner, so the
-    // right copy inherits the original's phase rather than a new origin.
     let mut working = document.clone();
-    working.audio_bindings =
-        crate::audio_binding_lifecycle::capture_unbound_audio_bindings(document, timing.clone())?;
     let mut supplied = identities.nodes.iter().cloned();
     let mut clocked: Vec<_> = plan.stages.iter().map(|stage| stage.id.clone()).collect();
-    // The Sequence that receives the pause, its slot, and the owners whose
-    // allocation moves later.
-    let (parent, slot, mut moved) = match &plan.site {
-        Site::Seam { parent, slot } => {
-            let NodeKind::Sequence { children } = &working.nodes()[parent].kind else {
-                unreachable!("seams belong to Sequences")
-            };
-            (parent.clone(), *slot, children[*slot..].to_vec())
-        }
+    // The Sequence that receives the pause and its slot.
+    let (parent, slot) = match &plan.site {
+        Site::Seam { parent, slot } => (parent.clone(), *slot),
         Site::Leaf { parent, leaf, cut } => {
             let node = working.nodes()[leaf].clone();
             let leaf_extent = extents[leaf];
@@ -781,44 +753,9 @@ pub(crate) fn apply(
                 crate::command::replace_child(&mut working, parent, leaf, container.clone())?;
                 (container, 1)
             };
-            let NodeKind::Sequence { children } = &working.nodes()[&container].kind else {
-                unreachable!("container is a Sequence")
-            };
-            (container.clone(), index, children[index..].to_vec())
+            (container, index)
         }
     };
-    // Later siblings at every enclosing Sequence also move.
-    for (sequence, slot) in plan.inner.iter().rev().chain(plan.outer.iter().rev()) {
-        let NodeKind::Sequence { children } = &working.nodes()[sequence].kind else {
-            unreachable!("path Sequences are unchanged")
-        };
-        moved.extend(children[slot + 1..].iter().cloned());
-    }
-    let mut affected = BTreeSet::new();
-    while let Some(id) = moved.pop() {
-        if affected.len() >= MAX_DOCUMENT_NODES || !affected.insert(id.clone()) {
-            return Err(super::limit("retimed pause traversal"));
-        }
-        let node = &working.nodes()[&id];
-        let processes = matches!(
-            &node.kind,
-            NodeKind::Retime { duration, mapping, pitch, .. }
-                if pitch.processes(mapping.duration() == *duration)
-        );
-        if !processes {
-            moved.extend(working.children(&id).cloned());
-        }
-    }
-    let at_frame = ProjectFrame(at.0);
-    let total_frames = crate::derived_clock::integral(total)?.frames();
-    working = super::composite::prepare_owners(
-        &working,
-        &affected,
-        at_frame,
-        total_frames,
-        &placement_timing,
-    )?;
-
     // The pause keeps its authored project duration. Under a non-unity stage,
     // an adapter maps it onto its exact child span.
     let hold_node = BeatNode::hold("Pause", hold.clone());
@@ -923,7 +860,7 @@ pub(crate) fn apply(
         .chain(plan.windows.iter().cloned())
         .collect();
     crate::audio_lineage::reconcile_exact(&working, &mut result, &clocked);
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     result.validate()?;
     EXACT_EDIT.with(|flag| flag.set(true));
     Ok(result)
@@ -1159,30 +1096,22 @@ mod one_leaf_replay_tests {
             )
             .unwrap(),
         };
-        for permitted in [false, true] {
-            crate::command_work::with_scoped_timing_captures(permitted, || {
-                assert_eq!(crate::command_work::scoped_timing_captures(), permitted);
-                for request in [request, &fallback] {
-                    let cached = crate::replay_compound_with_one_leaf::<EditError>(
-                        &entry,
-                        request,
-                        |_| Ok(()),
-                        Some(candidate),
-                    )
-                    .unwrap();
-                    assert_eq!(crate::command_work::scoped_timing_captures(), permitted);
-                    let plain =
-                        crate::replay_compound::<EditError>(&entry, request, |_| Ok(())).unwrap();
-                    assert_eq!(crate::command_work::scoped_timing_captures(), permitted);
-                    assert_eq!(
-                        cached.document.to_compact_json(),
-                        plain.document.to_compact_json()
-                    );
-                    assert_eq!(cached.edit, plain.edit);
-                    assert_eq!(cached.register_writes, plain.register_writes);
-                    assert!(!take_exact_edit());
-                }
-            });
+        for request in [request, &fallback] {
+            let cached = crate::replay_compound_with_one_leaf::<EditError>(
+                &entry,
+                request,
+                |_| Ok(()),
+                Some(candidate),
+            )
+            .unwrap();
+            let plain = crate::replay_compound::<EditError>(&entry, request, |_| Ok(())).unwrap();
+            assert_eq!(
+                cached.document.to_compact_json(),
+                plain.document.to_compact_json()
+            );
+            assert_eq!(cached.edit, plain.edit);
+            assert_eq!(cached.register_writes, plain.register_writes);
+            assert!(!take_exact_edit());
         }
         // A later ordinary refusal also clears the same destructive flag.
         let mut stale = transaction.steps()[0].edit().unwrap().request(&entry);

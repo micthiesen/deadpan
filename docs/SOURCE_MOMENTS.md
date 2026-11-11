@@ -21,8 +21,7 @@ endpoint holding still selects only frames intersecting the selected window.
 Fractional source ticks remain exact, and source-anchor queries reject hidden
 context outside the selected boundaries. See [picture timing](SOURCE_VIDEO_MAPPING.md).
 
-Core schema 39/database 48 store this representation, dormant linked audio,
-[retained local-origin translations](SOURCE_ORIGINS.md) and
+Core schema 39/database 48 store this representation, dormant linked audio and
 [retained framing clocks](SOURCE_EFFECT_CLOCKS.md). The
 [exact editorial window](SOURCE_EDIT_WINDOWS.md) retains selection before
 whole-frame enclosure. [Atomic Slip](SOURCE_SLIP.md) uses the qualified full
@@ -104,8 +103,7 @@ exact selection. Discrete original filter taps remain
 the affine source phase. A one-millisecond selection at 44.1 kHz can therefore
 use taps `0..45` while its 48 kHz output ends at sample 48.
 
-Selection endpoints belong to the physical Source clock. Transfers and owned
-timing bindings preserve their exhaustion on the retained grid. Transparent
+Selection endpoints belong to the physical Source clock. Transfers preserve their exhaustion on the retained grid. Transparent
 Partitions crop allocation without turning their seams into new selections.
 Ordinary source-placement gaps retain their existing processed-decay policy;
 selection exhaustion is distinct from an authored silent Hold and does not
@@ -178,7 +176,7 @@ DB32 nested pause histories while rejecting the new command. Migration retains
 all snapshots, forward/inverse patches, undo/redo, pending redo and operational
 rows, with an untouched pre-migration backup.
 
-Generic child-index Insert does not provide the sample-resume semantics of a
+Generic child-index Insert does not provide the placement semantics of a
 timeline splice. Native selected-moment paste uses the new command. The
 [moment-reuse board](design/boards/original-moment-reuse-v1.png) and
 [interaction contract](design/README.md) remain its visual target. Actual GUI
@@ -186,31 +184,26 @@ and performance evidence must be recorded separately from state-only tests.
 
 ### Required splice boundary
 
-The splice command preserves each shifted physical audio entry independently.
+Each shifted physical audio owner is sampled from its own current position.
 One offset for the whole suffix is insufficient. At 30000/1001 fps, inserting a
-frame inside the first play of a repeated two-frame Source must resume that
-play at its cut and later plays at their own start. A fixed local resume of one
-frame for every play can start a later play at old sample 3204 instead of 3203.
-Pre-existing transparent fragments retain their own visible entry as well.
+frame inside the first play of a repeated two-frame Source places that play at
+its cut and later plays at their own start; a fixed offset of one frame for
+every play can start a later play at old sample 3204 instead of 3203. Derived
+placement does this without stored clocks (removed 2026-11-11).
 
 Repeat gaps now have an explicit [definition reader](AUDIO_DEFINITIONS.md) and
 root/PointCeil placement, including a configured gap with no current occurrence.
-[Authored gap bindings](GAP_AUDIO_BINDINGS.md) now retain a typed gap owner,
-the stable preceding play identity and a canonical clock for genuinely new
-gaps. A surviving former final play gaining its first gap has no prior gap
-placement to inherit. The general splice author must compose these compact
-bindings across nested repeats and sparse overrides without allocating one
+A gap is sampled from its current position. The general splice author must
+handle nested repeats and sparse overrides without allocating one
 record per rendered play. Preserve outputs are physical domains for an outer
 move; their intrinsic preparation inputs must not also receive that move.
 
-Use the current owned recipes, existing timing layouts and shared DSP rather
+Use the current owned recipes and shared DSP rather
 than retaining a second historical recipe graph. Build the boundary partitions,
-entry changes, inserted Source and mark transforms together before the single
-reversible patch is created. Current recipe edits must keep working on retained
-clocks. Explicit Sequence-slot Source splicing has core, actual PCM, compactness,
-picture, history and migration regressions. The inserted Source begins unbound
-on the canonical project-origin grid; it must not force its first sample to
-local phase zero. Later insertions capture its actual sampling lattice.
+inserted Source and mark transforms together before the single
+reversible patch is created. Explicit Sequence-slot Source splicing has core, actual PCM, compactness,
+picture, history and migration regressions. The inserted Source is sampled on the canonical project-origin grid; it must
+not force its first sample to local phase zero.
 
 General cursor splicing inside Repeat/Retime occurrences, rational owner clocks,
 Visual replacement, named moments and preview trims remain required. These

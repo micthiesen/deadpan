@@ -1,9 +1,8 @@
 //! One accepted complete Trim intent, resolved against one immutable entry.
 use crate::{
-    AudioReanchorAnchor, AudioSourceEndpoint, AudioTimingId, DocumentError, EditError,
-    EditErrorCode, ExactFrameRange, ExactRatio, FrameDuration, FrameRange, MAX_DOCUMENT_NODES,
-    NodeId, NodeKind, ProjectDocument, ProjectFrame, RootSoundOperation, SourceEditWindow,
-    SourceTrimGeometry, SourceTrimIntent, SourceTrimOwnerGeometry, SourceTrimPhaseAnchor,
+    DocumentError, EditError, EditErrorCode, ExactRatio, FrameDuration, FrameRange,
+    MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectFrame, RootSoundOperation,
+    SourceEditWindow, SourceTrimGeometry, SourceTrimIntent, SourceTrimOwnerGeometry,
     SourceTrimPolicy, SplitIdentities, TimeError,
 };
 use serde::{Deserialize, Serialize};
@@ -21,20 +20,6 @@ pub struct SourceTrimResources {
     pub split: SplitIdentities,
     #[serde(deserialize_with = "bounded_fillers")]
     pub fillers: Vec<NodeId>,
-    pub timing: Option<AudioTimingId>,
-}
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum SourceTrimCapture {
-    None,
-    Unbound,
-    Placements,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct SourceTrimReanchorGroup {
-    pub owners: BTreeSet<NodeId>,
-    pub anchor: AudioReanchorAnchor,
-    pub window: Option<ExactFrameRange>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SourceTrimSplit {
@@ -91,8 +76,6 @@ pub struct SourceTrimEditResolution {
     pub required_split_nodes: usize,
     pub required_filler_nodes: usize,
     pub temporary_nodes: usize,
-    pub capture: SourceTrimCapture,
-    pub reanchors: Vec<SourceTrimReanchorGroup>,
     pub root_operation: Option<RootSoundOperation>,
 }
 impl SourceTrimEditResolution {
@@ -106,7 +89,6 @@ impl SourceTrimEditResolution {
             || resources.right_wrapper.is_some() != self.required_right_wrapper
             || resources.fillers.len() != self.required_filler_nodes
             || resources.split.nodes.len() != self.required_split_nodes
-            || resources.timing.is_some() != (self.capture != SourceTrimCapture::None)
         {
             return Err(invalid(
                 "combined Trim result identities do not match the resource roles",
@@ -189,8 +171,6 @@ fn resolve(
         required_split_nodes: 0,
         required_filler_nodes: 0,
         temporary_nodes: document.nodes().len(),
-        capture: SourceTrimCapture::None,
-        reanchors: Vec::new(),
         root_operation: None,
     };
     if intent.is_zero() {
@@ -232,16 +212,8 @@ fn resolve(
             in_frames: intent.in_frames,
             out_frames: intent.out_frames,
         });
-        reanchors(document, &mut result)?;
+        check_ripple_suffix(document, &result)?;
     }
-    let changes_edges = intent.in_frames != 0 || intent.out_frames != 0 || intent.roll_frames != 0;
-    result.capture = if !result.reanchors.is_empty() {
-        SourceTrimCapture::Placements
-    } else if changes_edges && crate::audio_binding_lifecycle::has_unbound_recipes(document) {
-        SourceTrimCapture::Unbound
-    } else {
-        SourceTrimCapture::None
-    };
     Ok(result)
 }
 fn overwrite(
@@ -365,47 +337,23 @@ fn overwrite(
     }
     Ok(())
 }
-fn reanchors(
+/// Refuse a ripple whose later siblings would cross a Repeat or Retime
+/// ancestor.
+fn check_ripple_suffix(
     document: &ProjectDocument,
-    result: &mut SourceTrimEditResolution,
+    result: &SourceTrimEditResolution,
 ) -> Result<(), EditError> {
     let g = &result.geometry;
-    if g.intent.in_frames != 0 {
-        result.reanchors.push(owner_anchor(&g.target)?)
-    }
     if g.duration_delta_frames == 0 {
         return Ok(());
     }
-    let mut at = g.target.output_before.end().0;
-    let mut slot = g.target.slot + 1;
-    if g.intent.roll_frames != 0 {
-        let b = g
-            .right
-            .as_ref()
-            .ok_or_else(|| invalid("combined Trim lost the admitted right Source"))?;
-        result.reanchors.push(owner_anchor(b)?);
-        at = b.output_before.end().0;
-        slot = b.slot + 1;
-    }
-    let end = g.project_duration_before.frames();
-    if at < end {
-        let owners = crate::insert_time::composite::shifted_owners(document, &g.parent, slot)?;
-        result.reanchors.push(SourceTrimReanchorGroup {
-            owners,
-            anchor: AudioReanchorAnchor::AllocationEntry,
-            window: Some(ExactFrameRange::new(
-                ExactRatio::integer(at),
-                ExactRatio::integer(end),
-            )?),
-        });
-    }
-    let mut seen = BTreeSet::new();
-    for group in &result.reanchors {
-        for owner in &group.owners {
-            if !seen.insert(owner) {
-                return Err(invalid("combined Trim assigned two clocks to one owner"));
-            }
-        }
+    let (at, slot) = match (&g.right, g.intent.roll_frames) {
+        (_, 0) => (g.target.output_before.end().0, g.target.slot + 1),
+        (Some(b), _) => (b.output_before.end().0, b.slot + 1),
+        (None, _) => return Err(invalid("combined Trim lost the admitted right Source")),
+    };
+    if at < g.project_duration_before.frames() {
+        crate::insert_time::composite::shifted_owners(document, &g.parent, slot)?;
     }
     Ok(())
 }
@@ -438,40 +386,6 @@ fn final_owner(
         visible_selection,
         needs_wrapper: side.target == side.physical_source
             && (allocation.start().0 != 0 || allocation.end().0 != side.after.duration.frames()),
-    })
-}
-fn owner_anchor(side: &SourceTrimOwnerGeometry) -> Result<SourceTrimReanchorGroup, EditError> {
-    let (anchor, window) = match side.phase_anchor {
-        SourceTrimPhaseAnchor::SourceStart => (
-            AudioReanchorAnchor::SourceEndpoint {
-                endpoint: AudioSourceEndpoint::Start,
-            },
-            None,
-        ),
-        SourceTrimPhaseAnchor::SourceEnd => (
-            AudioReanchorAnchor::SourceEndpoint {
-                endpoint: AudioSourceEndpoint::End,
-            },
-            None,
-        ),
-        SourceTrimPhaseAnchor::Retained { allocation } => {
-            let offset = sub(
-                side.output_before.start().0,
-                side.allocation_before.start().0,
-            )?;
-            (
-                AudioReanchorAnchor::AllocationEntry,
-                Some(ExactFrameRange::new(
-                    ExactRatio::integer(add(offset, allocation.start().0)?),
-                    ExactRatio::integer(add(offset, allocation.end().0)?),
-                )?),
-            )
-        }
-    };
-    Ok(SourceTrimReanchorGroup {
-        owners: BTreeSet::from([side.physical_source.clone()]),
-        anchor,
-        window,
     })
 }
 fn bounded_ids<'de, D: serde::Deserializer<'de>, const N: usize>(

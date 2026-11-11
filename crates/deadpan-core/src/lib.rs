@@ -9,11 +9,7 @@
 
 mod anchor;
 mod audio_binding;
-mod audio_binding_lifecycle;
 mod audio_binding_patch;
-pub use audio_binding_lifecycle::capture_unbound_audio_bindings;
-#[doc(hidden)]
-pub use audio_binding_lifecycle::with_reference_timing_representation;
 mod audio_context;
 mod speed_ramp;
 pub use speed_ramp::{
@@ -33,10 +29,7 @@ mod command_work;
 mod equalizer;
 mod tail_sends;
 #[cfg(any(test, feature = "test-support"))]
-pub use command_work::{
-    binding_wire_check_for_tests, diff_for_tests, provisional_captures_for_tests,
-    with_reference_command_work,
-};
+pub use command_work::{diff_for_tests, with_reference_command_work};
 mod compound;
 mod one_leaf_replay;
 pub use one_leaf_replay::OneLeafReplay;
@@ -178,9 +171,8 @@ pub use source_trim::{
     SourceTrimClamp, SourceTrimEdge, SourceTrimLimit, SourceTrimMode, SourceTrimResolution,
 };
 pub use source_trim_edit::{
-    SourceTrimCapture, SourceTrimEditResolution, SourceTrimEmptyMove, SourceTrimFinalOwner,
-    SourceTrimReanchorGroup, SourceTrimResources, SourceTrimResultIdentities,
-    SourceTrimRightDisposition, SourceTrimSplit,
+    SourceTrimEditResolution, SourceTrimEmptyMove, SourceTrimFinalOwner, SourceTrimResources,
+    SourceTrimResultIdentities, SourceTrimRightDisposition, SourceTrimSplit,
 };
 pub use source_trim_geometry::*;
 pub use split::SplitIdentities;

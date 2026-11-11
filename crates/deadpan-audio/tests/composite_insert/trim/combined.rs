@@ -9,13 +9,12 @@ fn combined(
     let r = before
         .source_trim_edit(&id("root"), &id("target"), None, intent)
         .unwrap();
-    let allocation = revision("combined");
     let tx = apply(
         before,
         &CommandRequest {
             project_id: before.project_id().clone(),
             expected_revision: before.revision_id().clone(),
-            new_revision: allocation.clone(),
+            new_revision: revision("combined"),
             command: Command::ApplySourceTrim {
                 parent: id("root"),
                 node: id("target"),
@@ -32,10 +31,6 @@ fn combined(
                     fillers: (0..r.required_filler_nodes)
                         .map(|n| id(&format!("combined-filler-{n}")))
                         .collect(),
-                    timing: (r.capture != SourceTrimCapture::None).then_some(AudioTimingId {
-                        allocation,
-                        ordinal: 0,
-                    }),
                 },
             },
         },

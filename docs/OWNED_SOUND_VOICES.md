@@ -60,11 +60,10 @@ before writes; see [development formats](DEVELOPMENT_FORMATS.md).
 chronological `SoundClockJournal`. Its live `scope` identifies a complete
 processing subtree. Each `SoundClockReference` names a frozen timing record,
 historical scope and historical owner. They describe each pre-edit placement;
-the live final placement is implicit. Independent journals never become physical
-Source bindings. A move away and back keeps both steps, including any intermediate
+the live final placement is implicit. Independent journals are never Original-audio placement (the physical Source
+bindings were removed on 2026-11-11). A move away and back keeps both steps, including any intermediate
 sample clipping.
-An unchanged origin adds no step. Commands use their explicit fresh timing ID
-and share an exactly equal capture with existing physical binding helpers.
+An unchanged origin adds no step. Commands use their explicit fresh timing ID.
 
 The supported transport compares the entire sound-bearing scope: durations,
 child order, stable Repeat identities and overrides, gap
@@ -157,8 +156,8 @@ processes this voice independently using the existing canonical DSP. A sound
 owned by a Retime enters at that node's output and bypasses its processor; a
 sound on its child passes through it.
 
-The borrowed voice uses its plan's structural maps. The Original's retained source
-bindings, source absence, endpoint masks and processing cache do not become
+The borrowed voice uses its plan's structural maps. The Original's source
+absence, endpoint masks and processing cache do not become
 this sound's history. Saved journals select the appropriate frozen plan without
 rebinding its borrowed handles to a different plan.
 
@@ -191,7 +190,7 @@ one owner that can contribute to a root sample window. It follows compact
 Repeat identities and active overrides without expanding unrelated plays.
 Its geometric allocation and exact owner-to-root map are separate from its
 processing influence: a voice below Preserve may continue across that stage's
-whole output. The query ignores the Original's retained bindings and audio
+whole output. The query ignores the Original's audio
 availability. Work or count exhaustion fails the entire query.
 
 `RenderPlan::source_voice_occurrences` validates an independent source recipe
@@ -258,7 +257,7 @@ this raw retained input.
 This borrowed route does not itself persist a sound clock or lift a temporal
 command guard. The saved-clock integration above supplies the sound's own
 processing definition, stable occurrence correspondence and chronological
-placements. Original audio bindings cannot substitute for those records.
+placements. The Original's derived placement cannot substitute for those records.
 
 ## Neutral grouping
 

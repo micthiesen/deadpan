@@ -33,23 +33,17 @@ the complete bounded layout after validating requested aliases.
 
 `AudioReferencePlan` compiles exact historical layouts into the same absolute
 RoundEven root allocation as the live plan while no Retime processes pitch.
-It uses effective geometry for policy and processing-domain queries. Retained
-binding states accept these affine layouts: a captured lattice on fractional
-FollowSpeed clocks renders the same decoded PCM as the unbound document, and
-[retimed pauses](INSERT_TIME.md#pauses-inside-followspeed-speed-changes) resume
-on them. A layout is affine when every Retime is FollowSpeed or a unity Preserve
-partition, judged on both its integral recipe and its effective clock.
-Historical Preserve/Shift processing, raw captured audio contexts and
-independent sound processing still refuse exact layouts until their owned
-output scheduling is integrated. Timing-only projection is not permission to process a changed child
-or stretch an intrinsic result to the new allocation.
+It uses effective geometry for policy and processing-domain queries. A layout
+is affine when every Retime is FollowSpeed or a unity Preserve partition,
+judged on both its integral recipe and its effective clock. Historical
+Preserve/Shift processing, raw captured audio contexts and independent sound
+processing still refuse exact layouts. Timing-only projection is not permission
+to process a changed child or stretch an intrinsic result to the new allocation.
 
-This is historical geometry support. Core 55/store 83 remain unchanged because
-existing project-embedded audio contexts and bindings do not yet admit this new
-frozen payload. Standalone bounded layout JSON round-trips it. Owned output
-history must still persist and resolve each occurrence's actual sample grids,
-chronological Keep/Gap selections, integer resume indices, envelopes and policy.
-Affine frame offsets cannot substitute for RoundEven or PointCeil continuation.
-Atomic Retime insertion and its metadata, effect and editing lifecycle remain
-open. See [owned inputs](OWNED_PRESERVE_INPUTS.md) and the
+Layouts are no longer used to place Original audio. Since 2026-11-11 that
+placement is derived from the current tree, and the only stored layouts are
+the timing tables that independent beat-sound clocks name through
+`AudioTimingId` (see [owned sound voices](OWNED_SOUND_VOICES.md)). Standalone
+bounded layout JSON round-trips the derived clocks. See
+[owned inputs](OWNED_PRESERVE_INPUTS.md) and the
 [splice design](STRUCTURAL_SPLICE_DESIGN.md).

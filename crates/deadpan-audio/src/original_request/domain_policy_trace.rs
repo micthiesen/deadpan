@@ -80,22 +80,16 @@ pub(super) fn record_admitted(
             policy_canonical_work: policy_receipt.0,
             policy_additional_work: policy_receipt.1,
             policy_lookup: policy.lookup,
-            content_only_eligible: processing.spans.iter().all(|span| {
-                matches!(
-                    span.content,
-                    AudioSignalContent::Leaf(_) | AudioSignalContent::Bound(_)
-                )
-            }),
+            content_only_eligible: processing
+                .spans
+                .iter()
+                .all(|span| matches!(span.content, AudioSignalContent::Leaf(_))),
         });
     });
 }
 
 pub(in crate::stages) fn domain_policy_trace() -> Vec<DomainPolicyTrace> {
     STATE.with(|state| state.borrow().rows.clone().unwrap_or_default())
-}
-
-pub(in crate::stages) fn reset_domain_policy_trace() {
-    STATE.with(|state| state.borrow_mut().rows = Some(Vec::new()));
 }
 
 /// The override follows this thread and is restored even when an assertion

@@ -20,10 +20,9 @@ on the current direct child. Inspector Enter retains its parameter action;
 normal Enter opens a Sequence. Text fields, IME, menus, dialogs, help and Camera
 keep their input ownership. Navigation clears pending operators and counts.
 
-Whole-beat deletion submits one `DeleteRipple` command and retains the sample
-entry of every following audio owner, including later siblings outside the current group.
+Whole-beat deletion submits one `DeleteRipple` command and moves every following audio owner structurally, including later siblings outside the current group.
 Empty groups remain deletable without changing time. One Undo restores the full
-authored document. See [retained deletion clocks](AUDIO_REANCHORS.md#ripple-deletion).
+authored document. See [ripple deletion](HEADLESS.md).
 
 `v`, motions, `d` cuts a nonempty active or finished Edit range through one
 `DeleteRange` command. Source, ordinary Hold and supported fragment endpoints
@@ -31,7 +30,7 @@ may be split; complete intervening composites may be removed. Enter the intended
 ordinary Sequence to cut its children. The cursor returns to the exact cut join,
 and one Undo restores all authored state. Empty selections never delete a beat.
 `:delete` captures its range or beat when command entry opens and rejects stale
-scope/revision/session targets. See [range deletion](AUDIO_REANCHORS.md#selected-ranges).
+scope/revision/session targets. See [range deletion](STRUCTURAL_SELECTIONS.md).
 
 `Enter` also opens selected Repeat/Retime contents through a separate
 [scoped inspector](SCOPED_EDITING.md). It supports explicit All plays/This play

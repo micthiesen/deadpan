@@ -2,11 +2,12 @@
 
 `RenderPlan::audio_definition` and `StageAudio::read_definition` read an authored
 recipe directly on its canonical local-zero 48 kHz point grid. This supplies a
-deterministic operand for future new-Repeat-play bindings, separately from an old
-physical occurrence's sampled continuity. It does not install a binding, grow a
-Repeat or insert time. The gap-definition extension changes no persisted wire:
-core 24/database 30 and `FrozenAudioContext` schema 3 are current. Authored
-[gap bindings](GAP_AUDIO_BINDINGS.md) now preserve these recipe clocks across edits.
+deterministic operand for a newly added Repeat play, separately from an old
+physical occurrence's sampled continuity. It does not grow a Repeat or insert
+time. The gap-definition extension changes no persisted wire:
+core 24/database 30 and `FrozenAudioContext` schema 3 are current. Original
+audio placement no longer stores clocks (removed 2026-11-11); a surviving or new
+play is sampled from its position in the current tree.
 
 ## Definition and occurrence are separate
 
@@ -91,23 +92,11 @@ is permitted. `read_definition` also works with an authenticated `open_context`
 session. Both paths can read an old definition after its current node is deleted.
 Inspection does not move the history cursor or mutate the document.
 
-## Remaining binding work
+## Remaining work
 
-Future insertion bindings need two explicit operands: a captured physical domain
-for a surviving occurrence, and a captured definition for newly born plays.
-The planned fresh-play convention binds definition sample zero at each new
-play's meaningful start; it does not claim historical occurrence continuity.
-One compact allocation-run rule should select the prototype without expanding
-every play. Existing survivors retain their separate physical/root maps.
-
-The [owned recipe clock](OWNED_AUDIO_CLOCKS.md) now supplies a physical definition's
+The [owned recipe clock](OWNED_AUDIO_CLOCKS.md) supplies a physical definition's
 current raw body, including a configured Repeat gap, in an explicit root or point
-placement. [Gap binding state](GAP_AUDIO_BINDINGS.md) now connects this operand
-to retained clocks and canonical gap birth. The binding approach uses the
-complete children already owned by Split, with timing-only indexes and
-explicit lexical Repeat arguments, instead of a second frozen raw-body graph.
-The complete movement and raw-recipe editing lifecycle remains required.
-Explicit historical contexts still authenticate
+placement. Explicit historical contexts still authenticate
 against committed revisions; never label reducer intermediates as committed
 snapshots. See [the splice design](STRUCTURAL_SPLICE_DESIGN.md) and
 [physical domains](AUDIO_PHYSICAL_DOMAINS.md).

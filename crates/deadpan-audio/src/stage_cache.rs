@@ -28,19 +28,11 @@ fn cache_failure(error: &std::io::Error) -> SavedAudioEvent {
 impl StageAudio {
     fn saved_status(&self, key: CacheKey, frames: u32, event: SavedAudioEvent) {
         if let Some(monitor) = &self.preparation_monitor {
-            #[cfg(test)]
-            read_signal_policy_before_trace::monitor(self, "saved_status_before", || {
-                serde_json::json!({})
-            });
             monitor.report_saved_audio(SavedAudioStatus {
                 key: Some(key.0),
                 bytes: u64::from(frames) * 8,
                 event,
                 regenerated_from: None,
-            });
-            #[cfg(test)]
-            read_signal_policy_before_trace::monitor(self, "saved_status_after", || {
-                serde_json::json!({})
             });
         }
     }
@@ -55,168 +47,26 @@ impl StageAudio {
         depth: usize,
     ) -> Result<Option<SavedStage>, StageAudioError> {
         if self.persistent_cache.is_none() {
-            #[cfg(test)]
-            saved_key_output_policy_before_trace::mark(self, control, "saved_key_disabled", || {
-                serde_json::json!({})
-            });
-            #[cfg(test)]
-            stage_validation_policy_before_trace::mark(self, control, "saved_key_disabled", || {
-                serde_json::json!({})
-            });
-            #[cfg(test)]
-            read_signal_policy_before_trace::saved_mark(
-                self,
-                control,
-                read_signal_policy_before_trace::SavedPhase::Disabled,
-            );
             return Ok(None);
         }
-        #[cfg(test)]
-        saved_key_output_policy_before_trace::mark(self, control, "cache_scope_before", || {
-            serde_json::json!({})
-        });
         let scope = control.cache_key_scope();
-        #[cfg(test)]
-        stage_validation_policy_before_trace::mark(self, control, "saved_key_scope_enter", || {
-            serde_json::json!({})
-        });
-        #[cfg(test)]
-        read_signal_policy_before_trace::saved_mark(
-            self,
-            control,
-            read_signal_policy_before_trace::SavedPhase::ScopeEnter,
-        );
-        #[cfg(test)]
-        let _p_scan = saved_key_output_policy_before_trace::scan(self, control, || {
-            serde_json::json!({"depth":depth,
-                "recipe":stage_block_policy_before_trace::recipe_value(recipe),
-                "input":stage_block_policy_before_trace::input_value(input,&self.plan),
-                "output":stage_block_policy_before_trace::input_value(output,&self.plan)})
-        });
         let result = self.scan_saved_stage_key(input, output, recipe, provider, control, depth);
-        #[cfg(test)]
-        saved_key_output_policy_before_trace::mark(self, control, "scan_raw_result", || {
-            match &result {
-                Ok(Some(saved)) => serde_json::json!({"status":"Ok","saved":true,
-                    "key":saved.key.0,"dependency_count":saved.dependencies.len(),"relative_depth":saved.relative_depth}),
-                Ok(None) => serde_json::json!({"status":"Ok","saved":false}),
-                Err(error) => {
-                    serde_json::json!({"status":"Err","error":stage_block_policy_before_trace::error(error)})
-                }
-            }
-        });
-        #[cfg(test)]
-        stage_validation_policy_before_trace::saved_result(
-            self,
-            control,
-            "saved_key_raw_result",
-            &result,
-        );
-        #[cfg(test)]
-        read_signal_policy_before_trace::saved_result(
-            self,
-            control,
-            read_signal_policy_before_trace::SavedPhase::RawResult,
-            &result,
-        );
         drop(scope);
-        #[cfg(test)]
-        saved_key_output_policy_before_trace::mark(self, control, "cache_scope_after", || {
-            serde_json::json!({})
-        });
-        #[cfg(test)]
-        stage_validation_policy_before_trace::mark(self, control, "saved_key_scope_exit", || {
-            serde_json::json!({})
-        });
-        #[cfg(test)]
-        read_signal_policy_before_trace::saved_mark(
-            self,
-            control,
-            read_signal_policy_before_trace::SavedPhase::ScopeExit,
-        );
-        #[cfg(not(test))]
         {
             match result {
                 Err(StageAudioError::Limit(CACHE_KEY_WORK_LIMIT)) => {
                     if let Some(monitor) = &self.preparation_monitor {
-                        #[cfg(test)]
-                        read_signal_policy_before_trace::monitor(
-                            self,
-                            "saved_status_before",
-                            || serde_json::json!({}),
-                        );
                         monitor.report_saved_audio(SavedAudioStatus {
                             key: None,
                             bytes: 0,
                             event: SavedAudioEvent::BudgetSkipped,
                             regenerated_from: None,
                         });
-                        #[cfg(test)]
-                        read_signal_policy_before_trace::monitor(
-                            self,
-                            "saved_status_after",
-                            || serde_json::json!({}),
-                        );
                     }
                     Ok(None)
                 }
                 other => other,
             }
-        }
-        #[cfg(test)]
-        {
-            let mapped = match result {
-                Err(StageAudioError::Limit(CACHE_KEY_WORK_LIMIT)) => {
-                    if let Some(monitor) = &self.preparation_monitor {
-                        #[cfg(test)]
-                        read_signal_policy_before_trace::monitor(
-                            self,
-                            "saved_status_before",
-                            || serde_json::json!({}),
-                        );
-                        monitor.report_saved_audio(SavedAudioStatus {
-                            key: None,
-                            bytes: 0,
-                            event: SavedAudioEvent::BudgetSkipped,
-                            regenerated_from: None,
-                        });
-                        #[cfg(test)]
-                        read_signal_policy_before_trace::monitor(
-                            self,
-                            "saved_status_after",
-                            || serde_json::json!({}),
-                        );
-                    }
-                    Ok(None)
-                }
-                other => other,
-            };
-            #[cfg(test)]
-            stage_validation_policy_before_trace::saved_result(
-                self,
-                control,
-                "saved_key_mapped_result",
-                &mapped,
-            );
-            #[cfg(test)]
-            read_signal_policy_before_trace::saved_result(
-                self,
-                control,
-                read_signal_policy_before_trace::SavedPhase::MappedResult,
-                &mapped,
-            );
-            #[cfg(test)]
-            saved_key_output_policy_before_trace::mark(self, control, "scan_mapped_result", || {
-                match &mapped {
-                    Ok(Some(saved)) => serde_json::json!({"status":"Ok","saved":true,
-                    "key":saved.key.0,"dependency_count":saved.dependencies.len(),"relative_depth":saved.relative_depth}),
-                    Ok(None) => serde_json::json!({"status":"Ok","saved":false}),
-                    Err(error) => {
-                        serde_json::json!({"status":"Err","error":stage_block_policy_before_trace::error(error)})
-                    }
-                }
-            });
-            mapped
         }
     }
 
@@ -229,117 +79,21 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<Option<SavedStage>, StageAudioError> {
-        #[cfg(test)]
-        let _o_scan = stage_block_policy_before_trace::context_scope(
-            self,
-            control,
-            "scan_saved_stage_key",
-            || {
-                serde_json::json!({"depth":depth,"recipe":stage_block_policy_before_trace::recipe_value(recipe),
-                "input":stage_block_policy_before_trace::input_value(input,&self.plan),
-                "output":stage_block_policy_before_trace::input_value(output,&self.plan)})
-            },
-        );
         let progress = self.preparation_monitor.as_ref().map(|m| {
             m.enter(PreparationActivity::CheckingSavedAudio {
                 completed: 0,
                 total: recipe.input_frames(),
             })
         });
-        #[cfg(test)]
-        read_signal_policy_before_trace::context(
-            self,
-            control,
-            "progress_enter",
-            || serde_json::json!({"monitor_present":progress.is_some()}),
-        );
-        #[cfg(test)]
-        let _key_stream = stage_validation_policy_before_trace::key_stream();
-        #[cfg(test)]
-        let _n_key_stream = read_signal_policy_before_trace::key_stream();
         let mut hash = blake3::Hasher::new();
         hash.update(b"deadpan-canonical-pcm-input-key-1\0stereo-f32-le-48000\0");
-        #[cfg(test)]
-        stage_validation_policy_before_trace::key_update(
-            "domain",
-            b"deadpan-canonical-pcm-input-key-1\0stereo-f32-le-48000\0",
-        );
-        #[cfg(test)]
-        read_signal_policy_before_trace::key_update(
-            "domain",
-            b"deadpan-canonical-pcm-input-key-1\0stereo-f32-le-48000\0",
-        );
         hash.update(ENGINE_PIN.as_bytes());
-        #[cfg(test)]
-        stage_validation_policy_before_trace::key_update("engine_pin", ENGINE_PIN.as_bytes());
-        #[cfg(test)]
-        read_signal_policy_before_trace::key_update("engine_pin", ENGINE_PIN.as_bytes());
         hash.update(recipe.engine_id().as_bytes());
-        #[cfg(test)]
-        stage_validation_policy_before_trace::key_update(
-            "recipe_engine_id",
-            recipe.engine_id().as_bytes(),
-        );
-        #[cfg(test)]
-        read_signal_policy_before_trace::key_update(
-            "recipe_engine_id",
-            recipe.engine_id().as_bytes(),
-        );
         hash.update(&recipe.input_frames().to_le_bytes());
-        #[cfg(test)]
-        stage_validation_policy_before_trace::key_update(
-            "input_frames",
-            &recipe.input_frames().to_le_bytes(),
-        );
-        #[cfg(test)]
-        read_signal_policy_before_trace::key_update(
-            "input_frames",
-            &recipe.input_frames().to_le_bytes(),
-        );
         hash.update(&recipe.output_frames().to_le_bytes());
-        #[cfg(test)]
-        stage_validation_policy_before_trace::key_update(
-            "output_frames",
-            &recipe.output_frames().to_le_bytes(),
-        );
-        #[cfg(test)]
-        read_signal_policy_before_trace::key_update(
-            "output_frames",
-            &recipe.output_frames().to_le_bytes(),
-        );
         hash.update(&recipe.rate().numerator().to_le_bytes());
-        #[cfg(test)]
-        stage_validation_policy_before_trace::key_update(
-            "rate_numerator",
-            &recipe.rate().numerator().to_le_bytes(),
-        );
-        #[cfg(test)]
-        read_signal_policy_before_trace::key_update(
-            "rate_numerator",
-            &recipe.rate().numerator().to_le_bytes(),
-        );
         hash.update(&recipe.rate().denominator().to_le_bytes());
-        #[cfg(test)]
-        stage_validation_policy_before_trace::key_update(
-            "rate_denominator",
-            &recipe.rate().denominator().to_le_bytes(),
-        );
-        #[cfg(test)]
-        read_signal_policy_before_trace::key_update(
-            "rate_denominator",
-            &recipe.rate().denominator().to_le_bytes(),
-        );
         hash.update(&recipe.pitch_semitones().to_le_bytes());
-        #[cfg(test)]
-        stage_validation_policy_before_trace::key_update(
-            "pitch_semitones",
-            &recipe.pitch_semitones().to_le_bytes(),
-        );
-        #[cfg(test)]
-        read_signal_policy_before_trace::key_update(
-            "pitch_semitones",
-            &recipe.pitch_semitones().to_le_bytes(),
-        );
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;
         let mut cursor = 0;
@@ -360,241 +114,48 @@ impl StageAudio {
                     return Err(deadpan_dsp::DspError::InputPeak.into());
                 }
                 hash.update(&sample.to_le_bytes());
-                #[cfg(test)]
-                stage_validation_policy_before_trace::key_update(
-                    "input_pcm_sample",
-                    &sample.to_le_bytes(),
-                );
-                #[cfg(test)]
-                read_signal_policy_before_trace::key_update(
-                    "input_pcm_sample",
-                    &sample.to_le_bytes(),
-                );
             }
             dependencies.extend(block.dependencies);
             relative_depth = relative_depth.max(block.relative_depth);
             cursor = end;
             if let Some(progress) = &progress {
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(
-                    self,
-                    control,
-                    "progress_report_before",
-                    || {
-                        serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::CheckingSavedAudio {
-                            completed: cursor,
-                            total: recipe.input_frames(),
-                        })})
-                    },
-                );
                 progress.report(PreparationActivity::CheckingSavedAudio {
                     completed: cursor,
                     total: recipe.input_frames(),
                 });
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(
-                    self,
-                    control,
-                    "progress_report_after",
-                    || {
-                        serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::CheckingSavedAudio {
-                            completed: cursor,
-                            total: recipe.input_frames(),
-                        })})
-                    },
-                );
             }
         }
         // Hash the exact mask applied after the canonical DSP, on its output
         // grid. Intermediate masks are already present in the input PCM.
-        #[cfg(test)]
-        saved_key_output_policy_before_trace::mark(
-            self,
-            control,
-            "output_loop_enter",
-            || serde_json::json!({"input_cursor":cursor,"output_frames":recipe.output_frames(),"zero_output":recipe.output_frames()==0}),
-        );
         cursor = 0;
         while cursor < recipe.output_frames() {
-            #[cfg(test)]
-            saved_key_output_policy_before_trace::mark(
-                self,
-                control,
-                "output_check_before",
-                || serde_json::json!({"cursor":cursor}),
-            );
             control.check()?;
-            #[cfg(test)]
-            saved_key_output_policy_before_trace::mark(
-                self,
-                control,
-                "output_check_after",
-                || serde_json::json!({"cursor":cursor,"status":"Ok"}),
-            );
             let count = (recipe.output_frames() - cursor).min(MAX_OUTPUT_FRAMES);
             let mut mask = vec![[1.0; 2]; count as usize];
-            #[cfg(test)]
-            let _p_window = saved_key_output_policy_before_trace::window();
-            #[cfg(test)]
-            let o_call = stage_block_policy_before_trace::call(
-                self,
-                control,
-                stage_block_policy_before_trace::Caller::SavedKeyOutputBits,
-                || {
-                    serde_json::json!({"depth":depth,"recipe":stage_block_policy_before_trace::recipe_value(recipe),
-                        "block_start":cursor,"block_len":mask.len(),"caller_block_capacity":mask.capacity(),
-                        "caller_block_storage":stage_block_policy_before_trace::layout::<[f32;2]>(mask.capacity())})
-                },
-            );
-            #[cfg(test)]
-            saved_key_output_policy_before_trace::mark(
-                self,
-                control,
-                "ordinary_helper_before",
-                || serde_json::json!({"cursor":cursor,"count":count}),
-            );
             suppress_signal(
                 output,
                 SignalSample(i64::from(cursor)),
                 &mut mask,
                 &self.plan,
                 control,
-                #[cfg(test)]
-                stage_block_policy_before_trace::HelperContext {
-                    caller: stage_block_policy_before_trace::Caller::SavedKeyOutputBits,
-                    renderer: self,
-                    ticket: o_call.ticket,
-                },
             )?;
-            #[cfg(test)]
-            stage_block_policy_before_trace::mark(
-                self,
-                control,
-                o_call.ticket,
-                "returned_vec_discarded_before_output_bits",
-                || serde_json::json!({"pcm_bits":stage_block_policy_before_trace::pcm_value(&mask)}),
-            );
-            #[cfg(test)]
-            saved_key_output_policy_before_trace::mark(
-                self,
-                control,
-                "ordinary_result_discarded_before_bits",
-                || {
-                    serde_json::json!({"cursor":cursor,"count":count,
-                    "ownership":"ordinary returned merged Vec was discarded by the existing statement; no admitted owner"})
-                },
-            );
             for sample in mask {
-                #[cfg(test)]
-                saved_key_output_policy_before_trace::mark(
-                    self,
-                    control,
-                    "bit_hash_before",
-                    || serde_json::json!({"cursor":cursor,"sample_bits":sample.map(f32::to_bits),"byte":u8::from(sample[0]==0.0)}),
-                );
                 hash.update(&[u8::from(sample[0] == 0.0)]);
-                #[cfg(test)]
-                stage_validation_policy_before_trace::key_update(
-                    "output_suppression_bit",
-                    &[u8::from(sample[0] == 0.0)],
-                );
-                #[cfg(test)]
-                read_signal_policy_before_trace::key_update(
-                    "output_suppression_bit",
-                    &[u8::from(sample[0] == 0.0)],
-                );
-                #[cfg(test)]
-                saved_key_output_policy_before_trace::mark(
-                    self,
-                    control,
-                    "bit_hash_after",
-                    || serde_json::json!({"cursor":cursor,"sample_bits":sample.map(f32::to_bits),"byte":u8::from(sample[0]==0.0)}),
-                );
             }
-            #[cfg(test)]
-            saved_key_output_policy_before_trace::mark(
-                self,
-                control,
-                "mask_consumed_cursor_before",
-                || serde_json::json!({"cursor":cursor,"count":count}),
-            );
             cursor += count;
-            #[cfg(test)]
-            saved_key_output_policy_before_trace::mark(
-                self,
-                control,
-                "cursor_after",
-                || serde_json::json!({"cursor":cursor,"count":count}),
-            );
         }
-        #[cfg(test)]
-        saved_key_output_policy_before_trace::mark(
-            self,
-            control,
-            "output_loop_exit",
-            || serde_json::json!({"cursor":cursor,"output_frames":recipe.output_frames()}),
-        );
         // Include every freshly observed physical source's complete index,
         // byte identity and interpretation, even if two sources decode alike.
         for (asset, provenance) in &dependencies {
             let name = asset.as_str();
             hash.update(&(name.len() as u64).to_le_bytes());
-            #[cfg(test)]
-            stage_validation_policy_before_trace::key_update(
-                "dependency_name_length",
-                &(name.len() as u64).to_le_bytes(),
-            );
-            #[cfg(test)]
-            read_signal_policy_before_trace::key_update(
-                "dependency_name_length",
-                &(name.len() as u64).to_le_bytes(),
-            );
             hash.update(name.as_bytes());
-            #[cfg(test)]
-            stage_validation_policy_before_trace::key_update("dependency_name", name.as_bytes());
-            #[cfg(test)]
-            read_signal_policy_before_trace::key_update("dependency_name", name.as_bytes());
             hash.update(provenance);
-            #[cfg(test)]
-            stage_validation_policy_before_trace::key_update("dependency_provenance", provenance);
-            #[cfg(test)]
-            read_signal_policy_before_trace::key_update("dependency_provenance", provenance);
         }
-        #[cfg(test)]
-        saved_key_output_policy_before_trace::mark(self, control, "key_final_check_before", || {
-            serde_json::json!({})
-        });
         control.check()?;
-        #[cfg(test)]
-        saved_key_output_policy_before_trace::mark(
-            self,
-            control,
-            "key_final_check_after",
-            || serde_json::json!({"status":"Ok"}),
-        );
-        #[cfg(not(test))]
         {
             Ok(Some(SavedStage {
                 key: CacheKey(*hash.finalize().as_bytes()),
-                dependencies,
-                relative_depth,
-            }))
-        }
-        #[cfg(test)]
-        {
-            let key = CacheKey(*hash.finalize().as_bytes());
-            #[cfg(test)]
-            saved_key_output_policy_before_trace::mark(
-                self,
-                control,
-                "key_finish",
-                || serde_json::json!({"key":key.0}),
-            );
-            stage_validation_policy_before_trace::key_finish(key.0);
-            #[cfg(test)]
-            read_signal_policy_before_trace::key_finish(key.0);
-            Ok(Some(SavedStage {
-                key,
                 dependencies,
                 relative_depth,
             }))
@@ -616,31 +177,14 @@ impl StageAudio {
                 total: frames,
             })
         });
-        #[cfg(test)]
-        read_signal_policy_before_trace::context(
-            self,
-            control,
-            "progress_enter",
-            || serde_json::json!({"monitor_present":progress.is_some()}),
-        );
         let mut writer = PcmWriter::new(frames, self.limits.maximum_memory_stage_frames)?;
         let result = cache.restore(saved.key, frames, |samples| {
             writer.push(samples, control).map_err(io_error)?;
             if let Some(progress) = &progress {
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(self, control, "progress_report_before", || serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::RestoringSavedAudio {
-                    completed: writer.len() as u32,
-                    total: frames,
-                })}));
                 progress.report(PreparationActivity::RestoringSavedAudio {
                     completed: writer.len() as u32,
                     total: frames,
                 });
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(self, control, "progress_report_after", || serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::RestoringSavedAudio {
-                    completed: writer.len() as u32,
-                    total: frames,
-                })}));
             }
             Ok(())
         });
@@ -685,13 +229,6 @@ impl StageAudio {
             .preparation_monitor
             .as_ref()
             .map(|m| m.enter(PreparationActivity::SavingAudioCache));
-        #[cfg(test)]
-        read_signal_policy_before_trace::context(
-            self,
-            control,
-            "progress_enter",
-            || serde_json::json!({"monitor_present":_progress.is_some()}),
-        );
         let frames = u32::try_from(block.samples.len()).map_err(|_| StageAudioError::Range)?;
         let result = cache.store(saved.key, frames, |range| {
             control.check().map_err(io_error)?;
@@ -723,10 +260,6 @@ fn hash_input_mapping(
     impl std::io::Write for HashWriter<'_> {
         fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
             self.0.update(bytes);
-            #[cfg(test)]
-            stage_validation_policy_before_trace::key_update("input_mapping_serde_chunk", bytes);
-            #[cfg(test)]
-            read_signal_policy_before_trace::key_update("input_mapping_serde_chunk", bytes);
             Ok(bytes.len())
         }
         fn flush(&mut self) -> std::io::Result<()> {

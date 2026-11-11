@@ -31,7 +31,9 @@ pub enum StoreError {
     ReadOnlyLocation(PathBuf),
     #[error("Project host ownership is unavailable: {0}")]
     HostOwner(&'static str),
-    #[error("Unsupported database schema {0}; the project has not been rewritten")]
+    #[error(
+        "This project was made by an earlier development build of Deadpan (format {0}) and cannot be opened; nothing in it was changed"
+    )]
     UnsupportedSchema(u32),
     #[error(
         "This project was saved by a newer Deadpan (database schema {found}; this build supports {supported}). It can only be opened read-only; nothing in it has been changed"

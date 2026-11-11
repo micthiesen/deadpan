@@ -36,7 +36,8 @@ Core 15 also retains [audio lineage](AUDIO_LINEAGE.md) across the complete copie
 contexts. Originals and copies share caller-revision-scoped tokens; refinement
 reuses them. Picture and transparent grouping changes preserve the relationship,
 while changed raw audio contexts detach without resetting unrelated copies.
-This metadata is separate from the remaining authored sample-resume bindings.
+This metadata is separate from audio placement, which is derived from the
+current tree.
 
 ## Native and headless entry
 
@@ -65,8 +66,8 @@ copies; initial legacy snapshots gain no inferred lineage.
 ## Remaining work
 
 This command targets one explicit node or concrete occurrence. Automatic minimal
-boundary-node selection for nested range operators, arbitrary cursor Hold
-insertion and shifted-fragment sample resume remain required. A later insertion
-must resume original audio at `B(f + N)` from the sample at `B(f)`; unchanged
-output from pure Split does not establish that distinct contract. Range reuse,
+boundary-node selection for nested range operators and arbitrary cursor Hold
+insertion remain required. A later insertion must place original audio at
+`B(f + N)` from the sample at `B(f)`; unchanged output from pure Split does not
+establish that distinct contract. Range reuse,
 sound placement, playback, effects, app generation and export also remain open.

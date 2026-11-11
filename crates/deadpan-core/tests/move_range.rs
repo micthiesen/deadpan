@@ -158,7 +158,7 @@ fn partial_boundary_noops_do_not_split_or_capture_even_at_maximum_ordinal() {
             .range_move(&node("root"), range(2, 7), &destination)
             .unwrap();
         assert!(plan.is_noop);
-        assert_eq!((plan.required_ids, plan.timing_slots), (0, 0));
+        assert_eq!(plan.required_ids, 0);
         let mut command = request(
             &before,
             &format!("noop-{at}"),
@@ -308,7 +308,7 @@ fn co_located_empty_slots_reorder_ownership_without_retiming_the_bus() {
         .range_move(&node("root"), range(2, 5), &seam("root", 2))
         .unwrap();
     assert!(!plan.is_noop);
-    assert_eq!((plan.required_ids, plan.timing_slots), (0, 0));
+    assert_eq!(plan.required_ids, 0);
     let after = checked(
         &before,
         &request(&before, "empty-slot", "root", range(2, 5), seam("root", 2)),
@@ -386,8 +386,8 @@ fn invalid_scope_source_and_identity_budgets_are_atomic() {
                 EditErrorCode::IdentityConflict
             }
             _ => {
-                timing.ordinal = u32::MAX;
-                EditErrorCode::LimitExceeded
+                timing.allocation = RevisionId::new("wrong-timing").unwrap();
+                EditErrorCode::InvalidCommand
             }
         };
         let error = apply(&before, &command).unwrap_err();

@@ -5,17 +5,8 @@ use super::*;
 use deadpan_plan::{AudioRoutedRoot, AudioRoutedSignal, AudioRoutedSignalInput, AudioSampleGrid};
 
 #[cfg(test)]
-#[path = "projected_mask_before_trace.rs"]
-mod projected_mask_before_trace;
-#[cfg(test)]
-#[path = "projected_tape_source_request.rs"]
-pub(in crate::stages) mod projected_tape_source_request;
-#[cfg(test)]
 #[path = "projected_tape_source_trace.rs"]
 pub(in crate::stages) mod projected_tape_source_trace;
-#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
-#[path = "routed_projected_mask_tests.rs"]
-pub(super) mod routed_projected_mask_tests;
 
 /// One retained PointCeil sound route before creative edges and current
 /// consuming Hold gates. Suppression retains old provider policy and route gaps.
@@ -217,40 +208,7 @@ impl StageAudio {
                 suppressed.push(destination, &mut self.masks(control))?;
                 continue;
             };
-            #[cfg(test)]
-            let n_call = match domain.input() {
-                AudioRoutedSignalInput::Source(_) => Some(read_signal_policy_before_trace::call(
-                    self,
-                    read_signal_policy_before_trace::Caller::RoutedSource,
-                    SignalSample(old.start),
-                    count,
-                    0,
-                )),
-                AudioRoutedSignalInput::Projected(_) => None,
-            };
-            #[cfg(test)]
-            let n_native_call = match domain.input() {
-                AudioRoutedSignalInput::Source(_) => Some(read_signal_policy_native_trace::call(
-                    read_signal_policy_before_trace::Caller::RoutedSource,
-                    SignalSample(old.start),
-                    count,
-                    0,
-                )),
-                AudioRoutedSignalInput::Projected(_) => None,
-            };
-            #[cfg(test)]
-            let ticket = n_call
-                .as_ref()
-                .and_then(read_signal_policy_before_trace::CallScope::ticket);
-            #[cfg(test)]
-            let origin = TraceOrigin::new(
-                ticket,
-                n_native_call
-                    .as_ref()
-                    .and_then(read_signal_policy_native_trace::CallScope::ticket),
-            );
             let block = match domain.input() {
-                #[cfg(not(test))]
                 AudioRoutedSignalInput::Source(voice) => self.read_signal(
                     &voice.input_signal(),
                     provider,
@@ -259,25 +217,6 @@ impl StageAudio {
                     control,
                     0,
                 )?,
-                #[cfg(test)]
-                AudioRoutedSignalInput::Source(voice) => {
-                    let result = self.read_signal(
-                        &voice.input_signal(),
-                        provider,
-                        (SignalSample(old.start), count),
-                        control,
-                        0,
-                        origin,
-                    );
-                    read_signal_policy_before_trace::block_result(
-                        self,
-                        control,
-                        ticket,
-                        "routed_child_result",
-                        &result,
-                    );
-                    result?
-                }
                 AudioRoutedSignalInput::Projected(projection) => self
                     .read_projected_signal_controlled(
                         projection,
@@ -288,7 +227,6 @@ impl StageAudio {
                     )?,
             };
             samples.extend(block.samples);
-            #[cfg(not(test))]
             suppressed.extend_try_map(
                 block.suppressed,
                 |range| {
@@ -303,49 +241,6 @@ impl StageAudio {
                 },
                 &mut self.masks(control),
             )?;
-            #[cfg(test)]
-            {
-                read_signal_policy_before_trace::mask(
-                    self,
-                    control,
-                    ticket,
-                    "routed_child_before_map",
-                    &block.suppressed,
-                );
-                let result = suppressed.extend_try_map(
-                    block.suppressed,
-                    |range| {
-                        Ok::<_, StageAudioError>(
-                            SignalSample(shift_label(
-                                range.start.0,
-                                old.start,
-                                destination.start.0,
-                            )?)
-                                ..SignalSample(shift_label(
-                                    range.end.0,
-                                    old.start,
-                                    destination.start.0,
-                                )?),
-                        )
-                    },
-                    &mut self.masks(control),
-                );
-                read_signal_policy_before_trace::result(
-                    self,
-                    control,
-                    ticket,
-                    "routed_map_result",
-                    &result,
-                );
-                read_signal_policy_before_trace::mask(
-                    self,
-                    control,
-                    ticket,
-                    "routed_destination_mask",
-                    &suppressed,
-                );
-                result?;
-            }
         }
         control.check()?;
         Ok(RoutedSignalBlock {
@@ -590,9 +485,6 @@ impl StageAudio {
             ExactRatio::ONE.checked_div(samples_per_frame(rate)?)?,
             rate,
         )?;
-        #[cfg(test)]
-        let o_resample_recipe = stage_block_policy_before_trace::position()
-            .map(|_| serde_json::to_value(&recipe).expect("resample recipe serializes"));
         let mut samples = sample_prepared(
             &prepared.samples,
             recipe,
@@ -601,52 +493,17 @@ impl StageAudio {
             control.cancelled,
         )?;
         #[cfg(test)]
-        let legacy_source = projected_tape_source_request::legacy();
+        let legacy_source = super::projected_signal_mask_request::legacy();
         #[cfg(not(test))]
         let legacy_source = false;
         let suppressed = if legacy_source {
-            #[cfg(test)]
-            let o_call = stage_block_policy_before_trace::call(
-                self,
-                control,
-                stage_block_policy_before_trace::Caller::RoutedLegacy,
-                || {
-                    serde_json::json!({"start":start,"frames":frames,
-                        "recipe_kind":"ResampleRecipe","recipe":o_resample_recipe,
-                        "caller_block_len":samples.len(),"caller_block_capacity":samples.capacity(),
-                        "caller_block_storage":stage_block_policy_before_trace::layout::<[f32;2]>(samples.capacity())})
-                },
-            );
             let suppressed = suppress_signal(
                 SignalInput::PreserveTape(projection.output_policy()),
                 start,
                 &mut samples,
                 &self.plan,
                 control,
-                #[cfg(test)]
-                stage_block_policy_before_trace::HelperContext {
-                    caller: stage_block_policy_before_trace::Caller::RoutedLegacy,
-                    renderer: self,
-                    ticket: o_call.ticket,
-                },
             )?;
-            #[cfg(test)]
-            stage_block_policy_before_trace::mark(
-                self,
-                control,
-                o_call.ticket,
-                "returned_vec_retained_by_routed_legacy",
-                || stage_block_policy_before_trace::vec_value(&suppressed),
-            );
-            #[cfg(test)]
-            projected_mask_before_trace::record(
-                self,
-                control,
-                start,
-                frames,
-                &prepared,
-                &suppressed,
-            );
             let suppressed = SignalSuppressionMask::plain(suppressed);
             #[cfg(test)]
             let suppressed = if super::projected_signal_mask_request::legacy() {
@@ -725,14 +582,7 @@ impl StageAudio {
         projected_tape_source_trace::before_handoff(self, control, policy.view());
         #[cfg(test)]
         let _handoff_scope = projected_tape_source_trace::handoff_scope();
-        #[cfg(not(test))]
-        {
-            policy.into_suppression(self, control)
-        }
-        #[cfg(test)]
-        {
-            policy.into_suppression(self, control, None)
-        }
+        policy.into_suppression(self, control)
     }
 }
 

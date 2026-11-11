@@ -465,17 +465,16 @@ fn process_kills_during_publication_leave_whole_entries_or_none() {
     let scratch = tempfile::tempdir().unwrap();
     let root = scratch.path().join("Proxies");
     drop(ProxyCache::at(&root).unwrap());
-    let seed = std::env::var("DEADPAN_CHAOS_SEED")
-        .ok()
-        .and_then(|text| u64::from_str_radix(text.trim_start_matches("0x"), 16).ok())
-        .unwrap_or(0x9e0c_5eed);
-    let rounds = std::env::var("DEADPAN_CHAOS_ITERATIONS")
-        .ok()
-        .and_then(|text| text.parse().ok())
-        .unwrap_or(8u64);
-    let mut rng = deadpan_chaos::Rng::new(seed);
+    // Fixed xorshift delays keep failures reproducible.
+    let mut state = 0x9e0c_5eed_u64;
+    let mut next_delay = move || {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        30 + state % 400
+    };
     let mut seen = 0;
-    for round in 0..rounds {
+    for round in 0..8 {
         let mut child = std::process::Command::new(std::env::current_exe().unwrap())
             .args([
                 "--exact",
@@ -487,7 +486,7 @@ fn process_kills_during_publication_leave_whole_entries_or_none() {
             .stderr(std::process::Stdio::piped())
             .spawn()
             .unwrap();
-        std::thread::sleep(Duration::from_millis(30 + rng.below(400) as u64));
+        std::thread::sleep(Duration::from_millis(next_delay()));
         assert!(
             child.try_wait().unwrap().is_none(),
             "round {round}: the child exited before the kill"

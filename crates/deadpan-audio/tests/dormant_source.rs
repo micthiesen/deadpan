@@ -133,22 +133,6 @@ fn source(document: &ProjectDocument) -> &SourceNode {
     source
 }
 
-fn bound(document: &ProjectDocument) -> ProjectDocument {
-    let mut wire = serde_json::to_value(document).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(
-        capture_unbound_audio_bindings(
-            document,
-            AudioTimingId {
-                allocation: revision("retained-source-clock"),
-                ordinal: 0,
-            },
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
-}
-
 #[derive(Default)]
 struct NoReads {
     calls: usize,
@@ -179,25 +163,23 @@ fn assert_silence(document: &ProjectDocument) {
     let mut chunk = 0;
     while at < total {
         let count = u32::try_from((total - at).min([199, 1, 127][chunk % 3])).unwrap();
-        if !plan.has_audio_bindings() {
-            let block = direct
-                .read_sources(
-                    &mut provider,
-                    AudioSample(at),
-                    count,
-                    TIMEOUT,
-                    &AtomicBool::new(false),
-                )
-                .unwrap();
-            assert_eq!(block.samples.len(), usize::try_from(count).unwrap());
-            assert!(
-                block
-                    .samples
-                    .iter()
-                    .flatten()
-                    .all(|sample| sample.to_bits() == 0)
-            );
-        }
+        let block = direct
+            .read_sources(
+                &mut provider,
+                AudioSample(at),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(block.samples.len(), usize::try_from(count).unwrap());
+        assert!(
+            block
+                .samples
+                .iter()
+                .flatten()
+                .all(|sample| sample.to_bits() == 0)
+        );
         let block = staged
             .read(
                 &mut provider,
@@ -243,7 +225,7 @@ fn assert_silence(document: &ProjectDocument) {
 }
 
 #[test]
-fn explicit_empty_support_is_digital_silence_without_media_for_live_and_retained_clocks() {
+fn explicit_empty_support_is_digital_silence_without_media() {
     for (rate, beat_frames, start, offset, points) in [
         (
             FrameRate::new(48_000, 1).unwrap(),
@@ -284,10 +266,7 @@ fn explicit_empty_support_is_digital_silence_without_media_for_live_and_retained
                 source(&original).audio.as_ref().unwrap().span,
                 span(100, 2100)
             );
-            for candidate in [original.clone(), bound(&original)] {
-                assert_eq!(source(&candidate), source(&original));
-                assert_silence(&candidate);
-            }
+            assert_silence(&original);
         }
     }
 }
@@ -311,7 +290,8 @@ fn intentionally_absent_audio_stays_absent_and_cannot_be_created_by_growing_supp
     wire["nodes"]["source"]["kind"]["source"]["link"] =
         serde_json::to_value(LinkRelation::Independent).unwrap();
     let absent = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    for before in [absent.clone(), bound(&absent)] {
+    {
+        let before = absent;
         assert!(source(&before).audio.is_none());
         assert_silence(&before);
         let rejected = apply(

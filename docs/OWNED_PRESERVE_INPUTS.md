@@ -42,7 +42,7 @@ their opaque identities.
 
 Snapshot restore, reversible clock patches and SQLite history persist these
 inputs. Ordinary reducers and the native workspace still refuse derived-clock
-documents. Shift, marks, sound metadata and retained audio bindings/lineage
+documents. Shift, marks, sound metadata and audio lineage
 remain outside derived-clock admission. All Preserve stages in such a document
 currently require owned inputs. Prior unused development schemas are refused
 under the owner's format-break authorization.
@@ -53,7 +53,7 @@ queries, flattened queries, independent occurrence voices through a projected
 owner and a projected stage's legacy child-input signal
 fail explicitly where they would otherwise substitute changed structural input.
 The separate output route must retain each occurrence's physical sample clock,
-resume index, envelope and silence policy. In particular, root RoundEven
+envelope and silence policy. In particular, root RoundEven
 allocation and intrinsic PointCeil sampling cannot share a rounded frame shift.
 Later edits still need atomic route/lifecycle transforms, including effects,
 copy, isolation, split, trim, deletion, movement and duration changes.

@@ -77,8 +77,8 @@ recordable yet.
   exact inward rounding, the frozen bank recording the register read, and one
   compound with an exact inverse; `SetRepeat` wraps or sets plays, gaps and
   escalation together and authors nothing when nothing changes. The
-  `SetRepeatGaps` command keeps stable plays, moves only the suffix with its
-  retained sampling clocks, transforms root sounds once and retires replaced
+  `SetRepeatGaps` command keeps stable plays, moves the suffix
+  structurally (audio is sampled from its new position), transforms root sounds once and retires replaced
   default-gap permissions.
 - Replay (`recipes`): both gags through the command line, the `:repeat` gap
   ladder and its inspector row, each with one Undo.

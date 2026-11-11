@@ -14,34 +14,30 @@ undo baseline remain intact.
 
 The command carries an exact boundary, Hold recipe, fresh Hold identity, bounded
 Split identity pool and timing identity allocated by its new revision. It
-captures the pre-edit sampling clocks, optionally performs a transparent Split,
-composes resume phases for every shifted physical allocation, and inserts the
-Hold. Intermediate structures never become history revisions. Marks follow the
+optionally performs a transparent Split and inserts the Hold. It changes
+structure only: Original-audio placement is derived from the current tree
+(see [sampling clocks](AUDIO_SAMPLING.md)), so no lattice, resume phase or
+reanchor step is captured or stored (removed 2026-11-11, core 59/database 89).
+Intermediate structures never become history revisions. Marks follow the
 existing Split and Insert transforms; source clocks and sequence-pinned marks
 retain their own semantics.
 
-Reanchor existing fragments as well as newly split ones. At 30000/1001 fps, a
-two-frame Source split at frame 1 has a right-hand entry at sample 1602. Inserting
-one frame at that seam must map new sample 3203 to old sample 1602, with unit
-sample step. Recomputing from the new absolute position would resume at 1601.
-The final extra allocation sample is zero after the retained envelope exhausts.
-Subsequent pauses compose differences on the then-current clock. They do not
-recapture the raw recipe or accumulate rounded durations.
+At 30000/1001 fps, a two-frame Source split at frame 1 has a right-hand
+fragment whose derived sample origin is 3203 after a one-frame insertion at that
+seam; it samples old position 1602 with unit step, as the old stored clock did.
+Placement derived from the new absolute position agrees with the old stored
+clocks to at most one sample at that rate and exactly at 48 kHz
+(`crates/deadpan-audio/tests/derived_timing.rs`). The final extra allocation
+sample is zero after the envelope exhausts. Cut edges at the new seams come from
+the tree ([audio edges](AUDIO_EDGES.md)).
 
-Bindings retain sampling phase and historical placement. Current owned recipes
-retain their meaningful extent, so lengthening a captured RoomTone Hold exposes
-its new tail without resetting phase or moving captured Repeat origins. Current
-authored crop constraints and source placement still constrain raw reads.
-Creative fade geometry follows the current body on the retained clock.
+Current owned recipes retain their meaningful extent, so lengthening a RoomTone
+Hold exposes its new tail. Current authored crop constraints and source
+placement still constrain raw reads.
 
-Ordinary `SetHoldDuration` also captures affected physical owners on their old
-root clocks when resizing moves output time. Shared Repeat definitions stay
-compact, and existing partial bindings retain their phase. No-op, terminal and
-dormant-definition changes avoid unnecessary captures. The separate
-clocked-Retime path is unchanged. Ordinary Holds inside fixed affine Retime
-windows also retain moved interior clocks while outer placements stay fixed.
-Preserve/Shift input windows retain those owners on their own PointCeil clocks
-while keeping the processor's output binding and rebuilding its current DSP.
+Ordinary `SetHoldDuration` changes structure only. Shared Repeat definitions
+stay compact. The separate clocked-Retime path is unchanged. Ordinary Holds
+inside fixed affine Retime windows keep outer placements fixed.
 Attached sounds whose processing subtree changes retain their explicit refusal.
 The native All plays duration action uses this same raw reducer through a
 duration-only semantic context, retaining every per-level Default choice.
@@ -57,18 +53,15 @@ No-op and unsupported scopes refuse before requesting clone identities. See
 Several selected Holds in bodies or explicit owned gaps stage those same mixed or all-Play primitives in
 one Compound, with a distinct revision per changed member. Every leaf maps the
 entire retained selection before the next resize; the final primary boundary
-is resolved after all changes. Surviving audio keeps each staged old physical
-clock. Equal total duration does not make changed recipes a no-op. Explicit
+is resolved after all changes. Equal total duration does not make changed
+recipes a no-op. Explicit
 owned gaps retain their preceding stable Play; a current final gap is dormant,
-so its recipe may change without adding output or capturing a root clock.
+so its recipe may change without adding output.
 The complete ancestry is still checked. A dormant primary keeps the ordinary
 cursor even when live counterparts ripple. See
 [selected duration semantics](SEMANTIC_MACROS.md#selected-plays-hold-length).
 Fixed-window tests
 cover exact nested slopes, cropped support and retained allocation endpoints.
-Processing-input tests
-extend that coverage to Preserve/Shift, historical input and output bindings,
-default and owned plays, and RoomTone gaps.
 The native inspector exposes existing Hold resizing for ordinary fixed Edit
 Retime ancestry through Enter, Change duration and `:hold-duration`, including
 recording, named calls and dot. Exact crop visibility determines the first
@@ -80,45 +73,35 @@ those pauses; its inspector and macros use the exact input rather than the
 covering recipe range. See [speed changes after a pause](RETIME_EDITING.md#speed-changes-after-an-exact-pause).
 
 Core 24 adds existing root Sequence seams before composite suffixes: Sequence,
-Repeat, Retime, owned gap branches and generated Hold owners can move together.
-Each physical or default-gap owner receives one compact chronological reanchor
-step in the pre-edit root window, unless that step is provably inert
-([timing storage](TIMING_STORAGE.md#inert-reanchor-steps)). Its placement is captured from the current
-document even when the owner's lattice and prior steps are older. A partial
-Repeat fragment and later complete plays therefore resume at their own visible
-entries. Hidden allocations remain absent; newly born gaps keep their canonical
-birth dispatch. No command expands the play count.
+Repeat, Retime, owned gap branches and generated Hold owners move together
+structurally. Hidden allocations remain absent; no command expands the play
+count.
 
 Movement stops at the first nonunity Preserve output. Its intrinsic preparation
-history stays on the retained input clock and is not shifted a second time.
+history stays on its input clock and is not shifted a second time.
 The old reducer remains in use for suffixes it already admitted, preserving
-their exact transaction output. Only the newly admitted composite path uses
-the generalized placement capture.
+their exact transaction output.
 
 Core 25 also admits a root Source, ordinary Hold or supported transparent
-fragment interior before a composite suffix. The sampling lattice is captured
-before the internal Split; the current placement graph is captured afterward,
-with a second consecutive checked timing ordinal. Copied physical aliases belong
-to the second graph, while their inherited lattices still name the first. At
-30000/1001 fps, inserting one frame inside a two-frame Source resumes its right
-part from old sample 1602 at new sample 3203. The following Repeat resumes old
-sample 3203 at new sample 4805. Each entry needs its own rounding; a common suffix
-sample offset would change the audio. Existing reducer paths remain unchanged.
+fragment interior before a composite suffix, by transparent Split. At
+30000/1001 fps, inserting one frame inside a two-frame Source places its right
+part at new sample 3203 and the following Repeat at new sample 4805. Each entry
+is rounded from its own position; a common suffix sample offset would change the
+audio. Existing reducer paths remain unchanged.
 
 Core 26 also descends through strict interiors of unretimed Sequence groups.
 `ProjectDocument::insert_time_target` supplies the same parent, child slot and
 exact Split identity count to the native host and the command. An existing seam
 stays at its Sequence level; a strict interior descends until that seam or a
 supported physical Source/Hold fragment. The new Hold is a child of that actual
-Sequence. Every ancestor remains live, and later siblings at every enclosing
-Sequence level receive their own current-clock reanchor. Repeat suffixes remain
+Sequence. Every ancestor remains live, and later Repeat suffixes remain
 compact, including a billion-play suffix, and later Preserve inputs stay on
 their intrinsic clocks. This does not admit a Repeat or Retime ancestor.
 
 `Command::InsertOccurrenceTime` now adds a pause at an integer boundary inside
 one concrete Repeat play or gap. The shared `pause_insertion_target` query
 returns the exact isolation, Split, container and gap identity requirements.
-Isolation runs outside-in before temporal capture and preserves stable play
+Isolation runs outside-in and preserves stable play
 identities. An implicit gap becomes an owned Hold, retaining its sound clock and
 permissions. A direct Repeat child receives a transparent Sequence when needed;
 the Repeat remains the live enclosing owner. No play-count expansion occurs.
@@ -175,12 +158,9 @@ another pause or change the ordinary enclosing selection. Mixed/multiple
 scope choices, Retime ancestry and external sound events remain refused for
 this resize path.
 
-Repeated Hold resizing captures still-unbound downstream audio after occurrence
-isolation and before changing duration. The old concrete Hold end bounds the
-suffix reanchor, including later ancestor plays and gaps. Existing lattices
-retain their phase; previously unbound Sources keep their pre-edit origins.
-Rounding each new root position into a fresh Source clock would change samples
-at fractional frame/sample rates, even though the picture timing was correct.
+Repeated Hold resizing isolates the occurrence and then changes the duration;
+later ancestor plays and gaps are sampled from their new positions, with the
+whole-source-sample snap keeping unity-rate Sources on exact source samples.
 
 Mixed choices and multiple selected plays retain their direct native path;
 they cannot supply semantic invocation authority. Scoped AI, reverse/tail
@@ -195,11 +175,9 @@ between the Repeats (a nested definition grows in every play of every enclosing
 Repeat), a cut inside the innermost definition (never a gap) shown through any
 default occurrence, and no AI preparation
 (generation needs one effective occurrence). Nothing is isolated: the command
-captures unbound lattices under its timing identity, Splits the definition
-leaf in place (wrapping a direct Repeat child in a Sequence when needed),
-reanchors every owner inside the outermost Repeat from the earliest default
-occurrence's cut to that Repeat's end on its own pre-edit clock, then the suffix after the Repeat,
-exactly as Repeat gap changes do. Decoded 44.1 kHz Source and room-tone gap PCM
+Splits the definition
+leaf in place (wrapping a direct Repeat child in a Sequence when needed) and
+inserts the Hold, exactly as Repeat gap changes do. Decoded 44.1 kHz Source and room-tone gap PCM
 keeps every play, gap and the tail sample-exact on the NTSC grid
 (`an_all_plays_pause_keeps_every_play_and_gap_on_its_own_44100_clock`, and for
 nested Repeats entered through the first or last occurrence,
@@ -208,9 +186,8 @@ tests cover the structure, exact inverse, an isolated play left unchanged and
 refusals. The scoped inspector's All plays scope (`:scope all`) inserts through
 it (`scoped-plays` replay).
 
-The command captures every later play, gap and enclosing Sequence sibling on
-its own pre-edit sampling clock. The inserted time grows only the selected
-occurrence. Native pauses and semantic macro pauses share the target query;
+Every later play, gap and enclosing Sequence sibling is sampled from its new
+position. The inserted time grows only the selected occurrence. Native pauses and semantic macro pauses share the target query;
 AI insertion records one durable preparation for the newly allocated Hold in
 that concrete branch. The ordinary `InsertTime` command retains its previous
 admission rules. Authored Retime interiors still require exact derived clocks.
@@ -222,7 +199,7 @@ a project-frame number or inferred cadence. Background/audio-only content uses
 Background. Session and revision guards apply before preparation and commit.
 
 `:hold 12f video=black` (black-frame punctuation) uses the
-same boundary, Split identities, sample reanchors and history as a freeze, but
+same boundary, Split identities and history as a freeze, but
 authors `HoldVideo::Background` with no sampled picture or captured framing.
 `audio=silence` is accepted and is the only choice at insertion; room tone is
 chosen afterwards. Macros record it as `InsertPause { length, black: true }`,
@@ -243,7 +220,7 @@ capture stages. No source media or rendered preview pixels are duplicated.
 ## Persistence and refusals
 
 Core 17/database 23 admit the new command. Database 22 replays through a frozen
-core-16 adapter retaining its exact binding and command vocabulary. Old history
+core-16 adapter retaining its exact command vocabulary. Old history
 cannot acquire InsertTime commands or invented timing records. Migration uses a
 consistent copy, preserves the backup and validates the complete chronology.
 
@@ -290,11 +267,10 @@ Integral results keep ordinary recipes; fractional windows become
 [derived clocks](STRUCTURAL_SPLICE_DESIGN.md#derived-owner-clocks). Every value
 stays exact through later pauses in the same speed change.
 
-Sampling lattices are captured before the copy, and each moved owner, inside
-or after the speed change, receives one chronological reanchor step in the
-pre-edit root window, exactly as at root interiors. At 30000/1001 fps, a pause
+Each moved owner, inside or after the speed change, is sampled from its new
+position, exactly as at root interiors. At 30000/1001 fps, a pause
 inside a 2x-slow FollowSpeed beat keeps every earlier sample, adds exact
-suppressed silence, and resumes the old sample stream bit-identically after it,
+suppressed silence, and continues the old sample stream after it,
 at whole and fractional child cuts and after a second pause.
 
 `pause_insertion_target` returns `PauseInsertionTarget::Retimed` with the live
@@ -308,8 +284,8 @@ clock. A pause of `h` project frames grows each stage's output by `h` times its
 enclosing slope, and its child window by `h` times its cumulative input slope.
 Intermediate fractions remain exact even when the net speed is unity. The Hold
 keeps its authored `h` frames through one adapter at the insertion site. Later
-siblings at every enclosing Sequence keep their individual pre-edit sample
-entries; one rounded sample offset for the whole suffix would be incorrect.
+siblings at every enclosing Sequence are rounded from their own positions;
+one rounded sample offset for the whole suffix would be incorrect.
 Further pauses may enter the resulting windows or the first pause's adapter.
 
 A Preserve or Shift stage inside the tape-speed child is split like a Source
@@ -326,8 +302,7 @@ at the pause's output frame: `Split` keeps the left half on the original stage
 and windows a complete copy for the right half, each with its full processing
 context, and the Hold goes between them. Every value is
 an integral output frame, so no derived clocks appear, and marks, sounds and
-ordinary commands keep their usual transforms. The right copy's retained clock
-resumes its processed output at the old cut, exactly as a split Source does.
+ordinary commands keep their usual transforms. The right copy continues its processed output from the old cut, exactly as a split Source does.
 When the stage has framing, gain or edges, a new group takes them around both
 halves and the pause, so they apply once and stay live over it; the stage and
 its copy lose them, and picture capture stops below the stage

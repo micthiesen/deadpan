@@ -248,48 +248,7 @@ mod tests {
         assert_eq!(result, AudioIntrinsicPreparation::MayBeRequired { work: 4 });
         assert!(!result.is_intrinsic_free());
 
-        let binding = |layout: FrozenAudioLayout| {
-            let timing = AudioTimingId {
-                allocation: revision("clock"),
-                ordinal: 0,
-            };
-            AudioBindingState::new(
-                vec![AudioTimingRecord {
-                    id: timing.clone(),
-                    layout,
-                }],
-                BTreeMap::from([(
-                    id("leaf"),
-                    OwnedAudioBinding {
-                        lattice: AudioPlacementTemplate {
-                            reference_local_offset: ExactRatio::ZERO,
-                            gap_after: None,
-                            reference: AudioReferenceClock {
-                                recipe: AudioRecipeKind::Node,
-                                timing,
-                                root: AudioClockRoot::ProjectRootRoundEven,
-                                physical: id("leaf"),
-                            },
-                            arguments: Vec::new(),
-                            births: Vec::new(),
-                        },
-                        reanchors: Vec::new(),
-                        resume: None,
-                    },
-                )]),
-            )
-        };
-        assert!(binding(transparent).is_ok());
-        let error = binding(derived).unwrap_err();
-        assert!(
-            error
-                .message
-                .contains("retained exact Preserve clocks require an owned output route")
-        );
-
-        // Do not invent a valid public current Source binding for this table:
-        // current binding and retained-context admission deliberately refuse it.
-        // The helper test above exercises the exact future-safe discovery path.
+        // Retained-context admission deliberately refuses this table.
         let context = FrozenAudioContext::capture(&document).unwrap();
         let mut context_wire = serde_json::to_value(&context).unwrap();
         context_wire["layout"] = layout_wire;

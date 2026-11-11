@@ -7,7 +7,6 @@ use deadpan_core::{
 };
 use serde::Serialize;
 
-use super::audio_bound::BindingTarget;
 use super::audio_boundary::BoundaryOwner;
 use super::audio_domain::{AudioDomainSeed, AudioWalkSeed, DomainGap};
 use super::{AudioBoundaries, AudioBoundaryKind, AudioDefinitionSelector};
@@ -27,11 +26,10 @@ pub use processing_query::AdmittedAudioProcessingQuery;
 
 // Keep each optional observation borrow independent, including the clock's
 // own Plan lifetime. This names the existing stack-only argument tuple.
-type UnmeteredWalkCaptures<'slot, 'editorial, 'clock, 'clock_plan, 'processing> = (
+type UnmeteredWalkCaptures<'slot, 'editorial, 'clock, 'clock_plan> = (
     Option<&'slot mut Option<AudioDomainSeed>>,
     Option<&'editorial mut EditorialCapture>,
     Option<&'clock super::AudioOwnerClock<'clock_plan>>,
-    Option<&'processing mut capture::ProcessingStops>,
 );
 
 /// Hard caps bound both returned occurrence paths and structural search work.
@@ -499,7 +497,7 @@ impl RenderPlan {
             seed,
             stop_at_preserve,
             stop_at_bindings,
-            (capture, None, None, None),
+            (capture, None, None),
         )
     }
 
@@ -517,7 +515,7 @@ impl RenderPlan {
             seed,
             stops.0,
             stops.1,
-            (None, Some(editorial), None, None),
+            (None, Some(editorial), None),
         )
     }
 
@@ -535,7 +533,7 @@ impl RenderPlan {
             seed,
             true,
             true,
-            (Some(&mut *capture), None, Some(owner), None),
+            (Some(&mut *capture), None, Some(owner)),
         );
         // Preserve the actual complete walk and its original discard point.
         walked?;
@@ -549,10 +547,10 @@ impl RenderPlan {
         seed: Option<&AudioWalkSeed>,
         stop_at_preserve: bool,
         stop_at_bindings: bool,
-        captures: UnmeteredWalkCaptures<'_, '_, '_, '_, '_>,
+        captures: UnmeteredWalkCaptures<'_, '_, '_, '_>,
     ) -> Result<AudioWalkSpan<'plan>, PlanError> {
         use super::audio_owners::admission::{self, Memory, Owned, Unmetered};
-        let (mut capture, mut editorial, owner, processing_stops) = captures;
+        let (mut capture, mut editorial, owner) = captures;
         let mut editorial_slot = Owned {
             value: editorial
                 .as_deref_mut()
@@ -584,7 +582,6 @@ impl RenderPlan {
                     None
                 },
                 owner,
-                processing_stops,
             ),
         );
         if let Some(capture) = capture {

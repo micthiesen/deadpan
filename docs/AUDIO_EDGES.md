@@ -33,6 +33,13 @@ that cannot carry a Hard side unmarked ([effect distribution](GROUP_EDITING.md#e
 Clearing that intent is not yet exposed.
 The [Source Trim contract](SOURCE_TRIM.md) records the implementation.
 
+Ordinary cuts need no stored mark. `deadpan-plan`'s `cut_edges.rs` derives
+the editorial edges from the current tree: a Partition side fades unless it
+meets its own contiguous continuation (equal child recipes and contiguous
+mappings, as after a pure Split). This covers cuts made by ordinary commands,
+Repeat play seams and pause joins, and an explicit Hard policy still cuts.
+Commands do not write audio bindings for this (removed 2026-11-11).
+
 Direct policy changes preserve temporal coordinates, marks and presentation
 basis. Occurrence edits preserve timing while copying or relocating owned marks
 under the existing isolation rules; their mark inventory may grow. Edge choices
@@ -91,7 +98,7 @@ Envelopes use full `AudioEnvelope` length/progress, never the requested chunk en
 Ordinary plans derive this from `envelope_samples`. Raw source/time-mapped reads
 also enforce its explicit silence endpoint without applying fades; outside-domain
 samples are zero even for Hard edges. [Sampling clocks](AUDIO_SAMPLING.md) describes
-the separation and the remaining persisted resume/policy work.
+the separation.
 For ordinary edits this equals `allocated_samples`. A [transparent partition](AUDIO_PARTITIONS.md)
 retains the original envelope range and offset while shortening allocation;
 it does not create a fade or change the width of an existing short fade.

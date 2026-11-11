@@ -110,12 +110,6 @@ fn paste_uses_exact_measured_selection_and_one_durable_undo_entry() -> Result {
             source: timing.source_node(input.asset),
         }
     );
-    assert!(
-        !expected
-            .audio_bindings()
-            .bindings()
-            .contains_key(&input.node)
-    );
     store.undo(expected.revision_id(), revision("undo-paste"))?;
     let undone = store.snapshot()?;
     assert_eq!(undone.nodes(), before.nodes());

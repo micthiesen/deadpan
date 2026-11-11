@@ -78,10 +78,6 @@ fn apply_intent(
                     fillers: (0..r.required_filler_nodes)
                         .map(|n| node_id(&format!("filler-{n}")))
                         .collect(),
-                    timing: (r.capture != SourceTrimCapture::None).then_some(AudioTimingId {
-                        allocation,
-                        ordinal: 0,
-                    }),
                 },
             },
         },

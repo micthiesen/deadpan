@@ -4,11 +4,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    AudioClockRoot, AudioLocalPhase, AudioPhaseTerm, AudioPlacementTemplate, AudioReanchorStep,
-    AudioReferenceClock, AudioResume, AudioTimingId, BeatNode, Command, EditError, EditErrorCode,
-    ExactFrameRange, ExactRatio, FrameDuration, HoldRecipe, HoldVideo, InstancePath,
-    MAX_AUDIO_BINDING_ENTRIES, MAX_AUDIO_BINDING_TERMS, MAX_DOCUMENT_NODES, NodeId, NodeKind,
-    ProjectDocument, ProjectFrame, RetimePurpose, RevisionId, SplitIdentities, Subtree,
+    AudioTimingId, BeatNode, Command, EditError, EditErrorCode, ExactRatio, FrameDuration,
+    HoldRecipe, HoldVideo, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectFrame,
+    RetimePurpose, RevisionId, SplitIdentities, Subtree,
 };
 
 pub(crate) mod composite;
@@ -39,12 +37,6 @@ pub(crate) use source_splice::{
     apply_interior as splice_source_at,
 };
 pub use target::{InsertTimeSplit, InsertTimeTarget};
-
-struct ShiftedOwner {
-    /// Alias in the pre-edit timing layout, independent of any Split copy.
-    old: NodeId,
-    entry: ExactRatio,
-}
 
 /// Insert a pause, also returning the result's structural durations when the
 /// insertion computed them (see `command::KnownValidation`).
@@ -80,10 +72,8 @@ pub(crate) fn apply_known(
         validate_identities(document, Some(id), identities)?;
         let extents = document.exact_durations()?;
         if let Some(target) = retimed::locate(document, &|id| extents.get(id).copied(), at)? {
-            return retimed::apply(
-                document, &target, at, hold, id, identities, timing, allocation,
-            )
-            .map(|result| (result, None));
+            return retimed::apply(document, &target, hold, id, identities, allocation)
+                .map(|result| (result, None));
         }
     }
     let durations = document.durations()?;
@@ -100,47 +90,30 @@ pub(crate) fn apply_known(
         &|id| durations.get(id).map(|d| ExactRatio::integer(d.frames())),
         at,
     )? {
-        return retimed::apply(
-            document, &target, at, hold, id, identities, timing, allocation,
-        )
-        .map(|result| (result, None));
+        return retimed::apply(document, &target, hold, id, identities, allocation)
+            .map(|result| (result, None));
     }
     let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
         return Err(invalid("pause insertion requires a project-root Sequence"));
     };
 
     let legacy = resolve_legacy_suffix(document, children, &durations, at);
-    let LegacySuffix {
-        slot,
-        interior,
-        shifted,
-    } = match legacy {
+    let LegacySuffix { slot, interior } = match legacy {
         Ok(resolved) => resolved,
         Err(error) if error.code == EditErrorCode::InvalidCommand => {
             let target = target::resolve(document, &durations, at)?;
+            let pause = || composite::Insertion {
+                node: BeatNode::hold("Pause", hold.clone()),
+                id,
+                allocation,
+            };
             if let Some(split) = target.split {
                 // The split target must still be a Source, ordinary Hold or
                 // admitted transparent fragment. Later siblings may have the
                 // complete composite structure supported at a root seam.
                 validate_split_budget(document, Some(&split.target), identities)?;
-                let placement_timing = AudioTimingId {
-                    allocation: timing.allocation.clone(),
-                    ordinal: timing
-                        .ordinal
-                        .checked_add(1)
-                        .ok_or_else(|| limit("interior pause needs a second timing identity"))?,
-                };
-                let mut working = document.clone();
-                // Capture sampling lattices BEFORE copying the retained Source
-                // or Hold. The new right copy must not acquire a new origin.
-                working.audio_bindings =
-                    crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
-                        document,
-                        timing.clone(),
-                    )?;
-                working = split_captured(document, &working, |working| {
-                    crate::split::apply(working, &split.target, split.at, identities, context)
-                })?;
+                let mut working =
+                    crate::split::apply(document, &split.target, split.at, identities, context)?;
                 let (parent, slot) = match &target.lift {
                     Some(retime) => {
                         let group =
@@ -155,38 +128,11 @@ pub(crate) fn apply_known(
                     }
                     None => (target.parent.clone(), target.index + 1),
                 };
-                // The post-Split placement graph has new physical aliases.
-                // Give it a distinct immutable identity rather than overwriting
-                // the pre-Split graph still referenced by inherited lattices.
-                return composite::apply_at(
-                    &working,
-                    &parent,
-                    slot,
-                    composite::Insertion {
-                        at,
-                        total,
-                        node: BeatNode::hold("Pause", hold.clone()),
-                        id,
-                        timing: &placement_timing,
-                        allocation,
-                    },
-                )
-                .map(|result| (result, None));
+                return composite::apply_at(&working, &parent, slot, pause())
+                    .map(|result| (result, None));
             }
-            return composite::apply_at(
-                document,
-                &target.parent,
-                target.index,
-                composite::Insertion {
-                    at,
-                    total,
-                    node: BeatNode::hold("Pause", hold.clone()),
-                    id,
-                    timing,
-                    allocation,
-                },
-            )
-            .map(|result| (result, None));
+            return composite::apply_at(document, &target.parent, target.index, pause())
+                .map(|result| (result, None));
         }
         Err(error) => return Err(error),
     };
@@ -196,43 +142,10 @@ pub(crate) fn apply_known(
         identities,
     )?;
 
-    // A current timing table is needed even when every physical node already
-    // has a lattice. Resume terms compose the CURRENT mapping, never recapture
-    // the old raw recipe or recompute from the Original's frame coordinate.
-    //
-    // The table may be a provisional slice (see `capture_scoped`). Before the
-    // resume terms below, it is read only through the new bindings (whose
-    // aliases it projects) and through each reanchored owner's trial step,
-    // which names that owner's pre-edit alias. A Split copy keeps its
-    // original's binding and aliases.
-    // The cut owner's right fragment almost always receives a resume term,
-    // so its alias is included up front (`rescope_timing` adds any other).
-    let reanchored = shifted
-        .iter()
-        .enumerate()
-        .filter(|(index, shifted)| {
-            (*index == 0 && interior.is_some())
-                || document
-                    .audio_bindings()
-                    .bindings()
-                    .get(&shifted.old)
-                    .is_some_and(|binding| !binding.reanchors.is_empty())
-        })
-        .map(|(_, shifted)| shifted.old.clone())
-        .collect();
-    let (bindings, phase_layout) = crate::audio_binding_lifecycle::capture_for_insertion_scoped(
-        document,
-        timing.clone(),
-        reanchored,
-    )?;
-    let mut working = document.clone();
-    working.audio_bindings = bindings;
-    // The successful entry query already proved this unchanged borrow. Keep
-    // its map alive through the tail, but expose it only to the existing
-    // binding-only bridge for the legacy interior Split.
+    // The successful entry query already proved the head's durations; a
+    // Split of the head reuses them when no validated scope retains them.
     let entry_durations = if interior.is_some()
         && crate::command_work::local()
-        && crate::audio_binding_lifecycle::compact_representation()
         && document.derived_clocks().is_empty()
         && document.retained_durations().is_none()
     {
@@ -240,17 +153,14 @@ pub(crate) fn apply_known(
     } else {
         None
     };
-    // The structural durations of `working`, which binding changes below
-    // never alter: the head's, or the Split result's complete validation.
+    let split_result;
+    // The structural durations of `working`: the head's, or the Split
+    // result's complete validation.
     let working_durations;
-    let insertion_slot = if let Some((target, cut)) = &interior {
+    let (working, insertion_slot) = if let Some((target, cut)) = &interior {
         let cut = FrameDuration::new(*cut).map_err(crate::DocumentError::from)?;
-        let split = || {
-            split_captured(document, &working, |working| {
-                crate::split::apply_validated(working, target, cut, identities, context)
-            })
-        };
-        let (split, (durations, _)) = match &entry_durations {
+        let split = || crate::split::apply_validated(document, target, cut, identities, context);
+        let (split, durations) = match &entry_durations {
             Some(durations) => {
                 document.with_proved_durations(std::sync::Arc::clone(durations), || {
                     #[cfg(test)]
@@ -260,149 +170,16 @@ pub(crate) fn apply_known(
             }
             None => split(),
         }?;
-        working = split;
+        split_result = split;
         working_durations = Some(std::sync::Arc::new(durations));
-        slot + 1
+        (&split_result, slot + 1)
     } else {
         working_durations = document.retained_durations();
-        slot
+        (document, slot)
     };
-
-    if let Some(layout) = phase_layout {
-        working
-            .audio_bindings
-            .timings
-            .insert(timing.clone(), layout);
-    }
-
-    let mut remaining = MAX_AUDIO_BINDING_ENTRIES;
-    // One occurrence path, refilled per owner without reallocating.
-    let mut instance = InstancePath {
-        node: document.root().clone(),
-        repeats: Vec::new(),
-    };
-    for (index, shifted) in shifted.iter().enumerate() {
-        let fragment;
-        let owner = if index == 0 && interior.is_some() {
-            let NodeKind::Sequence { children } = &working.nodes()[working.root()].kind else {
-                unreachable!("Split preserves the root Sequence")
-            };
-            fragment = physical(&working, &children[insertion_slot])?.0.clone();
-            &fragment
-        } else {
-            &shifted.old
-        };
-        // Owners without a retained binding take their derived placement.
-        if !working.audio_bindings.bindings.contains_key(owner) {
-            continue;
-        }
-        instance.node.clone_from(owner);
-        let resolved = working
-            .audio_bindings
-            .resolve(owner, &instance, remaining)?;
-        remaining = remaining
-            .checked_sub(resolved.work)
-            .ok_or_else(|| limit("pause resume work"))?;
-        let anchor = resolved
-            .resume
-            .as_ref()
-            .map_or(resolved.lattice.local_support.start, |resume| {
-                resume.local_boundary
-            });
-        if !working.audio_bindings.bindings[owner].reanchors.is_empty() {
-            let binding = &working.audio_bindings.bindings[owner];
-            let previous_terms = binding
-                .resume
-                .as_ref()
-                .map_or(0, |resume| resume.phase.terms.len());
-            if previous_terms + binding.reanchors.len() >= MAX_AUDIO_BINDING_TERMS {
-                return Err(limit(
-                    "pause resume exceeds the phase-term and reanchor limit",
-                ));
-            }
-            remaining = remaining
-                .checked_sub(1)
-                .ok_or_else(|| limit("pause resume work"))?;
-            // Reanchor steps are chronological. A later pause must follow
-            // them, not alter the legacy initial phase evaluated before them.
-            let step = AudioReanchorStep {
-                anchor: Default::default(),
-                placement: AudioPlacementTemplate {
-                    reference_local_offset: crate::ExactRatio::ZERO,
-                    gap_after: None,
-                    reference: AudioReferenceClock {
-                        recipe: crate::AudioRecipeKind::Node,
-                        timing: timing.clone(),
-                        root: AudioClockRoot::ProjectRootRoundEven,
-                        physical: shifted.old.clone(),
-                    },
-                    arguments: Vec::new(),
-                    births: Vec::new(),
-                },
-                window: Some(ExactFrameRange::new(
-                    ExactRatio::integer(at.0),
-                    ExactRatio::integer(total),
-                )?),
-            };
-            // An unmoved entry already is the resume anchor; see
-            // `reanchor_step_is_inert` for why omitting it is exact.
-            if !(crate::audio_binding_lifecycle::compact_representation()
-                && working
-                    .audio_bindings
-                    .reanchor_step_is_inert(owner, binding, &step))
-            {
-                working
-                    .audio_bindings
-                    .bindings
-                    .get_mut(owner)
-                    .expect("captured physical owner")
-                    .reanchors
-                    .push(step);
-            }
-            continue;
-        }
-        let binding = working
-            .audio_bindings
-            .bindings
-            .get_mut(owner)
-            .expect("captured physical owner");
-        let resume = binding.resume.get_or_insert_with(|| AudioResume {
-            local_boundary: anchor,
-            phase: AudioLocalPhase::default(),
-        });
-        if anchor != shifted.entry {
-            if resume.phase.terms.len() >= MAX_AUDIO_BINDING_TERMS {
-                return Err(limit("pause resume exceeds the phase-term limit"));
-            }
-            remaining = remaining
-                .checked_sub(1)
-                .ok_or_else(|| limit("pause resume work"))?;
-            resume.phase.terms.push(AudioPhaseTerm {
-                placement: AudioPlacementTemplate {
-                    reference_local_offset: crate::ExactRatio::ZERO,
-                    gap_after: None,
-                    reference: AudioReferenceClock {
-                        recipe: crate::AudioRecipeKind::Node,
-                        timing: timing.clone(),
-                        root: AudioClockRoot::ProjectRootRoundEven,
-                        physical: shifted.old.clone(),
-                    },
-                    arguments: Vec::new(),
-                    births: Vec::new(),
-                },
-                from_local: anchor,
-                to_local: shifted.entry,
-            });
-        }
-        resume.local_boundary = shifted.entry;
-    }
-    crate::audio_binding_lifecycle::prune(&mut working);
-    // Resume terms name each shifted owner's pre-edit alias in the new table.
-    crate::audio_binding_lifecycle::rescope_timing(document, &mut working.audio_bindings, timing)?;
-    working.validate_bindings_in_scope(&working.audio_bindings)?;
     let mut structure = None;
     let result = insert_leaf_shared(
-        &working,
+        working,
         working.root(),
         insertion_slot,
         id,
@@ -414,24 +191,6 @@ pub(crate) fn apply_known(
         &mut structure,
     )?;
     Ok((result, structure))
-}
-
-/// Split `working`, a copy of the validated `document` whose only change is
-/// a binding state captured and validated against `document`. Complete
-/// validation of `working` therefore returns `document`'s durations, so the
-/// Split reuses them instead of validating `working` from scratch.
-fn split_captured<T>(
-    document: &ProjectDocument,
-    working: &ProjectDocument,
-    split: impl FnOnce(&ProjectDocument) -> Result<T, EditError>,
-) -> Result<T, EditError> {
-    match document
-        .retained_durations()
-        .filter(|_| crate::command_work::local())
-    {
-        Some(durations) => working.with_proved_durations(durations, || split(working)),
-        None => split(working),
-    }
 }
 
 pub(crate) fn validate_split_budget(
@@ -482,7 +241,6 @@ pub(crate) fn split_node_count(
 struct LegacySuffix {
     slot: usize,
     interior: Option<(NodeId, i64)>,
-    shifted: Vec<ShiftedOwner>,
 }
 
 struct RootBoundary {
@@ -533,7 +291,6 @@ fn resolve_legacy_suffix(
     let mut offset = 0i64;
     let mut slot = children.len();
     let mut interior = None;
-    let mut shifted = Vec::new();
     for (index, child) in children.iter().enumerate() {
         let end = offset
             .checked_add(durations[child].frames())
@@ -545,24 +302,12 @@ fn resolve_legacy_suffix(
                     interior = Some((child.clone(), at.0 - offset));
                 }
             }
-            let (owner, start) = physical(document, child)?;
-            let cut = if index == slot {
-                (at.0 - offset).max(0)
-            } else {
-                0
-            };
-            shifted.push(ShiftedOwner {
-                old: owner.clone(),
-                entry: ExactRatio::integer(start.checked_add(cut).ok_or_else(overflow)?),
-            });
+            // Composite suffix children take the composite path instead.
+            physical(document, child)?;
         }
         offset = end;
     }
-    Ok(LegacySuffix {
-        slot,
-        interior,
-        shifted,
-    })
+    Ok(LegacySuffix { slot, interior })
 }
 
 fn insert_leaf_at(
@@ -909,18 +654,12 @@ pub(crate) fn source_leaf(label: &str, source: crate::SourceNode) -> BeatNode {
 }
 
 /// `SpliceSource` at a group seam inside one already isolated Repeat play.
-/// `at` is the seam's exact project frame in that occurrence. Each later
-/// owner, including later plays and gaps of every enclosing Repeat, keeps
-/// its own pre-edit clock; the new Source starts unbound.
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn splice_source_in_occurrence(
     document: &ProjectDocument,
     parent: &NodeId,
     index: usize,
-    at: ProjectFrame,
     id: &NodeId,
     node: BeatNode,
-    timing: &crate::AudioTimingId,
     allocation: &RevisionId,
 ) -> Result<ProjectDocument, EditError> {
     let NodeKind::Source { source } = &node.kind else {
@@ -939,14 +678,13 @@ pub(crate) fn splice_source_in_occurrence(
     total
         .checked_add(source.duration.frames())
         .ok_or_else(overflow)?;
-    let affected = composite::occurrence_shifted_owners(document, parent, index)?;
-    let working = composite::prepare_owners(document, &affected, at, total, timing)?;
-    insert_leaf_at(&working, parent, index, id, node, allocation)
+    // Refuse a suffix that would cross a Retime ancestor.
+    composite::occurrence_shifted_owners(document, parent, index)?;
+    insert_leaf_at(document, parent, index, id, node, allocation)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::*;
     use std::cell::Cell;
     use std::sync::Arc;
@@ -1063,20 +801,11 @@ mod tests {
     }
 
     #[test]
-    fn insert_split_proof_reference_representation_and_seams_keep_existing_path() {
+    fn insert_split_proof_and_seams_keep_existing_path() {
         let document = fixture(16);
         let request = pause(&document, "pause", 19);
+        compare_success(&document, &request);
         let count = scopes();
-        let local = crate::with_reference_timing_representation(|| {
-            crate::apply_with_result(&document, &request)
-        })
-        .unwrap();
-        let reference = crate::with_reference_timing_representation(|| {
-            crate::with_reference_command_work(|| crate::apply_with_result(&document, &request))
-        })
-        .unwrap();
-        assert_eq!(local, reference);
-        assert_eq!(scopes(), count);
         let mut seam = request.clone();
         let Command::InsertTime { at, identities, .. } = &mut seam.command else {
             unreachable!()
@@ -1145,51 +874,5 @@ mod tests {
         assert_eq!(scopes() - count, 1);
         let fresh = fixture(1);
         compare_success(&fresh, &pause(&fresh, "recovery", 3));
-    }
-
-    #[test]
-    fn insert_split_proof_binding_only_bridge_is_exact_and_pops_on_error_and_unwind() {
-        let document = fixture(16);
-        let durations = Arc::new(document.durations().unwrap());
-        let mut working = document.clone();
-        working.audio_bindings = crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
-            &document,
-            AudioTimingId {
-                allocation: RevisionId::new("captured").unwrap(),
-                ordinal: 0,
-            },
-        )
-        .unwrap();
-        assert_eq!(working.durations().unwrap(), *durations);
-        let sentinel = super::invalid("test-only Split refusal");
-        let error = document
-            .with_proved_durations(Arc::clone(&durations), || {
-                split_captured(&document, &working, |borrow| -> Result<(), EditError> {
-                    assert!(Arc::ptr_eq(
-                        &borrow.retained_durations().unwrap(),
-                        &durations
-                    ));
-                    Err(sentinel.clone())
-                })
-            })
-            .unwrap_err();
-        assert_eq!(error, sentinel);
-        assert!(document.retained_durations().is_none());
-        assert!(working.retained_durations().is_none());
-        let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            document.with_proved_durations(Arc::clone(&durations), || {
-                split_captured(&document, &working, |borrow| -> Result<(), EditError> {
-                    assert!(Arc::ptr_eq(
-                        &borrow.retained_durations().unwrap(),
-                        &durations
-                    ));
-                    panic!("test-only Split unwind");
-                })
-            })
-        }));
-        assert!(panic.is_err());
-        assert!(document.retained_durations().is_none());
-        assert!(working.retained_durations().is_none());
-        compare_success(&document, &pause(&document, "recovery", 19));
     }
 }

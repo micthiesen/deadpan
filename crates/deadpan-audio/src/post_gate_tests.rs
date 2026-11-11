@@ -147,8 +147,6 @@ fn fixture(root: bool, clocked: bool, treatments: AudioTreatments) -> Arc<Render
                 id: timing.clone(),
                 layout: deadpan_core::FrozenAudioLayout::capture(&before).unwrap(),
             }],
-            BTreeMap::new(),
-            BTreeMap::new(),
             BTreeMap::from([(
                 id("owner"),
                 BTreeMap::from([(

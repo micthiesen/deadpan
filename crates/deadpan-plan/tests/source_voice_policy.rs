@@ -514,33 +514,3 @@ fn combined_policy_queries_share_work_and_structural_span_bounds() {
             .is_empty()
     );
 }
-
-#[test]
-fn retained_original_bindings_do_not_supply_the_catalog_voice_policy() {
-    let document = document(&["original"], [("original", source(4, true, true))]);
-    let bindings = capture_unbound_audio_bindings(
-        &document,
-        AudioTimingId {
-            allocation: RevisionId::new("capture").unwrap(),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(document).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-    let plan =
-        RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap();
-    assert_eq!(
-        plan.audio_signal()
-            .policy(points(0, 4), Default::default())
-            .unwrap()
-            .suppressed,
-        vec![points(1, 4)]
-    );
-    let voice = plan.audio_signal().source_voice(recipe()).unwrap();
-    for signal in [voice.input_signal(), voice.output_signal()] {
-        let policy = signal.policy(points(0, 4), Default::default()).unwrap();
-        assert!(policy.suppressed.is_empty());
-        only_catalog_source(&policy.contents);
-    }
-}

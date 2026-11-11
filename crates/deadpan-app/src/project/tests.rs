@@ -992,7 +992,7 @@ fn native_open_refuses_schemas1_through38_without_writes_or_backups() {
                 .error
                 .as_deref()
                 .unwrap()
-                .contains("Nothing was changed")
+                .contains("cannot be opened")
         );
         assert!(opened.workspace.is_none());
         assert!(opened.committed.is_none());

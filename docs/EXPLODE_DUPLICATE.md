@@ -58,25 +58,11 @@ default-gap permission moves to the materialized gap Hold, and every address
 loses the exploded Repeat step. Root sound recipes and routes are unchanged
 because no root time changes.
 
-### Retained audio clocks
+### Audio placement
 
-Explode never recomputes a clock. A placement that names the exploded Repeat
-is closed for its concrete play:
-
-- If the play survives the placement's birth clause (or there is none), the
-  live Repeat argument becomes `Captured` for that play and the clause is
-  removed. This is exactly the clock the play resolved before.
-- If the play was born after the capture, the placement's root becomes the
-  clause's `DefinitionPointCeil` root, with outer clauses and arguments
-  outside that scope removed and inner clauses kept, so an inner birth still
-  wins exactly where it did before.
-- A reanchor window authored in the enclosing captured scope was already
-  discarded for a born play and is dropped. The one case a single root cannot
-  express (an inner birth selecting the old captured root) refuses explicitly.
-
-Only the exploded Repeat's own gap clock is captured, and only when a default
-gap is materialized; other unbound owners keep their implicit clocks, which
-explode leaves at the same positions.
+Explode stores no audio clock. Every play, materialized gap and escalation
+group is sampled from its current position in the exploded tree, like any other
+owner (original-audio bindings were removed on 2026-11-11).
 
 `ProjectDocument::explode_requirements(node)` returns the exact node and mark
 counts. Nodes are consumed per play in play order: the copied definition in
@@ -97,10 +83,9 @@ copies one exact direct child, inclusive sibling span or nonempty global range
 of an ordinary Sequence immediately after itself. It captures the current
 revision with `CapturedEditSlice::capture_selection` and resolves to the same
 `SpliceSlice` (at a seam) or `SpliceSliceAt` (when a range ends inside a beat)
-that paste uses, so marks, beat sounds, sparse overrides, retained clocks,
+that paste uses, so marks, beat sounds, sparse overrides, sound clocks,
 allowances and the single root sound transform follow the established copy
-rules in [edited slices](EDITED_SLICES.md). The scratch capture timing never
-persists. The copy enters under paste's neutral "Copied contents" Sequence.
+rules in [edited slices](EDITED_SLICES.md). The copy enters under paste's neutral "Copied contents" Sequence.
 
 `ProjectDocument::duplicate_requirements(parent, selection, timing)` returns
 the paste pools and any Split identities. The stored history keeps the
@@ -134,9 +119,9 @@ same store admission as a single scoped Hold-audio edit.
 
 - [`crates/deadpan-core/tests/explode.rs`](../crates/deadpan-core/tests/explode.rs):
   structure, overrides, gaps, dormant branches, captions, marks, escalation
-  groups, refusals, exact undo, and resolved retained clocks equal for every
+  groups, refusals, exact undo, and equal resolved timing for every
   play of a RepeatSelection Repeat; Duplicate of a child, span, interior and
-  seam range with fresh mark identities and no scratch clock.
+  seam range with fresh mark identities.
 - [`crates/deadpan-core/tests/sound_allowances.rs`](../crates/deadpan-core/tests/sound_allowances.rs):
   nested explode moves concrete and default-gap permissions.
 - [`crates/deadpan-core/tests/scoped_many.rs`](../crates/deadpan-core/tests/scoped_many.rs):
@@ -167,13 +152,3 @@ same store admission as a single scoped Hold-audio edit.
   another Repeat's play override is a separate authored Repeat and stays one.
 - Partial-range structural edits inside several plays at once (one cut applied
   to plays 2-3) remain separate EditOccurrence commands.
-- Fixed while testing: binding implicit clocks (as `IsolateGap` then did for
-  the whole project, and as InsertTime or RepeatSelection still do for shifted
-  or wrapped owners) made the limited bus refuse a gained, nonunity Preserve
-  inside a Repeat with "nonzero Original outside meaningful owner-clock
-  support". The authored-gain owner walk mapped a play's first RoundEven output
-  sample, which starts a fraction before the play's exact origin, onto the
-  Preserve input's PointCeil grid just before point 0 and called it outside.
-  The walk now attributes that overlapping sample to the first input point, as
-  the current clock does, and `IsolateGap` binds only its own gap clock.
-  Regression: `crates/deadpan-audio/tests/composite_insert/bound_preserve.rs`.

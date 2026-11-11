@@ -39,29 +39,10 @@ fn domain(plan: &RenderPlan, value: &AudioDomain<'_>) -> Value {
     })
 }
 
-pub(super) fn context(plan: &RenderPlan, value: &Context<'_>, at: AudioSample) -> Value {
+pub(super) fn context(plan: &RenderPlan, value: &Context<'_>, _at: AudioSample) -> Value {
     match value {
         Context::Root => json!({"kind": "Root"}),
         Context::Domain(value) => json!({"kind": "Domain", "value": domain(plan, value)}),
-        Context::Retained(value) => {
-            assert!(value.belongs_to(plan));
-            let raw_domain = match value.domain() {
-                deadpan_plan::AudioBoundDomain::Root(value) => {
-                    json!({"kind": "Root", "value": domain(plan, value)})
-                }
-                deadpan_plan::AudioBoundDomain::Point(_) => {
-                    json!({"kind": "Point", "private_fields": "Plan oracle only"})
-                }
-                deadpan_plan::AudioBoundDomain::Empty => json!({"kind": "Empty"}),
-            };
-            json!({
-                "kind": "Retained", "belongs_to_expected_plan": true,
-                "bound": value.bound(), "raw_domain": raw_domain,
-                "reference_at": value.reference_at(at).unwrap(),
-                "reference_step": value.reference_samples_per_output_sample(),
-                "retained_lookup_work": value.work(),
-            })
-        }
     }
 }
 
@@ -116,13 +97,6 @@ pub(super) fn measured<'plan>(
         Err(error) => output["result"] = json!({"error": format!("{error:?}")}),
         Ok(id) => {
             let node = &graph.nodes[id];
-            let retained_same_arc = match (incoming, &node.context) {
-                (Context::Retained(a), Context::Retained(b)) => Some(a.ptr_eq(b)),
-                _ => None,
-            };
-            if retained_same_arc.is_some() {
-                assert_eq!(retained_same_arc, Some(true));
-            }
             output["result"] = json!({
                 "id": id, "parent": node.parent,
                 "context": context(plan, &node.context, at),
@@ -134,7 +108,6 @@ pub(super) fn measured<'plan>(
                 },
                 "filter_present": node.filter.is_some(),
                 "tiles_empty": node.tiles.is_empty(),
-                "incoming_retained_same_arc": retained_same_arc,
             });
             let resident = graph.resident;
             let active = renderer.active_frames;

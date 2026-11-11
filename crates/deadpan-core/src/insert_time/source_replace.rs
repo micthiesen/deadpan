@@ -75,14 +75,6 @@ pub(crate) fn apply_in(
     (total - range.duration().frames())
         .checked_add(source.duration.frames())
         .ok_or_else(super::overflow)?;
-    let suffix_timing = crate::AudioTimingId {
-        allocation: insertion.timing.allocation.clone(),
-        ordinal: insertion
-            .timing
-            .ordinal
-            .checked_add(1)
-            .ok_or_else(|| super::limit("replacement needs a second timing identity"))?,
-    };
     let command = Command::ReplaceSource {
         parent: parent.clone(),
         range,
@@ -92,29 +84,21 @@ pub(crate) fn apply_in(
         identities: insertion.identities.clone(),
         timing: insertion.timing.clone(),
     };
-    let mut working = super::sequence_range::split_endpoints_in(
+    let working = super::sequence_range::split_endpoints_in(
         document,
         parent,
         range,
         insertion.identities,
-        insertion.timing,
         context,
         origin,
     )?;
     let removed = super::sequence_range::selected_children_in(&working, parent, range, origin)?;
-    working = if origin.is_some() {
-        let affected = super::composite::occurrence_shifted_owners(&working, parent, removed.end)?;
-        super::composite::prepare_owners(&working, &affected, range.end(), total, &suffix_timing)?
+    // Refuse a suffix that would cross a Repeat or Retime ancestor.
+    if origin.is_some() {
+        super::composite::occurrence_shifted_owners(&working, parent, removed.end)?;
     } else {
-        super::composite::prepare_suffix(
-            &working,
-            parent,
-            removed.end,
-            range.end(),
-            total,
-            &suffix_timing,
-        )?
-    };
+        super::composite::check_suffix(&working, parent, removed.end)?;
+    }
     let mut result = working.clone();
     let NodeKind::Sequence { children } =
         &mut result.nodes.get_mut(parent).expect("named parent").kind
@@ -128,7 +112,7 @@ pub(crate) fn apply_in(
     result.nodes.insert(insertion.id.clone(), insertion.node);
     crate::audio_lineage::reconcile(&working, &mut result, &command)?;
     result.marks = crate::marks::transform_marks(&working, &result, &command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     Ok(result)
 }
 
@@ -171,20 +155,10 @@ pub(crate) fn apply_children(
         label: node.label.clone(),
         timing: timing.clone(),
     };
-    // The suffix samples still belong to the old tree when their entries are
-    // captured. No intermediate deleted clock or separate insert is observed.
-    let working = if selected.range.end().0 < total {
-        super::composite::prepare_suffix(
-            document,
-            parent,
-            selected.end,
-            selected.range.end(),
-            total,
-            timing,
-        )?
-    } else {
-        document.clone()
-    };
+    if selected.range.end().0 < total {
+        super::composite::check_suffix(document, parent, selected.end)?;
+    }
+    let working = document;
     let mut result = working.clone();
     let NodeKind::Sequence { children } = &mut result.nodes.get_mut(parent).unwrap().kind else {
         unreachable!("exact child query admitted a Sequence")
@@ -196,9 +170,9 @@ pub(crate) fn apply_children(
         crate::command::remove_subtree(&mut result, &old)?;
     }
     result.nodes.insert(id.clone(), node);
-    crate::audio_lineage::reconcile(&working, &mut result, &command)?;
-    result.marks = crate::marks::transform_marks(&working, &result, &command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_lineage::reconcile(working, &mut result, &command)?;
+    result.marks = crate::marks::transform_marks(working, &result, &command)?;
+    crate::audio_binding::prune(&mut result);
     result.validate()?;
     Ok(result)
 }

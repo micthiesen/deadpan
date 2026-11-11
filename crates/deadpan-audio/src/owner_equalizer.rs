@@ -6,21 +6,16 @@ use deadpan_dsp::{
     FINITE_FILTER_INPUT_FRAMES as INPUT, FINITE_FILTER_OUTPUT_FRAMES as OUTPUT,
     FINITE_FILTER_RADIUS as RADIUS,
 };
-use deadpan_plan::{
-    AudioOwnerInput, AudioOwnerQuery, AudioOwnerRetainedInput, AudioOwnerSupport,
-    AudioTreatmentBoundary,
-};
+use deadpan_plan::{AudioOwnerInput, AudioOwnerQuery, AudioOwnerSupport, AudioTreatmentBoundary};
 
 use super::*;
 
 /// Worker-owned filter and its checked position in an existing owner's order.
 /// Descendant treatments feed the owner; its prefix feeds EQ and its suffix
 /// processes EQ output. Exterior owners and independent sounds are excluded.
-/// Retained history is selected from the checked observation, never recovered
-/// by inverting a nominal automation clock. No PCM or document is changed here.
+/// No PCM or document is changed here.
 pub struct PreparedOwnerEqualizer<'plan> {
     input: AudioOwnerInput<'plan>,
-    retained: Option<AudioOwnerRetainedInput<'plan>>,
     boundary: AudioTreatmentBoundary<'plan>,
     filter: crate::Equalizer,
     work: usize,
@@ -88,12 +83,7 @@ mod tests {
         let input = plan
             .audio_owner_input(&owner, AudioSample(128), Default::default())
             .unwrap();
-        let probe = input
-            .retained_probe_at(input.observed_at(), Default::default())
-            .unwrap();
-        assert!(probe.input().is_none());
-        assert!(probe.work() > 0);
-        let expected_work = input.work() + probe.work();
+        let expected_work = input.work();
         let cancelled = AtomicBool::new(false);
         let mut equalizer = PreparedOwnerEqualizer::new(input, 0, recipe, &cancelled).unwrap();
         assert_eq!(equalizer.work, expected_work);
@@ -241,30 +231,9 @@ impl<'plan> PreparedOwnerEqualizer<'plan> {
     ) -> Result<Self, StageAudioError> {
         check_cancel(cancelled)?;
         let boundary = input.owner().treatment_boundary(before_stage)?;
-        let at = input.observed_at();
-        let mut work = input.work();
-        let probe = input.retained_probe_at(at, AudioQueryLimits::default())?;
-        work += probe.work();
-        let retained = if let Some(retained) = probe.into_input() {
-            let query = retained.owners(
-                at..AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?),
-                AudioQueryLimits::default(),
-            )?;
-            work += query.work();
-            // An ancestor of a bound child owns its complete current domain,
-            // not the child's retained operand. Only adopt history containing
-            // this exact checked owner and its retained provenance.
-            query
-                .spans()
-                .iter()
-                .any(|span| span.owners().iter().any(|owner| boundary.matches(owner)))
-                .then_some(retained)
-        } else {
-            None
-        };
+        let work = input.work();
         Ok(Self {
             input,
-            retained,
             boundary,
             filter: crate::Equalizer::new(recipe, cancelled)?,
             work,
@@ -279,12 +248,8 @@ impl<'plan> PreparedOwnerEqualizer<'plan> {
     }
 
     fn range(&self, samples: Range<AudioSample>) -> Range<AudioSample> {
-        if self.retained.is_some() {
-            samples
-        } else {
-            let support = self.input.context().root_samples();
-            samples.start.max(support.start)..samples.end.min(support.end)
-        }
+        let support = self.input.context().root_samples();
+        samples.start.max(support.start)..samples.end.min(support.end)
     }
 
     fn owners(
@@ -292,13 +257,10 @@ impl<'plan> PreparedOwnerEqualizer<'plan> {
         samples: Range<AudioSample>,
         control: WorkControl<'_>,
     ) -> Result<AudioOwnerQuery<'plan>, StageAudioError> {
-        let query = if let Some(retained) = &self.retained {
-            retained.owners(samples, control.query_limits()?)?
-        } else {
-            self.input
-                .context()
-                .gain_owners(samples, control.query_limits()?)?
-        };
+        let query = self
+            .input
+            .context()
+            .gain_owners(samples, control.query_limits()?)?;
         control.spend_plan_work(query.work())?;
         for span in query.spans() {
             deadpan_core::validate_audio_treatment_layers(
@@ -477,25 +439,14 @@ impl StageAudio {
                 );
                 let owners = equalizer.owners(at..stop, control)?;
                 let count = u32::try_from(stop.0 - at.0).map_err(|_| StageAudioError::Range)?;
-                let block = if let Some(retained) = &equalizer.retained {
-                    self.read_retained_controlled(
-                        provider,
-                        retained,
-                        at,
-                        count,
-                        control,
-                        (depth, false),
-                    )?
-                } else {
-                    self.read_context_controlled(
-                        provider,
-                        equalizer.input.context(),
-                        at,
-                        count,
-                        control,
-                        (depth, true),
-                    )?
-                };
+                let block = self.read_context_controlled(
+                    provider,
+                    equalizer.input.context(),
+                    at,
+                    count,
+                    control,
+                    (depth, true),
+                )?;
                 for span in owners.spans() {
                     let Some(index) = span
                         .owners()

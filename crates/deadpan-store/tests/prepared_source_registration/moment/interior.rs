@@ -102,7 +102,7 @@ fn interior_rejection_and_cursor_failure_never_publish_a_preliminary_split() -> 
             "boundary" => input.at = FrameDuration::ZERO,
             "source" => input.ordinals = 0..u64::MAX,
             "identities" => input.identities.nodes[0] = input.node.clone(),
-            "timing" => input.timing.ordinal = u32::MAX,
+            "timing" => input.timing.allocation = RevisionId::new("wrong-timing").unwrap(),
             _ => unreachable!(),
         }
         assert!(

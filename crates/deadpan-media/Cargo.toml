@@ -25,7 +25,6 @@ tempfile.workspace = true
 deadpan-native-process.workspace = true
 
 [dev-dependencies]
-deadpan-chaos.workspace = true
 deadpan-plan.workspace = true
 
 [lints]

@@ -29,8 +29,6 @@ impl StageAudio {
             frames,
             control.cancelled,
             |at, count| {
-                #[cfg(test)]
-                raw_domain_query_trace::nested_callback(raw_domain_query_trace::Product::Root);
                 // `at` indexes a zero-based carrier of already allocated root
                 // samples. Restore the integer label, not a rounded frame origin.
                 let absolute = AudioSample(at.0.checked_add(anchor).ok_or(TimeError::Overflow)?);
@@ -67,50 +65,6 @@ impl StageAudio {
                     start: at,
                     samples: block.samples,
                     suppressed,
-                })
-            },
-        )?;
-        control.check()?;
-        Ok(SignalBlock {
-            samples: block.samples,
-            dependencies,
-            suppressed: SignalSuppressionMask::plain(block.suppressed),
-            relative_depth,
-        })
-    }
-
-    pub(super) fn read_point_bound_transferred_legacy(
-        &mut self,
-        provider: &mut impl AudioSourceProvider,
-        domain: &AudioPointDomain<'_>,
-        transfer: &RootSignalTransfer,
-        frames: u32,
-        control: WorkControl<'_>,
-        depth: usize,
-    ) -> Result<SignalBlock, StageAudioError> {
-        let mut dependencies = Dependencies::new();
-        let mut relative_depth = 0;
-        let block = transfer.render::<StageAudioError>(
-            SignalSample(0),
-            frames,
-            control.cancelled,
-            |storage, count| {
-                raw_domain_query_trace::nested_callback(raw_domain_query_trace::Product::Point);
-                let reference = domain.reference_at_signal(SignalSample(storage.0))?;
-                let block = self.read_point_domain_controlled(
-                    provider, domain, reference, count, control, depth,
-                )?;
-                dependencies.extend(block.dependencies);
-                relative_depth = relative_depth.max(block.relative_depth);
-                Ok(RootSignalBlock {
-                    start: storage,
-                    samples: block.samples,
-                    suppressed: block
-                        .suppressed
-                        .into_legacy_vector()
-                        .into_iter()
-                        .map(|range| AudioSample(range.start.0)..AudioSample(range.end.0))
-                        .collect(),
                 })
             },
         )?;

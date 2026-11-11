@@ -20,8 +20,7 @@ Validation requires a registered non-still video asset, a selection inside its
 video, nonnegative nonempty ranges and the count bound. A cutaway longer than
 its host is clipped to the host's duration; a Hold that is shortened and then
 lengthened again shows the clipped part again. `SetCutaways { node, cutaways }`
-replaces a beat's list as one reversible edit and changes no timing, sound or
-retained clock, so it is admitted alongside beat-owned sounds.
+replaces a beat's list as one reversible edit and changes no timing or sound, so it is admitted alongside beat-owned sounds.
 
 Because the attachment lives on its host node, every structural operation that
 moves, copies or deletes the host carries it. Split and Trim contraction keep

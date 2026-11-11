@@ -35,7 +35,6 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
         | Command::SetRepeatGaps { timing, .. }
         | Command::TrimSource { timing, .. }
         | Command::RollSources { timing, .. } => Some(timing),
-        Command::ApplySourceTrim { resources, .. } => resources.timing.as_ref(),
         _ => None,
     }
 }
@@ -70,10 +69,8 @@ fn capture_timing(command: &Command, allocation: &RevisionId) -> Option<AudioTim
         Command::Split { .. }
         | Command::SetHoldDuration { .. }
         | Command::WrapRetime { .. }
-        | Command::SetRetime { .. } => Some(derived()),
-        Command::ApplySourceTrim { resources, .. } => {
-            Some(resources.timing.clone().unwrap_or_else(derived))
-        }
+        | Command::SetRetime { .. }
+        | Command::ApplySourceTrim { .. } => Some(derived()),
         command => timing(command).cloned(),
     }
 }
@@ -350,7 +347,7 @@ impl SoundClockEditCapture {
     pub(crate) fn detach(&self, document: &mut ProjectDocument) {
         document.beat_sounds.clear();
         document.audio_bindings.sound_clocks.clear();
-        crate::audio_binding_lifecycle::prune(document);
+        crate::audio_binding::prune(document);
     }
 
     pub(crate) fn restore(self, document: &mut ProjectDocument) -> Result<(), EditError> {

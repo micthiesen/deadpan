@@ -194,25 +194,11 @@ impl MixedSuppression {
     pub(super) fn finish<C: MaskContext>(
         self,
         context: &mut C,
-        #[cfg(test)] receipt: Option<super::shared_mix_mask_trace::Receipt>,
     ) -> Result<AudioSuppressionMask, StageAudioError> {
         match self {
             Self::Ordinary(ranges) => Ok(AudioSuppressionMask::plain(ranges)),
-            Self::PendingMarks { start, marks } => {
-                #[cfg(test)]
-                super::components_mask_trace::inline_source_snapshot(&marks);
-                let result = marks.finish(start, context);
-                #[cfg(test)]
-                super::components_mask_trace::inline_source_closed();
-                result
-            }
+            Self::PendingMarks { start, marks } => marks.finish(start, context),
             Self::Pending { start, permissions } => {
-                #[cfg(test)]
-                let source_pointer = permissions.as_ptr() as usize;
-                #[cfg(test)]
-                let source_len = permissions.len();
-                #[cfg(test)]
-                let source_capacity = permissions.capacity();
                 let result = (|| {
                     let mut capacity = 0_usize;
                     for mask in &permissions {
@@ -229,11 +215,6 @@ impl MixedSuppression {
                     }
 
                     let mut ranges = begin_ranges::<AudioSample, C>(context, capacity)?;
-                    #[cfg(test)]
-                    super::shared_mix_mask_trace::destination_storage(
-                        ranges.as_slice().as_ptr() as usize,
-                        ranges.capacity(),
-                    );
                     for (index, mask) in permissions.iter().enumerate() {
                         context.check()?;
                         context.spend(MaskWorkPhase::Scan, 1)?;
@@ -246,15 +227,6 @@ impl MixedSuppression {
                     ranges.finish(context)?.merge(context)
                 })();
                 drop(permissions);
-                #[cfg(test)]
-                if let Some(receipt) = receipt {
-                    super::shared_mix_mask_trace::source_disposed(
-                        receipt,
-                        source_pointer,
-                        source_len,
-                        source_capacity,
-                    );
-                }
                 result
             }
         }

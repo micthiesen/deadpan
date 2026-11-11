@@ -194,34 +194,6 @@ where
         Context::Domain(domain) => {
             domain.owner_input_candidates_at_admitted(at, control.query_limits()?, admission)?
         }
-        Context::Retained(input) => {
-            let query = input.owners_admitted(range, control.query_limits()?, admission)?;
-            if query.was_forwarded() != A::METERED {
-                return Err(PlanError::InvalidPlan(
-                    "retained incoming query accounting mode differs",
-                )
-                .into());
-            }
-            if query.was_forwarded() {
-                Context::validate_owner_query_layers(query.query())?;
-            } else {
-                Context::admit_owner_query(query.query(), control)?;
-            }
-            let observed = query
-                .query()
-                .spans()
-                .iter()
-                .flat_map(|span| span.owners())
-                .find(|clock| key.matches(clock));
-            return if let Some(clock) = observed {
-                Ok(Some(ResolvedOriginal {
-                    context: incoming.owner_context(plan, clock, at, control)?,
-                    carrier: None,
-                }))
-            } else {
-                Ok(None)
-            };
-        }
     };
     if candidates.was_forwarded() != A::METERED {
         return Err(PlanError::InvalidPlan("owner query accounting mode differs").into());
@@ -263,11 +235,9 @@ where
             control,
             admission,
         )?;
-        let context = if let Some(domain) = carrier.domain() {
-            Context::Domain(Arc::clone(domain))
-        } else {
-            Context::Retained(carrier.retained().expect("shared retained").clone())
-        };
+        let context = Context::Domain(Arc::clone(carrier.domain().ok_or(
+            PlanError::InvalidPlan("shared Original context has no domain"),
+        )?));
         Ok(Some(ResolvedOriginal {
             context,
             carrier: Some(carrier),

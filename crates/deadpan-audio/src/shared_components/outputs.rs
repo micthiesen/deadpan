@@ -146,22 +146,10 @@ impl Output<'_> {
                 suppressed.push(sample..AudioSample(sample.0 + 1));
             }
             Some(OutputSuppression::Marks(marks)) => {
-                #[cfg(test)]
-                super::super::components_mask_trace::mark_attempt(at, sample.0, control);
                 let checked = control.check();
-                #[cfg(test)]
-                let checked = checked.inspect_err(|error| {
-                    super::super::components_mask_trace::mark_refused(at, sample.0, error);
-                });
                 checked?;
                 let spent = marks.mark(at, control);
-                #[cfg(test)]
-                let spent = spent.inspect_err(|error| {
-                    super::super::components_mask_trace::mark_refused(at, sample.0, error);
-                });
                 spent?;
-                #[cfg(test)]
-                super::super::components_mask_trace::mark_written(at, sample.0, control);
             }
             None => {}
         }

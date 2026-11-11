@@ -89,7 +89,7 @@ fn stale_invalid_and_failed_replacement_never_saves_splits_or_removal() -> Resul
             "range" => input.range = FrameRange::new(ProjectFrame(0), ProjectFrame(i64::MAX))?,
             "source" => input.ordinals = 0..u64::MAX,
             "identities" => input.identities.nodes[0] = input.node.clone(),
-            "timing" => input.timing.ordinal = u32::MAX,
+            "timing" => input.timing.allocation = RevisionId::new("wrong-timing").unwrap(),
             _ => unreachable!(),
         }
         assert!(

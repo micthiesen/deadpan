@@ -83,43 +83,6 @@ fn bound_fixture(case: BindingCase) -> (Arc<RenderPlan>, Provider) {
     }
     wire["nodes"] = serde_json::to_value(nodes).unwrap();
     let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let timing = AudioTimingId {
-        allocation: RevisionId::new("policy-reuse-timing").unwrap(),
-        ordinal: 0,
-    };
-    let bound_owner = if matches!(case, BindingCase::Source) {
-        "a"
-    } else {
-        "silent"
-    };
-    let bindings = AudioBindingState::new(
-        vec![AudioTimingRecord {
-            id: timing.clone(),
-            layout: FrozenAudioLayout::capture(&document).unwrap(),
-        }],
-        BTreeMap::from([(
-            id(bound_owner),
-            OwnedAudioBinding {
-                reanchors: Vec::new(),
-                lattice: AudioPlacementTemplate {
-                    reference_local_offset: ExactRatio::ZERO,
-                    gap_after: None,
-                    reference: AudioReferenceClock {
-                        recipe: AudioRecipeKind::Node,
-                        timing,
-                        root: AudioClockRoot::ProjectRootRoundEven,
-                        physical: id(bound_owner),
-                    },
-                    arguments: Vec::new(),
-                    births: Vec::new(),
-                },
-                resume: None,
-            },
-        )]),
-    )
-    .unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
     (Arc::new(RenderPlan::compile(&document).unwrap()), provider)
 }
 

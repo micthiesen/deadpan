@@ -349,16 +349,6 @@ fn nested_pause_captures_once_and_more_than_twenty_one_edits_keep_the_recipe() {
         ExactRatio::integer(132)
     );
     assert!(FrozenAudioContext::capture(&doc).is_err());
-    assert!(
-        capture_unbound_audio_bindings(
-            &doc,
-            AudioTimingId {
-                allocation: RevisionId::new("blocked").unwrap(),
-                ordinal: 0
-            }
-        )
-        .is_err()
-    );
     let (removed, _) = edit(
         &doc,
         Command::Delete {

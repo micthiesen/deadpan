@@ -1,8 +1,8 @@
-//! One old-tree clock capture and two final allocations; no ripple reanchors.
+//! Two final allocations around one changed seam.
 
 use crate::{
-    AudioEditorialEdges, Command, EditError, EditErrorCode, ExactRatio, FrameDuration,
-    FramingError, MAX_DOCUMENT_NODES, NodeId, NodeKind, PitchPolicy, ProjectDocument, RevisionId,
+    AudioEditorialEdges, Command, EditError, EditErrorCode, FrameDuration, FramingError,
+    MAX_DOCUMENT_NODES, NodeId, NodeKind, PitchPolicy, ProjectDocument, RevisionId,
     SourceRollSideResolution,
 };
 
@@ -70,8 +70,6 @@ pub(crate) fn apply(
         ));
     }
     let mut result = document.clone();
-    result.audio_bindings =
-        crate::audio_binding_lifecycle::capture_unbound_audio_bindings(document, timing.clone())?;
     install(&mut result, parent, &resolved.left, left_wrapper.as_ref())?;
     install(&mut result, parent, &resolved.right, right_wrapper.as_ref())?;
     // Literal adjacency was resolved before mutation. One call marks both sides
@@ -93,7 +91,7 @@ pub(crate) fn apply(
         &resolved.right.physical_source,
         resolved.right.physical_prefix,
     )?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     if result.structural_durations()?[result.root()]
         != document.structural_durations()?[document.root()]
     {
@@ -148,14 +146,6 @@ fn install(
     physical.kind = NodeKind::Source {
         source: side.after.clone(),
     };
-    if side.physical_prefix != FrameDuration::ZERO
-        && let Some(binding) = document
-            .audio_bindings
-            .bindings
-            .get_mut(&side.physical_source)
-    {
-        *binding = binding.rebase_local(ExactRatio::integer(side.physical_prefix.frames()))?;
-    }
     if let Some(wrapper) = wrapper {
         let partition = crate::split::partition(
             &document.nodes()[&side.target].label,

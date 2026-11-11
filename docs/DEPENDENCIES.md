@@ -65,12 +65,8 @@ egui-winit and locked `webbrowser` 1.2.4 to the default browser. Its URL parser
 and Unicode tables are included in the lockfile and generated notices.
 This path is permitted only through the native UI dependency.
 
-The development-only `deadpan-chaos` crate (the adversarial suite
-engine) adds no third-party dependency: it uses the existing `serde_json`, and
-provides a stable in-repository mutation runner beside the separate nightly
-libFuzzer workspace. It is a dev-dependency only and never ships.
-Its only `unsafe` is a documented forwarding `GlobalAlloc` wrapper over the
-system allocator used to bound per-case allocation in test binaries.
+The development-only `deadpan-chaos` crate (the adversarial suite engine) was
+removed on 2026-11-11 with that suite.
 
 `deadpan-models` adds host bundle qualification using the existing core, jobs,
 media, serialization and BLAKE3 dependencies. It adds no registry dependency or

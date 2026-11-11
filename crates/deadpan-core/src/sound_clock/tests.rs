@@ -132,8 +132,7 @@ fn clocks(ids: Vec<AudioTimingId>) -> SoundClocks {
     )])
 }
 fn state(records: Vec<AudioTimingRecord>, journals: SoundClocks) -> AudioBindingState {
-    AudioBindingState::new_with_sound_clocks(records, BTreeMap::new(), BTreeMap::new(), journals)
-        .unwrap()
+    AudioBindingState::new_with_sound_clocks(records, journals).unwrap()
 }
 
 #[test]
@@ -146,7 +145,7 @@ fn sound_only_clocks_roundtrip_and_retain_distinct_equal_layouts() {
         clocks(vec![clock(0), clock(1)]),
     );
     after.validate().unwrap();
-    assert!(after.audio_bindings.bindings().is_empty());
+
     assert_eq!(
         clock_ids(&after.audio_bindings.sound_clocks()[&node("owner")][&sound("effect")]),
         vec![clock(0), clock(1)]
@@ -157,7 +156,7 @@ fn sound_only_clocks_roundtrip_and_retain_distinct_equal_layouts() {
         FrozenAudioLayout::capture(&decoded).unwrap().duration(),
         frames(11)
     );
-    crate::audio_binding_lifecycle::prune(&mut after);
+    crate::audio_binding::prune(&mut after);
     assert_eq!(after.audio_bindings.timings().len(), 2);
     assert!(AudioBindingState::default().sound_clocks().is_empty());
     assert!(
@@ -171,23 +170,9 @@ fn sound_only_clocks_roundtrip_and_retain_distinct_equal_layouts() {
 #[test]
 fn missing_addresses_roots_and_timing_references_refuse() {
     let doc = fixture();
+    assert!(AudioBindingState::new_with_sound_clocks(vec![], clocks(vec![clock(0)])).is_err());
     assert!(
-        AudioBindingState::new_with_sound_clocks(
-            vec![],
-            BTreeMap::new(),
-            BTreeMap::new(),
-            clocks(vec![clock(0)])
-        )
-        .is_err()
-    );
-    assert!(
-        AudioBindingState::new_with_sound_clocks(
-            vec![record(&doc, 0)],
-            BTreeMap::new(),
-            BTreeMap::new(),
-            BTreeMap::new()
-        )
-        .is_err()
+        AudioBindingState::new_with_sound_clocks(vec![record(&doc, 0)], BTreeMap::new()).is_err()
     );
     let bindings = state(vec![record(&doc, 0)], clocks(vec![clock(0)]));
     let mut missing = doc.clone();
@@ -275,36 +260,6 @@ fn journal_and_relation_wire_are_strict_and_bounded() {
     assert!(super::from_json(&serde_json::to_string(&too_many).unwrap()).is_err());
     assert!(super::reference_count(&too_many).is_err());
     assert!(super::from_json(&" ".repeat(MAX_SOUND_CLOCK_BYTES + 1)).is_err());
-}
-
-#[test]
-fn physical_binding_admission_does_not_accept_sequence_owner_clocks() {
-    let doc = fixture();
-    let binding = OwnedAudioBinding {
-        lattice: AudioPlacementTemplate {
-            reference: AudioReferenceClock {
-                timing: clock(0),
-                root: AudioClockRoot::ProjectRootRoundEven,
-                physical: node("top"),
-                recipe: AudioRecipeKind::Node,
-            },
-            reference_local_offset: ExactRatio::ZERO,
-            arguments: vec![],
-            births: vec![],
-            gap_after: None,
-        },
-        resume: None,
-        reanchors: vec![],
-    };
-    assert!(
-        AudioBindingState::new_with_sound_clocks(
-            vec![record(&doc, 0)],
-            BTreeMap::from([(node("top"), binding)]),
-            BTreeMap::new(),
-            clocks(vec![clock(0)]),
-        )
-        .is_err()
-    );
 }
 
 #[test]

@@ -1,16 +1,10 @@
 #![cfg(any(target_os = "macos", target_os = "linux"))]
 
 //! Derived Original audio timing (brief S3). Edit scripts on a one-Original
-//! project at 30000/1001 and 24 fps render twice: as stored, and with every
-//! owner and Repeat-gap binding removed (sound clocks kept). The renderer
-//! derives sample placement from the current tree, so both renders must agree
-//! within the accepted loss of at most one sample. Lengths must be identical
-//! and the derived render must add no clicks. After a fractional-delay
-//! alignment, segments must reach correlation 0.9999 with a residual below
-//! -60 dBFS, or, inside a pitch-preserving speed change, correlation 0.98.
-//!
-//! Plain Original segments are also compared with the unedited Original: an
-//! edit must play the same material within one sample of its exact position.
+//! project at 30000/1001 and 24 fps render with sample placement derived from
+//! the current tree. Plain Original segments are compared with the unedited
+//! Original: an edit must play the same material within one sample of its
+//! exact position.
 
 use std::collections::BTreeMap;
 use std::io::Cursor;
@@ -31,14 +25,8 @@ const TIMEOUT: Duration = Duration::from_secs(60);
 const SECONDS: i64 = 4;
 /// After fractional alignment, outside pitch-preserving speed changes.
 const MIN_CORRELATION: f64 = 0.9999;
-/// Inside a Preserve or Shift speed change: the same input at a different
-/// sub-sample offset is a different but equivalent rendering of the stretch.
-const MIN_STRETCHED_CORRELATION: f64 = 0.98;
 /// -60 dBFS root-mean-square residual.
 const MAX_RESIDUAL: f64 = 1e-3;
-/// A new sample-to-sample step this much larger than the stored render's
-/// local maximum counts as a click (about -26 dBFS).
-const CLICK_STEP: f32 = 0.05;
 
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
@@ -606,32 +594,9 @@ fn scripts() -> Vec<(&'static str, Script)> {
     ]
 }
 
-/// The stored document with every owner and Repeat-gap binding removed.
-/// Timing tables and sound clocks stay.
-fn without_bindings(document: &ProjectDocument) -> ProjectDocument {
-    let mut wire = serde_json::to_value(document).unwrap();
-    if let Some(bindings) = wire
-        .get_mut("audio_bindings")
-        .and_then(|v| v.as_object_mut())
-    {
-        bindings.insert("bindings".into(), serde_json::json!({}));
-        bindings.remove("gap_bindings");
-        // Only sound clocks may still name a timing table.
-        let clocks = bindings
-            .get("sound_clocks")
-            .map_or_else(String::new, |clocks| clocks.to_string());
-        if let Some(serde_json::Value::Array(timings)) = bindings.get_mut("timings") {
-            timings.retain(|timing| clocks.contains(&timing["id"].to_string()));
-        }
-    }
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
-}
-
-/// A rendered segment: one query span, flagged when a pitch-preserving
-/// speed change (Preserve or Shift) processes it.
+/// A rendered segment: one query span.
 struct Segment {
     samples: Range<usize>,
-    stretched: bool,
     /// For plain Original audio, the exact position of `samples.start` in
     /// the unedited Original's 48 kHz render.
     original: Option<f64>,
@@ -653,12 +618,6 @@ fn render(document: &ProjectDocument, provider: &mut Provider) -> (Vec<[f32; 2]>
             segments.push(Segment {
                 samples: usize::try_from(span.samples.start.0).unwrap()
                     ..usize::try_from(span.samples.end.0).unwrap(),
-                stretched: span.retimes.iter().any(|stage| {
-                    matches!(
-                        stage.pitch,
-                        PitchPolicy::Preserve | PitchPolicy::Shift { .. }
-                    )
-                }),
                 original: match &span.content {
                     deadpan_plan::AudioContent::Source { .. } if span.retimes.is_empty() => {
                         let point = span.source_point(span.samples.start).unwrap();
@@ -704,31 +663,6 @@ struct Score {
     worst_shift: f64,
     worst_click: f32,
     failures: Vec<String>,
-}
-
-fn rms(values: impl Iterator<Item = f64>) -> f64 {
-    let mut sum = 0.0;
-    let mut count = 0usize;
-    for value in values {
-        sum += value * value;
-        count += 1;
-    }
-    if count == 0 {
-        0.0
-    } else {
-        (sum / count as f64).sqrt()
-    }
-}
-
-/// Best fractional alignment in [-1, 1] samples: the derived render delayed
-/// by a windowed-sinc fractional delay, over at most 16,384 interior samples.
-/// A pure sub-sample shift aligns to a correlation near 1.
-fn aligned(stored: &[[f32; 2]], derived: &[[f32; 2]], range: Range<usize>) -> (f64, f64, f64) {
-    let middle = (range.start + range.end) / 2;
-    let half = (range.len() / 2)
-        .saturating_sub(TAPS as usize + 2)
-        .min(8_192);
-    aligned_inner(stored, 0, derived, middle - half..middle + half)
 }
 
 const TAPS: isize = 16;
@@ -841,85 +775,6 @@ fn against_original(
     score
 }
 
-fn compare(name: &str, stored: &[[f32; 2]], derived: &[[f32; 2]], segments: &[Segment]) -> Score {
-    assert_eq!(stored.len(), derived.len(), "{name}: length");
-    let mut score = Score {
-        worst_correlation: 1.0,
-        worst_residual_db: f64::NEG_INFINITY,
-        ..Score::default()
-    };
-    for segment in segments {
-        let range = segment.samples.clone();
-        if range.is_empty() {
-            continue;
-        }
-        score.segments += 1;
-        if stored[range.clone()] == derived[range.clone()] {
-            continue;
-        }
-        score.differing += 1;
-        let kind = if segment.stretched { "stretched " } else { "" };
-        if range.len() < 64 {
-            // Too short to align: the closest whole-sample lag must agree.
-            let residual = [-1isize, 0, 1]
-                .into_iter()
-                .map(|lag| {
-                    rms(range.clone().flat_map(|n| {
-                        let m = n.checked_add_signed(lag).filter(|m| *m < derived.len());
-                        (0..2).map(move |c| {
-                            f64::from(stored[n][c]) - m.map_or(0.0, |m| f64::from(derived[m][c]))
-                        })
-                    }))
-                })
-                .fold(f64::INFINITY, f64::min);
-            score.worst_residual_db = score.worst_residual_db.max(db(residual));
-            if !segment.stretched && residual >= MAX_RESIDUAL {
-                score.failures.push(format!(
-                    "short {kind}segment {range:?} residual {:.1} dB",
-                    db(residual)
-                ));
-            }
-            continue;
-        }
-        let (shift, correlation, residual) = aligned(stored, derived, range.clone());
-        score.worst_correlation = score.worst_correlation.min(correlation);
-        score.worst_residual_db = score.worst_residual_db.max(db(residual));
-        if shift.abs() > score.worst_shift.abs() {
-            score.worst_shift = shift;
-        }
-        let passes = if segment.stretched {
-            correlation >= MIN_STRETCHED_CORRELATION
-        } else {
-            // A silent stretch has no defined correlation; -100 dBFS is exact.
-            (correlation >= MIN_CORRELATION || residual < 1e-5) && residual < MAX_RESIDUAL
-        };
-        if !passes {
-            score.failures.push(format!(
-                "{kind}segment {range:?} ({} samples) aligned at {shift:+.3}: \
-                 correlation {correlation:.7} residual {:.1} dB",
-                range.len(),
-                db(residual)
-            ));
-        }
-    }
-    let step = |values: &[[f32; 2]], n: usize, c: usize| (values[n][c] - values[n - 1][c]).abs();
-    for n in 1..stored.len() {
-        for c in 0..2 {
-            let local = (n.saturating_sub(2).max(1)..(n + 3).min(stored.len()))
-                .map(|m| step(stored, m, c))
-                .fold(0.0f32, f32::max);
-            let excess = step(derived, n, c) - local;
-            score.worst_click = score.worst_click.max(excess);
-            if excess >= CLICK_STEP {
-                score.failures.push(format!(
-                    "new click at sample {n} channel {c}: step exceeds stored by {excess}"
-                ));
-            }
-        }
-    }
-    score
-}
-
 fn db(value: f64) -> f64 {
     if value == 0.0 {
         f64::NEG_INFINITY
@@ -952,22 +807,15 @@ fn derived_original_audio_stays_within_one_sample_of_the_original() {
             let name = format!("{script}@{}/{}-{}", setup.rate.0, setup.rate.1, setup.clock);
             let mut editor = Editor::new(setup, script);
             run(&mut editor);
-            let stored = &editor.document;
-            let derived = without_bindings(stored);
-            let bound = !stored.audio_bindings().bindings().is_empty()
-                || !stored.audio_bindings().gap_bindings().is_empty();
-            let (stored_pcm, _) = render(stored, &mut provider);
-            let (derived_pcm, segments) = render(&derived, &mut provider);
-            let score = compare(&name, &stored_pcm, &derived_pcm, &segments);
+            let (derived_pcm, segments) = render(&editor.document, &mut provider);
             let edited = against_original(&name, &original_pcm, &derived_pcm, &segments);
-            report.push((name.clone(), bound, score));
-            report.push((format!("{name} vs Original"), bound, edited));
+            report.push((format!("{name} vs Original"), edited));
         }
     }
     let mut failures = 0;
-    for (name, bound, score) in &report {
+    for (name, score) in &report {
         eprintln!(
-            "{name:38} bound={bound:5} segments={:3} differing={:3} \
+            "{name:38} segments={:3} differing={:3} \
              worst aligned corr={:.7} residual={:.1} dB shift={:+.3} click excess={:.4}",
             score.segments,
             score.differing,

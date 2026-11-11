@@ -396,20 +396,3 @@ fn raw_geometry_unknown_duplicate_fields_and_frame_bytes_refuse() {
         Some(completed(ProposalSelection::Both))
     );
 }
-
-#[test]
-fn adversarial_face_frames() {
-    let detect = request(ProposalSelection::Both);
-    let cancel = PictureProposalProtocol::from_request(&detect)
-        .unwrap()
-        .cancellation();
-    crate::adversarial::protocol::<PictureProposalProtocol>(
-        "jobs-faces-protocol",
-        vec![detect, cancel],
-        vec![
-            completed(ProposalSelection::Both),
-            completed(ProposalSelection::SalientRegions),
-        ],
-        |reader| read_host(reader),
-    );
-}

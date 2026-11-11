@@ -31,13 +31,9 @@ without a separate isolation step. See
 
 `SetRepeatGaps { node, gap, branches, timing }` sets the default gap and
 replaces the gaps after named plays with fresh independent Holds in one
-retained-clock transaction, like `SetRepeatPlays`: it captures unbound clocks,
-reanchors the suffix once on its pre-edit clock when the Repeat's duration
-changes, and also reanchors every entry inside the Repeat after its first
-play, because later plays and gaps move with the gaps before them. Each moved
-play keeps its own pre-edit clock: at 30000/1001 a play moved from frame 8 to
-frame 9 keeps its samples at B(9) = 14,414 rather than accumulating one
-rounding to 14,415 (`ntsc_gap_changes_move_each_play_and_the_suffix_as_identical_samples`).
+transaction, like `SetRepeatPlays`, that changes structure only: later plays and
+gaps move with the gaps before them and are sampled from their new positions
+(a play moved from frame 8 to frame 9 at 30000/1001 starts at B(9) = 14,414).
 It transforms root sounds once and keeps total plays and stable identities.
 The request is the complete gap set: branches it does not name are removed,
 including a final play's dormant branch, so `gap=500ms` after a ladder resets
@@ -64,18 +60,10 @@ Repeat's play child must remain positive.
 
 ## Audio clocks and policy
 
-An isolated Hold owns its current raw recipe. Its retained lattice and phase
-terms may refer to the old Repeat-gap clock; they do not refer to a historical
-raw Hold recipe. The current node lives in the ordinary Node binding map. Each
-old own-gap argument is closed to the selected preceding play, independently of
-outer Repeat arguments. Outer scope arguments still follow copied ownership.
-
-A gap that did not exist in a captured layout uses the canonical gap-definition
-PointCeil clock. Materialization closes that dispatch and discards an enclosing
-reanchor window which the birth had already excluded. Surviving gaps keep their
-old origin-based RoundEven or Preserve-input PointCeil placement. Current Hold
-duration, audio policy and source remain live; changes to the Repeat's default
-do not alter this independent recipe.
+An isolated Hold owns its current raw recipe and is sampled from its current
+position like any other owner; no gap clock is stored (Repeat-gap bindings were
+removed on 2026-11-11). Current Hold duration, audio policy and source remain
+live; changes to the Repeat's default do not alter this independent recipe.
 
 Frozen layouts retain the sparse branches too. A dormant branch retains its
 affine clock and meaningful support, with an empty visible allocation. Current
@@ -91,7 +79,5 @@ reference recipe kind agree. Audio contexts use schema 3; schemas 1 and 2 retain
 their closed layout vocabulary. Database migration replays the complete earlier
 history and preserves a pre-migration backup.
 
-See [the splice design](STRUCTURAL_SPLICE_DESIGN.md),
-[gap timing ownership](GAP_AUDIO_BINDINGS.md), and
-[compact reanchors](AUDIO_REANCHORS.md). None of these primitives alone completes
+See [the splice design](STRUCTURAL_SPLICE_DESIGN.md). None of these primitives alone completes
 the arbitrary-boundary insertion or full keyboard editing requirements.

@@ -1,9 +1,9 @@
 use super::roll::{ready, same_content, stored};
 use super::*;
 use deadpan_core::{
-    AudioTimingId, ExactRatio, FrameRange, HoldAudio, HoldVideo, PitchPolicy, ProjectFrame,
-    RetimePurpose, SourceAudioMapping, SourceTrimCapture, SourceTrimIntent, SourceTrimPolicy,
-    SourceTrimResources, SourceVideoMapping, SplitIdentities,
+    ExactRatio, FrameRange, HoldAudio, HoldVideo, PitchPolicy, ProjectFrame, RetimePurpose,
+    SourceAudioMapping, SourceTrimIntent, SourceTrimPolicy, SourceTrimResources,
+    SourceVideoMapping, SplitIdentities,
 };
 
 fn node(value: &str) -> NodeId {
@@ -37,10 +37,6 @@ fn combined(
                 fillers: (0..resolution.required_filler_nodes)
                     .map(|n| node(&format!("trim-filler-{n}")))
                     .collect(),
-                timing: (resolution.capture != SourceTrimCapture::None).then(|| AudioTimingId {
-                    allocation: revision(next),
-                    ordinal: 0,
-                }),
             },
         },
     })
@@ -296,15 +292,6 @@ fn zero_preview_requires_empty_resources_and_never_reserves_a_revision() -> Resu
     assert!(reader.preview_source_trim_edit(&zero)?.edit.is_none());
     assert!(store.preview(&zero).is_err());
     assert!(store.commit(&zero).is_err());
-    let mut bad = zero.clone();
-    let Command::ApplySourceTrim { resources, .. } = &mut bad.command else {
-        unreachable!()
-    };
-    resources.timing = Some(AudioTimingId {
-        allocation: revision("unused"),
-        ordinal: 0,
-    });
-    assert!(reader.preview_source_trim_edit(&bad).is_err());
     let mut reused = zero;
     reused.new_revision = revision("right-registered");
     assert_eq!(
@@ -335,32 +322,17 @@ fn combined_refusals_preserve_nonempty_redo_and_every_authored_admission_row() -
     let rows = stored(&database)?;
     let redo: i64 = database.query_row("SELECT count(*) FROM redo", [], |row| row.get(0))?;
     assert_eq!(redo, 1);
-    for fault in ["timing", "pool", "collision", "stale", "used"] {
-        let policy = if fault == "timing" {
-            SourceTrimPolicy::Ripple
-        } else {
-            SourceTrimPolicy::Overwrite
-        };
+    for fault in ["pool", "collision", "stale", "used"] {
+        let policy = SourceTrimPolicy::Overwrite;
         let mut request = combined(&before, "rejected", mixed(policy))?;
         let Command::ApplySourceTrim { resources, .. } = &mut request.command else {
             unreachable!()
         };
         match fault {
-            "timing" => {
-                resources.timing = Some(AudioTimingId {
-                    allocation: revision("wrong"),
-                    ordinal: 0,
-                })
-            }
             "pool" => resources.fillers.push(node("extra")),
             "collision" => resources.target_wrapper = Some(node("root")),
             "stale" => request.expected_revision = initial.revision_id().clone(),
-            "used" => {
-                request.new_revision = revision("saved");
-                if let Some(timing) = &mut resources.timing {
-                    timing.allocation = revision("saved");
-                }
-            }
+            "used" => request.new_revision = revision("saved"),
             _ => unreachable!(),
         }
         let error = store.preview_source_trim_edit(&request).unwrap_err();

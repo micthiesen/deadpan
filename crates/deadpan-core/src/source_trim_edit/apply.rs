@@ -1,9 +1,8 @@
 use super::*;
 use crate::command::EditContext;
 use crate::{
-    AudioEditorialEdges, BeatNode, Command, ExactRatio, FrameDuration, FramingError, HoldAudio,
-    HoldRecipe, HoldVideo, MAX_AUDIO_BINDING_ENTRIES, NodeId, NodeKind, PitchPolicy,
-    ProjectDocument, SourceTrimOwnerGeometry,
+    AudioEditorialEdges, BeatNode, Command, FrameDuration, FramingError, HoldAudio, HoldRecipe,
+    HoldVideo, NodeId, NodeKind, PitchPolicy, ProjectDocument, SourceTrimOwnerGeometry,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -23,14 +22,13 @@ pub(crate) fn apply(
         return Err(invalid("expected a complete Source Trim command"));
     };
     let resolved = document.source_trim_edit(parent, node, right.as_ref(), *intent)?;
-    validate_resources(document, &resolved, resources, context.allocation)?;
+    validate_resources(document, &resolved, resources)?;
     if intent.is_zero() {
         return Err(invalid("combined Source Trim resolves to no change"));
     }
-    let mut result = capture(document, &resolved, resources)?;
     let boundaries: Vec<_> = resolved.splits.iter().map(|split| split.boundary).collect();
     let (refined, used) = crate::insert_time::sequence_range::split_prepared(
-        &result,
+        document,
         parent,
         &boundaries,
         &resources.split,
@@ -45,7 +43,7 @@ pub(crate) fn apply(
             "combined Trim did not consume its exact Split pool",
         ));
     }
-    result = refined;
+    let mut result = refined;
     let baseline = result.clone();
     let a = &resolved.geometry.target;
     let target = install(
@@ -102,7 +100,7 @@ pub(crate) fn apply(
     crate::audio_lineage::reconcile(&baseline, &mut result, command)?;
     result.marks =
         crate::marks::transform_marks_with_source_prefixes(&baseline, &result, command, &prefixes)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     if result.structural_durations()?[result.root()] != resolved.geometry.project_duration_after {
         return Err(invalid(
             "combined Trim final extent disagrees with its entry resolution",
@@ -115,16 +113,14 @@ fn validate_resources(
     document: &ProjectDocument,
     r: &SourceTrimEditResolution,
     ids: &SourceTrimResources,
-    allocation: &crate::RevisionId,
 ) -> Result<(), EditError> {
     if ids.target_wrapper.is_some() != r.required_target_wrapper
         || ids.right_wrapper.is_some() != r.required_right_wrapper
         || ids.split.nodes.len() != r.required_split_nodes
         || ids.fillers.len() != r.required_filler_nodes
-        || ids.timing.is_some() != (r.capture != SourceTrimCapture::None)
     {
         return Err(invalid(
-            "combined Trim requires exactly its resolved wrapper, Split, filler and timing resources",
+            "combined Trim requires exactly its resolved wrapper, Split and filler resources",
         ));
     }
     let mut seen = BTreeSet::new();
@@ -142,97 +138,7 @@ fn validate_resources(
             ));
         }
     }
-    if let Some(timing) = &ids.timing
-        && (&timing.allocation != allocation
-            || document.audio_bindings().timings().contains_key(timing))
-    {
-        return Err(invalid(
-            "combined Trim timing must be fresh and belong to its new revision",
-        ));
-    }
     Ok(())
-}
-fn capture(
-    document: &ProjectDocument,
-    r: &SourceTrimEditResolution,
-    ids: &SourceTrimResources,
-) -> Result<ProjectDocument, EditError> {
-    let mut working = document.clone();
-    match r.capture {
-        SourceTrimCapture::None => {}
-        SourceTrimCapture::Unbound => {
-            working.audio_bindings =
-                crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
-                    document,
-                    ids.timing
-                        .clone()
-                        .ok_or_else(|| invalid("missing Trim capture clock"))?,
-                )?;
-        }
-        SourceTrimCapture::Placements => {
-            let timing = ids
-                .timing
-                .clone()
-                .ok_or_else(|| invalid("missing Trim placement clock"))?;
-            let captured = crate::audio_binding_lifecycle::capture_for_composite_insertion(
-                document,
-                timing.clone(),
-            )?;
-            working.audio_bindings = captured.state;
-            // Ripple has no neighbor Splits. Every appended step references this
-            // one original layout; no intermediate tree is captured.
-            if !r.splits.is_empty() {
-                return Err(invalid(
-                    "ripple Trim unexpectedly requires retained neighbor Splits",
-                ));
-            }
-            if let Some(layout) = captured.phase_only_layout {
-                working.audio_bindings.timings.insert(timing, layout);
-            }
-            let mut entries = 0usize;
-            for (_, _, binding) in working.audio_bindings.owners() {
-                for placement in binding.placements() {
-                    entries = entries
-                        .checked_add(placement.entry_count())
-                        .filter(|n| *n <= MAX_AUDIO_BINDING_ENTRIES)
-                        .ok_or_else(|| limit("combined Trim binding inventory"))?;
-                }
-            }
-            for group in &r.reanchors {
-                let nodes = captured
-                    .node_placements
-                    .iter()
-                    .filter(|(owner, _)| group.owners.contains(*owner))
-                    .map(|(owner, p)| (owner.clone(), p.clone()))
-                    .collect();
-                let gaps = captured
-                    .gap_placements
-                    .iter()
-                    .filter(|(owner, _)| group.owners.contains(*owner))
-                    .map(|(owner, p)| (owner.clone(), p.clone()))
-                    .collect();
-                crate::insert_time::composite::append_anchored_steps(
-                    &mut working.audio_bindings,
-                    crate::AudioRecipeKind::Node,
-                    nodes,
-                    &group.owners,
-                    group.anchor,
-                    group.window,
-                    &mut entries,
-                )?;
-                crate::insert_time::composite::append_anchored_steps(
-                    &mut working.audio_bindings,
-                    crate::AudioRecipeKind::RepeatGap,
-                    gaps,
-                    &group.owners,
-                    group.anchor,
-                    group.window,
-                    &mut entries,
-                )?;
-            }
-        }
-    }
-    Ok(working)
 }
 fn install(
     document: &mut ProjectDocument,
@@ -281,14 +187,6 @@ fn install(
     physical.kind = NodeKind::Source {
         source: side.after.clone(),
     };
-    if side.physical_prefix != FrameDuration::ZERO
-        && let Some(binding) = document
-            .audio_bindings
-            .bindings
-            .get_mut(&side.physical_source)
-    {
-        *binding = binding.rebase_local(ExactRatio::integer(side.physical_prefix.frames()))?;
-    }
     if let Some(wrapper) = wrapper {
         let partition = crate::split::partition(
             &document.nodes()[&side.target].label,

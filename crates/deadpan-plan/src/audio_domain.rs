@@ -18,8 +18,8 @@ use crate::PlanError;
 #[path = "audio_context_sharing.rs"]
 mod sharing;
 pub use sharing::{
-    AdmittedOriginalContext, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
-    preflight_context_transfer, transfer_context_charges,
+    AdmittedOriginalContext, ContextChargeTransfer, preflight_context_transfer,
+    transfer_context_charges,
 };
 
 /// Evaluation placement of an owned physical definition in an absolute root
@@ -153,7 +153,6 @@ pub struct AudioDomainProcessing<'context, 'plan> {
     domain: &'context AudioDomain<'plan>,
     samples: Range<AudioSample>,
     query: AudioProcessingQuery<'plan>,
-    stops: super::audio::capture::ProcessingStops,
 }
 
 /// The completed queries after the single-use processing capability has been
@@ -170,7 +169,6 @@ pub struct AdmittedAudioDomainProcessing<'context, 'plan, I, L> {
     domain: &'context AudioDomain<'plan>,
     samples: Range<AudioSample>,
     query: super::audio::AdmittedAudioProcessingQuery<'plan, I, L>,
-    stops: super::audio::capture::ProcessingStops,
 }
 
 /// Admitted first-query storage paired with separately performed policy work.
@@ -219,15 +217,10 @@ impl<'plan, I: Copy + Eq, L> AdmittedAudioDomainProcessing<'_, 'plan, I, L> {
         let mut budget = super::audio_owners::admission::Budget::new(&mut local, admission);
         super::audio_owners::admission::outer::<_, A>((|| {
             let processing = self.query.validate_for(&mut budget)?;
-            let bindings = self
-                .stops
-                .permits_binding_reuse()
-                .then_some(processing.query().spans.as_slice());
             let policy = super::audio_policy::query::domain_query_with_processing(
                 caller,
                 samples,
                 limits,
-                bindings,
                 &mut budget,
             )?;
             Ok(AdmittedAudioDomainPolicy { processing, policy })
@@ -246,16 +239,7 @@ impl<'plan, I: Copy + Eq, L> AdmittedAudioDomainProcessing<'_, 'plan, I, L> {
                 "processing policy identity mismatch",
             ));
         }
-        let policy = if self.stops.permits_binding_reuse() {
-            super::audio_policy::domain_policy_with_processing(
-                caller,
-                samples,
-                limits,
-                &self.query.query().spans,
-            )?
-        } else {
-            caller.policy(samples, limits)?
-        };
+        let policy = caller.policy(samples, limits)?;
         Ok(AdmittedAudioDomainProcessingPolicy {
             processing: self.query,
             policy,
@@ -294,16 +278,7 @@ impl<'plan> AudioDomainProcessing<'_, 'plan> {
                 "processing policy identity mismatch",
             ));
         }
-        let policy = if self.stops.permits_binding_reuse() {
-            super::audio_policy::domain_policy_with_processing(
-                caller,
-                samples,
-                limits,
-                &self.query.spans,
-            )?
-        } else {
-            caller.policy(samples, limits)?
-        };
+        let policy = caller.policy(samples, limits)?;
         Ok(AudioDomainProcessingPolicy {
             processing: self.query,
             policy,
@@ -473,10 +448,6 @@ impl<'plan> AudioDomain<'plan> {
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
         std::ptr::eq(self.plan, plan)
     }
-    pub(super) fn has_audio_bindings(&self) -> bool {
-        self.plan.has_audio_bindings()
-    }
-
     fn budget(
         &self,
         samples: &Range<AudioSample>,
@@ -536,43 +507,32 @@ impl<'plan> AudioDomain<'plan> {
         self.processing_inner(samples, limits, true)
     }
 
-    /// Co-produce a private terminal witness during the actual processing walk
-    /// so policy can reuse its binding tape without a second eligibility pass.
+    /// The processing query sealed to this Domain and range for one policy.
     pub fn processing_for_policy(
         &self,
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioDomainProcessing<'_, 'plan>, PlanError> {
-        let mut stops = super::audio::capture::ProcessingStops::default();
-        let query = self.processing_observing(samples.clone(), limits, true, Some(&mut stops))?;
+        let query = self.processing_observing(samples.clone(), limits, true)?;
         Ok(AudioDomainProcessing {
             domain: self,
             samples,
             query,
-            stops,
         })
     }
 
-    /// Co-produce the policy witness while retaining actual processing leases.
+    /// [`Self::processing_for_policy`], retaining actual processing leases.
     pub fn processing_for_policy_admitted<A: crate::AudioSoundContextAdmission>(
         &self,
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
         admission: &mut A,
     ) -> Result<AdmittedAudioDomainProcessing<'_, 'plan, A::Issuer, A::Lease>, A::Error> {
-        let mut stops = super::audio::capture::ProcessingStops::default();
-        let query = self.processing_observing_admitted(
-            samples.clone(),
-            limits,
-            true,
-            Some(&mut stops),
-            admission,
-        )?;
+        let query = self.processing_observing_admitted(samples.clone(), limits, true, admission)?;
         Ok(AdmittedAudioDomainProcessing {
             domain: self,
             samples,
             query,
-            stops,
         })
     }
 
@@ -582,7 +542,7 @@ impl<'plan> AudioDomain<'plan> {
         limits: AudioQueryLimits,
         stop_at_preserve: bool,
     ) -> Result<AudioProcessingQuery<'plan>, PlanError> {
-        self.processing_observing(samples, limits, stop_at_preserve, None)
+        self.processing_observing(samples, limits, stop_at_preserve)
     }
 
     fn processing_observing(
@@ -590,10 +550,9 @@ impl<'plan> AudioDomain<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
         stop_at_preserve: bool,
-        stops: Option<&mut super::audio::capture::ProcessingStops>,
     ) -> Result<AudioProcessingQuery<'plan>, PlanError> {
         use super::audio_owners::admission::Unmetered;
-        self.processing_observing_admitted(samples, limits, stop_at_preserve, stops, &mut Unmetered)
+        self.processing_observing_admitted(samples, limits, stop_at_preserve, &mut Unmetered)
             .map(super::audio::AdmittedAudioProcessingQuery::unmetered)
     }
 
@@ -605,7 +564,7 @@ impl<'plan> AudioDomain<'plan> {
         admission: &mut A,
     ) -> Result<super::audio::AdmittedAudioProcessingQuery<'plan, A::Issuer, A::Lease>, A::Error>
     {
-        self.processing_observing_admitted(samples, limits, true, None, admission)
+        self.processing_observing_admitted(samples, limits, true, admission)
     }
 
     fn processing_observing_admitted<A: crate::AudioSoundContextAdmission>(
@@ -613,7 +572,6 @@ impl<'plan> AudioDomain<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
         stop_at_preserve: bool,
-        stops: Option<&mut super::audio::capture::ProcessingStops>,
         admission: &mut A,
     ) -> Result<super::audio::AdmittedAudioProcessingQuery<'plan, A::Issuer, A::Lease>, A::Error>
     {
@@ -624,7 +582,7 @@ impl<'plan> AudioDomain<'plan> {
             samples,
             limits,
             local,
-            (stop_at_preserve, stops),
+            stop_at_preserve,
             admission,
         )
     }
@@ -650,33 +608,6 @@ impl<'plan> AudioDomain<'plan> {
             Some(&self.seed),
             samples,
             limits,
-            budget,
-        )
-    }
-
-    pub(in crate::plan) fn processing_child_query<A: crate::AudioSoundContextAdmission>(
-        &self,
-        samples: Range<AudioSample>,
-        limits: AudioQueryLimits,
-        stop_at_preserve: bool,
-        budget: &mut super::audio_owners::admission::Budget<'_, A>,
-    ) -> super::audio_owners::admission::Result<
-        super::audio::processing_query::ProcessingChild<'plan, A>,
-        A,
-    > {
-        limits.validate()?;
-        if samples.start < self.samples.start
-            || samples.end < samples.start
-            || samples.end > self.samples.end
-        {
-            return Err(PlanError::AudioRangeOutOfRange.into());
-        }
-        super::audio::processing_query::child_domain_query(
-            self.plan,
-            &self.seed,
-            samples,
-            limits,
-            stop_at_preserve,
             budget,
         )
     }

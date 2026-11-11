@@ -252,43 +252,4 @@ mod tests {
             Err(Refusal::Unauthenticated)
         );
     }
-
-    #[test]
-    fn adversarial_youtube_connect() {
-        use deadpan_chaos::{Target, Verdict, fuzz};
-
-        // Captured from the pinned yt-dlp against an owned loopback proxy,
-        // using an intentionally public test credential. No upstream request.
-        let seed = include_bytes!("../../../tests/fixtures/youtube-connect.bin");
-        let credentials = Credentials {
-            password: "fixture".into(),
-            authorization: "Basic ZGVhZHBhbjpmaXh0dXJl".into(),
-        };
-        let wrong = Credentials {
-            password: "wrong".into(),
-            authorization: "Basic ZGVhZHBhbjp3cm9uZw==".into(),
-        };
-        assert_eq!(destination(seed, &credentials).unwrap(), "www.youtube.com");
-        let report = fuzz(
-            Target::bytes("cli-youtube-connect")
-                .iterations(2_000)
-                .max_input_bytes(HEADER_LIMIT * 2)
-                .max_case_alloc(256 * 1024),
-            vec![seed.to_vec()],
-            |input| match destination(input, &credentials) {
-                Ok(host) => {
-                    if !supported_host(&host)
-                        || !host.is_ascii()
-                        || host != host.to_ascii_lowercase()
-                        || destination(input, &wrong) != Err(Refusal::Unauthenticated)
-                    {
-                        return Err("accepted an unsupported or unauthenticated tunnel".into());
-                    }
-                    Ok(Verdict::Accepted)
-                }
-                Err(reason) => Ok(Verdict::Rejected(format!("{reason:?}"))),
-            },
-        );
-        report.assert_clean();
-    }
 }

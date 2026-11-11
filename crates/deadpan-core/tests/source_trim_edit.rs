@@ -163,7 +163,7 @@ fn intent(i: i64, o: i64, s: i64, r: i64, policy: SourceTrimPolicy) -> SourceTri
         policy,
     }
 }
-fn resources(d: &ProjectDocument, r: &SourceTrimEditResolution) -> SourceTrimResources {
+fn resources(r: &SourceTrimEditResolution) -> SourceTrimResources {
     SourceTrimResources {
         target_wrapper: r.required_target_wrapper.then(|| id("a-crop")),
         right_wrapper: r.required_right_wrapper.then(|| id("b-crop")),
@@ -175,10 +175,6 @@ fn resources(d: &ProjectDocument, r: &SourceTrimEditResolution) -> SourceTrimRes
         fillers: (0..r.required_filler_nodes)
             .map(|n| id(&format!("filler-{n}")))
             .collect(),
-        timing: (r.capture != SourceTrimCapture::None).then(|| AudioTimingId {
-            allocation: revision(d),
-            ordinal: 0,
-        }),
     }
 }
 fn command_for(
@@ -196,7 +192,7 @@ fn command_for(
         node: id(left),
         right,
         intent,
-        resources: resources(d, &r),
+        resources: resources(&r),
     }
 }
 fn combined(d: &ProjectDocument, intent: SourceTrimIntent) -> Command {
@@ -339,8 +335,7 @@ fn overwrite_normal_form_handles_compensation_and_disjoint_swept_silence() {
         assert_eq!(resolution.geometry.target.output_after, a);
         assert_eq!(resolution.right_after.as_ref().map(|s| s.output), b);
         assert_eq!(resolution.fillers, fillers);
-        assert!(resolution.reanchors.is_empty());
-        let ids = resources(&before, &resolution);
+        let ids = resources(&resolution);
         let result_ids = resolution.result_identities(&ids).unwrap();
         let (after, tx) = edit(
             &before,
@@ -656,7 +651,7 @@ fn raw_zero_bad_resources_stale_targets_and_absence_never_author_or_retarget() {
             1 => resources.target_wrapper = None,
             2 => resources.fillers[0] = id("left"),
             3 => resources.fillers[1] = resources.fillers[0].clone(),
-            4 => resources.timing.as_mut().unwrap().allocation = RevisionId::new("wrong").unwrap(),
+            4 => resources.target_wrapper = Some(id("left")),
             5 => *right = Some(id("prefix")),
             _ => unreachable!(),
         }
@@ -731,14 +726,12 @@ fn nested_scope_ripple_captures_ancestor_suffix_but_overwrite_cannot_consume_it(
     let r = before
         .source_trim_edit(&id("group"), &id("left"), Some(&id("right")), accepted)
         .unwrap();
-    assert_eq!(r.reanchors.len(), 3);
-    assert!(r.reanchors[2].owners.contains(&id("suffix")));
     let command = Command::ApplySourceTrim {
         parent: id("group"),
         node: id("left"),
         right: Some(id("right")),
         intent: accepted,
-        resources: resources(&before, &r),
+        resources: resources(&r),
     };
     let (after, _) = edit(&before, command);
     assert_eq!(
@@ -829,7 +822,6 @@ fn overwrite_rejects_real_temporary_split_peak_even_when_final_tree_would_fit() 
     let small_resolution = small
         .source_trim_edit(&id("root"), &id("left"), None, accepted)
         .unwrap();
-    assert_eq!(small_resolution.capture, SourceTrimCapture::Unbound);
     assert_eq!(small_resolution.required_split_nodes, 4);
     assert_eq!(small_resolution.splits.len(), 1);
     assert!(!small_resolution.required_target_wrapper);
@@ -859,10 +851,6 @@ fn overwrite_rejects_real_temporary_split_peak_even_when_final_tree_would_fit() 
             split: SplitIdentities {
                 nodes: (0..4).map(|n| id(&format!("peak-copy-{n}"))).collect(),
             },
-            timing: Some(AudioTimingId {
-                allocation: revision(&before),
-                ordinal: 0,
-            }),
             ..Default::default()
         },
     };

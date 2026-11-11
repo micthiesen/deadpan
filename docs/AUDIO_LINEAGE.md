@@ -3,8 +3,8 @@
 Core schema 15 persists an optional `audio_lineage` map from owned physical node
 IDs to `AudioLineageId { allocation, origin }`. Split and automatic occurrence
 isolation establish these relationships as part of their normal atomic edit.
-This supplies copy lineage for later inserted-time bindings. It does not yet
-persist sample-resume anchors or implement arbitrary-boundary Hold insertion.
+This supplies copy lineage for later edits. It stores no sampling phase;
+Original audio placement is derived from the current tree.
 
 ## Identity and ownership
 
@@ -22,7 +22,7 @@ Unrelated imports do not acquire relationships by matching media or timing.
 
 This is authored copy provenance. A token alone is not evidence of equal current
 PCM, source qualification, a particular sampling clock or permission to read
-media. Actual continuity bindings must resolve the live recipes, retained
+media. Actual continuity must resolve the live recipes, retained
 processing context, exact map and explicit policy. Map keys must belong to the
 current owned tree; values remain historical names. The map is bounded by the
 100,000-node document limit, uses unique closed JSON records and participates in
@@ -88,5 +88,5 @@ The migration keeps its original backup, validates all chronology and preserves
 workflow profiles and operational rows before SQLite promotion.
 
 [The splice design](STRUCTURAL_SPLICE_DESIGN.md) and
-[reference contract](AUDIO_REFERENCE.md) track the remaining authored sample
-bindings, policy replacement, carrier-grid transfer and Hold command.
+[reference contract](AUDIO_REFERENCE.md) track the remaining policy
+replacement, carrier-grid transfer and Hold command.

@@ -16,29 +16,14 @@ use deadpan_dsp::{CanonicalRecipe, CanonicalStretch};
 use deadpan_dsp::{StereoPcm, StreamRecipe, StreamingStretch, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_plan::{
-    AdmittedAudioBoundDomain, AdmittedAudioPointContentQuery, AudioBound, AudioBoundDomain,
-    AudioContent, AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioFadeQuery,
-    AudioPointDomain, AudioPolicyQuery, AudioProcessingQuery, AudioProcessingSpan,
-    AudioProjectionIdentity, AudioQuery, AudioQueryLimits, AudioSignalContent, AudioSignalMix,
-    AudioSignalQuery, AudioSignalSpan, AudioSignalTape, AudioStage, AudioStageDescriptor,
-    AudioStageProjection, PlanError, ReferenceSample, RenderPlan, SignalSample, SilenceReason,
+    AdmittedAudioPointContentQuery, AudioContent, AudioDefinition, AudioDefinitionSelector,
+    AudioDomain, AudioFadeQuery, AudioPointDomain, AudioPolicyQuery, AudioProcessingQuery,
+    AudioProcessingSpan, AudioProjectionIdentity, AudioQuery, AudioQueryLimits, AudioSignalContent,
+    AudioSignalMix, AudioSignalQuery, AudioSignalSpan, AudioSignalTape, AudioStage,
+    AudioStageDescriptor, AudioStageProjection, PlanError, ReferenceSample, RenderPlan,
+    SignalSample, SilenceReason,
 };
 use serde::Serialize;
-
-#[cfg(test)]
-#[path = "read_signal_policy_native_trace.rs"]
-#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
-mod read_signal_policy_native_trace;
-#[cfg(test)]
-#[path = "read_signal_policy_trace_origin.rs"]
-mod read_signal_policy_trace_origin;
-#[cfg(test)]
-use read_signal_policy_trace_origin::TraceOrigin;
-
-#[cfg(test)]
-#[path = "read_signal_policy_before_trace.rs"]
-#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
-mod read_signal_policy_before_trace;
 
 #[path = "read_signal_policy.rs"]
 mod read_signal_policy;
@@ -48,36 +33,8 @@ mod ramp_stage;
 #[path = "stage_block_policy.rs"]
 mod stage_block_policy;
 
-#[cfg(test)]
-#[path = "stage_block_policy_native_trace.rs"]
-#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
-mod stage_block_policy_native_trace;
-
-#[cfg(test)]
-#[path = "stage_block_policy_request.rs"]
-#[allow(dead_code, reason = "legacy switch whose callers were deleted")]
-mod stage_block_policy_request;
-
-#[cfg(test)]
-#[path = "read_signal_policy_request.rs"]
-mod read_signal_policy_request;
-
-#[cfg(test)]
-#[path = "stage_validation_policy_before_trace.rs"]
-#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
-mod stage_validation_policy_before_trace;
-
 #[path = "stage_validation_policy.rs"]
 mod stage_validation_policy;
-
-#[cfg(test)]
-#[path = "stage_validation_policy_request.rs"]
-mod stage_validation_policy_request;
-
-#[cfg(test)]
-#[path = "stage_validation_policy_native_trace.rs"]
-#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
-mod stage_validation_policy_native_trace;
 
 use crate::sequence::{original_sample, resolve_source, source_samples};
 use crate::{
@@ -86,26 +43,6 @@ use crate::{
     Resampler, RoomTone, RoomToneRecipe, RootSignalTransfer, SignalTransferError, StereoMatrix,
     check_cancel,
 };
-
-#[cfg(test)]
-#[path = "intrinsic_preflight_policy_request.rs"]
-#[allow(dead_code, reason = "legacy switch whose callers were deleted")]
-mod intrinsic_preflight_policy_request;
-
-#[cfg(test)]
-#[path = "intrinsic_preflight_before_trace.rs"]
-#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
-mod intrinsic_preflight_before_trace;
-
-#[cfg(test)]
-#[path = "intrinsic_preflight_policy_native_trace.rs"]
-#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
-mod intrinsic_preflight_policy_native_trace;
-
-#[cfg(test)]
-#[path = "native_tape_source_before_trace.rs"]
-#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
-mod native_tape_source_before_trace;
 
 #[path = "signal_input.rs"]
 mod signal_input;
@@ -170,42 +107,16 @@ mod authored_gain;
 #[path = "authored_eq.rs"]
 mod authored_eq;
 #[cfg(test)]
-#[path = "components_mask_trace.rs"]
-mod components_mask_trace;
-#[cfg(test)]
 #[path = "native_query_interval_trace.rs"]
 mod native_query_interval_trace;
-#[cfg(test)]
-#[path = "point_content_query_trace.rs"]
-mod point_content_query_trace;
-#[cfg(test)]
-#[path = "point_content_request.rs"]
-mod point_content_request;
-#[cfg(test)]
-#[path = "raw_domain_query_trace.rs"]
-mod raw_domain_query_trace;
-#[cfg(test)]
-#[path = "raw_domain_request.rs"]
-mod raw_domain_request;
 #[path = "shared_components.rs"]
 mod shared_components;
 #[path = "shared_eq.rs"]
 mod shared_eq;
 #[path = "shared_mix.rs"]
 mod shared_mix;
-#[cfg(test)]
-#[path = "shared_mix_mask_trace.rs"]
-mod shared_mix_mask_trace;
 #[path = "sound_context_admission.rs"]
 mod sound_context_admission;
-
-#[cfg(test)]
-#[path = "stage_block_policy_before_trace.rs"]
-mod stage_block_policy_before_trace;
-
-#[cfg(test)]
-#[path = "saved_key_output_policy_before_trace.rs"]
-mod saved_key_output_policy_before_trace;
 
 #[path = "point_suppression.rs"]
 pub(crate) mod point_suppression;
@@ -494,40 +405,12 @@ pub struct EdgeFadedBlock {
 }
 
 enum PointContentQuery<'plan, I, L> {
-    #[cfg(test)]
-    Ordinary(AudioSignalQuery<'plan>),
     Admitted(AdmittedAudioPointContentQuery<'plan, I, L>),
 }
 impl<'plan, I: Copy + Eq, L> PointContentQuery<'plan, I, L> {
     fn query(&self) -> &AudioSignalQuery<'plan> {
         match self {
-            #[cfg(test)]
-            Self::Ordinary(value) => value,
             Self::Admitted(value) => value.query(),
-        }
-    }
-}
-
-enum RawBoundDomain<'plan, I, L> {
-    #[cfg(test)]
-    Ordinary(AudioBoundDomain<'plan>),
-    Admitted(AdmittedAudioBoundDomain<'plan, I, L>),
-}
-impl<'plan, I, L> RawBoundDomain<'plan, I, L> {
-    fn domain(&self) -> &AudioBoundDomain<'plan> {
-        match self {
-            #[cfg(test)]
-            Self::Ordinary(value) => value,
-            Self::Admitted(value) => value.domain(),
-        }
-    }
-
-    #[cfg(test)]
-    fn trace_product(&self) -> raw_domain_query_trace::Product {
-        match self.domain() {
-            AudioBoundDomain::Root(_) => raw_domain_query_trace::Product::Root,
-            AudioBoundDomain::Point(_) => raw_domain_query_trace::Product::Point,
-            AudioBoundDomain::Empty => raw_domain_query_trace::Product::Empty,
         }
     }
 }
@@ -546,9 +429,6 @@ struct ReadBlock {
 
 #[path = "original_request.rs"]
 mod original_request;
-
-#[path = "retained_request.rs"]
-mod retained_request;
 
 struct RootReadQueries<'plan> {
     flattened: AudioQuery,
@@ -574,13 +454,6 @@ impl<'plan> RootReadQueries<'plan> {
             fades: self.fades.as_ref(),
         }
     }
-}
-
-#[derive(Clone, Copy)]
-struct BoundRead {
-    offset: i128,
-    frames: u32,
-    depth: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1270,7 +1143,6 @@ impl StageAudio {
         frames: u32,
         budget: &PreparationBudget<'_>,
     ) -> Result<SignalBlock, StageAudioError> {
-        #[cfg(not(test))]
         {
             if !definition.belongs_to(&self.plan) {
                 return Err(StageAudioError::ForeignDefinition);
@@ -1293,82 +1165,6 @@ impl StageAudio {
             control.check()?;
             Ok(block)
         }
-        #[cfg(test)]
-        {
-            let call = read_signal_policy_before_trace::call(
-                self,
-                read_signal_policy_before_trace::Caller::Definition,
-                start,
-                frames,
-                0,
-            );
-            let native_call = read_signal_policy_native_trace::call(
-                read_signal_policy_before_trace::Caller::Definition,
-                start,
-                frames,
-                0,
-            );
-            let ticket = call.ticket();
-            let origin = TraceOrigin::new(ticket, native_call.ticket());
-            let result = (|| {
-                if !definition.belongs_to(&self.plan) {
-                    return Err(StageAudioError::ForeignDefinition);
-                }
-                let signal = definition.signal();
-                let end = start
-                    .0
-                    .checked_add(i64::from(frames))
-                    .ok_or(StageAudioError::Range)?;
-                if start.0 < 0
-                    || frames == 0
-                    || frames > MAX_OUTPUT_FRAMES
-                    || end > signal.sample_count()?.0
-                {
-                    return Err(StageAudioError::Range);
-                }
-                {
-                    let result = budget.check();
-                    read_signal_policy_before_trace::caller_result(
-                        self,
-                        None,
-                        ticket,
-                        "caller_budget_check",
-                        &result,
-                    );
-                    result?
-                };
-                let control = budget.control();
-                let block =
-                    self.read_signal(&signal, provider, (start, frames), control, 0, origin)?;
-                {
-                    let result = control.check();
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "caller_final_check",
-                        &result,
-                    );
-                    result?
-                };
-                read_signal_policy_before_trace::mask(
-                    self,
-                    control,
-                    ticket,
-                    "definition_return_mask",
-                    &block.suppressed,
-                );
-                Ok(block)
-            })();
-            read_signal_policy_before_trace::caller_result(
-                self,
-                None,
-                ticket,
-                "caller_result",
-                &result,
-            );
-            result
-        }
     }
 
     /// Read a checked projection of current structural signals under one
@@ -1384,7 +1180,6 @@ impl StageAudio {
         timeout: Duration,
         cancelled: &AtomicBool,
     ) -> Result<TapeAudioBlock, StageAudioError> {
-        #[cfg(not(test))]
         {
             check_cancel(cancelled)?;
             if !tape.belongs_to(&self.plan) {
@@ -1420,86 +1215,6 @@ impl StageAudio {
                 samples: block.samples,
                 suppressed: block.suppressed,
             })
-        }
-        #[cfg(test)]
-        {
-            let call = read_signal_policy_before_trace::call(
-                self,
-                read_signal_policy_before_trace::Caller::PublicTape,
-                start,
-                frames,
-                0,
-            );
-            let native_call = read_signal_policy_native_trace::call(
-                read_signal_policy_before_trace::Caller::PublicTape,
-                start,
-                frames,
-                0,
-            );
-            let ticket = call.ticket();
-            let origin = TraceOrigin::new(ticket, native_call.ticket());
-            let result = (|| {
-                check_cancel(cancelled)?;
-                if !tape.belongs_to(&self.plan) {
-                    return Err(StageAudioError::ForeignDomain);
-                }
-                validate_timeout(timeout)?;
-                let end = start
-                    .0
-                    .checked_add(i64::from(frames))
-                    .ok_or(StageAudioError::Range)?;
-                if start.0 < 0
-                    || frames == 0
-                    || frames > MAX_OUTPUT_FRAMES
-                    || end > tape.sample_count()?.0
-                {
-                    return Err(StageAudioError::Range);
-                }
-                let work = RefCell::new(ReadWork::default());
-                let control = WorkControl {
-                    cancelled,
-                    deadline: Instant::now() + timeout,
-                    work: &work,
-                };
-                let block =
-                    self.read_signal(tape, provider, (start, frames), control, 0, origin)?;
-                {
-                    let result = control.check();
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "caller_final_check",
-                        &result,
-                    );
-                    result?
-                };
-                read_signal_policy_before_trace::mask(
-                    self,
-                    control,
-                    ticket,
-                    "tape_return_mask",
-                    &block.suppressed,
-                );
-                Ok(TapeAudioBlock {
-                    schema_version: 1,
-                    stage: "projected_preparation_pcm_before_effects",
-                    project_id: self.plan.metadata().project_id.clone(),
-                    revision_id: self.plan.metadata().revision_id.clone(),
-                    support: tape.support(),
-                    start,
-                    samples: block.samples,
-                    suppressed: block.suppressed,
-                })
-            })();
-            read_signal_policy_before_trace::caller_result(
-                self,
-                None,
-                ticket,
-                "caller_result",
-                &result,
-            );
-            result
         }
     }
 
@@ -1574,36 +1289,6 @@ impl StageAudio {
         control.check()?;
         let samples = signal_start..signal_end;
         let limits = control.query_limits()?;
-        #[cfg(test)]
-        let mut point_result_lifetime = point_content_query_trace::ResultGuard::new();
-        #[cfg(test)]
-        let query = {
-            let mut trace = point_content_query_trace::ScopeGuard::new(control);
-            if point_content_request::legacy() {
-                let query = domain.signal_ref().query(samples.clone(), limits)?;
-                control.spend_plan_work(query.work)?;
-                trace.completed(query.work, 0, query.work, false, true, query.spans.len());
-                PointContentQuery::Ordinary(query)
-            } else {
-                let query = {
-                    let mut admission = sound_context_admission::Admission::new(self, control);
-                    domain.content_query_admitted(samples.clone(), limits, &mut admission)?
-                };
-                if !query.was_forwarded() {
-                    control.spend_plan_work(query.total_units())?;
-                }
-                trace.completed(
-                    query.canonical_units(),
-                    query.additional_units(),
-                    query.total_units(),
-                    query.was_forwarded(),
-                    false,
-                    query.query().spans.len(),
-                );
-                PointContentQuery::Admitted(query)
-            }
-        };
-        #[cfg(not(test))]
         let query = {
             let query = {
                 let mut admission = sound_context_admission::Admission::new(self, control);
@@ -1614,10 +1299,6 @@ impl StageAudio {
             }
             PointContentQuery::Admitted(query)
         };
-        #[cfg(test)]
-        if matches!(&query, PointContentQuery::Admitted(_)) {
-            point_result_lifetime.acquired();
-        }
         control.check()?;
         let ordinary_policy = signal_policy_input::legacy();
         let policy = if ordinary_policy {
@@ -1634,25 +1315,9 @@ impl StageAudio {
         if !policy.was_forwarded() {
             control.spend_plan_work(policy.view().work)?;
         }
-        self.preflight_signal_queries(
-            query.query(),
-            policy.view(),
-            control,
-            depth,
-            #[cfg(test)]
-            TraceOrigin::NONE,
-            #[cfg(test)]
-            None,
-        )?;
-        let mut block = self.read_signal_queries(
-            query.query(),
-            policy,
-            provider,
-            control,
-            depth,
-            #[cfg(test)]
-            TraceOrigin::NONE,
-        )?;
+        self.preflight_signal_queries(query.query(), policy.view(), control, depth)?;
+        let mut block =
+            self.read_signal_queries(query.query(), policy, provider, control, depth)?;
         if ordinary_policy && !point_suppression::internal_legacy() {
             block.suppressed = block.suppressed.into_admitted(&mut self.masks(control))?;
         }
@@ -1717,8 +1382,6 @@ impl StageAudio {
     /// and creative edges. The context can include an enclosing processor and
     /// other descendant owners; consult `input.scope()` before planning effects.
     /// This excludes authored treatments and independent sound contributions.
-    /// A resumed binding's reference history is separate; `input.retained_at()`
-    /// exposes that operand and its exact map beyond current delivery.
     pub fn read_owner_input(
         &mut self,
         provider: &mut impl AudioSourceProvider,
@@ -1773,171 +1436,6 @@ impl StageAudio {
         self.read_prepared_original(provider, request, control, depth)
     }
 
-    /// A retained processor's history on its consumer sample grid after its
-    /// creative output edges. Reads can precede current delivery; they never
-    /// authorize extending authored output or bypassing silence/tail policy.
-    pub fn read_retained_owner_input(
-        &mut self,
-        provider: &mut impl AudioSourceProvider,
-        input: &deadpan_plan::AudioOwnerRetainedInput<'_>,
-        start: AudioSample,
-        frames: u32,
-        timeout: Duration,
-        cancelled: &AtomicBool,
-    ) -> Result<EdgeFadedBlock, StageAudioError> {
-        self.read_retained_input(provider, input, start, frames, (timeout, cancelled, false))
-    }
-
-    /// Apply this retained Original operand's current authored treatments after
-    /// its time/pitch and edges, using reference-owner clocks. Exterior owners
-    /// and independent sounds are excluded; this is not a complete group mix.
-    pub fn read_retained_owner_treatments(
-        &mut self,
-        provider: &mut impl AudioSourceProvider,
-        input: &deadpan_plan::AudioOwnerRetainedInput<'_>,
-        start: AudioSample,
-        frames: u32,
-        timeout: Duration,
-        cancelled: &AtomicBool,
-    ) -> Result<EdgeFadedBlock, StageAudioError> {
-        self.read_retained_input(provider, input, start, frames, (timeout, cancelled, true))
-    }
-
-    fn read_retained_input(
-        &mut self,
-        provider: &mut impl AudioSourceProvider,
-        input: &deadpan_plan::AudioOwnerRetainedInput<'_>,
-        start: AudioSample,
-        frames: u32,
-        (timeout, cancelled, authored): (Duration, &AtomicBool, bool),
-    ) -> Result<EdgeFadedBlock, StageAudioError> {
-        check_cancel(cancelled)?;
-        validate_timeout(timeout)?;
-        let work = RefCell::new(ReadWork::default());
-        let control = WorkControl {
-            cancelled,
-            deadline: Instant::now() + timeout,
-            work: &work,
-        };
-        let block =
-            self.read_retained_controlled(provider, input, start, frames, control, (0, authored))?;
-        Ok(EdgeFadedBlock {
-            schema_version: 1,
-            stage: if authored {
-                "retained_original_owner_treatments"
-            } else {
-                "retained_owner_input_before_treatments"
-            },
-            engine: crate::edges::EDGE_FADE_ID,
-            processing_order: if authored {
-                ["time_pitch_mapping", "edge_fades_then_authored_treatments"]
-            } else {
-                ["time_pitch_mapping", "edge_fades"]
-            },
-            project_id: self.plan.metadata().project_id.clone(),
-            revision_id: self.plan.metadata().revision_id.clone(),
-            start,
-            samples: block.samples,
-            suppressed: block.suppressed.merge(&self.masks(control))?,
-        })
-    }
-
-    fn read_retained_controlled(
-        &mut self,
-        provider: &mut impl AudioSourceProvider,
-        input: &deadpan_plan::AudioOwnerRetainedInput<'_>,
-        start: AudioSample,
-        frames: u32,
-        control: WorkControl<'_>,
-        (depth, authored): (usize, bool),
-    ) -> Result<ReadBlock, StageAudioError> {
-        control.check()?;
-        if !input.belongs_to(&self.plan) {
-            return Err(StageAudioError::ForeignDomain);
-        }
-        if depth > self.limits.maximum_depth {
-            return Err(StageAudioError::Limit("nested stage depth"));
-        }
-        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
-            return Err(StageAudioError::Range);
-        }
-        let end = AudioSample(
-            start
-                .0
-                .checked_add(i64::from(frames))
-                .ok_or(StageAudioError::Range)?,
-        );
-        control.spend_plan_work(input.work())?;
-        let fades = self.prepare_retained_fades(input, start..end, control)?;
-        crate::edges::validate_creative_fades(start, frames as usize, &fades.query().spans)?;
-        let owners = if authored {
-            let query = self.prepare_retained_owners(input, start..end, control)?;
-            for span in query.query().spans() {
-                deadpan_core::validate_audio_treatment_layers(
-                    span.owners().iter().filter_map(|owner| owner.treatments()),
-                )?;
-            }
-            Some(query)
-        } else {
-            None
-        };
-        let reservation = if authored { u64::from(frames) * 2 } else { 0 };
-        self.make_room(reservation, false, control)?;
-        self.active_frames += reservation;
-        let result = (|| {
-            let raw = self.read_bound_at(
-                input.bound(),
-                provider,
-                input.reference_at(start)?,
-                (frames, depth),
-                control,
-            )?;
-            let suppressed = raw.suppressed.try_map(
-                |range| {
-                    Ok::<_, TimeError>(
-                        AudioSample(
-                            start
-                                .0
-                                .checked_add(range.start.0)
-                                .ok_or(TimeError::Overflow)?,
-                        )
-                            ..AudioSample(
-                                start
-                                    .0
-                                    .checked_add(range.end.0)
-                                    .ok_or(TimeError::Overflow)?,
-                            ),
-                    )
-                },
-                &mut self.masks(control),
-            )?;
-            let mut block = ReadBlock {
-                start,
-                samples: raw.samples,
-                dependencies: raw.dependencies,
-                relative_depth: raw.relative_depth,
-                suppressed,
-                exhausted: Vec::new(),
-            };
-            crate::edges::apply_creative_fades(start, &mut block.samples, &fades.query().spans)?;
-            if let Some(owners) = &owners {
-                let gained = authored_gain::original_samples_with_owners(
-                    &block,
-                    owners.query(),
-                    control,
-                    &[],
-                )?;
-                authored_gain::write_finite_samples(&mut block.samples, gained)?;
-            }
-            control.check()?;
-            Ok(block)
-        })();
-        self.active_frames -= reservation;
-        drop(owners);
-        drop(fades);
-        result
-    }
-
     /// Transfer hidden or visible domain PCM with one preparation allowance and
     /// deadline across all interpolation halo reads. The transfer retains the
     /// borrowed domain; foreign plans cannot supply a same-named replacement.
@@ -1977,129 +1475,6 @@ impl StageAudio {
             samples: block.samples,
             suppressed: block.suppressed,
         })
-    }
-
-    /// Read a bound physical recipe with this read's admission and work state.
-    /// Output labels are rebased from the containing span, never rerounded.
-    fn read_bound(
-        &mut self,
-        bound: &AudioBound<'_>,
-        provider: &mut impl AudioSourceProvider,
-        request: BoundRead,
-        control: WorkControl<'_>,
-    ) -> Result<SignalBlock, StageAudioError> {
-        let BoundRead {
-            offset,
-            frames,
-            depth,
-        } = request;
-        if offset < 0 {
-            return Err(StageAudioError::Range);
-        }
-        let at = bound.reference_at_wide_offset(offset)?;
-        self.read_bound_at(bound, provider, at, (frames, depth), control)
-    }
-
-    fn read_bound_at(
-        &mut self,
-        bound: &AudioBound<'_>,
-        provider: &mut impl AudioSourceProvider,
-        at: ExactRatio,
-        (frames, depth): (u32, usize),
-        control: WorkControl<'_>,
-    ) -> Result<SignalBlock, StageAudioError> {
-        control.check()?;
-        if depth > self.limits.maximum_depth {
-            return Err(StageAudioError::Limit("nested stage depth"));
-        }
-        if !bound.belongs_to(&self.plan) {
-            return Err(StageAudioError::ForeignDomain);
-        }
-        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
-            return Err(StageAudioError::Range);
-        }
-        if bound.is_silent_hold() {
-            return self.empty_bound_controlled(frames, control);
-        }
-        let step = bound.reference_samples_per_output_sample();
-        let output = SignalSample(0)..SignalSample(i64::from(frames));
-        #[cfg(test)]
-        let mut raw_result_lifetime = raw_domain_query_trace::ResultGuard::new();
-        #[cfg(test)]
-        let raw_domain = {
-            let mut trace = raw_domain_query_trace::ScopeGuard::new(control);
-            let raw_domain = if raw_domain_request::legacy() {
-                RawBoundDomain::Ordinary(bound.raw_domain()?)
-            } else {
-                let mut admission = sound_context_admission::Admission::new(self, control);
-                RawBoundDomain::Admitted(bound.raw_domain_query(&mut admission)?)
-            };
-            let product = raw_domain.trace_product();
-            let receipt = match &raw_domain {
-                RawBoundDomain::Ordinary(_) => (0, 0, 0, false),
-                RawBoundDomain::Admitted(value) => (
-                    value.canonical_units(),
-                    value.additional_units(),
-                    value.total_units(),
-                    value.was_forwarded(),
-                ),
-            };
-            trace.completed(receipt.0, receipt.1, receipt.2, receipt.3, product);
-            raw_domain
-        };
-        #[cfg(not(test))]
-        let raw_domain = {
-            let mut admission = sound_context_admission::Admission::new(self, control);
-            RawBoundDomain::Admitted(bound.raw_domain_query(&mut admission)?)
-        };
-        #[cfg(test)]
-        if matches!(&raw_domain, RawBoundDomain::Admitted(_)) {
-            raw_result_lifetime.acquired();
-        }
-        match raw_domain.domain() {
-            AudioBoundDomain::Root(domain) => {
-                if domain.root_samples().is_empty() {
-                    return self.empty_bound_controlled(frames, control);
-                }
-                let transfer = crate::domain_transfer::DomainSignalTransfer::borrowed(
-                    domain,
-                    at,
-                    output.start,
-                    step,
-                    output,
-                )?;
-                self.read_domain_transferred_controlled(
-                    provider,
-                    &transfer,
-                    SignalSample(0),
-                    frames,
-                    control,
-                    depth,
-                )
-            }
-            AudioBoundDomain::Point(domain) => {
-                let support = domain.reference_samples();
-                let length = support
-                    .end
-                    .0
-                    .checked_sub(support.start.0)
-                    .ok_or(TimeError::Overflow)?;
-                if length == 0 {
-                    return self.empty_bound_controlled(frames, control);
-                }
-                let transfer = RootSignalTransfer::new(
-                    AudioSample(0)..AudioSample(length),
-                    at.checked_sub(ExactRatio::integer(support.start.0))?,
-                    output.start,
-                    step,
-                    output,
-                )?;
-                self.read_point_bound_transferred_controlled(
-                    provider, domain, &transfer, frames, control, depth,
-                )
-            }
-            AudioBoundDomain::Empty => self.empty_bound_controlled(frames, control),
-        }
     }
 
     /// Convert the complete root signal into a point-grid input, using one work
@@ -2221,7 +1596,7 @@ impl StageAudio {
                 AudioSignalContent::ProjectedStage(stage) => {
                     self.preflight_projected(stage, control, depth + 1)?;
                 }
-                AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
+                AudioSignalContent::Stage(_) => {}
             }
         }
         for content in &queries.policy.contents {
@@ -2369,22 +1744,6 @@ impl StageAudio {
                         cancelled,
                     )?
                 }
-                AudioSignalContent::Bound(bound) => {
-                    let block = self.read_bound(
-                        bound,
-                        provider,
-                        BoundRead {
-                            offset: i128::from(span.samples.start.0)
-                                - i128::from(span.allocated_samples.start.0),
-                            frames: count(&span.samples)?,
-                            depth: depth + 1,
-                        },
-                        control,
-                    )?;
-                    dependencies.extend(block.dependencies);
-                    relative_depth = relative_depth.max(1 + block.relative_depth);
-                    block.samples
-                }
             };
             samples.extend(block);
         }
@@ -2420,39 +1779,13 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<Arc<PreparedStage>, StageAudioError> {
-        #[cfg(test)]
-        let _validation_caller = stage_validation_policy_before_trace::enter(
-            self,
-            control,
-            "caller_current_stage",
-            || serde_json::json!({"depth":depth,"descriptor":stage.descriptor()}),
-        );
         control.check()?;
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
         let key = PreparedKey::Preserve(stage.descriptor().clone());
-        #[cfg(not(test))]
         if let Some(entry) = self.cached(&key, provider, control, depth)? {
             return Ok(entry);
-        }
-        #[cfg(test)]
-        {
-            let result = self.cached(&key, provider, control, depth);
-            stage_validation_policy_before_trace::mark(
-                self,
-                control,
-                "current_stage_cache_result",
-                || match &result {
-                    Ok(value) => serde_json::json!({"status":"Ok","hit":value.is_some()}),
-                    Err(error) => {
-                        serde_json::json!({"status":"Err","error":stage_validation_policy_before_trace::error(error)})
-                    }
-                },
-            );
-            if let Some(entry) = result? {
-                return Ok(entry);
-            }
         }
         if let Some(ramp) = stage.descriptor().pitch.ramp() {
             return self.prepare_ramp_stage(stage, ramp, key, provider, control, depth);
@@ -2473,20 +1806,7 @@ impl StageAudio {
             )?,
             i32::from(stage.descriptor().pitch.semitones()),
         );
-        #[cfg(not(test))]
         let reservation = self.reserve_stream(input_frames, output_frames, control)?;
-        #[cfg(test)]
-        let reservation = {
-            let result = self.reserve_stream(input_frames, output_frames, control);
-            let reservation = stage_validation_policy_before_trace::step(
-                self,
-                control,
-                "stream_reservation_result",
-                result,
-            )?;
-            stage_validation_policy_before_trace::reserved(self, control, &reservation);
-            reservation
-        };
         let result = recipe.map_err(StageAudioError::from).and_then(|recipe| {
             self.build_stage(
                 (&input_signal).into(),
@@ -2497,29 +1817,7 @@ impl StageAudio {
                 depth,
             )
         });
-        #[cfg(test)]
-        {
-            stage_validation_policy_before_trace::block_result(
-                self,
-                control,
-                "build_result_before_release",
-                &result,
-            );
-            stage_validation_policy_before_trace::mark(
-                self,
-                control,
-                "stream_release_before",
-                || {
-                    serde_json::json!({
-                "resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes})
-                },
-            );
-        }
         self.release_stream(reservation);
-        #[cfg(test)]
-        stage_validation_policy_before_trace::mark(self, control, "stream_release_after", || {
-            serde_json::json!({})
-        });
         self.publish(key, result?, control)
     }
 
@@ -2582,13 +1880,6 @@ impl StageAudio {
         output_frames: u32,
         control: WorkControl<'_>,
     ) -> Result<StreamReservation, StageAudioError> {
-        #[cfg(test)]
-        let _o_reservation = stage_block_policy_before_trace::context_scope(
-            self,
-            control,
-            "reserve_stream",
-            || serde_json::json!({"input_frames":input_frames,"output_frames":output_frames}),
-        );
         let window = u64::from(input_frames).min(deadpan_dsp::MAX_STREAM_WINDOW_FRAMES as u64);
         let disk = output_frames > self.limits.maximum_memory_stage_frames;
         let reservation = StreamReservation {
@@ -2604,15 +1895,6 @@ impl StageAudio {
                 0
             },
         };
-        #[cfg(test)]
-        stage_block_policy_before_trace::mark(
-            self,
-            control,
-            None,
-            "stream_reservation_before",
-            || serde_json::json!({"resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes}),
-        );
-        #[cfg(not(test))]
         self.reserve_budget(
             input_frames,
             output_frames,
@@ -2620,47 +1902,12 @@ impl StageAudio {
             reservation.disk_bytes,
             control,
         )?;
-        #[cfg(test)]
-        {
-            let result = self.reserve_budget(
-                input_frames,
-                output_frames,
-                reservation.resident_frames,
-                reservation.disk_bytes,
-                control,
-            );
-            stage_block_policy_before_trace::result(
-                self,
-                control,
-                None,
-                "stream_reservation_result",
-                &result,
-            );
-            result?;
-            stage_block_policy_before_trace::mark(
-                self,
-                control,
-                None,
-                "stream_reservation_accepted",
-                || serde_json::json!({"resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes}),
-            );
-        }
         Ok(reservation)
     }
 
     fn release_stream(&mut self, reservation: StreamReservation) {
-        #[cfg(test)]
-        stage_block_policy_before_trace::controller_mark(self, "stream_release_before", || {
-            serde_json::json!({"resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes,
-                "work_snapshot":"unavailable: release_stream has no WorkControl argument"})
-        });
         self.active_frames -= reservation.resident_frames;
         self.active_disk_bytes -= reservation.disk_bytes;
-        #[cfg(test)]
-        stage_block_policy_before_trace::controller_mark(self, "stream_release_after", || {
-            serde_json::json!({"resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes,
-                "work_snapshot":"unavailable: release_stream has no WorkControl argument"})
-        });
     }
 
     fn reserve_budget(
@@ -3149,16 +2396,6 @@ impl StageAudio {
                 + control.work.borrow().projected_disk_bytes
                 + disk_bytes;
             let owned_suppression = self.owned_suppression_residency(control)?;
-            #[cfg(test)]
-            read_signal_policy_native_trace::resident_predicate(
-                self,
-                control,
-                additional,
-                new_entry,
-                resident,
-                disk,
-                owned_suppression,
-            );
             if resident
                 + self.active_frames
                 + control.work.borrow().projected_resident_frames
@@ -3201,31 +2438,6 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<PreparedBlock, StageAudioError> {
-        #[cfg(test)]
-        let _validation_build = stage_validation_policy_before_trace::enter(
-            self,
-            control,
-            "build_stage",
-            || {
-                serde_json::json!({
-                "depth":depth,"input":stage_validation_policy_before_trace::mode(input),
-                "output":stage_validation_policy_before_trace::mode(output),
-                "input_frames":recipe.input_frames(),"output_frames":recipe.output_frames(),
-                "rate":{"numerator":recipe.rate().numerator(),"denominator":recipe.rate().denominator()},
-                "pitch_semitones":recipe.pitch_semitones()})
-            },
-        );
-        #[cfg(test)]
-        let _o_build = stage_block_policy_before_trace::context_scope(
-            self,
-            control,
-            "build_stage",
-            || {
-                serde_json::json!({"depth":depth,"recipe":stage_block_policy_before_trace::recipe_value(recipe),
-                "input":stage_block_policy_before_trace::input_value(input,&self.plan),
-                "output":stage_block_policy_before_trace::input_value(output,&self.plan)})
-            },
-        );
         let WorkControl { cancelled, .. } = control;
         let progress = self.preparation_monitor.as_ref().map(|monitor| {
             monitor.enter(PreparationActivity::CheckingStretch {
@@ -3234,312 +2446,37 @@ impl StageAudio {
                 total: recipe.output_frames(),
             })
         });
-        #[cfg(test)]
-        read_signal_policy_before_trace::context(
-            self,
-            control,
-            "progress_enter",
-            || serde_json::json!({"monitor_present":progress.is_some()}),
-        );
-        #[cfg(test)]
-        stage_validation_policy_before_trace::mark(self, control, "progress_entered", || {
-            serde_json::json!({})
-        });
         // A policy may own no input-grid points but become audible after the
         // stretch. Validate the complete intrinsic output before source I/O.
-        #[cfg(test)]
-        let validation_scope = stage_validation_policy_before_trace::enter(
-            self,
-            control,
-            "validation",
-            || serde_json::json!({"depth":depth,"total":recipe.output_frames()}),
-        );
         let mut validated = 0_u32;
         while validated < recipe.output_frames() {
-            #[cfg(test)]
-            let _validation_chunk = stage_validation_policy_before_trace::enter(
-                self,
-                control,
-                "chunk",
-                || {
-                    serde_json::json!({
-                    "role":"output","output":stage_validation_policy_before_trace::mode(output),
-                    "range":{"start":validated,"end":(validated+MAX_OUTPUT_FRAMES).min(recipe.output_frames())},
-                    "depth":depth})
-                },
-            );
-            #[cfg(test)]
-            let _native_validation_scope = stage_validation_policy::scope(
-                control,
-                output,
-                SignalSample(i64::from(validated))
-                    ..SignalSample(i64::from(
-                        (validated + MAX_OUTPUT_FRAMES).min(recipe.output_frames()),
-                    )),
-                depth,
-            );
-            #[cfg(test)]
-            stage_validation_policy_native_trace::mark(
-                control,
-                stage_validation_policy_native_trace::Mark::CheckBefore,
-            );
-            #[cfg(not(test))]
             control.check()?;
-            #[cfg(test)]
-            {
-                let result = control.check();
-                stage_validation_policy_native_trace::result(
-                    control,
-                    "control_check_result",
-                    &result,
-                );
-                stage_validation_policy_before_trace::step(
-                    self,
-                    control,
-                    "control_check_result",
-                    result,
-                )?;
-                stage_validation_policy_native_trace::mark(
-                    control,
-                    stage_validation_policy_native_trace::Mark::CheckAccepted,
-                );
-            }
             let end = (validated + MAX_OUTPUT_FRAMES).min(recipe.output_frames());
-            #[cfg(not(test))]
             let policy = self.stage_validation_policy(
                 output,
                 SignalSample(i64::from(validated))..SignalSample(i64::from(end)),
                 control,
             )?;
-            #[cfg(test)]
-            let policy = {
-                let result = self.stage_validation_policy(
-                    output,
-                    SignalSample(i64::from(validated))..SignalSample(i64::from(end)),
-                    control,
-                );
-                stage_validation_policy_before_trace::step(self, control, "policy_result", result)?
-            };
-            #[cfg(test)]
-            stage_validation_policy_before_trace::policy(
-                self,
-                control,
-                "policy_constructed",
-                &policy,
-                0,
-            );
-            #[cfg(test)]
-            stage_validation_policy_native_trace::use_view(
-                control,
-                stage_validation_policy_native_trace::UsePhase::PolicyReady,
-                policy.view(),
-            );
             if !policy.was_forwarded() {
-                #[cfg(not(test))]
                 control.spend_plan_work(policy.view().work)?;
-                #[cfg(test)]
-                {
-                    stage_validation_policy_native_trace::use_view(
-                        control,
-                        stage_validation_policy_native_trace::UsePhase::DebitBefore,
-                        policy.view(),
-                    );
-                    let result = control.spend_plan_work(policy.view().work);
-                    stage_validation_policy_native_trace::result(
-                        control,
-                        "policy_debit_result",
-                        &result,
-                    );
-                    stage_validation_policy_before_trace::step(
-                        self,
-                        control,
-                        "policy_debit_result",
-                        result,
-                    )?;
-                    stage_validation_policy_native_trace::use_view(
-                        control,
-                        stage_validation_policy_native_trace::UsePhase::Debited,
-                        policy.view(),
-                    );
-                }
             }
-            #[cfg(test)]
-            stage_validation_policy_before_trace::policy(
-                self,
-                control,
-                if policy.was_forwarded() {
-                    "policy_forwarded"
-                } else {
-                    "policy_debited"
-                },
-                &policy,
-                0,
-            );
-            #[cfg(test)]
-            let mut completed_contents = 0;
             for content in policy.view().contents {
-                #[cfg(test)]
-                stage_validation_policy_native_trace::use_view(
-                    control,
-                    stage_validation_policy_native_trace::UsePhase::ContentBefore(
-                        completed_contents,
-                    ),
-                    policy.view(),
-                );
-                #[cfg(test)]
-                stage_validation_policy_before_trace::policy(
-                    self,
-                    control,
-                    "content_before",
-                    &policy,
-                    completed_contents,
-                );
-                #[cfg(not(test))]
                 control.preflight_content(content, &self.plan)?;
-                #[cfg(test)]
-                {
-                    let result = control.preflight_content(content, &self.plan);
-                    stage_validation_policy_before_trace::step(
-                        self,
-                        control,
-                        "content_result",
-                        result,
-                    )?;
-                    completed_contents += 1;
-                    stage_validation_policy_before_trace::policy(
-                        self,
-                        control,
-                        "content_accepted",
-                        &policy,
-                        completed_contents,
-                    );
-                    stage_validation_policy_native_trace::use_view(
-                        control,
-                        stage_validation_policy_native_trace::UsePhase::ContentAccepted(
-                            completed_contents - 1,
-                        ),
-                        policy.view(),
-                    );
-                }
             }
             validated = end;
             if let Some(progress) = &progress {
-                #[cfg(test)]
-                stage_validation_policy_native_trace::use_view(
-                    control,
-                    stage_validation_policy_native_trace::UsePhase::ProgressBefore,
-                    policy.view(),
-                );
-                #[cfg(test)]
-                stage_validation_policy_before_trace::policy(
-                    self,
-                    control,
-                    "progress_report_before",
-                    &policy,
-                    completed_contents,
-                );
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(
-                    self,
-                    control,
-                    "progress_report_before",
-                    || {
-                        serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::CheckingStretch {
-                            depth,
-                            completed: validated,
-                            total: recipe.output_frames(),
-                        })})
-                    },
-                );
                 progress.report(PreparationActivity::CheckingStretch {
                     depth,
                     completed: validated,
                     total: recipe.output_frames(),
                 });
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(
-                    self,
-                    control,
-                    "progress_report_after",
-                    || {
-                        serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::CheckingStretch {
-                            depth,
-                            completed: validated,
-                            total: recipe.output_frames(),
-                        })})
-                    },
-                );
-                #[cfg(test)]
-                stage_validation_policy_before_trace::policy(
-                    self,
-                    control,
-                    "progress_report_after",
-                    &policy,
-                    completed_contents,
-                );
-                #[cfg(test)]
-                stage_validation_policy_native_trace::use_view(
-                    control,
-                    stage_validation_policy_native_trace::UsePhase::ProgressAfter,
-                    policy.view(),
-                );
-            }
-            #[cfg(test)]
-            {
-                stage_validation_policy_native_trace::use_view(
-                    control,
-                    stage_validation_policy_native_trace::UsePhase::IterationComplete,
-                    policy.view(),
-                );
-                stage_validation_policy_native_trace::mark(
-                    control,
-                    stage_validation_policy_native_trace::Mark::OwnerDropBefore,
-                );
-                drop(policy);
-                stage_validation_policy_native_trace::mark(
-                    control,
-                    stage_validation_policy_native_trace::Mark::OwnerDropped,
-                );
             }
         }
-        #[cfg(test)]
-        {
-            drop(validation_scope);
-            stage_validation_policy_before_trace::mark(
-                self,
-                control,
-                "validation_complete",
-                || serde_json::json!({"validated":validated}),
-            );
-        }
-        #[cfg(not(test))]
         let saved = self.saved_stage_key(input, output, recipe, provider, control, depth)?;
-        #[cfg(test)]
-        let saved = {
-            let result = self.saved_stage_key(input, output, recipe, provider, control, depth);
-            stage_validation_policy_before_trace::saved_result(
-                self,
-                control,
-                "saved_key_return",
-                &result,
-            );
-            result?
-        };
-        #[cfg(not(test))]
         if let Some(saved) = &saved
             && let Some(block) = self.restore_saved_stage(saved, recipe.output_frames(), control)?
         {
             return Ok(block);
-        }
-        #[cfg(test)]
-        if let Some(saved) = &saved {
-            let result = self.restore_saved_stage(saved, recipe.output_frames(), control);
-            stage_validation_policy_before_trace::restore_result(self, control, &result);
-            #[cfg(test)]
-            read_signal_policy_before_trace::restore_result(self, control, &result);
-            if let Some(block) = result? {
-                return Ok(block);
-            }
         }
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;
@@ -3552,37 +2489,11 @@ impl StageAudio {
         while samples.len() < recipe.output_frames() as usize {
             control.check()?;
             if let Some(progress) = &progress {
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(
-                    self,
-                    control,
-                    "progress_report_before",
-                    || {
-                        serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::Stretching {
-                            depth,
-                            completed: samples.len() as u32,
-                            total: recipe.output_frames(),
-                        })})
-                    },
-                );
                 progress.report(PreparationActivity::Stretching {
                     depth,
                     completed: samples.len() as u32,
                     total: recipe.output_frames(),
                 });
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(
-                    self,
-                    control,
-                    "progress_report_after",
-                    || {
-                        serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::Stretching {
-                            depth,
-                            completed: samples.len() as u32,
-                            total: recipe.output_frames(),
-                        })})
-                    },
-                );
             }
             let frames =
                 (recipe.output_frames() as usize - samples.len()).min(MAX_OUTPUT_FRAMES as usize);
@@ -3617,162 +2528,23 @@ impl StageAudio {
                 .zip(&right[..read])
                 .map(|(&l, &r)| [l, r])
                 .collect::<Vec<_>>();
-            #[cfg(test)]
-            let o_call = stage_block_policy_before_trace::call(
-                self,
-                control,
-                stage_block_policy_before_trace::Caller::BuildStageBlock,
-                || {
-                    serde_json::json!({"depth":depth,"recipe":stage_block_policy_before_trace::recipe_value(recipe),
-                        "input":stage_block_policy_before_trace::input_value(input,&self.plan),
-                        "output":stage_block_policy_before_trace::input_value(output,&self.plan),
-                        "actual_dsp_input_range":range,"actual_read":read,"requested_frames":frames,
-                        "block_start":samples.len(),"block_len":block.len(),"caller_block_capacity":block.capacity(),
-                        "caller_block_storage":stage_block_policy_before_trace::layout::<[f32;2]>(block.capacity()),
-                        "pcm_before":stage_block_policy_before_trace::pcm_value(&block),
-                        "dependencies":dependencies,"relative_depth":relative_depth})
-                },
-            );
-            #[cfg(test)]
-            let o_native_call = (!stage_block_policy_request::legacy()).then(|| {
-                stage_block_policy_native_trace::call(
-                    self,
-                    control,
-                    output,
-                    SignalSample(samples.len() as i64),
-                    block.len(),
-                )
-            });
-            #[cfg(test)]
-            let o_native_ticket = o_native_call.as_ref().and_then(|call| call.ticket);
-            #[cfg(not(test))]
             self.suppress_stage_block(
                 output,
                 SignalSample(samples.len() as i64),
                 &mut block,
                 control,
             )?;
-            #[cfg(test)]
-            if stage_block_policy_request::legacy() {
-                suppress_signal(
-                    output,
-                    SignalSample(samples.len() as i64),
-                    &mut block,
-                    &self.plan,
-                    control,
-                    #[cfg(test)]
-                    stage_block_policy_before_trace::HelperContext {
-                        caller: stage_block_policy_before_trace::Caller::BuildStageBlock,
-                        renderer: self,
-                        ticket: o_call.ticket,
-                    },
-                )?;
-                #[cfg(test)]
-                stage_block_policy_before_trace::mark(
-                    self,
-                    control,
-                    o_call.ticket,
-                    "returned_vec_discarded_before_push",
-                    || {
-                        serde_json::json!({"pcm_after":stage_block_policy_before_trace::pcm_value(&block),
-                        "writer_len_before":samples.len()})
-                    },
-                );
-            } else {
-                self.suppress_stage_block(
-                    output,
-                    SignalSample(samples.len() as i64),
-                    &mut block,
-                    control,
-                    o_native_ticket,
-                )?;
-            }
-            #[cfg(not(test))]
             samples.push(&block, control)?;
-            #[cfg(test)]
-            {
-                let _push =
-                    stage_block_policy_before_trace::phase(o_call.ticket, "writer_push", None);
-                stage_block_policy_native_trace::mark(
-                    control,
-                    o_native_ticket,
-                    "writer_push_before",
-                    || {
-                        serde_json::json!({"writer_len":samples.len(),"block_len":block.len(),"block_capacity":block.capacity(),
-                        "pcm_bits":stage_block_policy_before_trace::pcm_value(&block)})
-                    },
-                );
-                let result = samples.push(&block, control);
-                stage_block_policy_native_trace::result(
-                    control,
-                    o_native_ticket,
-                    "writer_push_result",
-                    &result,
-                );
-                stage_block_policy_native_trace::mark(
-                    control,
-                    o_native_ticket,
-                    "writer_push_after",
-                    || {
-                        serde_json::json!({"writer_len":samples.len(),"block_len":block.len(),"block_capacity":block.capacity(),
-                        "pcm_bits":stage_block_policy_before_trace::pcm_value(&block)})
-                    },
-                );
-                stage_block_policy_before_trace::result(
-                    self,
-                    control,
-                    o_call.ticket,
-                    "writer_push_result",
-                    &result,
-                );
-                stage_block_policy_before_trace::mark(
-                    self,
-                    control,
-                    o_call.ticket,
-                    "writer_after_push",
-                    || {
-                        serde_json::json!({"writer_len_after":samples.len(),
-                        "pcm_after":stage_block_policy_before_trace::pcm_value(&block)})
-                    },
-                );
-                result?;
-            }
         }
         // Explicit-rate output can end before retained input does. Preserve
         // full input admission and finite/peak validation without keeping it.
         while input_end < recipe.input_frames() {
             if let Some(progress) = &progress {
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(
-                    self,
-                    control,
-                    "progress_report_before",
-                    || {
-                        serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::CheckingStretchInput {
-                            depth,
-                            completed: input_end,
-                            total: recipe.input_frames(),
-                        })})
-                    },
-                );
                 progress.report(PreparationActivity::CheckingStretchInput {
                     depth,
                     completed: input_end,
                     total: recipe.input_frames(),
                 });
-                #[cfg(test)]
-                read_signal_policy_before_trace::context(
-                    self,
-                    control,
-                    "progress_report_after",
-                    || {
-                        serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::CheckingStretchInput {
-                            depth,
-                            completed: input_end,
-                            total: recipe.input_frames(),
-                        })})
-                    },
-                );
             }
             let end = input_end
                 .saturating_add(MAX_OUTPUT_FRAMES)
@@ -3790,21 +2562,7 @@ impl StageAudio {
         }
         control.check()?;
         if let Some(progress) = &progress {
-            #[cfg(test)]
-            read_signal_policy_before_trace::context(
-                self,
-                control,
-                "progress_report_before",
-                || serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::SavingStretch { depth })}),
-            );
             progress.report(PreparationActivity::SavingStretch { depth });
-            #[cfg(test)]
-            read_signal_policy_before_trace::context(
-                self,
-                control,
-                "progress_report_after",
-                || serde_json::json!({"actual":read_signal_policy_before_trace::activity_value(PreparationActivity::SavingStretch { depth })}),
-            );
         }
         let block = PreparedBlock {
             samples: samples.finish(control)?,
@@ -3827,7 +2585,6 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<SignalBlock, StageAudioError> {
-        #[cfg(not(test))]
         {
             let mut samples = Vec::with_capacity((range.end - range.start) as usize);
             let mut dependencies = Dependencies::new();
@@ -3859,89 +2616,17 @@ impl StageAudio {
                 suppressed: SignalSuppressionMask::default(),
             })
         }
-        #[cfg(test)]
-        {
-            let mut samples = Vec::with_capacity((range.end - range.start) as usize);
-            let mut dependencies = Dependencies::new();
-            let mut relative_depth = 0;
-            let mut at = range.start;
-            while at < range.end {
-                control.check()?;
-                let frames = (range.end - at).min(MAX_OUTPUT_FRAMES);
-                let call = read_signal_policy_before_trace::call(
-                    self,
-                    read_signal_policy_before_trace::Caller::StreamedStageInput,
-                    SignalSample(i64::from(at)),
-                    frames,
-                    depth,
-                );
-                let native_call = read_signal_policy_native_trace::call(
-                    read_signal_policy_before_trace::Caller::StreamedStageInput,
-                    SignalSample(i64::from(at)),
-                    frames,
-                    depth,
-                );
-                let ticket = call.ticket();
-                let origin = TraceOrigin::new(ticket, native_call.ticket());
-                let result = self.read_signal(
-                    input,
-                    provider,
-                    (SignalSample(i64::from(at)), frames),
-                    control,
-                    depth,
-                    origin,
-                );
-                read_signal_policy_before_trace::block_result(
-                    self,
-                    control,
-                    ticket,
-                    "streamed_child_result",
-                    &result,
-                );
-                let block = result?;
-                read_signal_policy_before_trace::mask(
-                    self,
-                    control,
-                    ticket,
-                    "streamed_discard_before",
-                    &block.suppressed,
-                );
-                if block.samples.len() != frames as usize {
-                    return Err(PlanError::InvalidPlan("incomplete streamed stage input").into());
-                }
-                samples.extend(block.samples);
-                dependencies.extend(block.dependencies);
-                relative_depth = relative_depth.max(block.relative_depth);
-                at += frames;
-                read_signal_policy_before_trace::mark(
-                    self,
-                    control,
-                    ticket,
-                    "streamed_disposal_lexical",
-                    || serde_json::json!({"proof":"remaining suppressed field drops at original iteration exit"}),
-                );
-            }
-            Ok(SignalBlock {
-                samples,
-                dependencies,
-                relative_depth,
-                suppressed: SignalSuppressionMask::default(),
-            })
-        }
     }
 
     fn read_signal<'signal, 'plan: 'signal>(
         &mut self,
         signal: impl Into<SignalInput<'signal, 'plan>>,
         provider: &mut impl AudioSourceProvider,
-        #[cfg(not(test))] start: SignalSample,
-        #[cfg(not(test))] frames: u32,
-        #[cfg(test)] (start, frames): (SignalSample, u32),
+        start: SignalSample,
+        frames: u32,
         control: WorkControl<'_>,
         depth: usize,
-        #[cfg(test)] ticket: TraceOrigin,
     ) -> Result<SignalBlock, StageAudioError> {
-        #[cfg(not(test))]
         {
             let signal = signal.into();
             if let SignalInput::Mix(mix) = signal {
@@ -3968,204 +2653,6 @@ impl StageAudio {
             self.preflight_signal_queries(&query, policy.view(), control, depth)?;
             self.read_signal_queries(&query, policy, provider, control, depth)
         }
-        #[cfg(test)]
-        {
-            let signal = signal.into();
-            let origin = ticket;
-            let ticket = origin.before();
-            let native_ticket = origin.native();
-            let _invocation = read_signal_policy_before_trace::invocation(ticket, signal);
-            let _native_invocation =
-                read_signal_policy_native_trace::invocation(native_ticket, signal);
-            let result = (|| {
-                if let SignalInput::Mix(mix) = signal {
-                    read_signal_policy_before_trace::mark(
-                        self,
-                        control,
-                        ticket,
-                        "mix_dispatch",
-                        || serde_json::json!({"producer_entered":false}),
-                    );
-                    return self.read_mix_controlled(mix, provider, start, frames, control, depth);
-                }
-                {
-                    let _phase = read_signal_policy_before_trace::phase(ticket, "initial_check");
-                    let result = control.check();
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "initial_check",
-                        &result,
-                    );
-                    read_signal_policy_native_trace::result(
-                        control,
-                        native_ticket,
-                        "initial_check",
-                        &result,
-                    );
-                    result?
-                };
-                read_signal_policy_before_trace::mark(
-                    self,
-                    control,
-                    ticket,
-                    "depth",
-                    || serde_json::json!({"depth":depth,"maximum_depth":self.limits.maximum_depth}),
-                );
-                if depth > self.limits.maximum_depth {
-                    let result = Err(StageAudioError::Limit("nested stage depth"));
-                    read_signal_policy_before_trace::block_result(
-                        self,
-                        control,
-                        ticket,
-                        "depth_refused",
-                        &result,
-                    );
-                    return result;
-                }
-                let limits = read_signal_policy_before_trace::limits(
-                    self,
-                    control,
-                    ticket,
-                    "graph_limits",
-                    control.query_limits(),
-                )?;
-                let query = {
-                    let _phase = read_signal_policy_before_trace::phase(ticket, "graph_query");
-                    let result =
-                        signal.query(start..SignalSample(start.0 + i64::from(frames)), limits);
-                    read_signal_policy_before_trace::graph_result(self, control, ticket, &result);
-                    result?
-                };
-                read_signal_policy_before_trace::mark(
-                    self,
-                    control,
-                    ticket,
-                    "graph_debit_before",
-                    || serde_json::json!({"amount":query.work}),
-                );
-                {
-                    let _phase = read_signal_policy_before_trace::phase(ticket, "graph_debit");
-                    let result = control.spend_plan_work(query.work);
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "graph_debit",
-                        &result,
-                    );
-                    read_signal_policy_native_trace::result(
-                        control,
-                        native_ticket,
-                        "graph_debit",
-                        &result,
-                    );
-                    result?
-                };
-                let _native_scope = read_signal_policy_native_trace::scope(
-                    control,
-                    native_ticket,
-                    signal,
-                    start..SignalSample(start.0 + i64::from(frames)),
-                    depth,
-                );
-                read_signal_policy_native_trace::factory_begin(control, native_ticket);
-                let policy_result = (|| {
-                    let limits = read_signal_policy_before_trace::limits(
-                        self,
-                        control,
-                        ticket,
-                        "policy_limits",
-                        control.query_limits(),
-                    )?;
-                    let policy = if read_signal_policy_request::legacy() {
-                        let _phase = read_signal_policy_before_trace::phase(ticket, "policy_query");
-                        let result =
-                            signal.policy(start..SignalSample(start.0 + i64::from(frames)), limits);
-                        read_signal_policy_before_trace::policy_result(
-                            self, control, ticket, &result,
-                        );
-                        SignalPolicyInput::Ordinary(result?)
-                    } else {
-                        self.read_signal_policy_input(
-                            signal,
-                            start..SignalSample(start.0 + i64::from(frames)),
-                            limits,
-                            control,
-                        )?
-                    };
-                    Ok::<_, StageAudioError>(policy)
-                })();
-                read_signal_policy_native_trace::factory_result(
-                    control,
-                    native_ticket,
-                    &policy_result,
-                );
-                let policy = policy_result?;
-                if !policy.was_forwarded() {
-                    read_signal_policy_before_trace::mark(
-                        self,
-                        control,
-                        ticket,
-                        "policy_debit_before",
-                        || serde_json::json!({"amount":policy.view().work}),
-                    );
-                    let _phase = read_signal_policy_before_trace::phase(ticket, "policy_debit");
-                    let result = control.spend_plan_work(policy.view().work);
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "policy_debit",
-                        &result,
-                    );
-                    read_signal_policy_native_trace::result(
-                        control,
-                        native_ticket,
-                        "policy_debit",
-                        &result,
-                    );
-                    result?
-                };
-                read_signal_policy_before_trace::policy(
-                    self,
-                    control,
-                    ticket,
-                    "policy_ready",
-                    &policy,
-                );
-                read_signal_policy_native_trace::use_policy(
-                    control,
-                    native_ticket,
-                    "policy_ready",
-                    &policy,
-                );
-                self.preflight_signal_queries(
-                    &query,
-                    policy.view(),
-                    control,
-                    depth,
-                    origin,
-                    Some(&policy),
-                )?;
-                self.read_signal_queries(&query, policy, provider, control, depth, origin)
-            })();
-            read_signal_policy_before_trace::block_result(
-                self,
-                control,
-                ticket,
-                "read_signal_result",
-                &result,
-            );
-            read_signal_policy_native_trace::result(
-                control,
-                native_ticket,
-                "read_signal_result",
-                &result,
-            );
-            result
-        }
     }
 
     fn preflight_signal_queries(
@@ -4174,13 +2661,8 @@ impl StageAudio {
         policy: deadpan_plan::SignalPolicyView<'_>,
         control: WorkControl<'_>,
         depth: usize,
-        #[cfg(test)] ticket: TraceOrigin,
-        #[cfg(test)] owner: Option<&SignalPolicyInput<'_>>,
     ) -> Result<(), StageAudioError> {
-        #[cfg(not(test))]
         {
-            #[cfg(test)]
-            point_content_query_trace::consumer(point_content_query_trace::Consumer::Preflight);
             for content in policy.contents {
                 control.preflight_content(content, &self.plan)?;
             }
@@ -4192,157 +2674,11 @@ impl StageAudio {
                     AudioSignalContent::ProjectedStage(stage) => {
                         self.preflight_projected(stage, control, depth + 1)?;
                     }
-                    // Stage/Bound preparation owns its recursive admission boundary.
-                    AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
+                    // Stage preparation owns its recursive admission boundary.
+                    AudioSignalContent::Stage(_) => {}
                 }
             }
             Ok(())
-        }
-        #[cfg(test)]
-        {
-            let origin = ticket;
-            let ticket = origin.before();
-            let native_ticket = origin.native();
-            let _consumer = read_signal_policy_before_trace::consumer(
-                ticket,
-                read_signal_policy_before_trace::Consumer::Preflight,
-            );
-            let _native_consumer =
-                read_signal_policy_native_trace::consumer(native_ticket, "preflight");
-            let result = (|| {
-                #[cfg(test)]
-                point_content_query_trace::consumer(point_content_query_trace::Consumer::Preflight);
-                for (index, content) in policy.contents.iter().enumerate() {
-                    let _phase = read_signal_policy_before_trace::phase_index(
-                        ticket,
-                        "policy_content",
-                        index,
-                    );
-                    let _native_phase = read_signal_policy_native_trace::phase(
-                        native_ticket,
-                        "policy_content",
-                        Some(index),
-                    );
-                    if let Some(owner) = owner {
-                        read_signal_policy_before_trace::policy(
-                            self,
-                            control,
-                            ticket,
-                            "content_before",
-                            owner,
-                        );
-                        read_signal_policy_native_trace::use_policy(
-                            control,
-                            native_ticket,
-                            "content_before",
-                            owner,
-                        );
-                    }
-                    read_signal_policy_before_trace::mark(
-                        self,
-                        control,
-                        ticket,
-                        "content_index",
-                        || serde_json::json!({"index":index,"content":content}),
-                    );
-                    read_signal_policy_native_trace::cancel_at(
-                        control,
-                        native_ticket,
-                        read_signal_policy_native_trace::UsePoint::ContentBefore(index),
-                    );
-                    let result = control.preflight_content(content, &self.plan);
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "content_result",
-                        &result,
-                    );
-                    read_signal_policy_native_trace::result(
-                        control,
-                        native_ticket,
-                        "content_result",
-                        &result,
-                    );
-                    result?;
-                    if let Some(owner) = owner {
-                        read_signal_policy_before_trace::policy(
-                            self,
-                            control,
-                            ticket,
-                            "content_accepted",
-                            owner,
-                        );
-                        read_signal_policy_native_trace::use_policy(
-                            control,
-                            native_ticket,
-                            "content_accepted",
-                            owner,
-                        );
-                    }
-                }
-                for (index, span) in query.spans.iter().enumerate() {
-                    let _phase = read_signal_policy_before_trace::phase_index(
-                        ticket,
-                        "graph_span_preflight",
-                        index,
-                    );
-                    let _native_phase = read_signal_policy_native_trace::phase(
-                        native_ticket,
-                        "graph_span_preflight",
-                        Some(index),
-                    );
-                    read_signal_policy_before_trace::mark(
-                        self,
-                        control,
-                        ticket,
-                        "graph_span_preflight_before",
-                        || serde_json::json!({"index":index,"span":span}),
-                    );
-                    let result = (|| {
-                        match &span.content {
-                            AudioSignalContent::Leaf(content) => {
-                                control.preflight_content(content, &self.plan)?
-                            }
-                            AudioSignalContent::ProjectedStage(stage) => {
-                                self.preflight_projected(stage, control, depth + 1)?;
-                            }
-                            // Stage/Bound preparation owns its recursive admission boundary.
-                            AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
-                        }
-                        Ok::<_, StageAudioError>(())
-                    })();
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "graph_span_preflight_result",
-                        &result,
-                    );
-                    read_signal_policy_native_trace::result(
-                        control,
-                        native_ticket,
-                        "graph_span_preflight_result",
-                        &result,
-                    );
-                    result?;
-                }
-                Ok(())
-            })();
-            read_signal_policy_before_trace::result(
-                self,
-                control,
-                ticket,
-                "preflight_result",
-                &result,
-            );
-            read_signal_policy_native_trace::result(
-                control,
-                native_ticket,
-                "preflight_result",
-                &result,
-            );
-            result
         }
     }
 
@@ -4353,12 +2689,8 @@ impl StageAudio {
         provider: &mut impl AudioSourceProvider,
         control: WorkControl<'work>,
         depth: usize,
-        #[cfg(test)] ticket: TraceOrigin,
     ) -> Result<SignalBlock, StageAudioError> {
-        #[cfg(not(test))]
         {
-            #[cfg(test)]
-            point_content_query_trace::consumer(point_content_query_trace::Consumer::Numerical);
             let cancelled = control.cancelled;
             let start = query.samples.start;
             let frames =
@@ -4367,8 +2699,6 @@ impl StageAudio {
             let mut dependencies = Dependencies::new();
             let mut relative_depth = 0;
             for span in &query.spans {
-                #[cfg(test)]
-                point_content_query_trace::consumer(point_content_query_trace::Consumer::Span);
                 control.check()?;
                 let start = AudioSample(span.samples.start.0);
                 let count = u32::try_from(span.samples.end.0 - span.samples.start.0)
@@ -4445,22 +2775,6 @@ impl StageAudio {
                         )?;
                         sample_prepared(&prepared.samples, recipe, start, count, cancelled)?
                     }
-                    AudioSignalContent::Bound(bound) => {
-                        let block = self.read_bound(
-                            bound,
-                            provider,
-                            BoundRead {
-                                offset: i128::from(span.samples.start.0)
-                                    - i128::from(span.allocated_samples.start.0),
-                                frames: count,
-                                depth: depth + 1,
-                            },
-                            control,
-                        )?;
-                        dependencies.extend(block.dependencies);
-                        relative_depth = relative_depth.max(1 + block.relative_depth);
-                        block.samples
-                    }
                 };
                 samples.extend(block);
             }
@@ -4475,632 +2789,6 @@ impl StageAudio {
                 suppressed,
                 relative_depth,
             })
-        }
-        #[cfg(test)]
-        {
-            let origin = ticket;
-            let ticket = origin.before();
-            let native_ticket = origin.native();
-            let _consumer = read_signal_policy_before_trace::consumer(
-                ticket,
-                read_signal_policy_before_trace::Consumer::Numerical,
-            );
-            let _native_consumer =
-                read_signal_policy_native_trace::consumer(native_ticket, "numerical");
-            let result = (|| {
-                #[cfg(test)]
-                point_content_query_trace::consumer(point_content_query_trace::Consumer::Numerical);
-                let cancelled = control.cancelled;
-                let start = query.samples.start;
-                let frames = u32::try_from(query.samples.end.0 - start.0)
-                    .map_err(|_| StageAudioError::Range)?;
-                let mut samples = Vec::with_capacity(frames as usize);
-                let mut dependencies = Dependencies::new();
-                let mut relative_depth = 0;
-                for (index, span) in query.spans.iter().enumerate() {
-                    let _span = read_signal_policy_before_trace::phase_index(
-                        ticket,
-                        "numerical_span",
-                        index,
-                    );
-                    let _native_phase = read_signal_policy_native_trace::phase(
-                        native_ticket,
-                        "numerical_span",
-                        Some(index),
-                    );
-                    read_signal_policy_before_trace::policy(
-                        self,
-                        control,
-                        ticket,
-                        "span_before",
-                        &policy,
-                    );
-                    read_signal_policy_native_trace::use_policy(
-                        control,
-                        native_ticket,
-                        "span_before",
-                        &policy,
-                    );
-                    read_signal_policy_before_trace::mark(
-                        self,
-                        control,
-                        ticket,
-                        "span_context",
-                        || serde_json::json!({"index":index,"span":span}),
-                    );
-                    let span_result = (|| {
-                        #[cfg(test)]
-                        point_content_query_trace::consumer(
-                            point_content_query_trace::Consumer::Span,
-                        );
-                        {
-                            let _phase =
-                                read_signal_policy_before_trace::phase(ticket, "span_check");
-                            read_signal_policy_native_trace::cancel_at(
-                                control,
-                                native_ticket,
-                                read_signal_policy_native_trace::UsePoint::SpanBefore(index),
-                            );
-                            let result = control.check();
-                            read_signal_policy_before_trace::result(
-                                self,
-                                control,
-                                ticket,
-                                "span_check",
-                                &result,
-                            );
-                            read_signal_policy_native_trace::result(
-                                control,
-                                native_ticket,
-                                "span_check",
-                                &result,
-                            );
-                            result?
-                        };
-                        let start = AudioSample(span.samples.start.0);
-                        let count = u32::try_from(span.samples.end.0 - span.samples.start.0)
-                            .map_err(|_| StageAudioError::Range)?;
-                        let block = match &span.content {
-                            AudioSignalContent::Leaf(AudioContent::Source { source, .. }) => {
-                                let prepared = {
-                                    let _source = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "source_resolve",
-                                    );
-                                    let result = resolve_source(
-                                        provider,
-                                        &self.plan,
-                                        &source.asset,
-                                        cancelled,
-                                    );
-                                    read_signal_policy_before_trace::preparation_result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "source_resolve_result",
-                                        &result,
-                                    );
-                                    result?
-                                };
-                                dependencies.insert(source.asset.clone(), {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "source_observe",
-                                    );
-                                    let result = control.observe(&source.asset, prepared);
-                                    read_signal_policy_before_trace::result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "source_observe_result",
-                                        &result,
-                                    );
-                                    read_signal_policy_native_trace::result(
-                                        control,
-                                        native_ticket,
-                                        "source_observe_result",
-                                        &result,
-                                    );
-                                    result?
-                                });
-                                let recipe = {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "source_recipe",
-                                    );
-                                    let result = signal_source_recipe(
-                                        span,
-                                        prepared.index().stream().sample_rate,
-                                    );
-                                    read_signal_policy_before_trace::result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "source_recipe_result",
-                                        &result,
-                                    );
-                                    read_signal_policy_native_trace::result(
-                                        control,
-                                        native_ticket,
-                                        "source_recipe_result",
-                                        &result,
-                                    );
-                                    result?
-                                };
-                                {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "source_pcm",
-                                    );
-                                    let result = prepare_source_block(
-                                        prepared,
-                                        recipe,
-                                        start,
-                                        count,
-                                        {
-                                            let _phase = read_signal_policy_before_trace::phase(
-                                                ticket,
-                                                "source_pcm_check",
-                                            );
-                                            let result = control.check();
-                                            read_signal_policy_before_trace::result(
-                                                self,
-                                                control,
-                                                ticket,
-                                                "source_pcm_check",
-                                                &result,
-                                            );
-                                            read_signal_policy_native_trace::result(
-                                                control,
-                                                native_ticket,
-                                                "source_pcm_check",
-                                                &result,
-                                            );
-                                            result?
-                                        },
-                                        cancelled,
-                                    );
-                                    read_signal_policy_before_trace::samples_result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "source_pcm_result",
-                                        &result,
-                                    );
-                                    result?
-                                }
-                            }
-                            AudioSignalContent::Leaf(
-                                content @ (AudioContent::RoomTone { .. }
-                                | AudioContent::Reverse { .. }
-                                | AudioContent::Tail { .. }
-                                | AudioContent::Rewind { .. }
-                                | AudioContent::Tone { .. }
-                                | AudioContent::Custom { .. }),
-                            ) => {
-                                let prepared = {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_prepare",
-                                    );
-                                    let result = self.prepare_hold(
-                                        PreparedKey::Hold {
-                                            definition: span.definition.clone(),
-                                            instance: span.instance.clone(),
-                                            gap_after: span.gap_after.clone(),
-                                            content: content.clone(),
-                                        },
-                                        None,
-                                        provider,
-                                        control,
-                                        depth + 1,
-                                    );
-                                    read_signal_policy_before_trace::result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_prepare_result",
-                                        &result,
-                                    );
-                                    read_signal_policy_native_trace::result(
-                                        control,
-                                        native_ticket,
-                                        "child_prepare_result",
-                                        &result,
-                                    );
-                                    result?
-                                };
-                                dependencies.extend(prepared.block.dependencies.clone());
-                                relative_depth =
-                                    relative_depth.max(1 + prepared.block.relative_depth);
-                                let recipe = {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_recipe",
-                                    );
-                                    let result = signal_stage_recipe(
-                                        span,
-                                        prepared.block.samples.len(),
-                                        self.plan.metadata().presentation_basis.frame_rate,
-                                    );
-                                    read_signal_policy_before_trace::result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_recipe_result",
-                                        &result,
-                                    );
-                                    read_signal_policy_native_trace::result(
-                                        control,
-                                        native_ticket,
-                                        "child_recipe_result",
-                                        &result,
-                                    );
-                                    result?
-                                };
-                                {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_sample",
-                                    );
-                                    let result = sample_prepared(
-                                        &prepared.block.samples,
-                                        recipe,
-                                        start,
-                                        count,
-                                        cancelled,
-                                    );
-                                    read_signal_policy_before_trace::samples_result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_sample_result",
-                                        &result,
-                                    );
-                                    result?
-                                }
-                            }
-                            AudioSignalContent::Leaf(_) => vec![[0.0; 2]; count as usize],
-                            AudioSignalContent::Stage(stage) => {
-                                let prepared = {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_prepare",
-                                    );
-                                    let result =
-                                        self.prepare_stage(stage, provider, control, depth + 1);
-                                    read_signal_policy_before_trace::result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_prepare_result",
-                                        &result,
-                                    );
-                                    read_signal_policy_native_trace::result(
-                                        control,
-                                        native_ticket,
-                                        "child_prepare_result",
-                                        &result,
-                                    );
-                                    result?
-                                };
-                                dependencies.extend(prepared.block.dependencies.clone());
-                                relative_depth =
-                                    relative_depth.max(1 + prepared.block.relative_depth);
-                                let recipe = {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_recipe",
-                                    );
-                                    let result = signal_stage_recipe(
-                                        span,
-                                        prepared.block.samples.len(),
-                                        self.plan.metadata().presentation_basis.frame_rate,
-                                    );
-                                    read_signal_policy_before_trace::result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_recipe_result",
-                                        &result,
-                                    );
-                                    read_signal_policy_native_trace::result(
-                                        control,
-                                        native_ticket,
-                                        "child_recipe_result",
-                                        &result,
-                                    );
-                                    result?
-                                };
-                                {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_sample",
-                                    );
-                                    let result = sample_prepared(
-                                        &prepared.block.samples,
-                                        recipe,
-                                        start,
-                                        count,
-                                        cancelled,
-                                    );
-                                    read_signal_policy_before_trace::samples_result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_sample_result",
-                                        &result,
-                                    );
-                                    result?
-                                }
-                            }
-                            AudioSignalContent::ProjectedStage(stage) => {
-                                let prepared = {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_prepare",
-                                    );
-                                    let result =
-                                        self.prepare_projected(stage, provider, control, depth + 1);
-                                    read_signal_policy_before_trace::result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_prepare_result",
-                                        &result,
-                                    );
-                                    read_signal_policy_native_trace::result(
-                                        control,
-                                        native_ticket,
-                                        "child_prepare_result",
-                                        &result,
-                                    );
-                                    result?
-                                };
-                                dependencies.extend(prepared.dependencies.clone());
-                                relative_depth = relative_depth.max(1 + prepared.relative_depth);
-                                let recipe = {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_recipe",
-                                    );
-                                    let result = signal_stage_recipe(
-                                        span,
-                                        prepared.samples.len(),
-                                        self.plan.metadata().presentation_basis.frame_rate,
-                                    );
-                                    read_signal_policy_before_trace::result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_recipe_result",
-                                        &result,
-                                    );
-                                    read_signal_policy_native_trace::result(
-                                        control,
-                                        native_ticket,
-                                        "child_recipe_result",
-                                        &result,
-                                    );
-                                    result?
-                                };
-                                {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_sample",
-                                    );
-                                    let result = sample_prepared(
-                                        &prepared.samples,
-                                        recipe,
-                                        start,
-                                        count,
-                                        cancelled,
-                                    );
-                                    read_signal_policy_before_trace::samples_result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_sample_result",
-                                        &result,
-                                    );
-                                    result?
-                                }
-                            }
-                            AudioSignalContent::Bound(bound) => {
-                                let block = {
-                                    let _phase = read_signal_policy_before_trace::phase(
-                                        ticket,
-                                        "child_bound",
-                                    );
-                                    let result = self.read_bound(
-                                        bound,
-                                        provider,
-                                        BoundRead {
-                                            offset: i128::from(span.samples.start.0)
-                                                - i128::from(span.allocated_samples.start.0),
-                                            frames: count,
-                                            depth: depth + 1,
-                                        },
-                                        control,
-                                    );
-                                    read_signal_policy_before_trace::result(
-                                        self,
-                                        control,
-                                        ticket,
-                                        "child_bound_result",
-                                        &result,
-                                    );
-                                    read_signal_policy_native_trace::result(
-                                        control,
-                                        native_ticket,
-                                        "child_bound_result",
-                                        &result,
-                                    );
-                                    result?
-                                };
-                                dependencies.extend(block.dependencies);
-                                relative_depth = relative_depth.max(1 + block.relative_depth);
-                                block.samples
-                            }
-                        };
-                        Ok::<_, StageAudioError>(block)
-                    })();
-                    read_signal_policy_before_trace::samples_result(
-                        self,
-                        control,
-                        ticket,
-                        "span_result",
-                        &span_result,
-                    );
-                    samples.extend(span_result?);
-                    read_signal_policy_before_trace::policy(
-                        self,
-                        control,
-                        ticket,
-                        "span_accepted",
-                        &policy,
-                    );
-                    read_signal_policy_native_trace::use_policy(
-                        control,
-                        native_ticket,
-                        "span_accepted",
-                        &policy,
-                    );
-                }
-                {
-                    let _phase = read_signal_policy_before_trace::phase(ticket, "final_check");
-                    read_signal_policy_native_trace::cancel_at(
-                        control,
-                        native_ticket,
-                        read_signal_policy_native_trace::UsePoint::FinalCheck,
-                    );
-                    let result = control.check();
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "final_check",
-                        &result,
-                    );
-                    read_signal_policy_native_trace::result(
-                        control,
-                        native_ticket,
-                        "final_check",
-                        &result,
-                    );
-                    result?
-                };
-                {
-                    let _phase =
-                        read_signal_policy_before_trace::phase(ticket, "apply_suppression");
-                    read_signal_policy_before_trace::policy(
-                        self,
-                        control,
-                        ticket,
-                        "apply_before",
-                        &policy,
-                    );
-                    read_signal_policy_native_trace::use_policy(
-                        control,
-                        native_ticket,
-                        "apply_before",
-                        &policy,
-                    );
-                    read_signal_policy_before_trace::mark(
-                        self,
-                        control,
-                        ticket,
-                        "pcm_before_suppression",
-                        || read_signal_policy_before_trace::pcm_value(&samples),
-                    );
-                    let result = apply_suppression(
-                        start,
-                        &mut samples,
-                        policy.view().suppressed,
-                        |sample| sample.0,
-                    );
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "apply_result",
-                        &result,
-                    );
-                    read_signal_policy_native_trace::result(
-                        control,
-                        native_ticket,
-                        "apply_result",
-                        &result,
-                    );
-                    read_signal_policy_before_trace::mark(
-                        self,
-                        control,
-                        ticket,
-                        "pcm_after_suppression",
-                        || read_signal_policy_before_trace::pcm_value(&samples),
-                    );
-                    result?;
-                }
-                read_signal_policy_before_trace::policy(
-                    self,
-                    control,
-                    ticket,
-                    "into_suppression_before",
-                    &policy,
-                );
-                read_signal_policy_native_trace::use_policy(
-                    control,
-                    native_ticket,
-                    "into_suppression_before",
-                    &policy,
-                );
-                let suppressed = {
-                    let _phase = read_signal_policy_before_trace::phase(ticket, "into_suppression");
-                    read_signal_policy_native_trace::cancel_at(
-                        control,
-                        native_ticket,
-                        read_signal_policy_native_trace::UsePoint::BeforeHandoff,
-                    );
-                    let result = policy.into_suppression(self, control, native_ticket);
-                    read_signal_policy_before_trace::result(
-                        self,
-                        control,
-                        ticket,
-                        "into_suppression_result",
-                        &result,
-                    );
-                    read_signal_policy_native_trace::result(
-                        control,
-                        native_ticket,
-                        "into_suppression_result",
-                        &result,
-                    );
-                    if let Ok(mask) = &result {
-                        read_signal_policy_before_trace::mask(
-                            self,
-                            control,
-                            ticket,
-                            "merged_return_mask",
-                            mask,
-                        );
-                    }
-                    result?
-                };
-                Ok(SignalBlock {
-                    samples,
-                    dependencies,
-                    suppressed,
-                    relative_depth,
-                })
-            })();
-            read_signal_policy_before_trace::block_result(
-                self,
-                control,
-                ticket,
-                "numerical_result",
-                &result,
-            );
-            result
         }
     }
 }
@@ -5277,7 +2965,6 @@ fn is_silent_hold(content: &AudioContent) -> bool {
     )
 }
 
-#[cfg(not(test))]
 fn suppress_signal(
     signal: SignalInput<'_, '_>,
     start: SignalSample,
@@ -5292,351 +2979,13 @@ fn suppress_signal(
             .ok_or(TimeError::Overflow)?,
     );
     let policy = signal.policy(start..end, control.query_limits()?)?;
-    #[cfg(test)]
-    native_tape_source_before_trace::record(
-        signal,
-        control,
-        start,
-        samples,
-        &policy,
-        "constructed_before_manual_debit",
-        0,
-    );
     control.spend_plan_work(policy.work)?;
-    #[cfg(test)]
-    native_tape_source_before_trace::record(
-        signal,
-        control,
-        start,
-        samples,
-        &policy,
-        "manual_debit_accepted",
-        0,
-    );
-    #[cfg(test)]
-    let mut completed_contents = 0;
     for content in &policy.contents {
         control.preflight_content(content, plan)?;
-        #[cfg(test)]
-        {
-            completed_contents += 1;
-            native_tape_source_before_trace::record(
-                signal,
-                control,
-                start,
-                samples,
-                &policy,
-                "content_preflight_accepted",
-                completed_contents,
-            );
-        }
     }
     control.check()?;
-    #[cfg(test)]
-    native_tape_source_before_trace::record(
-        signal,
-        control,
-        start,
-        samples,
-        &policy,
-        "control_check_accepted",
-        policy.contents.len(),
-    );
     apply_suppression(start, samples, &policy.suppressed, |sample| sample.0)?;
-    #[cfg(test)]
-    native_tape_source_before_trace::record(
-        signal,
-        control,
-        start,
-        samples,
-        &policy,
-        "ranges_validated_and_zeroed",
-        policy.contents.len(),
-    );
     Ok(merged_suppression(policy.suppressed))
-}
-
-#[cfg(test)]
-fn suppress_signal(
-    signal: SignalInput<'_, '_>,
-    start: SignalSample,
-    samples: &mut [[f32; 2]],
-    plan: &RenderPlan,
-    control: WorkControl<'_>,
-    context: stage_block_policy_before_trace::HelperContext<'_>,
-) -> Result<Vec<Range<SignalSample>>, StageAudioError> {
-    let stage_block_policy_before_trace::HelperContext {
-        caller,
-        renderer,
-        ticket,
-    } = context;
-    stage_block_policy_before_trace::mark(renderer, control, ticket, "helper_enter", || {
-        serde_json::json!({"caller":caller,"start":start,"samples_len":samples.len(),
-            "samples_capacity":"borrowed slice; unexposed",
-            "input":stage_block_policy_before_trace::input_value(signal,plan),
-            "pcm_bits":stage_block_policy_before_trace::pcm_value(samples)})
-    });
-    let result = (|| {
-        let end_result: Result<SignalSample, StageAudioError> = (|| {
-            Ok(SignalSample(
-                start
-                    .0
-                    .checked_add(i64::try_from(samples.len()).map_err(|_| TimeError::Overflow)?)
-                    .ok_or(TimeError::Overflow)?,
-            ))
-        })();
-        stage_block_policy_before_trace::mark(renderer, control, ticket, "range_result", || {
-            match &end_result {
-                Ok(end) => serde_json::json!({"status":"Ok","range":start..*end}),
-                Err(error) => {
-                    serde_json::json!({"status":"Err","error":stage_block_policy_before_trace::error(error)})
-                }
-            }
-        });
-        let end = end_result?;
-        let limits_result = {
-            let _phase = stage_block_policy_before_trace::phase(ticket, "query_limits", None);
-            control.query_limits()
-        };
-        stage_block_policy_before_trace::mark(
-            renderer,
-            control,
-            ticket,
-            "query_limits_result",
-            || match &limits_result {
-                Ok(limits) => {
-                    serde_json::json!({"status":"Ok","maximum_work":limits.maximum_work,"maximum_spans":limits.maximum_spans})
-                }
-                Err(error) => {
-                    serde_json::json!({"status":"Err","error":stage_block_policy_before_trace::error(error)})
-                }
-            },
-        );
-        let limits = limits_result?;
-        let _query = stage_block_policy_before_trace::invocation(ticket, caller);
-        let policy_result = {
-            let _phase = stage_block_policy_before_trace::phase(ticket, "policy_query", None);
-            signal.policy(start..end, limits)
-        };
-        stage_block_policy_before_trace::mark(
-            renderer,
-            control,
-            ticket,
-            "policy_query_result",
-            || match &policy_result {
-                Ok(policy) => {
-                    serde_json::json!({"status":"Ok","policy":stage_block_policy_before_trace::policy_value(policy)})
-                }
-                Err(error) => {
-                    serde_json::json!({"status":"Err","error":stage_block_policy_before_trace::plan_error(error),
-            "local_work":"not exposed on construction failure"})
-                }
-            },
-        );
-        let policy = policy_result?;
-        #[cfg(test)]
-        native_tape_source_before_trace::record(
-            signal,
-            control,
-            start,
-            samples,
-            &policy,
-            "constructed_before_manual_debit",
-            0,
-        );
-        stage_block_policy_before_trace::mark(
-            renderer,
-            control,
-            ticket,
-            "manual_debit_before",
-            || serde_json::json!({"amount":policy.work,"policy":stage_block_policy_before_trace::policy_value(&policy)}),
-        );
-        let debit_result = {
-            let _phase = stage_block_policy_before_trace::phase(ticket, "manual_debit", None);
-            control.spend_plan_work(policy.work)
-        };
-        stage_block_policy_before_trace::result(
-            renderer,
-            control,
-            ticket,
-            "manual_debit_result",
-            &debit_result,
-        );
-        debit_result?;
-        #[cfg(test)]
-        native_tape_source_before_trace::record(
-            signal,
-            control,
-            start,
-            samples,
-            &policy,
-            "manual_debit_accepted",
-            0,
-        );
-        #[cfg(test)]
-        let mut completed_contents = 0;
-        for content in &policy.contents {
-            stage_block_policy_before_trace::mark(
-                renderer,
-                control,
-                ticket,
-                "content_preflight_before",
-                || {
-                    serde_json::json!({"index":completed_contents,"content":content,
-                "policy":stage_block_policy_before_trace::policy_value(&policy)})
-                },
-            );
-            let content_result = {
-                let _phase = stage_block_policy_before_trace::phase(
-                    ticket,
-                    "content_preflight",
-                    Some(completed_contents),
-                );
-                control.preflight_content(content, plan)
-            };
-            stage_block_policy_before_trace::result(
-                renderer,
-                control,
-                ticket,
-                "content_preflight_result",
-                &content_result,
-            );
-            content_result?;
-            stage_block_policy_before_trace::mark(
-                renderer,
-                control,
-                ticket,
-                "content_preflight_accepted",
-                || {
-                    serde_json::json!({"index":completed_contents,"completed_contents":completed_contents+1,
-                "policy":stage_block_policy_before_trace::policy_value(&policy)})
-                },
-            );
-            #[cfg(test)]
-            {
-                completed_contents += 1;
-                native_tape_source_before_trace::record(
-                    signal,
-                    control,
-                    start,
-                    samples,
-                    &policy,
-                    "content_preflight_accepted",
-                    completed_contents,
-                );
-            }
-        }
-        stage_block_policy_before_trace::mark(
-            renderer,
-            control,
-            ticket,
-            "control_check_before",
-            || serde_json::json!({"policy":stage_block_policy_before_trace::policy_value(&policy)}),
-        );
-        let check_result = {
-            let _phase = stage_block_policy_before_trace::phase(ticket, "control_check", None);
-            control.check()
-        };
-        stage_block_policy_before_trace::result(
-            renderer,
-            control,
-            ticket,
-            "control_check_result",
-            &check_result,
-        );
-        check_result?;
-        #[cfg(test)]
-        native_tape_source_before_trace::record(
-            signal,
-            control,
-            start,
-            samples,
-            &policy,
-            "control_check_accepted",
-            policy.contents.len(),
-        );
-        stage_block_policy_before_trace::mark(
-            renderer,
-            control,
-            ticket,
-            "apply_suppression_before",
-            || {
-                serde_json::json!({"policy":stage_block_policy_before_trace::policy_value(&policy),
-            "pcm_bits":stage_block_policy_before_trace::pcm_value(samples)})
-            },
-        );
-        let apply_result = {
-            let _phase = stage_block_policy_before_trace::phase(ticket, "apply_suppression", None);
-            apply_suppression(start, samples, &policy.suppressed, |sample| sample.0)
-        };
-        stage_block_policy_before_trace::result(
-            renderer,
-            control,
-            ticket,
-            "apply_suppression_result",
-            &apply_result,
-        );
-        stage_block_policy_before_trace::mark(
-            renderer,
-            control,
-            ticket,
-            "apply_suppression_pcm_after",
-            || {
-                serde_json::json!({"policy":stage_block_policy_before_trace::policy_value(&policy),
-            "pcm_bits":stage_block_policy_before_trace::pcm_value(samples)})
-            },
-        );
-        apply_result?;
-        #[cfg(test)]
-        native_tape_source_before_trace::record(
-            signal,
-            control,
-            start,
-            samples,
-            &policy,
-            "ranges_validated_and_zeroed",
-            policy.contents.len(),
-        );
-        stage_block_policy_before_trace::mark(
-            renderer,
-            control,
-            ticket,
-            "merge_before",
-            || serde_json::json!({"source_policy":stage_block_policy_before_trace::policy_value(&policy)}),
-        );
-        let merged = {
-            let _phase = stage_block_policy_before_trace::phase(ticket, "merged_suppression", None);
-            merged_suppression(policy.suppressed)
-        };
-        stage_block_policy_before_trace::mark(
-            renderer,
-            control,
-            ticket,
-            "merged_return_vec",
-            || stage_block_policy_before_trace::vec_value(&merged),
-        );
-        Ok(merged)
-    })();
-    stage_block_policy_before_trace::result(renderer, control, ticket, "helper_result", &result);
-    stage_block_policy_before_trace::mark(
-        renderer,
-        control,
-        ticket,
-        "helper_final_pcm",
-        || serde_json::json!({"pcm_bits":stage_block_policy_before_trace::pcm_value(samples)}),
-    );
-    result
-}
-
-#[cfg(test)]
-fn empty_bound_block(frames: u32) -> SignalBlock {
-    SignalBlock {
-        samples: vec![[0.0; 2]; frames as usize],
-        suppressed: SignalSuppressionMask::plain(vec![
-            SignalSample(0)..SignalSample(i64::from(frames)),
-        ]),
-        ..Default::default()
-    }
 }
 
 fn apply_suppression<T: Copy>(

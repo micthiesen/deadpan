@@ -101,14 +101,8 @@ pub(crate) fn apply(
     let plan = document.group_selection(parent, selection)?;
     validate_identities(document, identities, plan.required_split_ids)?;
     validate_timing(document, timing, context.allocation)?;
-    let mut working = document.clone();
-    if plan.required_split_ids != 0 {
-        // Capture before the first Split so both endpoints retain the old
-        // lattice, complete Preserve context and nested Repeat birth clocks.
-        working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
-    }
     let (mut working, consumed) = sequence_range::split_prepared(
-        &working,
+        document,
         parent,
         &[plan.range.start(), plan.range.end()],
         &identities.split,

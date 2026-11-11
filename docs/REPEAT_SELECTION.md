@@ -44,10 +44,9 @@ group and Split identities. Generic structural endpoint splitting retains
 Sequence, Repeat and Retime contexts behind transparent partitions. It does not
 flatten unrelated structures or discard framing owner clocks.
 
-Before splitting, the command captures unbound audio clocks and the old suffix
-entry. Existing lattices, resumes and reanchors survive. A new enclosing Repeat
-does not rewrite an established intrinsic lattice; see
-[owned audio bindings](OWNED_AUDIO_BINDINGS.md). Marks and existing silence
+The command changes structure only: Original audio is sampled from the current
+tree, so the new enclosing Repeat captures and stores no clock (see
+[sampling clocks](AUDIO_SAMPLING.md)). Marks and existing silence
 permissions gain the new wrapper's first occurrence. Those permissions do not
 automatically authorize added plays. Root sound insertion occurs at the old
 selection end for precisely the extra authored frames.

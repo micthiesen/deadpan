@@ -34,7 +34,6 @@ fn flattened_lease_remains_live_inside_actual_policy_population_then_releases_af
             Context::Domain(domain) => {
                 renderer.prepare_original_domain(domain, range.start, 64, control, true)
             }
-            Context::Retained(_) => unreachable!(),
         }
         .unwrap();
         let live = work.borrow().sound_context_frames;
@@ -42,7 +41,6 @@ fn flattened_lease_remains_live_inside_actual_policy_population_then_releases_af
         let owners = match &context {
             Context::Root => plan.audio_gain_owners(range.clone(), Default::default()),
             Context::Domain(domain) => domain.gain_owners(range.clone(), Default::default()),
-            Context::Retained(_) => unreachable!(),
         }
         .unwrap();
         let mut mix = SharedMix::new(range.start, 64, None, None, true, None, &[]);
@@ -168,7 +166,6 @@ fn flattened_prepared_late_cache_hit_drops_unused_query_lease_and_preserves_cach
             Context::Domain(domain) => {
                 renderer.prepare_original_domain(domain, range.start, 64, control, true)
             }
-            Context::Retained(_) => unreachable!(),
         }
         .unwrap();
         assert!(work.borrow().sound_context_frames > 0);
@@ -234,7 +231,6 @@ fn flattened_prepared_late_hit_foreign_ledger_is_refused_before_cache_or_source_
             Context::Domain(domain) => {
                 renderer.prepare_original_domain(domain, range.start, 64, control, true)
             }
-            Context::Retained(_) => unreachable!(),
         }
         .unwrap();
         assert!(work.borrow().sound_context_frames > 0);

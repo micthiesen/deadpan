@@ -74,12 +74,6 @@ fn explicit_slot_retains_nested_edges_and_zero_duration_child_order() {
             after.nodes()[&id("moment")].kind,
             NodeKind::Source { .. }
         ));
-        assert!(
-            !after
-                .audio_bindings()
-                .bindings()
-                .contains_key(&id("moment"))
-        );
         // The single retained clock describes only pre-splice owners.
         assert!(
             after

@@ -64,8 +64,6 @@ impl ComponentMarks {
                 .checked_add(word.count_ones() as usize)
                 .ok_or(StageAudioError::Range)?;
         }
-        #[cfg(test)]
-        crate::stages::components_mask_trace::counted_marks(count);
         if count == 0 {
             context.check()?;
             return Ok(AudioSuppressionMask::default());
@@ -74,11 +72,6 @@ impl ComponentMarks {
         // Keep the old raw singleton count as funded capacity, even though
         // ordered emission coalesces the actual set bits into fewer ranges.
         let mut destination = begin_ranges::<AudioSample, C>(context, count)?;
-        #[cfg(test)]
-        crate::stages::components_mask_trace::destination_storage(
-            destination.as_slice().as_ptr() as usize,
-            destination.capacity(),
-        );
         let mut pending: Option<Range<AudioSample>> = None;
         for (index, mut bits) in self.words.into_iter().enumerate() {
             context.check()?;

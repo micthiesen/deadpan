@@ -115,7 +115,7 @@ gained empty publication tables. All gained an empty automatic encoder decision
 table while preserving operational cells and rejecting new vocabulary in legacy
 intents. Those historical paths do not grant current admission to obsolete formats.
 
-[Root sound events](SOUND_EVENTS.md#persisted-root-sounds) have durable commands and shared pre-master mixing; chronological root ripple edits preserve sample phase. [Explicit allowances](SOUND_EVENTS.md#persisted-root-sound-allowances) permit one root contribution through one concrete silent Hold or default Repeat gap. Nested ownership, send/tail allowances, the full voice graph and remaining structural sound transforms stay open. [Original moments](SOURCE_MOMENTS.md) use native Visual selection and atomic explicit-Sequence paste, and retain measured picture ranges and exact audio selections independently of the full source phase mapping. [Audio copy lineage](AUDIO_LINEAGE.md) retains explicit relationships through Split, occurrence isolation and durable history. [Owned timing bindings](OWNED_AUDIO_BINDINGS.md) have persisted clocks, compact capture and a normal plan/PCM consumer; their complete authoring lifecycle remains open. [Audio edge intent](AUDIO_EDGES.md) persists exact boundary choices and applies shared short fades after time mapping. [Source registration](SOURCE_REGISTRATION.md) binds measured indexes and metadata to historical assets and optionally inserts the full source atomically. [Automatic basis state](PRESENTATION_BASIS.md) and explicit canvas changes are authored transactions. [Connection-free import preparation](IMPORT_PREPARATION.md) separates copying, snapshot verification and qualification receipt construction from writer commits using session-bound opaque results. The authenticated native owner now routes CLI retention, relinking, exact source registration and database checkpoints through that preparation boundary. Native [relink and recovery reporting](RECOVERY.md) exist; native checkpoint controls and rotating backups remain open. Native source-preview evidence does not qualify a complete editing viewport.
+[Root sound events](SOUND_EVENTS.md#persisted-root-sounds) have durable commands and shared pre-master mixing; root ripple edits move the root sound bus once. [Explicit allowances](SOUND_EVENTS.md#persisted-root-sound-allowances) permit one root contribution through one concrete silent Hold or default Repeat gap. Nested ownership, send/tail allowances, the full voice graph and remaining structural sound transforms stay open. [Original moments](SOURCE_MOMENTS.md) use native Visual selection and atomic explicit-Sequence paste, and retain measured picture ranges and exact audio selections independently of the full source phase mapping. [Audio copy lineage](AUDIO_LINEAGE.md) retains explicit relationships through Split, occurrence isolation and durable history. Original audio placement is derived from the current tree and stores no per-owner clocks (bindings were removed on 2026-11-11; see [sampling clocks](AUDIO_SAMPLING.md)). [Audio edge intent](AUDIO_EDGES.md) persists exact boundary choices and applies shared short fades after time mapping. [Source registration](SOURCE_REGISTRATION.md) binds measured indexes and metadata to historical assets and optionally inserts the full source atomically. [Automatic basis state](PRESENTATION_BASIS.md) and explicit canvas changes are authored transactions. [Connection-free import preparation](IMPORT_PREPARATION.md) separates copying, snapshot verification and qualification receipt construction from writer commits using session-bound opaque results. The authenticated native owner now routes CLI retention, relinking, exact source registration and database checkpoints through that preparation boundary. Native [relink and recovery reporting](RECOVERY.md) exist; native checkpoint controls and rotating backups remain open. Native source-preview evidence does not qualify a complete editing viewport.
 
 Each direct or routed sound prepares complete input before current Hold
 suppression. Its output gate combines that contribution's exact issuer allowances
@@ -170,8 +170,7 @@ seed processing and flattened-policy queries at one retained subtree or gap.
 Their signed root grids can extend outside visible allocation. `StageAudio`
 reads them through the shared preparation/cache path; a domain transfer exposes
 that raw signal on a point grid without resetting absolute phase. Headless
-domain inspection uses the same historical media host. It does not yet author
-the live bindings needed for inserted-time edits.
+domain inspection uses the same historical media host. It stores no placement state: Original audio is derived from the current tree.
 
 [Audio definition output](AUDIO_DEFINITIONS.md) reads a captured Node, actual
 Repeat default or configured Repeat gap directly on a local-zero point grid.
@@ -180,19 +179,18 @@ projection retains that stable identity and its own local support, bounded by
 the nearest physical clock. Definition scope brands
 relative paths, nested stage descriptors and caches. This supplies a distinct
 new-play recipe operand even when all existing plays are overridden; it does not
-replace their physical-domain continuity or install a live binding.
+replace their physical-domain continuity.
 
 [Owned recipe clocks](OWNED_AUDIO_CLOCKS.md) evaluate a physical definition in an
 explicit signed root placement while the selected plan supplies its current raw
 inputs and policies. Root spans retain definition scope and preparation uses the
-same bounded controller. This supports the proposed use of Split's owned children
-with retained timing indexes instead of a second graph of historical raw bodies.
-Core 17/database 23 retain bounded clock and symbolic-phase intent with explicit
-Repeat birth/survivor scope. The normal StageAudio path consumes those bindings,
-including current crop support, independent silence and post-mapping virtual
-fades. Root-only bypass and evaluation scope participate in intrinsic cache
-identity. Pure capture preserves existing bindings and rejects nonempty Repeat
-gaps. Atomic Source/Hold insertion under ordinary Sequence groups composes those clocks; Repeat/Retime insertion
+same bounded controller. This uses Split's owned children instead of a second graph of historical raw
+bodies. Original audio placement is derived from the current tree (core 59/database 89
+removed the stored per-owner clocks on 2026-11-11): the StageAudio path samples
+each owner from its current position, with current crop support, independent
+silence and post-mapping virtual fades. Root-only bypass and evaluation scope
+participate in intrinsic cache identity. Atomic Source/Hold insertion under
+ordinary Sequence groups changes structure only; Repeat/Retime insertion
 and the complete authoring lifecycle remain open.
 
 ## Full component map

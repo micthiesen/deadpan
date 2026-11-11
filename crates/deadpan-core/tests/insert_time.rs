@@ -285,12 +285,6 @@ fn first_pause_locks_an_automatic_empty_project_before_final_validation() {
     assert_eq!(children(&after), &[id("pause-first")]);
     assert_eq!(after.presentation_basis(), before.presentation_basis());
     assert_eq!(after.basis_state().rate_origin, FrameRateOrigin::TimedEdit);
-    assert!(
-        !after
-            .audio_bindings()
-            .bindings()
-            .contains_key(&id("pause-first"))
-    );
     after.validate().unwrap();
 }
 

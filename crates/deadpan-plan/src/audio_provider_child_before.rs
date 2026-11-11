@@ -81,8 +81,6 @@ fn content(plan: &RenderPlan, value: &AudioSignalContent<'_>) -> Value {
         AudioSignalContent::Stage(value) => {
             json!({"tag":"Stage","value":value.point_content_old_snapshot(plan)})
         }
-        // Plans no longer carry owner bindings.
-        AudioSignalContent::Bound(_) => json!({"tag":"Bound"}),
         AudioSignalContent::ProjectedStage(value) => {
             json!({"tag":"ProjectedStage","value":value.provider_before_snapshot(plan)})
         }

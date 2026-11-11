@@ -9,11 +9,11 @@ use deadpan_core::{
 };
 
 use super::audio::{Budget, intersect};
-use super::audio_bound::{BindingTarget, BoundPlacement};
+use super::audio_bound::BindingTarget;
 use super::audio_domain::{AudioWalkSeed, DomainGap};
 use super::{
-    AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioOwnerRetainedInput,
-    AudioQueryLimits, CompiledKind, LookupStats, RenderPlan, SignalSample, SignalTransform,
+    AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioQueryLimits, CompiledKind,
+    LookupStats, RenderPlan, SignalSample,
 };
 use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 
@@ -51,12 +51,6 @@ pub enum AudioOwnerSupport {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AudioOwnerClockOrigin {
     Current,
-    Retained {
-        definition: Option<AudioDefinitionSelector>,
-        instance: InstancePath,
-        kind: AudioOwnerKind,
-        gap_after: Option<IterationId>,
-    },
 }
 
 /// A checked owner borrowed from one immutable plan. There is intentionally no
@@ -92,16 +86,6 @@ impl<S> crate::audio_allocated::OwnedHeap for AudioOwnerClock<'_, S> {
         budget.visit(gap_after)?;
         match origin {
             AudioOwnerClockOrigin::Current => Ok(()),
-            AudioOwnerClockOrigin::Retained {
-                definition,
-                instance,
-                kind: _,
-                gap_after,
-            } => {
-                budget.visit(definition)?;
-                budget.visit(instance)?;
-                budget.visit(gap_after)
-            }
         }
     }
 }
@@ -516,32 +500,6 @@ impl<'plan> AudioDefinition<'plan> {
     }
 }
 
-impl<'plan> AudioOwnerRetainedInput<'plan> {
-    /// Owner clocks on this retained processor's consumer grid, including
-    /// hidden history. Exterior ancestors are excluded; the processor and its
-    /// current descendants keep their recipes and exact reference timing.
-    pub fn owners(
-        &self,
-        samples: Range<AudioSample>,
-        limits: AudioQueryLimits,
-    ) -> Result<AudioOwnerQuery<'plan>, PlanError> {
-        let mut admission = admission::Unmetered;
-        let query = retained_query::query(self, samples, limits, &mut admission)?;
-        Ok(query.unmetered())
-    }
-
-    /// Query retained owner clocks while charging the actual envelope and
-    /// recursive walk to one shared work and allocation admission.
-    pub fn owners_admitted<A: crate::AudioSoundContextAdmission>(
-        &self,
-        samples: Range<AudioSample>,
-        limits: AudioQueryLimits,
-        admission: &mut A,
-    ) -> std::result::Result<AdmittedAudioOwnerQuery<'plan, A::Issuer, A::Lease>, A::Error> {
-        retained_query::query(self, samples, limits, admission)
-    }
-}
-
 #[derive(Clone, Copy)]
 struct Placement {
     origin: ExactRatio,
@@ -674,7 +632,7 @@ fn query<'plan, S: Copy>(
     seed: Walk,
     label: impl Fn(i64) -> S,
 ) -> Result<AudioOwnerQuery<'plan, S>, PlanError> {
-    query_mapped(plan, samples, limits, seed, label, None)
+    query_mapped(plan, samples, limits, seed, label)
 }
 
 fn query_mapped<'plan, S: Copy>(
@@ -683,7 +641,6 @@ fn query_mapped<'plan, S: Copy>(
     limits: AudioQueryLimits,
     seed: Walk,
     label: impl Fn(i64) -> S,
-    retained: Option<&AudioOwnerRetainedInput<'plan>>,
 ) -> Result<AudioOwnerQuery<'plan, S>, PlanError> {
     let mut local = Budget {
         remaining: limits.maximum_work,
@@ -698,7 +655,6 @@ fn query_mapped<'plan, S: Copy>(
         limits,
         seed,
         label,
-        retained,
         &mut budget,
     ))
     .map(|value| value.query.unmetered())

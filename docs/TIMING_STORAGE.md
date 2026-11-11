@@ -1,69 +1,20 @@
 # Compact retained timing and revision storage
 
-Pauses, ripple deletes, moves, splices and trims retain each shifted owner's
-pre-edit audio clock ([owned bindings](OWNED_AUDIO_BINDINGS.md),
-[reanchors](AUDIO_REANCHORS.md)). The semantics are unchanged: every shifted
-physical allocation keeps its exact pre-edit sample grid and entry. This page
-describes how that state is stored so that storage and edit cost follow what
-an edit changes rather than the project size times the number of pauses.
-
-## What grew
-
-Measured on the 10,000-Hold `large-10000` fixture before this change:
-
-- Every timing capture stored a `FrozenAudioLayout` of the whole structure
-  (about 284 compact bytes per node). Each pause created a new one for its
-  newly unbound owners or phase terms, and the old ones stayed referenced, so
-  four pauses held four 2.8 MB tables.
-- Composite edits appended one reanchor step per shifted owner per edit,
-  even when the step could not change any resume.
-- Each history entry stored the complete `AudioBindingState` four times (both
-  sides of the forward and inverse patch): 58 MB per entry after a few pauses.
-- Each revision row stored the complete pretty-printed document.
-- Validation charged every retained layout node, so the fifth pause failed
-  with `audio binding work exhausted`.
-
-## Sliced timing tables
-
-A placement only projects its own alias through its ancestors: origin, scale,
-Repeat play layout, Retime selections and meaningful support depend on the
-ancestor path and on sibling durations, never on sibling contents. After each
-command, `compact_new_timings` slices every timing table the transaction
-introduced (`FrozenAudioLayout::sliced`):
-
-- Keep every alias any placement names (physical owner, clock root, Repeat
-  arguments, birth definition roots and captured Repeats) plus all ancestors,
-  with their exact nodes, override keys and lineage.
-- Replace every other subtree by a duration-preserving spacer under its first
-  alias: a silent Hold, or an empty Sequence for zero duration. Runs of such
-  Sequence siblings merge into one spacer; zero-length runs vanish.
-- Existing tables are never rewritten. Tables named by sound clocks stay
-  complete, because sound clocks compile and compare whole processing subtrees.
-
-A later pause's table therefore holds its path and a few spacers (4 to 9 nodes
-on the 10,000-beat fixture) instead of the whole project. The first capture
-that binds every owner still needs every owner's path.
-
-## Inert reanchor steps
-
-A step adds `B_step(entry) - B_step(anchor)` to the resume phase and moves the
-anchor to `entry`. When no placement in the binding or the step names a Repeat
-argument, birth or gap, every occurrence and definition resolves the same
-clocks. If the step's entry then equals the current anchor, or it has no entry,
-its contribution is exactly zero for this and every later step, and local-origin
-rebasing shifts both values equally. `AudioBindingState::reanchor_step_is_inert`
-checks this by resolving the binding with and without the step; the shared
-append path omits such steps. Owners under Repeats always keep their steps.
-Unsplit suffix owners of a pause, delete or move no longer gain a step each.
-
-## Granular binding patches
-
-`DocumentPatch::audio_bindings` is an `AudioBindingPatch`: guarded changes to
-individual timing tables (sorted `AudioTimingChange` records), owner and gap
-bindings, and the sound-clock relation. Every before-value is checked; the
-complete result is validated with the document. Deserialization charges every
-layout's collections before materializing it. A later pause's history entry now
-holds its new table, its new and changed bindings and the changed nodes.
+Original-audio placement stores nothing: it is derived from the current tree
+([sampling clocks](AUDIO_SAMPLING.md)), and cut edges likewise
+([audio edges](AUDIO_EDGES.md)). The per-owner sampling bindings, reanchor
+steps, sliced timing tables and provisional tables this page once described were
+removed on 2026-11-11 (core 59/database 89). What remains stored is
+`AudioBindingState` (the document field `audio_bindings`): the independent
+beat-sound clock journals and the frozen `FrozenAudioLayout` timing tables they
+name by `AudioTimingId`. `DocumentPatch::audio_bindings` is an
+`AudioBindingPatch` of guarded changes to individual timing tables and the
+sound-clock relation. Every before-value is checked and the complete result is
+validated with the document. Deserialization charges every layout's collections
+before materializing it. Tables named by sound clocks stay complete, because
+sound clocks compile and compare whole processing subtrees. This page covers
+how revisions, validation and command work are stored and reused so that cost
+follows what an edit changes rather than the project size.
 
 ## Revision storage (database schema 64)
 
@@ -176,7 +127,7 @@ another program is detected by the next open or `validate`, not by the open
 store.
 
 `ValidatedDocument` (core) pairs a shared document with the durations and
-per-owner audio binding proof its validation produced. Inside
+durations its validation produced. Inside
 `ValidatedDocument::scope`, `durations`, `structural_durations` and
 `validate` on that exact document return the retained result: a pure function
 memoized on a value that cannot change while it is borrowed.
@@ -220,24 +171,13 @@ exact equivalence argument. The families checked by
 | Tails outside speed stages | Ancestor Retimes | Recomputed (skipped when no speed stage exists, which cannot fail) |
 | Basis state | Presentation, durations | Recomputed |
 | Audio lineage | Lineage map, nodes | Recomputed |
-| Audio bindings, per owner: wire size, reanchor anchors, placement templates against their timing tables | That binding and the immutable tables it names | Reused when the patch changed neither the binding nor any table it names |
-| Audio bindings, aggregate: record, entry, node, run and work limits; every table referenced; sound clocks; live owners, kinds, resume bounds, Repeat ancestry | Whole binding state and document | Recomputed |
+| Sound clocks: record, entry, node, run and work limits; every table referenced; live owners, kinds, Repeat ancestry | Whole binding state and document | Recomputed |
 | Marks | Marks, structure, durations | Recomputed |
-
-The per-owner binding checks are pure functions of exactly that binding and
-those tables, and they spend a fixed amount of the shared work budget. A
-reused owner spends the same amount at the same position in the same owner
-order, and only when the remaining budget strictly exceeds that amount: with
-at least that much left, every check inside it receives at least the budget
-it used before and succeeds identically. Otherwise it runs again. Owners
-iterate in the same order, so every aggregate and failure point is unchanged.
-`changed_ids` uses the same binding patch for its changed owners and is
-checked against the complete comparison in debug builds.
 
 Validating the whole tree structurally on each commit is deliberate. Local
 rechecks of the tree would need maintained parent, depth and reachability
 indexes; a wrapped or moved subtree changes the depth of everything below it,
-and marks and binding ancestry depend on durations and Repeat ancestors
+and marks and sound-clock ancestry depend on durations and Repeat ancestors
 anywhere above a change. The complete pass costs about 9 ms on 10,000 beats
 with retained clocks, and it remains the single source of truth.
 
@@ -251,37 +191,17 @@ the previous computation on the current thread as an oracle.
 | Step | Before | Now | Why it is the same |
 | --- | --- | --- | --- |
 | Lineage and mark transforms | Each rebuilt the result's structural durations | One shared value per structure (`command::shared_structure`) | Only `audio_lineage` changes in between, which the structural pass does not read |
-| Final result validation | Repeated the structural pass | Takes that shared value when the shared post-processing (prune, compaction, basis lock) ran without sound, beat-sound or allowance restoration | Those steps change bindings and basis state only |
+| Final result validation | Repeated the structural pass | Takes that shared value when the shared post-processing (prune, basis lock) ran without sound, beat-sound or allowance restoration | Those steps change sound clocks and basis state only |
 | Split command | Split validated its result, then the transaction validated it again | The transaction adopts Split's complete validation when pruning removed nothing, no new timing table exists and the basis did not lock | The result is then the Split result with a new revision identity, which validation does not read |
 | Split's anchor index | Every parent, offset and Repeat layout | Built only when a bound occurrence mark lies in the target; otherwise the target's parent is found directly | The index is read only to relocate those marks; the input validated, so building it cannot fail |
-| Pause Split input | The captured copy (head plus new bindings) was validated from scratch | Its durations are the head's (`with_proved_durations`) | A copy differing only in a binding state that `validate_for` accepted against the head validates to the head's durations; no other invariant reads bindings |
-| Intermediate validations (Split result, capture, resume terms) | Every binding owner's placement checks | Owners unchanged from the validated head in scope reuse its proof, through the exact binding patch to that head | The same argument as committed results: reused checks are pure functions of the binding and its immutable tables |
-| Capture byte limit | Validated again, then serialized the complete binding state | Layouts remember their exact compact length; bindings use the structural bound binding admission already relies on; exact counting only when the bound exceeds the limit | `to_json` after a successful validation fails exactly when the length exceeds the limit |
 | Layout admission | Built the JSON text to measure it | Counts bytes without retaining them, once per layout | Same length, same limit |
 | Patch diff, lineage comparison | Collected the key union and looked every key up in both maps | One merged pass over both sorted maps; lineage ancestors use hash maps | Same comparisons in the same key order |
 | Store inverse check | Copied the result, applied the inverse, compared whole documents | `DocumentPatch::restores`: the same guards and errors, then a field-by-field comparison of the would-be result | Equal to `apply_stored(from) == to`, checked on every random step |
 
-An unscoped legacy interior pause also retains its already successful entry
-duration query in a local `Arc`. Only local command work with compact timing,
-no derived clocks and no existing retained proof enters this scope. It lends
-the map to the exact unchanged entry borrow around the existing
-`split_captured` call. Capture has validated the working copy's only change,
-its bindings, so that bridge can reuse the same structural durations. Both
-borrowed scopes end before replacing the working document. Split still
-validates its changed result completely; later resume/result checks and every
-byte/work charge remain. No entry proof is attached to the changed result.
-Reference, derived-clock, already-scoped and noninterior paths stay as before.
-Six `insert_split_proof_*` unit tests compare unscoped, scoped and reference
-results and exact refusals, including malformed same-revision inputs, real
-mark/phase limits, recovery after errors and cleanup on unwind. The existing
-10,000-Hold oracle checks complete document/transaction equality and inverse
-restoration.
-
 Ordinary one-leaf semantic replay also retains the successful leaf
 `EditTransaction` in its private `OneLeafReplay`. Only an actual eligible reuse
 hit can lend it to final aggregation: exactly one ordinary `InsertTime`, no
-inputs or isolation, local command work, compact timing and no derived or
-provisional clocks. Every prefix admission, revision/identity check,
+inputs or isolation, local command work and no derived clocks. Every prefix admission, revision/identity check,
 byte/work charge, visitor and final document admission keeps its original
 order. After that hit, only the document's revision header
 changes. The aggregate therefore copies the validated leaf patches, changes
@@ -314,7 +234,7 @@ full-serializer Results against each reused count. Other transaction shapes
 and reference modes retain full counting. This adds only scalar counts and a
 bounded revision-header clone, with no new document/JSON buffer or persistent
 cache. Tests compare both Some/None paths against independently forced full
-counting, including provisional-value equality, visitor/prefix failures,
+counting, including visitor/prefix failures,
 short/equal/128-byte outer headers and the actual 64 MiB/512 MiB limits.
 
 `crates/deadpan-core/tests/command_work.rs` runs 48 seeded random sequences of
@@ -327,32 +247,25 @@ kinds) and requires
 identical transactions, results, durations and errors with and without the
 oracle, through both the validated and the unscoped entry points, and
 identical `restores` results for matching, reversed and conflicting patches.
-Separate tests compare the capture's byte check with `to_json` below and above
-the structural bound (12,000 newly bound Holds) and with sound clocks (no
-bound), and check that scoped binding reuse rechecks every owner of a
-replaced timing table. The oracle and these probes are compiled only for
-tests (`test-support` feature).
+The oracle is compiled only for tests (`test-support` feature).
 Debug builds also assert at each reuse that the shared or proved durations and
 any adopted validation equal a complete recomputation.
 
 The structural walk and each validation family still run once per commit over
-the whole document; on a 10,000-sibling root a pause also composes one resume
-term per later physical owner, which the authored semantics require.
+the whole document.
 
 ### Pause work scoped to its changes
 
 A pause on a 10,000-sibling root still repeated whole-document work that its
 result does not need. Each replacement below is exact; debug builds assert
 it against the complete computation at every use, and the random suites in
-`command_work.rs`, `structural_properties.rs`, the store's commit and
-rebuild suites and `deadpan-audio`'s `timing_representation.rs` (compact
-against reference representation, bit-identical PCM) run through them.
+`command_work.rs`, `structural_properties.rs` and the store's commit and
+rebuild suites run through them.
 
 | Step | Before | Now | Why it is the same |
 | --- | --- | --- | --- |
-| New timing table | Captured, indexed and counted the complete-structure layout, then sliced it at the end of the commit | `FrozenAudioLayout::capture_scoped` builds the slice for the aliases the command will read (the new bindings, the cut owner, reanchored owners and, for composite insertion, the affected owners' placements) straight from the document. The command's other terms extend it once (`rescope_timing`) before they are validated | Slicing that provisional table to any subset of its aliases equals slicing the complete capture (zero-length runs keep a spacer so merged runs keep the same first alias). Budgets charge the complete layout's node, lineage and run counts, and the byte check uses its exact length, counted node by node, so every limit decides as before. Anything the complete capture could refuse falls back to it. Both insertion paths extend the table before validating their own templates; should a leaf still leave an alias unprojected, the command repeats that leaf with complete captures rather than refuse. A provisional table cannot be serialized and must be compacted before the command returns |
 | Result structure | A complete structural pass for lineage, marks and the final validation | `structural_durations_after_root_leaf` adds the new Hold to the Split result's (or the head's) durations and repeats only the checks the new leaf and the root's sum could fail | Only the leaf and the root differ; every other node, asset, override and the basis were proved for the base |
-| Identity lookups | Ordered-map lookups by identity in the structural pass, binding validation, frozen projections, the lineage closure and plan compilation | Transient hashed indexes (FNV-1a from a per-process random offset, `id_hash`; keys are the validated document's own bounded identities, so a crafted collision set can only slow a pass), merge-joins of sorted owners against their nodes and proofs, and the root (always a Sequence) without a lookup | The same entries are found; the hashed maps are never iterated for output |
+| Identity lookups | Ordered-map lookups by identity in the structural pass, sound-clock validation, frozen projections, the lineage closure and plan compilation | Transient hashed indexes (FNV-1a from a per-process random offset, `id_hash`; keys are the validated document's own bounded identities, so a crafted collision set can only slow a pass), merge-joins of sorted owners against their nodes and proofs, and the root (always a Sequence) without a lookup | The same entries are found; the hashed maps are never iterated for output |
 | Plan compile | Copied the head's durations and looked every child up twice | Shares the retained durations and one hashed index | Same plan |
 
 `FrozenIndex` parents are hashed, and every node of an admitted layout but
@@ -458,52 +371,37 @@ chain's: unkeyed corruption and partial-tamper detection, not authentication.
 
 ## Qualification
 
-`crates/deadpan-audio/tests/timing_representation.rs` runs random edit
-sequences (InsertTime at seams and interiors, Split, Repeat wraps with silent
-and room-tone gaps, ripple and range deletes, MoveRange and undo) over Sources, room-tone and silent
-Holds, Preserve retimes and optional root sounds at 30000/1001, 24 and 25 fps.
-Each step runs once compact and once inside `with_reference_timing_representation`,
-which disables slicing and step omission. It requires identical authored
-structure, identical resolved root clocks, a compact document no larger than
-the reference, and bit-identical authored-bus and limited-output PCM over the
-whole timeline. Granular patches must round-trip their wire and restore the
-previous revision.
-
-Tests that assert step counts or complete layouts run inside the reference
-representation; the property test above proves the compact form equivalent.
 `crates/deadpan-store/tests/revision_storage.rs` covers keyframe placement and
 size bounds, exact reconstruction of every revision through edits, undo, redo
 and reopen, randomized commits compared with complete validation and an
 independent rebuild from storage, receipt extension, invalidation and tamper
-detection, and bounded pause history entries. Core `validated_tests` compare
-reused binding proofs with complete validation, accepting and rejecting.
+detection, and bounded pause history entries. The derived placement is compared
+with the old stored clocks in `crates/deadpan-audio/tests/derived_timing.rs`
+(identical at 48 kHz, at most one sample at 30000/1001).
 
 ## Commit-path costs
 
 Frozen layouts share one immutable allocation, so cloning or comparing a
 document copies no retained table. Parsing a document no longer re-serializes
-its admitted binding state or layouts to recheck the input's byte bound, and a
-binding whose structural size bound fits skips exact size serialization. A
+its admitted sound-clock state or layouts to recheck the input's byte bound. A
 commit parses no document and serializes only its patch (keyframes excepted),
 and validation does not rebuild admitted layouts' indexes.
 
 ### Shared collections and identities
 
-Every edit derives several documents from the validated head (the capture
-copy, the Split result, the insertion result), and the store cache, the
+Every edit derives several documents from the validated head (the Split
+result, the insertion result), and the store cache, the
 workspace and the plan keep further copies. On 10,000 beats copying and
 freeing those maps cost about 7 ms of a pause.
 Two representation changes remove most of it without changing any value:
 
-- `nodes`, `audio_lineage` and the binding state's `bindings` and
-  `gap_bindings` are `SharedMap`s (core `shared_map`): a `BTreeMap` behind an
+- `nodes` and `audio_lineage` are `SharedMap`s (core `shared_map`): a `BTreeMap` behind an
   `Arc`. Cloning or dropping one adjusts a reference count; the first mutable
   access through a shared handle copies the map once (`Arc::make_mut`), so an
   edit still copies exactly the maps it changes. `Deref` exposes the inner
   map, and equality, iteration order and serialization are the inner map's
   (equality has no identity shortcut, so irreflexive values compare as
-  before). A plan's binding state and the workspace's document copy now share
-  the head's maps.
+  before). The workspace's document copy and the plan share the head's maps.
 - Identifiers (`NodeId`, `RevisionId` and the other `identifier!` types) hold
   `Arc<str>`. Cloning one is a reference count rather than an allocation;
   equality, hashing and the wire form are those of the text.
@@ -516,19 +414,10 @@ Two representation changes remove most of it without changing any value:
 
 ## Remaining costs
 
-- The first edit that binds owners still captures every physical owner's
-  lattice, and the full-structure table they share: on 10,000 Holds about
-  3 MB of bindings and 2.8 MB of layout, retained once (the first pause
-  of a run, 100 to 160 ms).
-- Each commit still validates its result once over the whole document, and
-  a pause validates its capture, its Split intermediate and its resumed
-  bindings too (four binding validations, each over every owner, now with
-  hashed and merge-joined lookups); see
-  [command work reuse](#command-work-reuse). On a wide root a pause still
-  resolves one resume clock per later sibling. After the changes above
-  these passes are most of a 10,000-beat pause.
+- Each commit still validates its result once over the whole document; see
+  [command work reuse](#command-work-reuse).
 - An edit still copies each large map it changes once (`nodes` for every
-  structural edit, the binding maps for timing edits), and a commit's
+  structural edit), and a commit's
   durable WAL sync (`F_FULLFSYNC`) takes 3 to 5 ms.
 - An edit's history row still carries the changed parent Sequence's complete
   old children list once ([compact history rows](#compact-history-rows)).

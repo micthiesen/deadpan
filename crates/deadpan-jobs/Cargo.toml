@@ -30,4 +30,3 @@ deadpan-native-process.workspace = true
 workspace = true
 
 [dev-dependencies]
-deadpan-chaos.workspace = true

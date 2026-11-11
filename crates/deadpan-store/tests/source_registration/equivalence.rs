@@ -6,8 +6,8 @@ use super::*;
 use deadpan_core::{
     AudioEdgePolicy, AudioSample, AudioTimingId, FrameDuration, HoldAudio, HoldRecipe, HoldVideo,
     ProjectFrame, SoundEvent, SoundId, SoundOverflowPolicy, SourceAudio, SourceAudioMapping,
-    SourceSpan, SourceTimestamp, SourceTrimCapture, SourceTrimIntent, SourceTrimPolicy,
-    SourceTrimResources, SplitIdentities,
+    SourceSpan, SourceTimestamp, SourceTrimIntent, SourceTrimPolicy, SourceTrimResources,
+    SplitIdentities,
 };
 
 fn node(value: &str) -> NodeId {
@@ -57,7 +57,6 @@ fn trim(current: &ProjectDocument, next: &str, intent: SourceTrimIntent) -> Opti
                 fillers: (0..resolution.required_filler_nodes)
                     .map(|n| node(&format!("{next}-filler-{n}")))
                     .collect(),
-                timing: (resolution.capture != SourceTrimCapture::None).then(|| timing(next)),
             },
         },
     ))

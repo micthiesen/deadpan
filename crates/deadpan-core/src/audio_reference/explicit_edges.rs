@@ -56,11 +56,6 @@ impl FrozenAudioLayout {
         &self,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        if self.inner.complete.is_some() {
-            return Err(serde::ser::Error::custom(
-                "a provisional frozen audio layout cannot be serialized",
-            ));
-        }
         // Exhaustive patterns make future persisted fields explicit in both
         // codecs. Borrowed wrappers stream into the caller's bounded writer.
         let FrozenAudioLayoutData {
@@ -73,7 +68,6 @@ impl FrozenAudioLayout {
             derived_clocks,
             index: _,
             wire_bytes: _,
-            complete: _,
         } = self.inner.as_ref();
         Layout {
             root,

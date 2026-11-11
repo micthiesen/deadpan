@@ -136,14 +136,7 @@ pub(in crate::plan) fn child_query<A: AudioSoundContextAdmission>(
             return Err(PlanError::AudioQueryLimit("span count").into());
         }
         let mut span = plan
-            .audio_walk_inner_admitted(
-                cursor,
-                budget,
-                seed,
-                false,
-                false,
-                (None, None, None, None),
-            )?
+            .audio_walk_inner_admitted(cursor, budget, seed, false, false, (None, None, None))?
             .flattened_leaf(budget)?;
         span.value.samples = cursor..span.value.allocated_samples.end.min(samples.end);
         cursor = span.value.samples.end;

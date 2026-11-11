@@ -195,7 +195,7 @@ pub(crate) fn apply(
     }
     crate::marks::check_combined_slice_limits(working.marks(), &finished)?;
     working.marks.extend(finished);
-    crate::audio_binding_lifecycle::prune(&mut working);
+    crate::audio_binding::prune(&mut working);
     working.validate()?;
     Ok(working)
 }

@@ -374,8 +374,8 @@ exact logical support so unrelated edits preserve its accepted intent. Removing
 all selected support deletes the event. Internal helper Splits do not apply the
 transformation twice. Non-root Split retains the root bus unchanged.
 
-`DeleteRipple` uses this same one-step root-bus transform while also retaining
-the old sample entry of structural Source/Hold/Repeat/Preserve suffix owners.
+`DeleteRipple` uses this same one-step root-bus transform; structural
+Source/Hold/Repeat/Preserve suffix owners are sampled from their new positions.
 It is the native and public CLI deletion path; saved core `Delete` keeps its
 historical reduction for exact history replay. No route vocabulary changes.
 
@@ -688,8 +688,7 @@ Input and output views share one opaque voice identity and the complete source
 recipe. The input retains raw sound through current silent Holds so canonical
 processing has the required history. The output adds only current explicit
 silent-Hold rules from its structural owner, evaluated directly on the consuming
-grid. Original source absence, endpoints, RoomTone, tails and retained sampling
-bindings are not this voice's policy. Hold introspection retains the issuer's
+grid. Original source absence, endpoints, RoomTone and tails are not this voice's policy. Hold introspection retains the issuer's
 definition and stable occurrence identity. No allowance is implied.
 
 Both views use existing signal tapes, dependency admission, source resampling and
@@ -791,7 +790,7 @@ and bounded compact histories whose masked dependencies remain revocable.
 
 Required PCM evidence includes different source rates, arbitrary sample onsets,
 independent scalar sums, per-voice exhaustion, scoped silence, mixed-before-
-Preserve witnesses, full retained history through split/repeat/reanchor, cold and
+Preserve witnesses, full retained history through split/repeat, cold and
 shuffled reads, changed source fingerprints, aggregate limits, and summation
 before one shared limiter. Every source, recipe and processed result remains tied
 to its immutable project revision.

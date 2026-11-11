@@ -106,7 +106,7 @@ group's exact clock, and applies everything in one reversible transaction.
 `ProjectDocument::ungroup_requirements` reports how many fresh wrapper
 identities the command needs; the semantic planner allocates them, and a
 wrong count refuses before any change. Wrappers take the group's label. Marks,
-retained audio clocks, lineage and root sounds are unchanged: the move touches
+sound clocks, lineage and root sounds are unchanged: the move touches
 only node effects and Sequence structure. Inside a retained independent sound
 scope, a treated group still refuses as below. Evidence: core
 `ungroup_reports_removed_mark_host_and_moves_group_owned_effects`,

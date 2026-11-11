@@ -437,8 +437,6 @@ fn every_sound_journal_timing_is_scanned_not_only_the_first_clock() {
                 layout: FrozenAudioLayout::capture(&historical).unwrap(),
             },
         ],
-        BTreeMap::new(),
-        BTreeMap::new(),
         BTreeMap::from([(
             id("owner"),
             BTreeMap::from([(

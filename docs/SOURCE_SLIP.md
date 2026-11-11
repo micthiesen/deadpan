@@ -51,8 +51,8 @@ effective audio support, converted back by subtracting the independent offset.
 An empty intersection retains audio with equal selection endpoints at the nearest
 support boundary, so a later Slip can make it audible again.
 
-The operation changes both maps in one reversible transaction. Existing audio
-bindings, sample grids, resumes, effect clocks, gain/mute keys and root sounds
+The operation changes both maps in one reversible transaction. Sound clocks,
+effect clocks, gain/mute keys and root sounds
 stay fixed. Changed source content invalidates its current audio lineage through
 the ordinary command path. Local, Occurrence and Sequence marks keep their
 coordinates. Source marks retain their immutable PTS and resolve at the changed

@@ -133,10 +133,7 @@ impl StageAudio {
             if block.iter().flatten().any(|sample| !sample.is_finite()) {
                 return Err(crate::PreparationError::InvalidSamples.into());
             }
-            #[cfg(not(test))]
             self.suppress_stage_block(output, SignalSample(start), &mut block, control)?;
-            #[cfg(test)]
-            self.suppress_stage_block(output, SignalSample(start), &mut block, control, None)?;
             samples.push(&block, control)?;
             at += frames;
         }
@@ -213,16 +210,7 @@ impl StageAudio {
                 .zip(&right[..read])
                 .map(|(&l, &r)| [l, r])
                 .collect();
-            #[cfg(not(test))]
             self.suppress_stage_block(output, SignalSample(i64::from(at)), &mut block, control)?;
-            #[cfg(test)]
-            self.suppress_stage_block(
-                output,
-                SignalSample(i64::from(at)),
-                &mut block,
-                control,
-                None,
-            )?;
             samples.push(&block, control)?;
         }
         Ok(PreparedBlock {

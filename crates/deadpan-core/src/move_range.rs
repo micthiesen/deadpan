@@ -6,9 +6,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    AudioTimingId, Command, EditError, EditErrorCode, ExactFrameRange, ExactRatio, FrameDuration,
-    FrameRange, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectFrame, RetimePurpose,
-    SplitIdentities,
+    Command, EditError, EditErrorCode, FrameDuration, FrameRange, MAX_DOCUMENT_NODES, NodeId,
+    NodeKind, ProjectDocument, ProjectFrame, RetimePurpose, SplitIdentities,
 };
 
 /// Both addresses refer to the original document. A seam retains its slot even
@@ -44,8 +43,6 @@ pub struct SequenceRangeMove {
     pub removal_join: ProjectFrame,
     /// Joint Split budget, including shared-target refinements only once.
     pub required_ids: usize,
-    /// Original lattice capture if needed, then current placement capture.
-    pub timing_slots: u32,
     pub is_noop: bool,
 }
 
@@ -58,7 +55,6 @@ struct Cuts {
 struct Plan {
     result: SequenceRangeMove,
     cuts: BTreeMap<NodeId, Cuts>,
-    capture_before_split: bool,
 }
 
 impl ProjectDocument {
@@ -170,9 +166,6 @@ impl Plan {
         {
             return Err(limit("move exceeds the temporary document node limit"));
         }
-        let capture_before_split =
-            required_ids != 0 && crate::audio_binding_lifecycle::has_unbound_recipes(document);
-        let changed_time = d != range.start() && d != range.end();
         Ok(Self {
             result: SequenceRangeMove {
                 range,
@@ -184,11 +177,9 @@ impl Plan {
                     range.start()
                 },
                 required_ids,
-                timing_slots: u32::from(capture_before_split) + u32::from(!is_noop && changed_time),
                 is_noop,
             },
             cuts,
-            capture_before_split,
         })
     }
 }
@@ -264,30 +255,10 @@ pub(crate) fn apply(
     }
     let plan = Plan::new(document, source_parent, *range, destination)?;
     validate_pools(document, identities, plan.result.required_ids)?;
-    if let Some(last) = plan.result.timing_slots.checked_sub(1) {
-        let end = timing
-            .ordinal
-            .checked_add(last)
-            .ok_or_else(|| limit("move timing ordinal overflow"))?;
-        if document.audio_bindings.timings.keys().any(|id| {
-            id.allocation == timing.allocation && id.ordinal >= timing.ordinal && id.ordinal <= end
-        }) {
-            return Err(EditError::new(
-                EditErrorCode::IdentityConflict,
-                "move timing range is retained",
-            ));
-        }
-    }
     if plan.result.is_noop {
         return Ok(document.clone());
     }
     let mut working = document.clone();
-    if plan.capture_before_split {
-        working.audio_bindings = crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
-            document,
-            timing.clone(),
-        )?;
-    }
     let mut consumed = 0usize;
     let mut right_at_destination = None;
     for (original, cuts) in &plan.cuts {
@@ -345,17 +316,6 @@ pub(crate) fn apply(
     };
     let selected =
         crate::insert_time::sequence_range::selected_children(&working, source_parent, *range)?;
-    let d = plan.result.destination_before;
-    if d != range.start() && d != range.end() {
-        let placement_timing = AudioTimingId {
-            allocation: timing.allocation.clone(),
-            ordinal: timing
-                .ordinal
-                .checked_add(u32::from(plan.capture_before_split))
-                .ok_or_else(|| limit("move placement timing ordinal overflow"))?,
-        };
-        working = reanchor(&working, *range, d, &placement_timing)?;
-    }
     let mut result = working.clone();
     let count = selected.end - selected.first;
     let slot = if source_parent == destination.parent() {
@@ -381,7 +341,7 @@ pub(crate) fn apply(
     destination_children.splice(slot..slot, selected.nodes);
     crate::audio_lineage::reconcile(&working, &mut result, command)?;
     result.marks = crate::marks::transform_marks(&working, &result, command)?;
-    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding::prune(&mut result);
     result.validate()?;
     Ok(result)
 }
@@ -414,133 +374,6 @@ fn validate_pools(
         ));
     }
     Ok(())
-}
-
-fn reanchor(
-    document: &ProjectDocument,
-    moved: FrameRange,
-    d: ProjectFrame,
-    timing: &AudioTimingId,
-) -> Result<ProjectDocument, EditError> {
-    let displaced = if d < moved.start() {
-        FrameRange::new(d, moved.start())
-    } else {
-        FrameRange::new(moved.end(), d)
-    }
-    .map_err(crate::DocumentError::from)?;
-    let sets = [
-        island_owners(document, moved)?,
-        island_owners(document, displaced)?,
-    ];
-    if !sets[0].is_disjoint(&sets[1]) {
-        return Err(invalid("move owner islands overlap"));
-    }
-    let mut captured =
-        crate::audio_binding_lifecycle::capture_for_composite_insertion(document, timing.clone())?;
-    let mut working = document.clone();
-    working.audio_bindings = captured.state;
-    if let Some(layout) = captured.phase_only_layout {
-        working
-            .audio_bindings
-            .timings
-            .insert(timing.clone(), layout);
-    }
-    let mut entries = working
-        .audio_bindings
-        .owners()
-        .flat_map(|(_, _, binding)| binding.placements())
-        .try_fold(0usize, |count, placement| {
-            count
-                .checked_add(placement.entry_count())
-                .ok_or_else(overflow)
-        })?;
-    for (owners, range) in sets.iter().zip([moved, displaced]) {
-        let window = ExactFrameRange::new(
-            ExactRatio::integer(range.start().0),
-            ExactRatio::integer(range.end().0),
-        )?;
-        let nodes = owners
-            .iter()
-            .filter_map(|id| {
-                captured
-                    .node_placements
-                    .remove(id)
-                    .map(|placement| (id.clone(), placement))
-            })
-            .collect();
-        let gaps = owners
-            .iter()
-            .filter_map(|id| {
-                captured
-                    .gap_placements
-                    .remove(id)
-                    .map(|placement| (id.clone(), placement))
-            })
-            .collect();
-        crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings,
-            crate::AudioRecipeKind::Node,
-            nodes,
-            owners,
-            window,
-            &mut entries,
-        )?;
-        crate::insert_time::composite::append_steps(
-            &mut working.audio_bindings,
-            crate::AudioRecipeKind::RepeatGap,
-            gaps,
-            owners,
-            window,
-            &mut entries,
-        )?;
-    }
-    Ok(working)
-}
-
-/// Walk ordinary Sequence envelopes until each non-Sequence owned unit lies
-/// wholly inside one island. Its hidden context moves with that unit; opaque
-/// Preserve inputs remain in their intrinsic clock.
-fn island_owners(
-    document: &ProjectDocument,
-    range: FrameRange,
-) -> Result<BTreeSet<NodeId>, EditError> {
-    let durations = document.durations()?;
-    let mut owners = BTreeSet::new();
-    let mut pending = vec![(document.root().clone(), 0i64)];
-    while let Some((id, start)) = pending.pop() {
-        let end = start
-            .checked_add(durations[&id].frames())
-            .ok_or_else(overflow)?;
-        if end <= range.start().0 || start >= range.end().0 {
-            continue;
-        }
-        if let NodeKind::Sequence { children } = &document.nodes()[&id].kind {
-            let mut at = start;
-            for child in children {
-                pending.push((child.clone(), at));
-                at = at
-                    .checked_add(durations[child].frames())
-                    .ok_or_else(overflow)?;
-            }
-        } else {
-            if start < range.start().0 || end > range.end().0 {
-                return Err(invalid("move island cuts an unsplit owned unit"));
-            }
-            let mut subtree = vec![id];
-            while let Some(id) = subtree.pop() {
-                if owners.len() >= MAX_DOCUMENT_NODES || !owners.insert(id.clone()) {
-                    return Err(limit("move physical-owner traversal"));
-                }
-                if !matches!(&document.nodes()[&id].kind,
-                    NodeKind::Retime { duration, mapping, pitch, .. }
-                        if pitch.processes(*duration == mapping.duration()))
-                {
-                    subtree.extend(document.children(&id).cloned());
-                }
-            }
-        }
-    }
-    Ok(owners)
 }
 
 fn children<'a>(document: &'a ProjectDocument, parent: &NodeId) -> Result<&'a [NodeId], EditError> {

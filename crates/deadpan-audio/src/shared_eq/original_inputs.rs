@@ -68,7 +68,6 @@ impl LookupKey {
         let (kind, identity) = match context {
             Context::Root => (0, 0),
             Context::Domain(value) => (1, Arc::as_ptr(value) as usize),
-            Context::Retained(value) => (2, value.as_ptr() as usize),
         };
         Self {
             kind,
@@ -263,7 +262,6 @@ fn same_context(left: &Context<'_>, right: &Context<'_>) -> bool {
     match (left, right) {
         (Context::Root, Context::Root) => true,
         (Context::Domain(left), Context::Domain(right)) => Arc::ptr_eq(left, right),
-        (Context::Retained(left), Context::Retained(right)) => left.ptr_eq(right),
         _ => false,
     }
 }
@@ -331,7 +329,6 @@ impl StageAudio {
             || match context {
                 Context::Root => false,
                 Context::Domain(domain) => !domain.belongs_to(&self.plan),
-                Context::Retained(input) => !input.belongs_to(&self.plan),
             }
         {
             return Err(StageAudioError::ForeignDomain);
@@ -427,9 +424,6 @@ impl StageAudio {
         depth: usize,
     ) -> Result<Option<Arc<ReadBlock>>, StageAudioError> {
         self.validate_original_input_request(graph, context, &samples, control, depth)?;
-        if matches!(context, Context::Retained(_)) {
-            return Ok(None);
-        }
         let lookup = LookupKey::new(context, &samples, depth);
         let Some(slot) = graph.original_inputs.find(lookup, control)? else {
             return Ok(None);
@@ -547,8 +541,7 @@ impl StageAudio {
             }
             graph.original_inputs.remove(slot, control)?;
         }
-        // Every context has one fixed private read mode. Retained applies its
-        // creative fades with authored=false, so no owner treatment is cached.
+        // Every context has one fixed private read mode.
         let block = if let Some(request) = prepared {
             self.read_prepared_original(provider, request, control, depth)?
         } else {
@@ -563,14 +556,6 @@ impl StageAudio {
                     frames,
                     control,
                     (depth, true),
-                )?,
-                Context::Retained(input) => self.read_retained_controlled(
-                    provider,
-                    input,
-                    samples.start,
-                    frames,
-                    control,
-                    (depth, false),
                 )?,
             }
         };

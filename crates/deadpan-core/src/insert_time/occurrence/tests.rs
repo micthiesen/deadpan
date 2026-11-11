@@ -275,7 +275,7 @@ fn occurrence_pause_is_compact_at_maximum_repeat_count_and_rejects_bad_pools() {
                 *pause_id = identities.isolation.nodes[0].clone();
             }
             2 => {
-                timing.ordinal = u32::MAX;
+                timing.allocation = crate::RevisionId::new("wrong-timing").unwrap();
             }
             _ => {
                 hold.duration = FrameDuration::ZERO;

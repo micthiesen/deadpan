@@ -62,15 +62,14 @@ revision; native controls should explain the no-op without committing it.
 
 ## Picture, audio and ownership
 
-Capture original sample lattices before transparent endpoint cuts. The split
-tree still has its original duration. From that tree, capture one shared placement
-layout and append at most one reanchor to each affected physical owner. Moved and
-displaced owners use their own original windows. Stop physical traversal at
-nonunity Preserve outputs, retaining their complete processing context.
+Cut transparent endpoints and place the children; no audio clock is captured
+or appended. Moved and displaced owners are sampled from their final positions.
+Stop physical traversal at nonunity Preserve outputs, retaining their complete
+processing context.
 
 Build the final child order directly. An intermediate delete-only document can
 lose retained samples at fractional frame boundaries, so it must not become the
-basis for later capture or validation. Preserve old entry phase and provider
+basis for later capture or validation. Preserve provider
 support while allocating each final interval as `B(end)-B(start)`. A moved or
 displaced interval may gain or lose one allocated sample at fractional rates;
 real retained support determines its PCM, and exhausted support stays silent.

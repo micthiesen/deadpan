@@ -1,6 +1,10 @@
 # Structural splice prerequisites
 
-This is an implementation design record. The [transparent audio partition
+This is an implementation design record. Original-audio sampling bindings
+(retained lattices, resume anchors and reanchor steps) were removed on
+2026-11-11; passages below that mention them are history. Original audio
+placement is now derived from the current tree (see
+[audio sampling](AUDIO_SAMPLING.md)). The [transparent audio partition
 layer](AUDIO_PARTITIONS.md) was introduced in core 12/database 18. The
 [mark binding lifecycle](MARK_FRAGMENTS.md) follows in core 13/database 19.
 [Pure Split](STRUCTURAL_SPLIT.md) was introduced in core 14/database 20.
@@ -73,8 +77,7 @@ its live framing: place full old Retime contexts beneath left/right output
 partitions and a Hold between them, removing the lifted framing from both
 contexts. The owner envelope then spans the new duration, as ordinary duration
 edits require. Owner-local marks need biased insertion transforms; descendant
-marks need retained fragments. Preserve output bindings belong on the retained
-Retime contexts, not the new Sequence, and node edge policies need deliberate
+marks need retained fragments. Node edge policies need deliberate
 ownership transfer. Existing commands must keep their historical output.
 
 This does not represent the general case. An outer Retime mapping three child
@@ -86,12 +89,10 @@ The complete implementation needs exact retained-output selections and live
 owner clocks spanning inserted time. These may extend the existing primitives;
 static captured framing and integer partitions alone are insufficient.
 
-Before copying or splitting, retain unbound audio sampling lattices. After
-zero-time isolation/splitting, capture current placements and append root-window
-resume steps only to owners with affected allocations. Each occurrence derives
-its own absolute rounded sample boundary. Stop at Preserve output owners to
-retain complete input history. A global no-op reanchor on every owner would
-consume the bounded history of unrelated earlier material. Implicit-gap
+Audio placement needs no capture at the edit: every Source, Hold and processing
+owner is sampled from its current position, so an insertion changes structure
+only. Each occurrence derives its own absolute rounded sample boundary, and a
+Preserve output owner keeps its complete input history. Implicit-gap
 materialization, mark-identity allocation, scoped suffix planning and one atomic
 history patch remain part of the required splice implementation.
 
@@ -104,7 +105,7 @@ Retime allocations and exact child windows; production plans consume it.
 Core 55 also persists the owned Preserve input described below. Authored splice
 construction and retained output routes remain open.
 Historical timing layouts now retain these exact clocks independently of their
-integral recipe counts; see [historical audio clocks](FROZEN_AUDIO_CLOCKS.md).
+integral recipe counts; see [historical audio clocks](FROZEN_AUDIO_CLOCKS.md) (used by sound clocks).
 This geometry does not yet establish owned output sample continuation.
 Source, Hold and authored Retime counts, the insertion boundary and
 requested duration, and the final project extent retain their integer contracts.
@@ -142,10 +143,10 @@ prepare 96,000 samples and changes the Source resampling pitch before Preserve.
 The picture mappings cancel, but the PCM does not. Explicit coordinate units
 could avoid this only by retaining identical physical input/output grids, exact
 DSP rates, complete processing history, support and phase. Those conversions
-would still need every clock consumer and frozen binding representation audited.
+would still need every clock consumer audited.
 
 Keep Preserve as an opaque retained processing context. A pause adds output
-allocation and a resume map, not new samples in that context's input history.
+allocation, not new samples in that context's input history.
 Apply silence on its output grid even when the inserted interval owns no input
 sample. Existing no-input-point suppression and distinct root RoundEven versus
 Preserve PointCeil tests are prerequisites, not proof of a complete splice.
@@ -191,8 +192,8 @@ connect that representation to strict document admission, reversible patches,
 SQLite snapshots/history and production picture/audio compilation. Sequence
 and compact Repeat totals use exact child extents; the root must be integral.
 Legacy duration maps and ordinary reducers refuse these documents. Current
-admission still refuses marks and sounds. Retained audio bindings and lineage
-are admitted while no Retime processes pitch: FollowSpeed stages and unity
+admission still refuses marks and sounds. Audio lineage
+is admitted while no Retime processes pitch: FollowSpeed stages and unity
 Preserve partitions only resample affinely. Shift is refused, and core 55
 admits Preserve only with an owned input projection.
 [Retimed pauses](INSERT_TIME.md#pauses-inside-followspeed-speed-changes) are the
@@ -207,8 +208,7 @@ is integrated; they are not completion of the insertion requirement.
 ### Preserve input projection
 
 Retaining a timing layout is not enough to retain a processing operand.
-`AudioBindingState` stores old topology/clocks and resume terms, but the current
-`AudioSignal` walker still feeds the current child into a nonunity Preserve
+The current `AudioSignal` walker still feeds the current child into a nonunity Preserve
 stage. Inserting a Hold inside that child would therefore change its input and
 history. `FrozenAudioContext` is a detached revision snapshot, not a live body;
 audio lineage is not a pointer to equivalent current PCM. Neither supplies this
@@ -260,7 +260,7 @@ Ordinary root-plan evaluation refuses a projected owner until its output
 placement is integrated.
 [Projected root placement](AUDIO_PROJECTED_ROOT.md) now supplies separate
 absolute RoundEven allocation for one physical projection, preserving its
-exact PCM phase and root-policy clock through crops and repeated resumes.
+exact PCM phase and root-policy clock through crops and repeated reads.
 Persistent output clocks/lifecycle, aggregate output scheduling and atomic
 splice construction remain necessary for the nested splice.
 
@@ -320,262 +320,16 @@ Core 12 now implements this distinction using `RetimePurpose::Partition`,
 `SourceSamplingSupport`, and separate envelope extent/sample ranges. Current
 tests compare paired retained partitions with the original PCM. Later actual
 Split tests cover marks, copied occurrences and output parity. Subsequent time
-insertion still needs the resume semantics below.
+insertion derives its audio placement from the edited tree.
 
 ## Repeat gap operands
 
-`AudioDefinitionSelector::RepeatGap` now exposes the current configured gap
+`AudioDefinitionSelector::RepeatGap` exposes the current configured gap
 recipe in its local-zero PointCeil clock or an explicit root/point placement.
 It remains available with one play and invents no preceding-play identity.
-`FrozenAudioLayout::project_scoped_with_support` resolves an actual gap's retained
-clock and meaningful support from its stable preceding play. These separate
-operands serve new gaps and surviving gaps, respectively.
-[Authored gap ownership and compact resume dispatch](GAP_AUDIO_BINDINGS.md)
-now consume both. General atomic splice remains open. See
-[gap clocks](AUDIO_DEFINITIONS.md) and
+A surviving gap is sampled from its current position like any other owner.
+See [gap clocks](AUDIO_DEFINITIONS.md) and
 [the current Original-moment contract](SOURCE_MOMENTS.md).
-
-## Exact resume at fractional frame rates
-
-For an old sampling function `q_old(n) = q0 + (n - s0) * r`, preserve the exact
-authored step `r` and establish a resume anchor:
-
-```text
-s_cut    = B(f)
-s_resume = B(f + N)
-q_resume = q_old(s_cut)
-q_new(n) = q_resume + (n - s_resume) * r
-```
-
-This makes `q_new(B(f + N)) == q_old(B(f))` explicit. Merely shifting picture
-Placement does not: at 30000/1001 fps there are 1601.6 samples/frame, so inserting
-one frame at frame 1 shifts allocation from sample 1602 to 3203. Subtracting one
-exact frame gives source position 1601.4 instead of 1602.
-
-Persist the exact domain coordinate and structural boundary anchor, resolving
-its current absolute sample position at plan compilation. Repeated occurrences
-need compact affine mappings, not a record per rendered play. Existing genuine
-cuts can retain separate domain start anchors; transparent partitions share a
-domain and must not introduce a reanchoring point.
-
-The absolute allocation rule does not permit a stronger promise
-that every previous PCM sample survives movement unchanged. Let `T` be the old
-end; inserted silence owns `B(f+N)-B(f)` samples, the old suffix owns
-`B(T)-B(f)`, and the new suffix owns `B(T+N)-B(f+N)`:
-
-| Samples/frame | f, N, T | Silence | Old suffix | New suffix |
-| --- | --- | --- | --- | --- |
-| 8008/5 | 0, 1, 1 | 1602 | 1602 | 1601 |
-| 8008/5 | 1, 1, 2 | 1601 | 1601 | 1602 |
-| 1001/2 | 1, 2, 3 | 1002 | 1002 | 1000 |
-
-Counts are not invariant under rounded translation. Preserve the original
-selection, resume coordinate and rate, while each new interval still owns its
-absolute allocation. Do not squeeze all old samples into the new count by changing
-speed. Qualify the behavior at shortened/extended endpoints explicitly. These
-mathematical constraints are not proof that the proposed representation meets
-the complete media contract.
-
-[Sampling clocks and retained envelopes](AUDIO_SAMPLING.md) now implement the
-separate derived grid/map/progress values and consume them in both audio readers.
-This does not persist the retained reference domain or author an insertion. That
-contract also records the nested Preserve/silent-Hold rounding counterexample
-which requires both old reference-policy and current structural suppression.
-[Frozen timing capture and reference queries](AUDIO_REFERENCE.md) now preserve
-those old policy facts and stable play placements outside the live tree. The
-bounded root-resume PCM consumer proves both rounding phases with canonical DSP.
-The owned binding representation described below now persists timing intent.
-Its complete lifecycle, cross-grid consumption and the atomic insertion command
-remain to be implemented.
-
-[Sampled-root transfer](AUDIO_SIGNAL_TRANSFER.md) now converts already mapped,
-explicitly suppressed root PCM to a new point grid with bounded halo reads.
-Old silence and envelope exhaustion affect input taps before interpolation and
-are reapplied at exact destination points; creative fades remain separate.
-The StageAudio entrypoint shares preparation work, provenance observations and
-one deadline across the complete halo. This supplies the conversion operation,
-not the authored binding or lifecycle rules that select its retained signal.
-
-The reference plan now provides borrowed physical processing-domain lookup,
-separate visible/meaningful extents and unit-rate root resume maps. Lookup stops
-at opaque Preserve and remains bounded for compact repeats. Tests distinguish
-the active resumed domain from later domains' independent starts and exercise
-composed phase through another real DSP stage. Core 15/database 21 now retain
-[logical audio copy lineage](AUDIO_LINEAGE.md) through Split, occurrence copies,
-reversible patches and strict history migration. Physical aliases stay distinct.
-The remaining sample binding must use this relationship with exact clocks and
-live context; matching media/timing or lineage alone cannot authorize a retained
-signal. See [the reference contract](AUDIO_REFERENCE.md).
-
-[Retained audio contexts](AUDIO_CONTEXT.md) now carry the complete raw processing
-tree and its media inputs, beyond the timing-only reference layout. Direct
-audio-only compilation preserves picture-only Source absence, exact original
-mappings and mix offsets, Hold policies and nested processing. The headless host
-reopens a context only after comparing it with the exact retained historical
-revision, then qualifies source receipts and original bytes on demand. This
-provides the old signal body. It does not yet persist which live occurrence reads
-that body, its composed phase anchors or its transformation through later edits.
-
-The [physical-domain reader](AUDIO_PHYSICAL_DOMAINS.md) now supplies hidden
-processing context independently of root allocation. A moved Partition can
-project its meaningful context into a sibling or before root zero. Whole-root
-PCM and policy queries would then select the wrong contribution. Borrowed
-domain handles seed both walkers at the physical subtree, preserving the original
-signed grid and meaningful constraints. Domain-to-point transfer rebases only
-integer sample labels and shares the preparation controller across its halo.
-
-The original frozen-body proposal would require a bounded dependency graph when
-a newly captured context contains earlier bindings. The preferred owned-tree
-approach below avoids duplicating those raw bodies. It still needs compact birth
-rules for new Repeat plays and gaps. Preparation must share residency/work limits
-through nested evaluations. Audibility must remain queryable on both input and
-output grids of a later Preserve stage; scaling rounded input silence cannot
-recover intervals that owned no input point.
-
-[Definition-output reads](AUDIO_DEFINITIONS.md) now supply the separate operand
-needed for new Repeat plays. Select the committed default child definition
-directly, including when all existing plays are overridden; never choose an old
-effective occurrence by convenience. Its scoped local-zero point grid provides
-the proposed canonical fresh-play recipe. Surviving plays retain their old-root
-continuity. The eventual binding graph must capture earlier descendant bindings
-and lexical Repeat arguments as well as these raw recipes.
-
-The [owned recipe reader](OWNED_AUDIO_CLOCKS.md) now evaluates a physical
-definition from the selected current revision in an explicit signed root clock.
-It uses the complete children already owned by Split, and their current policies,
-instead of substituting an old raw body. This makes editing the retained recipe
-observable without a second historical recipe graph. Explicit historical reads
-still authenticate their complete capture against the committed revision.
-
-Core 16/database 22 introduced the [owned binding representation](OWNED_AUDIO_BINDINGS.md):
-bounded timing-only records, lexical arguments, ordered default-birth clauses
-and symbolic local phase terms. Each term retains its own clock, so rounding at
-a shared-definition cut can differ across existing plays without expanding them.
-Split/isolation remap live aliases and removal prunes unused records atomically.
-Normal plans and StageAudio now consume these bindings. Pure capture retains
-existing clocks and compact default/override scope. Core 22/database 28 also
-capture configured Repeat gaps, including unplayed gaps. The consumer preserves current raw
-recipes, resumed phase, crop support, current Hard policies and virtual
-post-mapping fades. Endpoint masks stay on the physical sampling grid; explicit
-SilentHold policy also applies after a downstream Preserve, including intervals
-with no input point. Query/preparation work, source provenance and relative cache
-depth remain shared. Changed raw contributions and affected opaque ancestors
-still need explicit lifecycle rules; the arbitrary insertion command remains open.
-
-## Proposed compact resume dispatch
-
-The retained allocation query and ordered steps below are now implemented in
-[core 21/database 27](AUDIO_REANCHORS.md), with
-[gap binding ownership](GAP_AUDIO_BINDINGS.md) added in core 22/database 28.
-The general splice author remains open.
-
-Core 24/database 30 extend `InsertTime` at existing root
-Sequence seams to shift composite suffixes. The author reuses capture's current placement
-templates without replacing an owner's retained lattice or accumulated phase.
-Append one chronological step for each shifted physical or default-gap owner,
-using the pre-edit root window. Allocation-entry dispatch chooses each concrete
-occurrence's entry, including a partially visible first play and later full
-plays. Movement traversal stops at the first nonunity Preserve output; moving
-its intrinsic preparation descendants again would alter its history.
-
-This changes contextual command admission. Legacy replay retains core 23's
-`InsertTime` suffix restrictions against the pre-edit document through database
-29. Closed JSON fields and exact
-patch comparison alone cannot reject a consistently forged old history that
-claims a formerly unsupported composite suffix. Preserve the old reducer's
-output for inputs it admitted and add a forged-history refusal fixture beside
-genuine old-binary replay.
-
-Interior Repeat/Retime boundaries, fractional Retime cuts, outside-in occurrence
-isolation, materialized-gap insertion and admitted Original-moment payloads
-remain subsequent parts of the full atomic splice contract.
-
-Core 25/database 31 add a root Source/ordinary Hold fragment interior followed
-by a composite suffix. Both existing reducer paths remain unchanged. Capture
-unbound lattices before the internal Split, let Split copy live aliases while
-retaining historical references, then capture fresh current placements after
-Split and before the Hold. The right copy's physical and Repeat aliases belong
-to that second graph. A single timing identity cannot name both graphs: replacing
-the first table would invalidate retained lattices. The new branch reserves two
-consecutive checked timing ordinals without changing old requests, rejecting
-collision or overflow before publishing a transaction. Do not install an unused
-phase-only table before Split's intermediate validation.
-
-Core 26/database 32 add actual insertion beneath pure Sequence ancestors. A
-strict interior descends to the next Sequence; an existing child seam stays in
-its owner. The typed preflight returns that owner, slot and required Split IDs.
-Split only the admitted physical leaf or retained fragment, insert into its
-actual parent, then reanchor suffix siblings from that parent through the root.
-This preserves group identity and live framing, including on the inserted Hold.
-The native capture omits the insertion parent and all ancestors. Core 25 replay
-retains its former root-only context admission. The effective rational clock
-proposal above is still needed for Retime interiors; no sparse clock map or
-persisted projected DSP routes are introduced by this increment.
-
-Frozen core 24 retains contextual admission as the old physical suffix or an existing root
-seam; the stricter core-23 restriction still applies to database 29 and earlier.
-The decoded-PCM tests include an NTSC Source cut at frame 1 resuming
-new sample 3203 from old 1602 while the following Repeat resumes new 4805 from
-old 3203. One common suffix sample offset cannot satisfy both. Keep cropped
-Preserve history, gap births, mark bias and one-step undo in the same transaction.
-
-One local resume anchor per physical owner cannot represent a cut Repeat. If a
-two-frame Source repeats and insertion splits its first play at local frame one,
-the first surviving fragment enters at one while later full plays enter at zero.
-A single suffix sample offset also fails: each later physical domain starts on
-its own absolute rounded boundary.
-
-Prefer a bounded allocation-entry query against each retained timing layout over
-explicit clauses enumerating play intervals. The query should project the
-physical Source, Hold, Preserve output or actual gap, then intersect its visible
-allocation with every ancestor selection, including transparent Partitions and
-the selected clock's input constraint. An optional insertion window belongs to
-that captured clock scope. Keep this allocation query separate from meaningful
-raw support, which deliberately retains hidden Partition context.
-
-Return an explicit absent entry when intersections are empty. A right Partition
-retains earlier hidden plays; clamping an empty intersection to the old endpoint
-would install a spurious resume that could become audible after later expansion.
-An absent entry must leave the previous sampling map intact.
-
-Resolve lexical birth scope before applying the enclosing window. A new play
-must discard an old occurrence's outer cut while retaining intrinsic edits in
-its definition. For example, a born play of `Repeat(Partition(A,[1,3)))` enters A
-at one, not zero. A cut inside an old occurrence may enter at two, but that outer
-cut must not become the new play's entry. Each retained step needs its own scope;
-nested births cannot use one global reset. A former final play gaining a gap
-requires gap-definition birth even though its play identity survived, and an
-overridden child does not eliminate that play's ordinary gap.
-
-A bounded persisted representation retains the existing resume as its initial
-state and appends bounded, chronological reanchor steps. Each step contains a
-placement template and an optional window in that template's captured scope.
-Resolve its allocation entry `e`; skip absent entries. For the current local
-anchor `a` and accumulated exact local phase `p`, apply:
-
-```text
-p = p + (B_step(e) - B_step(a)) * step.local_frames_per_sample
-a = e
-```
-
-The initial state retains the existing resolved phase and anchor, or zero phase
-at the lattice's meaningful start when no resume exists. A timing snapshot alone
-cannot reconstruct phase accumulated by previous edits. Old symbolic phase
-terms keep their original interpretation. Consumers can continue receiving a
-resolved scalar anchor and phase after this bounded evaluation.
-
-Root movement stops at the first opaque nonunity Preserve output; it must not
-also shift that stage's intrinsic preparation descendants. Split/isolation,
-argument closing, pruning, identity reservation and wire admission must visit
-every new step reference. Live aliases may change; retained historical aliases
-and stable play identities must not. The persistent representation uses frozen
-core-16-through-20 adapters and complete history replay into database 27.
-
-Required evidence includes clipped first versus full later plays, hidden plays
-subsequently exposed, born plays retaining intrinsic Partitions, nested births
-with prior resumes, former-final gap birth, repeated NTSC insertions, movement
-and bounded billion-play lookup. Actual PCM tests must establish the recurrence
-before the general splice command uses it.
 
 ## Structural and mark requirements
 
@@ -643,7 +397,7 @@ The binding lifecycle, biased query visibility and Split construction are
 implemented. Split retains target-local full-context coordinates and relocates
 concrete events once using their exact old target position, independent of outer
 visibility. Apply seam bias before deduplicating exact coordinates; rounded frame
-equality cannot merge distinct positions. Shifted-fragment resume remains required.
+equality cannot merge distinct positions.
 
 [Sparse gap branches](REPEAT_GAP_BRANCHES.md) now provide independently owned
 subtrees and exact default-gap materialization without changing other shared
@@ -657,7 +411,7 @@ duration must be a semantic no-op without a new authored revision.
 Before claiming Split or arbitrary Hold insertion, test actual PCM and picture
 identity across fractional rates, 44.1 kHz resampling, short envelopes, source
 offsets, VFR endpoints, nested Preserve/FollowSpeed, RoomTone and generated crops.
-Assert exact resume anchors, original sampling steps, absolute later boundaries,
+Assert original sampling steps, absolute later boundaries,
 silence suppression, irregular-seek parity, compact billion-play queries, all
 mark spaces/biases and atomic identity exhaustion. Durable undo/redo must retain
 domain/anchor/envelope metadata as well as picture structure.
