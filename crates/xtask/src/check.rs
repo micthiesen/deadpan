@@ -2,7 +2,7 @@
 //! workspace packages whose files changed since a base revision (default
 //! `origin/main`, including uncommitted and untracked files). Dependents,
 //! replays, preview/export runs and the tests in `.config/slow-tests.txt`
-//! belong to the milestone gate; `--all` includes those tests here.
+//! are opt-in (`cargo xtask gate --slow`); `--all` includes those tests here.
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
@@ -219,13 +219,13 @@ pub fn run(arguments: &[String]) -> Result<()> {
     failed.map_or(Ok(()), Err)
 }
 
-/// A nextest filter excluding the listed slow tests, or `None` if the list is
-/// empty. The list holds `<binary id> <test name>` lines.
-fn skip_slow_tests(root: &Path) -> Result<Option<String>> {
+/// The `.config/slow-tests.txt` entries as nextest filter terms. The list holds
+/// `<binary id> <test name>` lines.
+pub(crate) fn slow_terms(root: &Path) -> Result<Vec<String>> {
     let path = root.join(".config/slow-tests.txt");
     let list = std::fs::read_to_string(&path)
         .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
-    let mut excluded = Vec::new();
+    let mut terms = Vec::new();
     for line in list
         .lines()
         .filter(|line| !line.is_empty() && !line.starts_with('#'))
@@ -233,13 +233,20 @@ fn skip_slow_tests(root: &Path) -> Result<Option<String>> {
         let (binary, test) = line
             .split_once(' ')
             .ok_or_else(|| format!("{}: malformed line {line:?}", path.display()))?;
-        excluded.push(format!("(binary_id(={binary}) & test(={test}))"));
+        terms.push(format!("(binary_id(={binary}) & test(={test}))"));
     }
+    Ok(terms)
+}
+
+/// A nextest filter excluding the listed slow tests, or `None` if the list is
+/// empty.
+pub(crate) fn skip_slow_tests(root: &Path) -> Result<Option<String>> {
+    let excluded = slow_terms(root)?;
     if excluded.is_empty() {
         return Ok(None);
     }
     println!(
-        "check: leaving {} slow tests to the gate (--all runs them)",
+        "check: leaving {} slow tests to `cargo xtask gate --slow` (--all runs them)",
         excluded.len()
     );
     Ok(Some(format!("not ({})", excluded.join(" | "))))

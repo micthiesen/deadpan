@@ -9,9 +9,11 @@ use std::time::Instant;
 use super::*;
 use crate::project::targets::{Coverage, Installed};
 
-/// Pictures per range: the 28 pictures before the cut make seven ranges, so a
-/// cancellation after the first lands with work left.
-const WIDTH: usize = 4;
+/// Pictures per range: the 28 pictures before the cut make twenty-eight ranges.
+/// Narrow ranges keep the job running for many worker launches, so the cancel
+/// below lands while it runs even when the machine is loaded; with wide ranges
+/// the job could finish before the cancel arrived.
+const WIDTH: usize = 1;
 /// The fixture's cut (a stored shot boundary stops tracking there).
 const CUT: usize = 30;
 /// The tolerance the app's other real-worker test uses, in coded pixels.
@@ -151,13 +153,9 @@ fn the_real_worker_tracks_cancels_resumes_corrects_and_undoes_through_the_app_se
         "the preview comes from the real worker"
     );
     let first_range = clock.elapsed();
-    // The next range's worker is (usually) already running; cancel it there.
-    let waiting = Instant::now();
-    let mut running_worker = live_workers(&worker);
-    while running_worker.is_empty() && waiting.elapsed() < Duration::from_secs(5) {
-        std::thread::sleep(Duration::from_millis(1));
-        running_worker = live_workers(&worker);
-    }
+    // Cancel straight away, with a range worker normally running: polling for
+    // one first (a `ps` per try) let the whole job finish under load.
+    let running_worker = live_workers(&worker);
     let cancelled = targets(
         &fixture.service,
         Operation::Cancel {

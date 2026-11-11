@@ -22,13 +22,6 @@ binary(storage_failures) | binary(storage_failures_media) | binary(proxy_disk_fu
 """
 test-group = "disk-images"
 
-# Exhaustive fault-injection sweeps: each takes about nine minutes, so they
-# start first to overlap the rest of the run.
-[[profile.default.overrides]]
-filter = "test(/stage_block_policy_every_real_(plan|cache)_callback/)"
-slow-timeout = { period = "60s", terminate-after = 20 }
-priority = 100
-
 # Encoded export runs take three to five minutes each and share the machine,
 # so the default limit stops valid runs under load.
 [[profile.default.overrides]]

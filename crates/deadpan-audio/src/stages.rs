@@ -27,6 +27,7 @@ use serde::Serialize;
 
 #[cfg(test)]
 #[path = "read_signal_policy_native_trace.rs"]
+#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
 mod read_signal_policy_native_trace;
 #[cfg(test)]
 #[path = "read_signal_policy_trace_origin.rs"]
@@ -36,6 +37,7 @@ use read_signal_policy_trace_origin::TraceOrigin;
 
 #[cfg(test)]
 #[path = "read_signal_policy_before_trace.rs"]
+#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
 mod read_signal_policy_before_trace;
 
 #[path = "read_signal_policy.rs"]
@@ -48,10 +50,12 @@ mod stage_block_policy;
 
 #[cfg(test)]
 #[path = "stage_block_policy_native_trace.rs"]
+#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
 mod stage_block_policy_native_trace;
 
 #[cfg(test)]
 #[path = "stage_block_policy_request.rs"]
+#[allow(dead_code, reason = "legacy switch whose callers were deleted")]
 mod stage_block_policy_request;
 
 #[cfg(test)]
@@ -60,6 +64,7 @@ mod read_signal_policy_request;
 
 #[cfg(test)]
 #[path = "stage_validation_policy_before_trace.rs"]
+#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
 mod stage_validation_policy_before_trace;
 
 #[path = "stage_validation_policy.rs"]
@@ -71,6 +76,7 @@ mod stage_validation_policy_request;
 
 #[cfg(test)]
 #[path = "stage_validation_policy_native_trace.rs"]
+#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
 mod stage_validation_policy_native_trace;
 
 use crate::sequence::{original_sample, resolve_source, source_samples};
@@ -83,18 +89,22 @@ use crate::{
 
 #[cfg(test)]
 #[path = "intrinsic_preflight_policy_request.rs"]
+#[allow(dead_code, reason = "legacy switch whose callers were deleted")]
 mod intrinsic_preflight_policy_request;
 
 #[cfg(test)]
 #[path = "intrinsic_preflight_before_trace.rs"]
+#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
 mod intrinsic_preflight_before_trace;
 
 #[cfg(test)]
 #[path = "intrinsic_preflight_policy_native_trace.rs"]
+#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
 mod intrinsic_preflight_policy_native_trace;
 
 #[cfg(test)]
 #[path = "native_tape_source_before_trace.rs"]
+#[allow(dead_code, reason = "recorders whose capture consumers were deleted")]
 mod native_tape_source_before_trace;
 
 #[path = "signal_input.rs"]

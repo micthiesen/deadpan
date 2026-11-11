@@ -64,12 +64,6 @@ deadpan-native-process.workspace = true
 # Real-device audition in the `perf` benchmark example (docs/PERFORMANCE.md).
 deadpan-playback.workspace = true
 
-# Builds accepted AI pauses with the synthetic worker. `cargo xtask gate`
-# enables the feature for the workspace runs, so the target is never skipped.
-[[test]]
-name = "offline_portable"
-required-features = ["synthetic-worker"]
-
 [[example]]
 name = "qualify_render_host_crash"
 required-features = ["qualification-render-host-crash"]

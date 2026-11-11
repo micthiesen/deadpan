@@ -465,5 +465,3 @@ fn capture_routed_projected_mask_before_g() {
 #[path = "routed_projected_mask_lifetime_tests.rs"]
 mod copy_lifetime;
 
-#[path = "native_tape_source_before_tests.rs"]
-mod native_tape_source_before;

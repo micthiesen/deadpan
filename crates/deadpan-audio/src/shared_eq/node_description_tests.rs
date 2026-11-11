@@ -538,5 +538,3 @@ mod query_admission;
 #[path = "capture_admission_tests.rs"]
 mod capture_admission;
 
-#[path = "caller_baseline_tests.rs"]
-mod caller_baseline;

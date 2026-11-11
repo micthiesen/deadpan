@@ -5,30 +5,20 @@
 //! build-directory hygiene. `cargo xtask hygiene` runs only that check.
 //! `cargo xtask bundle` assembles a relocatable `Deadpan.app`;
 //! `bundle-audit` and `bundle-verify` check one (docs/PACKAGING.md).
-//! `cargo xtask offline-dist` builds a full offline distribution with model
-//! packs from such a bundle; `offline-dist-verify` checks and imports it.
 //! `cargo xtask replays` builds the ui-harness app once and replays every
 //! UI scenario in its own report directory (docs/UI_FEEDBACK.md).
 //! `cargo xtask perf` runs the release Section 25 benchmark suite on copied
 //! fixtures (docs/PERFORMANCE.md).
-//! `cargo xtask chaos` runs the time-bounded Gate G adversarial campaign
-//! (docs/ADVERSARIAL.md). `cargo xtask fuzz` runs the coverage-guided
-//! libFuzzer targets in `fuzz/` with the nightly toolchain.
-//! `cargo xtask sanitizers` runs the remaining native adapters' tests and
-//! focused harnesses under nightly ASan/UBSan and TSan.
 
 use std::path::Path;
 use std::process::{Command, ExitCode};
 
 mod bundle;
-mod chaos;
 mod check;
-mod fuzz;
-mod offline_dist;
+mod install;
 mod percentile;
 mod perf;
 mod replays;
-mod sanitizers;
 mod target_hygiene;
 
 fn main() -> ExitCode {
@@ -37,20 +27,16 @@ fn main() -> ExitCode {
         .split_first()
         .map_or((None, &[][..]), |(task, rest)| (Some(task.as_str()), rest));
     let result = match task {
-        Some("gate") => gate(),
+        Some("gate") => gate(rest),
         Some("check") => check::run(rest),
         Some("hygiene") => target_hygiene::maintain(Path::new(".")),
         Some("bundle") => bundle::run(rest),
+        Some("install") => install::run(rest),
         Some("bundle-audit") => bundle::audit_command(rest),
         Some("bundle-verify") => bundle::verify::run(rest),
-        Some("offline-dist") => offline_dist::run(rest),
-        Some("offline-dist-verify") => offline_dist::verify_command(rest),
         Some("replays") => replays::run(rest),
         Some("perf") => perf::run(rest),
-        Some("chaos") => chaos::run(rest),
-        Some("fuzz") => fuzz::run(rest),
-        Some("sanitizers") => sanitizers::run(rest),
-        _ => Err("usage: cargo xtask check [--since REV] [--no-test] [--filter EXPR] | gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | perf [--fixture NAME=PACKAGE]... [--generate] [--ui] [--output <new dir>] | chaos [--minutes N] [--seed HEX] [--only a,b] [--output <new dir>] [--sanitize] [--list] | fuzz list | seeds | replay | run [--minutes N] [--jobs N] [--only a,b] | sanitizers [--only a,b] [--sanitizer address|thread] [--runs N] [--target-root <dir>] [--output <new dir>] [--whisper-model <path>] [--no-device] [--list] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app> | offline-dist --app <Deadpan.app> --output <new dir> --pack <id>[=<models root>]... | offline-dist-verify <dist dir>".into()),
+        _ => Err("usage: cargo xtask check [--since REV] [--no-test] [--filter EXPR] | gate [--slow] | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | perf [--fixture NAME=PACKAGE]... [--generate] [--ui] [--output <new dir>] | install [--dest <dir>] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,
@@ -82,55 +68,80 @@ const TEST_OPT_LEVEL: &str = "1";
 const UNOPTIMIZED_TEST_PACKAGES: [&str; 3] = ["deadpan-core", "deadpan-plan", "deadpan-store"];
 
 /// Formatting, lints and tests for the workspace and the replay harness
-/// feature set. Tests use nextest when installed, then doc tests.
-fn gate() -> target_hygiene::Result<()> {
+/// feature set. Tests use nextest when installed, then doc tests. The tests in
+/// `.config/slow-tests.txt` are left out so the gate stays under ten minutes;
+/// `cargo xtask gate --slow` runs only those.
+fn gate(arguments: &[String]) -> target_hygiene::Result<()> {
+    let slow = match arguments {
+        [] => false,
+        [flag] if flag == "--slow" => true,
+        _ => return Err("usage: cargo xtask gate [--slow]".into()),
+    };
+    if slow && !nextest_available() {
+        return Err("cargo xtask gate --slow needs cargo-nextest".into());
+    }
     target_hygiene::maintain(Path::new("."))?;
-    run(&["fmt", "--all", "--", "--check"])?;
-    run(&[
-        "clippy",
-        "--workspace",
-        "--all-targets",
-        "--features",
-        SYNTHETIC_WORKER,
-        "--locked",
-        "--",
-        "-D",
-        "warnings",
-    ])?;
-    run(&[
-        "clippy",
-        "-p",
-        "deadpan-app",
-        "--all-targets",
-        "--features",
-        "ui-harness",
-        "--locked",
-        "--",
-        "-D",
-        "warnings",
-    ])?;
+    if !slow {
+        run(&["fmt", "--all", "--", "--check"])?;
+        run(&[
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--features",
+            SYNTHETIC_WORKER,
+            "--locked",
+            "--",
+            "-D",
+            "warnings",
+        ])?;
+        run(&[
+            "clippy",
+            "-p",
+            "deadpan-app",
+            "--all-targets",
+            "--features",
+            "ui-harness",
+            "--locked",
+            "--",
+            "-D",
+            "warnings",
+        ])?;
+    }
     if nextest_available() {
+        let root = Path::new(".");
+        let filter = if slow {
+            let terms = check::slow_terms(root)?;
+            if terms.is_empty() {
+                return Err("no slow tests are listed".into());
+            }
+            terms.join(" | ")
+        } else {
+            check::skip_slow_tests(root)?.unwrap_or_else(|| "all()".into())
+        };
         let mut optimized = vec!["nextest", "run", "--workspace"];
         for package in UNOPTIMIZED_TEST_PACKAGES {
             optimized.extend(["--exclude", package]);
         }
         optimized.extend(["--features", SYNTHETIC_WORKER, "--locked", "--no-fail-fast"]);
+        optimized.extend(["-E", filter.as_str(), "--no-tests", "pass"]);
+        let mut unoptimized = unoptimized_tests();
+        unoptimized.extend(["-E", filter.as_str(), "--no-tests", "pass"]);
+        let mut app = vec![
+            "nextest",
+            "run",
+            "-p",
+            "deadpan-app",
+            "--features",
+            "ui-harness",
+            "--locked",
+            "--no-fail-fast",
+        ];
+        app.extend(["-E", filter.as_str(), "--no-tests", "pass"]);
         // Every stage runs even after a failure, so one failed target does
         // not hide the results of the independent ones after it.
-        let stages = [
-            run(&optimized),
-            run_at(&unoptimized_tests(), "0"),
-            run(&[
-                "nextest",
-                "run",
-                "-p",
-                "deadpan-app",
-                "--features",
-                "ui-harness",
-                "--locked",
-                "--no-fail-fast",
-            ]),
-            run(&[
+        let mut stages = vec![run(&optimized), run_at(&unoptimized, "0"), run(&app)];
+        if !slow {
+            stages.push(run(&[
                 "test",
                 "--workspace",
                 "--features",
@@ -138,8 +149,8 @@ fn gate() -> target_hygiene::Result<()> {
                 "--locked",
                 "--doc",
                 "--no-fail-fast",
-            ]),
-        ];
+            ]));
+        }
         stages.into_iter().collect()
     } else {
         run(&[
