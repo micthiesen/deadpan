@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+"""Word-start/end error of Deadpan's recognizer against LibriSpeech word truth.
+
+Truth: Montreal Forced Aligner alignments of LibriSpeech test-clean (Lugosch et
+al., zenodo 2619474). Usage:
+
+  word_eval.py prep   ROOT [N]    pick N utterances, write 16 kHz f32le + truth
+  word_eval.py run    ROOT MODEL  run the word_eval example, store token JSON
+  word_eval.py score  ROOT [mode] score the stored run (mode: worker = shipped conversion; heuristic = old whisper times)
+
+WORD_EVAL_SEED (default 7) picks the sample. ROOT is ~/Library/Developer/Deadpan/acceptance/speech (outside the repository).
+"""
+import difflib, io, time, urllib.request, glob, json, os, random, re, statistics, subprocess, sys, zipfile
+
+
+def norm(w):
+    return re.sub(r"[^a-z0-9']", "", w.lower())
+
+
+def load_truth(zip_path, wanted):
+    """{utt: [(word, start_s, end_s)]} from the TextGrid words tier."""
+    out = {}
+    with zipfile.ZipFile(zip_path) as z:
+        for name in z.namelist():
+            utt = os.path.basename(name)[:-9]
+            if utt not in wanted or not name.endswith(".TextGrid"):
+                continue
+            text = z.read(name).decode()
+            tier = text.split('name = "words"')[1]
+            tier = tier.split("item [")[0]
+            out[utt] = [(w, float(a), float(b)) for a, b, w in re.findall(
+                r'xmin = ([\d.]+)\s+xmax = ([\d.]+)\s+text = "([^"]*)"', tier) if w.strip()]
+    return out
+
+
+URL = "https://zenodo.org/api/records/2619474/files/librispeech_alignments.zip/content"
+UA = {"User-Agent": "OpenAI File Downloader, XaiImageApiFetch/1.0"}
+
+
+class RemoteZip(io.BufferedIOBase):
+    """Read-only file over HTTP range requests (the alignment zip is 623 MB)."""
+
+    BLOCK = 1 << 18
+
+    def __init__(self, size):
+        self.size, self.pos, self.cache = size, 0, {}
+
+    def seekable(self):
+        return True
+
+    def tell(self):
+        return self.pos
+
+    def seek(self, offset, whence=0):
+        self.pos = offset if whence == 0 else self.pos + offset if whence == 1 else self.size + offset
+        return self.pos
+
+    def _block(self, i):
+        if i not in self.cache:
+            a, b = i * self.BLOCK, min(self.size, (i + 1) * self.BLOCK) - 1
+            req = urllib.request.Request(URL, headers={**UA, "Range": f"bytes={a}-{b}"})
+            for attempt in range(12):  # zenodo answers 429 under bursts
+                try:
+                    self.cache[i] = urllib.request.urlopen(req).read()
+                    break
+                except Exception:
+                    time.sleep(5 * (attempt + 1))
+            else:
+                raise SystemExit("zenodo download failed")
+        return self.cache[i]
+
+    def read(self, k=-1):
+        k = self.size - self.pos if k < 0 else min(k, self.size - self.pos)
+        out = b""
+        while k > 0:
+            block = self._block(self.pos // self.BLOCK)
+            piece = block[self.pos % self.BLOCK:][:k]
+            out += piece
+            self.pos += len(piece)
+            k -= len(piece)
+        return out
+
+
+def fetch_truth(names, target):
+    zin = zipfile.ZipFile(RemoteZip(623023332))
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as out:
+        for name in names:
+            out.writestr(name, zin.read(name))
+
+
+SEED = int(os.environ.get("WORD_EVAL_SEED", "7"))
+
+
+def evaldir(root, seed):
+    return f"{root}/eval" if seed == 7 else f"{root}/eval{seed}"
+
+
+def prep(root, n, seed=SEED):
+    flacs = sorted(glob.glob(f"{root}/corpus/LibriSpeech/test-clean/*/*/*.flac"))
+    random.Random(seed).shuffle(flacs)
+    # spread over speakers: at most 6 utterances each
+    picked, per = [], {}
+    for f in flacs:
+        spk = f.split("/")[-3]
+        if per.get(spk, 0) < 6:
+            per[spk] = per.get(spk, 0) + 1
+            picked.append(f)
+        if len(picked) == n:
+            break
+    d = evaldir(root, seed)
+    os.makedirs(d, exist_ok=True)
+    utts = {os.path.basename(f)[:-5]: f for f in picked}
+    grids = f"{d}/textgrids.zip"
+    if not os.path.exists(grids):
+        fetch_truth(["test-clean/" + "/".join(f.split("/")[-3:])[:-5] + ".TextGrid" for f in picked], grids)
+    truth = load_truth(grids, set(utts))
+    keep = {}
+    for utt, f in utts.items():
+        if utt not in truth:
+            continue
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", f, "-ac", "1", "-ar", "16000",
+                        "-f", "f32le", f"{d}/{utt}.f32"], check=True)
+        keep[utt] = truth[utt]
+    json.dump(keep, open(f"{d}/truth.json", "w"))
+    print(len(keep), "utterances")
+
+
+def run(root, model):
+    binary = os.environ.get("WORD_EVAL_BIN", "target/lane-words/release/examples/word_eval")
+    files = sorted(glob.glob(f"{evaldir(root, SEED)}/*.f32"))
+    with open(f"{evaldir(root, SEED)}/run.jsonl", "w") as out:
+        subprocess.run([binary, model, *files], stdout=out, check=True)
+
+
+def prevtok(s, tok):
+    toks = [t for t in s["tokens"] if not t["text"].startswith("[_") and t["text"].strip()]
+    i = toks.index(tok)
+    return toks[i - 1] if i else None
+
+
+def words_from(segments, mode):
+    """Group tokens into words like Transcript::from_segments; mode picks times."""
+    words = []
+    for s in segments:
+        toks = [t for t in s["tokens"] if not t["text"].startswith("[_") and t["text"].strip()]
+        for i, t in enumerate(toks):
+            punct = not any(c.isalnum() for c in t["text"].strip())
+            if punct and words and not (t["text"].startswith(" ")):
+                continue
+            if t["text"].startswith(" ") or not words or words[-1]["seg"] != id(s):
+                if punct:
+                    continue
+                words.append({"text": t["text"].strip(), "seg": id(s), "toks": [t], "next": toks[i + 1] if i + 1 < len(toks) else None, "s": s})
+            else:
+                words[-1]["toks"].append(t)
+                words[-1]["next"] = toks[i + 1] if i + 1 < len(toks) else None
+                words[-1]["text"] += t["text"].strip()
+    out = []
+    for w in words:
+        first, last, nxt, s = w["toks"][0], w["toks"][-1], w["next"], w["s"]
+        if mode == "heuristic":
+            start, end = first["t0"], last["t1"]
+        else:  # dtw variants
+            start = first["dtw"]
+            if mode == "dtw":
+                end = nxt["dtw"] if nxt else s["t1"]
+            elif mode == "dtw_prev":  # start = previous token's DTW time, end = last token's
+                prev = prevtok(s, first)
+                start = prev["dtw"] if prev else s["t0"]
+                end = last["dtw"]
+            elif mode == "dtw_prev_h":
+                prev = prevtok(s, first)
+                start = prev["dtw"] if prev else s["t0"]
+                end = min(last["t1"], last["dtw"]) if False else last["dtw"]
+            elif mode == "dtw_h":  # end: heuristic, but never past the next start
+                end = min(last["t1"], nxt["dtw"]) if nxt else last["t1"]
+            else:
+                raise SystemExit("unknown mode " + mode)
+        out.append((norm(w["text"]), start / 100, max(end, start) / 100))
+    return out
+
+
+def stats(label, errs):
+    a = sorted(abs(e) for e in errs)
+    if not a:
+        return
+    p = lambda q: a[min(len(a) - 1, int(q * len(a)))]
+    print(f"{label}: n={len(a)} median_abs={1000*statistics.median(a):.0f}ms "
+          f"signed_median={1000*statistics.median(errs):+.0f}ms p90={1000*p(.9):.0f}ms "
+          f"within60={100*sum(x <= .06 for x in a)/len(a):.0f}% within100={100*sum(x <= .1 for x in a)/len(a):.0f}%")
+
+
+def score(root, mode):
+    truth = json.load(open(f"{evaldir(root, SEED)}/truth.json"))
+    se, ee, total, matched, secs, audio = [], [], 0, 0, 0.0, 0.0
+    for line in open(f"{evaldir(root, SEED)}/run.jsonl"):
+        r = json.loads(line)
+        utt = os.path.basename(r["file"])[:-4]
+        secs += r["seconds"]
+        audio += os.path.getsize(r["file"]) / 4 / 16000
+        if mode == "worker":  # Transcript::from_segments over the worker's output
+            hyp = [(norm(t), s / 100, e / 100) for t, s, e in r["words"]]
+        else:
+            hyp = words_from(r["segments"], mode)
+        ref = [(norm(w), s, e) for w, s, e in truth[utt]]
+        total += len(ref)
+        m = difflib.SequenceMatcher(None, [h[0] for h in hyp], [x[0] for x in ref], autojunk=False)
+        for a, b, size in m.get_matching_blocks():
+            for k in range(size):
+                se.append(hyp[a + k][1] - ref[b + k][1])
+                ee.append(hyp[a + k][2] - ref[b + k][2])
+                matched += 1
+    print(f"mode={mode} truth words={total} matched={matched} recognizer {secs:.1f}s for {audio:.0f}s audio")
+    stats("start", se)
+    stats("end  ", ee)
+
+
+if __name__ == "__main__":
+    cmd, root = sys.argv[1], os.path.expanduser(sys.argv[2])
+    if cmd == "prep":
+        prep(root, int(sys.argv[3]) if len(sys.argv) > 3 else 200)
+    elif cmd == "run":
+        run(root, sys.argv[3])
+    else:
+        score(root, sys.argv[3] if len(sys.argv) > 3 else "heuristic")

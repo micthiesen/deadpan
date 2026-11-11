@@ -118,9 +118,14 @@ on all of LibriSpeech test-clean (5.4 h of human read speech, each chapter
 transcribed as one long file), or 3.92% without two failed chapters. One of
 those fell into a confident repetition loop and lost half the chapter; the
 other stopped after its first sentence. A short JFK excerpt and the synthesized
-interview were transcribed without errors. Word timing is much coarser than
-word identity: sentence-initial words start a median 315 ms from the energy
-onset, and sentence-final words end a median 650 ms after the speech stops.
+interview were transcribed without errors. Word times come from whisper.cpp
+DTW token timestamps (base.en alignment heads), with each token's start 60% and
+end 40% of the way back and forward to its neighbours' DTW times. Against
+Montreal Forced Aligner word alignments of 200 LibriSpeech test-clean utterances
+(and 200 more held out), the median word-start error fell from 110-120 ms to
+50 ms, the end error from 110-120 ms to 50 ms (p90 140 ms); see
+`native/deadpan-transcribe/examples/word_eval.py`. Noisy and music-backed speech
+remain unmeasured.
 The approximate flag marks about a third of wrong words. Conversational, noisy
 and non-English speech remain unmeasured. The
 same chapters through the app's own analysis-PCM path (AAC Originals,

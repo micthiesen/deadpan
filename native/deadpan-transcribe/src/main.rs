@@ -10,6 +10,9 @@
 //! Stdout carries only framed protocol messages; whisper.cpp logs go to stderr,
 //! which the host keeps as a bounded diagnostic tail.
 
+#[cfg(target_os = "macos")]
+mod engine;
+
 use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::Path;
@@ -18,7 +21,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use deadpan_analysis::{RawSegment, RawToken};
+use deadpan_analysis::RawSegment;
 use deadpan_jobs::protocol::{
     AttemptId, Diagnostic, RequestId, Sha256, WorkspaceArtifact, WorkspaceRef,
 };
@@ -445,71 +448,37 @@ fn recognize(
     language: &Language,
     cancelled: &Arc<AtomicBool>,
 ) -> Result<Option<Vec<RawSegment>>, String> {
-    use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
-
     let path = model.path.to_str().ok_or("model path must be UTF-8")?;
-    let context = WhisperContext::new_with_params(path, WhisperContextParameters::default())
-        .map_err(|error| format!("load model: {error}"))?;
-    let mut state = context
-        .create_state()
-        .map_err(|error| format!("create recognizer state: {error}"))?;
-    let mut parameters = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-    parameters.set_token_timestamps(true);
-    parameters.set_language(Some(language.code().unwrap_or("auto")));
-    parameters.set_print_progress(false);
-    parameters.set_print_realtime(false);
-    parameters.set_print_special(false);
-    parameters.set_print_timestamps(false);
-    {
-        let output = Arc::clone(&job.output);
-        let request = job.request.clone();
-        let attempt = job.attempt.clone();
-        let mut last = None;
-        parameters.set_progress_callback_safe(move |percent: i32| {
-            let percent = u8::try_from(percent.clamp(0, 100)).unwrap_or(100);
-            if last == Some(percent) {
-                return;
-            }
-            last = Some(percent);
-            let job = Job {
-                request: request.clone(),
-                attempt: attempt.clone(),
-                output: Arc::clone(&output),
-            };
-            let _ = job.send(job.progress(percent));
-        });
-    }
-    abort::install(&mut parameters, cancelled);
-    let result = state.full(parameters, pcm);
+    let context = engine::load(path, true)?;
+    let output = Arc::clone(&job.output);
+    let request = job.request.clone();
+    let attempt = job.attempt.clone();
+    let mut last = None;
+    let result = engine::recognize(
+        &context,
+        pcm,
+        language.code().unwrap_or("auto"),
+        |parameters| {
+            parameters.set_progress_callback_safe(move |percent: i32| {
+                let percent = u8::try_from(percent.clamp(0, 100)).unwrap_or(100);
+                if last == Some(percent) {
+                    return;
+                }
+                last = Some(percent);
+                let job = Job {
+                    request: request.clone(),
+                    attempt: attempt.clone(),
+                    output: Arc::clone(&output),
+                };
+                let _ = job.send(job.progress(percent));
+            });
+            abort::install(parameters, cancelled);
+        },
+    );
     if cancelled.load(Ordering::Acquire) {
         return Ok(None);
     }
-    result.map_err(|error| format!("recognize: {error}"))?;
-    let mut segments = Vec::new();
-    for segment in state.as_iter() {
-        let mut tokens = Vec::new();
-        for index in 0..segment.n_tokens() {
-            let Some(token) = segment.get_token(index) else {
-                continue;
-            };
-            let data = token.token_data();
-            tokens.push(RawToken {
-                text: token
-                    .to_str_lossy()
-                    .map_err(|error| format!("token text: {error}"))?
-                    .into_owned(),
-                t0: data.t0,
-                t1: data.t1,
-                p: data.p,
-            });
-        }
-        segments.push(RawSegment {
-            t0: segment.start_timestamp(),
-            t1: segment.end_timestamp(),
-            tokens,
-        });
-    }
-    Ok(Some(segments))
+    result.map(|segments| Some(engine::to_raw(&segments)))
 }
 
 /// whisper-rs 0.16's `set_abort_callback_safe` instantiates its trampoline for
