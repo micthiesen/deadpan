@@ -415,12 +415,6 @@ fn temporal_and_occurrence_edits_fail_before_transforming_retained_context() {
             at: FrameDuration::new(50).unwrap(),
             identities: SplitIdentities { nodes: vec![] },
         },
-        Command::WrapRetime {
-            node: node("hold"),
-            id: node("retime"),
-            duration: FrameDuration::new(100).unwrap(),
-            pitch: PitchPolicy::Preserve,
-        },
         Command::EditOccurrence {
             instance: InstancePath {
                 node: node("hold"),
@@ -433,7 +427,11 @@ fn temporal_and_occurrence_edits_fail_before_transforming_retained_context() {
     for command in commands {
         let failure = apply(&document, &request(&document, command)).unwrap_err();
         assert_eq!(failure.code, EditErrorCode::InvalidCommand);
-        assert!(failure.message.contains("sound intervals and sample phase"));
+        assert!(
+            failure
+                .message
+                .contains("move time under a placed sound effect")
+        );
     }
     assert!(
         FrozenAudioContext::capture(&document)
@@ -550,4 +548,130 @@ fn bounded_live_inventory_allows_replacement_and_rejects_unknown_wire_fields() {
     wire["future"] = json!(true);
     assert!(serde_json::from_value::<SoundEvent>(wire).is_err());
     assert!(serde_json::from_value::<SoundOverflowPolicy>(json!("trim")).is_err());
+}
+
+/// Split the 100-frame Hold into [0,40), [40,50), [50,95) and [95,100) and
+/// place a sound over frames 60..90 (inside the third piece).
+fn speed_fixture() -> (ProjectDocument, [NodeId; 4]) {
+    let mut document = fixture();
+    for (index, at) in [40, 50, 95].into_iter().enumerate() {
+        let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+            panic!("root sequence")
+        };
+        let durations = document.durations().unwrap();
+        let mut start = 0;
+        let mut target = None;
+        for child in children {
+            let length = durations[child].frames();
+            if at < start + length {
+                target = Some(child.clone());
+                break;
+            }
+            start += length;
+        }
+        let target = target.unwrap();
+        let mut count = 3;
+        let mut pending = vec![target.clone()];
+        while let Some(next) = pending.pop() {
+            count += 1;
+            pending.extend(document.children(&next).cloned());
+        }
+        document = edit(
+            &document,
+            Command::Split {
+                node: target,
+                at: FrameDuration::new(at - start).unwrap(),
+                identities: SplitIdentities {
+                    nodes: (0..count)
+                        .map(|n| node(&format!("split{index}-{n}")))
+                        .collect(),
+                },
+            },
+        )
+        .0;
+    }
+    let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
+        panic!("root sequence")
+    };
+    let children: [NodeId; 4] = children.clone().try_into().unwrap();
+    let mut placed = event(&document);
+    if let SourceAudioMapping::Placement { start, .. } = &mut placed.mapping {
+        *start = ExactRatio::integer(60);
+    }
+    let (document, _) = place(&document, placed);
+    (document, children)
+}
+
+fn last_operation(document: &ProjectDocument) -> Option<RootSoundOperation> {
+    document.sound_routes()[&sound()]
+        .edits
+        .last()
+        .map(|edit| edit.operation)
+}
+
+#[test]
+fn speed_changes_move_placed_sounds_by_the_time_they_add_or_remove() {
+    let (document, children) = speed_fixture();
+    assert_eq!(
+        document.duration().unwrap(),
+        FrameDuration::new(100).unwrap()
+    );
+    let speed = |target: &NodeId, duration: i64, pitch: PitchPolicy| Command::WrapRetime {
+        node: target.clone(),
+        id: node("speed"),
+        duration: FrameDuration::new(duration).unwrap(),
+        pitch,
+    };
+    // Before the sound: [0,40) at double speed removes its last 20 frames, so
+    // the sound at 60..90 moves to 40..70.
+    let (faster, _) = edit(&document, speed(&children[0], 20, PitchPolicy::Preserve));
+    assert_eq!(faster.duration().unwrap(), FrameDuration::new(80).unwrap());
+    assert_eq!(
+        last_operation(&faster),
+        Some(RootSoundOperation::Delete {
+            range: FrameRange::new(ProjectFrame(20), ProjectFrame(40)).unwrap(),
+        })
+    );
+    assert_eq!(faster.sounds(), document.sounds());
+    // After the sound: slowing [95,100) inserts its extra frames at 100, so
+    // the sound stays at 60..90.
+    let (slower, _) = edit(&document, speed(&children[3], 10, PitchPolicy::FollowSpeed));
+    assert_eq!(slower.duration().unwrap(), FrameDuration::new(105).unwrap());
+    assert_eq!(
+        last_operation(&slower),
+        Some(RootSoundOperation::Insert {
+            at: ProjectFrame(100),
+            duration: FrameDuration::new(5).unwrap(),
+        })
+    );
+    // Over the sound: speeding [50,95) up to 30 frames removes 80..95, which
+    // cuts the sound's 80..90 tail like a deletion there would.
+    let (overlapped, transaction) = edit(&document, speed(&children[2], 30, PitchPolicy::Preserve));
+    assert_eq!(
+        last_operation(&overlapped),
+        Some(RootSoundOperation::Delete {
+            range: FrameRange::new(ProjectFrame(80), ProjectFrame(95)).unwrap(),
+        })
+    );
+    assert!(overlapped.sounds().contains_key(&sound()));
+    // Undo restores the sound and its route exactly.
+    let undone = transaction.inverse.apply(&overlapped).unwrap();
+    assert_eq!(undone.sounds(), document.sounds());
+    assert_eq!(undone.sound_routes(), document.sound_routes());
+    // A later speed change of the new stage is recorded the same way.
+    let (changed, _) = edit(
+        &faster,
+        Command::SetRetime {
+            node: node("speed"),
+            duration: FrameDuration::new(40).unwrap(),
+            pitch: PitchPolicy::Preserve,
+        },
+    );
+    assert_eq!(
+        last_operation(&changed),
+        Some(RootSoundOperation::Insert {
+            at: ProjectFrame(20),
+            duration: FrameDuration::new(20).unwrap(),
+        })
+    );
 }

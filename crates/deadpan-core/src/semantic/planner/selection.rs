@@ -130,7 +130,7 @@ where
             | SemanticSelector::Ranges { .. }
             | SemanticSelector::TranscriptSearch { .. } => {
                 return Err(unavailable(
-                    "this instruction does not accept a discontiguous set",
+                    "a search or a multi-beat selection can cover several places, and this action works on one range; step to one match with n, press v on it, then try again",
                 ));
             }
             SemanticSelector::SelectedBeat => {
@@ -165,7 +165,7 @@ where
                     | SemanticVisualSelection::Ranges { .. }
                     | SemanticVisualSelection::TranscriptSearch { .. } => {
                         return Err(unavailable(
-                            "this instruction does not accept a discontiguous set",
+                            "a search or a multi-beat selection can cover several places, and this action works on one range; step to one match with n, press v on it, then try again",
                         ));
                     }
                     SemanticVisualSelection::Time { anchor, head, .. } => {

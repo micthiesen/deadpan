@@ -202,7 +202,7 @@ fn changed_processing_subtree_refuses_and_partial_deletion_keeps_the_sound_alias
     };
     let error = apply(&before, &request(&before, "changed", command)).unwrap_err();
     assert!(
-        error.message.contains("processing subtree changed"),
+        error.message.contains("carries an attached sound"),
         "{error}"
     );
     let selected = range(1, 3);
@@ -479,7 +479,7 @@ fn late_compound_failure_does_not_publish_first_transport() {
     )
     .unwrap_err();
     assert!(
-        error.message.contains("processing subtree changed"),
+        error.message.contains("carries an attached sound"),
         "{error}"
     );
     assert_eq!(before.to_json().unwrap(), snapshot);

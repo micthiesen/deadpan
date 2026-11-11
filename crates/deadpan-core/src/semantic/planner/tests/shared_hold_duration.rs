@@ -748,7 +748,7 @@ fn shared_hold_duration_root_sound_refusal_preserves_document_context_and_bank()
     assert!(
         error
             .message
-            .contains("cannot yet preserve authored sound intervals")
+            .contains("move time under a placed sound effect")
     );
     assert_eq!(before.to_json().unwrap(), snapshot);
     assert_eq!(context, entry(Some(1)));

@@ -746,6 +746,28 @@ fn oracle_explode(document: &ProjectDocument, repeat: &NodeId) -> Result<Project
     .map(|(_, document)| document)
     .map_err(string)
 }
+/// Every allocation name a document retains: timing tables, Repeat play
+/// orders and audio lineage.
+fn allocation_ids(document: &ProjectDocument) -> std::collections::BTreeSet<RevisionId> {
+    let mut ids: std::collections::BTreeSet<RevisionId> = document
+        .audio_bindings()
+        .allocation_ids()
+        .into_iter()
+        .cloned()
+        .collect();
+    for node in document.nodes().values() {
+        if let NodeKind::Repeat { iterations, .. } = &node.kind {
+            for (allocation, _, _) in iterations.segments() {
+                ids.insert(allocation.clone());
+            }
+        }
+    }
+    for lineage in document.audio_lineage().values() {
+        ids.insert(lineage.allocation.clone());
+    }
+    ids
+}
+
 fn canonical(document: &ProjectDocument, before: &ProjectDocument) -> Value {
     let mut replacements = BTreeMap::from([(
         document.revision_id().as_str().to_owned(),
@@ -755,8 +777,8 @@ fn canonical(document: &ProjectDocument, before: &ProjectDocument) -> Value {
     // from its outer commit. The direct typed oracle uses one revision for
     // both. Normalize only newly retained allocations, preserving their
     // distinct references and every allocation already in the input.
-    let prior_allocations = before.audio_bindings().allocation_ids();
-    let allocations = document.audio_bindings().allocation_ids();
+    let prior_allocations = allocation_ids(before);
+    let allocations = allocation_ids(document);
     for (n, allocation) in allocations.difference(&prior_allocations).enumerate() {
         replacements.insert(
             allocation.as_str().to_owned(),

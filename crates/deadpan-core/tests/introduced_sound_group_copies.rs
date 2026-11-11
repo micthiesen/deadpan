@@ -422,10 +422,7 @@ fn partial_group_copy_requires_entering_the_group_and_filters_outer_relation() {
     let error =
         CapturedEditSlice::capture(&before, &id("top"), range(4, 6), timing("outside-partial"))
             .unwrap_err();
-    assert!(
-        error.message.contains("enter the intended group"),
-        "{error}"
-    );
+    assert!(error.message.contains("press Enter to open it"), "{error}");
     assert_eq!(before.to_json().unwrap(), bytes);
     let slice = CapturedEditSlice::capture(
         &before,

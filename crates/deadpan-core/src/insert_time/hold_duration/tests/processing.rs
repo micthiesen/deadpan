@@ -112,11 +112,7 @@ fn ordinary_hold_duration_processing_changed_attachment_scope_refuses_atomically
         // This descendant's sound enters the changed processing input. The
         // output owner's narrower proof must never admit this dependency.
         assert_eq!(error.code, EditErrorCode::InvalidCommand);
-        assert!(
-            error
-                .message
-                .ends_with("(sound clock processing subtree changed)")
-        );
+        assert!(error.message.contains("carries an attached sound"));
         assert_eq!(before, snapshot);
         assert_eq!(before.to_json().unwrap(), json);
         assert_eq!(before.audio_bindings, snapshot.audio_bindings);

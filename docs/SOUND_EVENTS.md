@@ -216,7 +216,7 @@ anchors:
 | Group / Ungroup | Unchanged. | Unchanged. Ungroup of a Sequence that owns a sound itself refuses, as do Group and Ungroup inside a sting's retained clock scope. |
 | `rr`, `r` + motion, `:repeat N` wrap | The bed is routed through the repeated plays. | The sting sounds in every play; `rib` keeps it on the first play only. |
 | `:sound-cut` | Ends at the cursor through the retained route (above). | Not applicable. |
-| Trim, Slip, Roll, speed change or Hold length change inside the owner | Trim and Roll before or around the bed transform it; speed changes and Hold length changes with root sounds refuse. | Edits before or after the beat transport it; changing timing inside the beat refuses with "this edit changes the timing inside a beat that carries an attached sound". |
+| Trim, Slip, Roll, speed change or Hold length change inside the owner | Trim and Roll before or around the bed transform it. A speed change on a beat in ordinary groups records its added or removed time at the beat's end (`sound_routing::speed_change_operation`): sounds before the beat stay, sounds after it move by the difference, a sound playing over the beat's end is gapped or cut there; inside a Repeat or another speed change it refuses. Hold length changes with root sounds refuse. | Edits before or after the beat transport it; changing timing inside the beat refuses with "this edit changes the timing inside a beat that carries an attached sound". |
 
 Moving a beat that carries a sting proves only the sting's own processing
 subtree (the owner, or its enclosing speed change), not the whole top-level

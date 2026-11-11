@@ -205,7 +205,7 @@ fn timing_changes_inside_a_sting_beat_refuse_readably() {
             anchor_policy: Default::default(),
         },
     );
-    assert!(message.contains("remove beat sounds"), "{message}");
+    assert!(message.contains("remove the attached sound"), "{message}");
     // A Sequence's own sound has no exact redistribution onto its children.
     let mut sequence = before.clone();
     let events = sequence.beat_sounds.remove(&node("owner")).unwrap();
@@ -378,6 +378,28 @@ fn attached_fragment(start: ExactRatio) -> (ProjectDocument, BTreeMap<SoundId, B
 /// (the pre-split layout, with the exact Split forest), and the side that does
 /// not contain the sound crops it away. Before, after and across the cut give
 /// the same exact journal; only the audible piece differs.
+/// A caller that sizes a plain fragment cut (a pause, range cut or Repeat
+/// inside the beat) gets the attached-sound refusal, not an identity count.
+#[test]
+fn an_undersized_cut_inside_a_sting_fragment_names_the_attached_sound() {
+    let (attached, _) = attached_fragment(ExactRatio::ZERO);
+    let message = refusal(
+        &attached,
+        "short",
+        Command::Split {
+            node: node("p-0"),
+            at: frames(2),
+            identities: SplitIdentities { nodes: ids("s", 2) },
+        },
+    );
+    assert!(
+        message.starts_with(
+            "this edit changes the timing inside a beat that carries an attached sound"
+        ),
+        "{message}"
+    );
+}
+
 #[test]
 fn fragment_split_keeps_the_sting_complete_on_its_retained_clock() {
     // The sound lasts 1000/1601.6 of a frame at 30000/1001.

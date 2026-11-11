@@ -590,7 +590,7 @@ fn one_play_deletion_and_repeat_refuse_root_sounds_with_a_readable_message() {
         let error = before
             .occurrence_structure_requirements(&instance, &edit)
             .unwrap_err();
-        assert!(error.message.contains("remove the sound events"), "{error}");
+        assert!(error.message.contains("delete the placed sound"), "{error}");
         let request = CommandRequest {
             project_id: before.project_id().clone(),
             expected_revision: before.revision_id().clone(),
@@ -605,6 +605,6 @@ fn one_play_deletion_and_repeat_refuse_root_sounds_with_a_readable_message() {
             },
         };
         let error = crate::apply(&before, &request).unwrap_err();
-        assert!(error.message.contains("remove the sound events"), "{error}");
+        assert!(error.message.contains("delete the placed sound"), "{error}");
     }
 }

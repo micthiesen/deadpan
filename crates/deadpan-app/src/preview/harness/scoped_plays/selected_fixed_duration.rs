@@ -500,7 +500,12 @@ fn same_content(actual: &ProjectDocument, expected: &ProjectDocument) -> Result<
     ) {
         return Ok(false);
     }
-    b["audio_bindings"] = a["audio_bindings"].clone();
+    // Compared above; an empty state is omitted from the wire.
+    for json in [&mut a, &mut b] {
+        if let Some(object) = json.as_object_mut() {
+            object.remove("audio_bindings");
+        }
+    }
     Ok(a == b)
 }
 fn undo(d: &mut Driver<'_>) -> Result<(), String> {

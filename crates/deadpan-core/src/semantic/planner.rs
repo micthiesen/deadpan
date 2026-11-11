@@ -1006,7 +1006,7 @@ where
                     | SemanticInstruction::Call { .. }
             ) {
                 return Err(unavailable(
-                    "this instruction does not accept a discontiguous set; clear the selection first",
+                    "this action works on one range, and the current selection covers several places; press Escape to clear it, then select one range",
                 ));
             }
             if instruction.uses_transcript_words() {

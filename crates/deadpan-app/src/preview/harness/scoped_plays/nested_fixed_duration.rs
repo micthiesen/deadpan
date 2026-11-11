@@ -563,7 +563,12 @@ fn same_content(actual: &ProjectDocument, expected: &ProjectDocument) -> Result<
     ) {
         return Ok(false);
     }
-    expected_json["audio_bindings"] = actual_json["audio_bindings"].clone();
+    // Compared above; an empty state is omitted from the wire.
+    for json in [&mut actual_json, &mut expected_json] {
+        if let Some(object) = json.as_object_mut() {
+            object.remove("audio_bindings");
+        }
+    }
     Ok(actual_json == expected_json)
 }
 

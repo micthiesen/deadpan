@@ -372,9 +372,7 @@ fn repeat_wrapping_cannot_discard_a_complete_split_forest_atomically() {
         )
         .unwrap_err();
         assert!(
-            error
-                .message
-                .contains("cannot narrow a complete retained sound clock forest"),
+            error.message.contains("carries an attached sound"),
             "{error}"
         );
         assert_eq!(before.to_json().unwrap(), snapshot);

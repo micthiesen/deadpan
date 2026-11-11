@@ -666,7 +666,7 @@ fn ranges_cli_rejects_invalid_offsets_and_late_failures_without_sql_publication(
         error["error"]["message"]
             .as_str()
             .unwrap()
-            .contains("does not accept a discontiguous set")
+            .contains("works on one range")
     );
     assert_eq!(cells(&package)?, before);
     Ok(())

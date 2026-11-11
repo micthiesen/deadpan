@@ -377,14 +377,14 @@ fn fixed_retime_output_sound_late_child_dependency_refusal_preserves_all_rows() 
             .preview_compound(&request)
             .unwrap_err()
             .to_string()
-            .contains("sound clock processing subtree changed")
+            .contains("carries an attached sound")
     );
     assert!(
         store
             .commit_compound(&request, None)
             .unwrap_err()
             .to_string()
-            .contains("sound clock processing subtree changed")
+            .contains("carries an attached sound")
     );
     assert_eq!(store.snapshot()?, before);
     assert_eq!(store.registers()?, bank);

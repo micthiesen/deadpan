@@ -358,6 +358,53 @@ fn exact_replacement_operation(
     }
 }
 
+/// A speed change turns its beat's `D` frames into `D'` frames. Placed sounds
+/// before the beat stay where they are and sounds after it move by `D' - D`:
+/// the difference is inserted or removed at the beat's end, so a sound playing
+/// over the beat keeps its start and is gapped or cut where a pause or delete
+/// at that point would gap or cut it.
+fn speed_change_operation(
+    document: &ProjectDocument,
+    node: &crate::NodeId,
+    duration: FrameDuration,
+) -> Result<Option<RootSoundOperation>, EditError> {
+    let refused = || {
+        EditError::new(
+            EditErrorCode::InvalidCommand,
+            "a speed change inside a repeat or inside another speed change cannot move placed sound effects yet; change the speed outside it, or remove the sound effects first",
+        )
+    };
+    let parent = document.parent_of(node).ok_or_else(refused)?;
+    let NodeKind::Sequence { children } = &document.nodes[&parent].kind else {
+        return Err(refused());
+    };
+    let slot = children
+        .iter()
+        .position(|child| child == node)
+        .ok_or_else(refused)?;
+    let start = document
+        .source_splice_boundary(&parent, slot)
+        .map_err(|_| refused())?;
+    let old = document.durations()?[node].frames();
+    let new = duration.frames();
+    let end = start
+        .0
+        .checked_add(old)
+        .ok_or(TimeError::Overflow)
+        .map_err(DocumentError::from)?;
+    Ok(match new.cmp(&old) {
+        std::cmp::Ordering::Equal => None,
+        std::cmp::Ordering::Greater => Some(RootSoundOperation::Insert {
+            at: ProjectFrame(end),
+            duration: FrameDuration::new(new - old).map_err(DocumentError::from)?,
+        }),
+        std::cmp::Ordering::Less => Some(RootSoundOperation::Delete {
+            range: FrameRange::new(ProjectFrame(end - (old - new)), ProjectFrame(end))
+                .map_err(DocumentError::from)?,
+        }),
+    })
+}
+
 impl RootSoundEditCapture {
     pub(crate) fn prepare(
         document: &ProjectDocument,
@@ -597,6 +644,13 @@ impl RootSoundEditCapture {
             Command::DeleteRange { parent, range, .. } => {
                 document.range_deletion(parent, *range)?;
                 RootSoundOperation::Delete { range: *range }
+            }
+            Command::WrapRetime { node, duration, .. }
+            | Command::SetRetime { node, duration, .. } => {
+                let Some(operation) = speed_change_operation(document, node, *duration)? else {
+                    return Ok(None);
+                };
+                operation
             }
             Command::DeleteChildren {
                 parent,

@@ -434,7 +434,7 @@ fn repeat_owned_sound_refuses_a_changed_processing_extent_atomically() {
     )
     .unwrap_err();
     assert!(
-        error.message.contains("processing subtree changed"),
+        error.message.contains("carries an attached sound"),
         "{error}"
     );
     assert_eq!(before.to_json().unwrap(), snapshot);

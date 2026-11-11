@@ -199,7 +199,10 @@ fn partial_range_of_preserve_owner_still_rejects_before_sound_capture() {
         },
     )
     .unwrap_err();
-    assert!(error.message.contains("Range endpoints require"), "{error}");
+    assert!(
+        error.message.contains("cannot be cut from outside"),
+        "{error}"
+    );
 }
 
 #[test]

@@ -1293,17 +1293,20 @@ fn invalid(message: &str) -> EditError {
     EditError::new(EditErrorCode::InvalidCommand, message)
 }
 
+const ATTACHED_SOUND_REFUSAL: &str = "this edit changes the timing inside a beat that carries an attached sound, which cannot keep its sound in place yet; edit before or after that beat, move or delete the whole beat, or remove its attached sound first";
+
 /// Transport proofs report internal structure; the editor needs the action.
-/// The proof's own reason stays appended for diagnosis and tests.
 pub(crate) fn readable_refusal(error: EditError) -> EditError {
     if error.code != EditErrorCode::InvalidCommand {
         return error;
     }
     EditError {
-        message: format!(
-            "this edit changes the timing inside a beat that carries an attached sound, which cannot yet keep its sound in place; edit before or after that beat, move or delete the whole beat, or remove its attached sound first ({})",
-            error.message
-        ),
+        message: ATTACHED_SOUND_REFUSAL.into(),
         ..error
     }
+}
+
+/// The same refusal where an edit inside such a beat stops before transport.
+pub(crate) fn attached_sound_refusal() -> EditError {
+    invalid(ATTACHED_SOUND_REFUSAL)
 }

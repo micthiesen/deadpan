@@ -626,7 +626,7 @@ fn composite_endpoint(d: &mut Driver<'_>) -> Result<(), String> {
                 && d.app()
                     .error
                     .as_deref()
-                    .is_some_and(|error| error.contains("Range endpoints")),
+                    .is_some_and(|error| error.contains("cannot be cut from outside")),
             json!({"wrapper":command,"requested":[15,27],"no_cut_at_seam":20}),
             d.snapshot(),
         )?;

@@ -408,7 +408,7 @@ pub(crate) fn validate_command_with_grouping(
     {
         return Err(EditError::new(
             EditErrorCode::InvalidCommand,
-            "this structural edit cannot yet preserve beat-owned sound clocks and sample phase; remove beat sounds before editing time",
+            "this edit would move time under a sound attached to a beat, which cannot follow it yet; remove the attached sound, make the edit, then attach it again",
         ));
     }
     // Without root sounds, attached sounds were decided above.
@@ -439,6 +439,8 @@ pub(crate) fn validate_command_with_grouping(
                 | Command::SetRepeatPlays { .. }
                 | Command::SetRepeatGaps { .. }
                 | Command::Delete { .. }
+                | Command::WrapRetime { .. }
+                | Command::SetRetime { .. }
         )
         || matches!(command, Command::Split { node, .. } if node != document.root())
         || matches!(command, Command::EditOccurrence { instance, edit: OccurrenceEdit::Split { .. }, .. }
@@ -448,7 +450,7 @@ pub(crate) fn validate_command_with_grouping(
     }
     Err(EditError::new(
         EditErrorCode::InvalidCommand,
-        "this structural edit cannot yet preserve authored sound intervals and sample phase; remove the sound events before editing time",
+        "this edit would move time under a placed sound effect, which cannot follow it yet; delete the placed sound (dd in Placed sounds), make the edit, then place it again",
     ))
 }
 

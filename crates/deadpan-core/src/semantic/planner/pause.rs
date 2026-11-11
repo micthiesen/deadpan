@@ -983,7 +983,12 @@ where
         } else {
             let value = self.bank.get(&register).cloned();
             self.inputs.insert(register, value.clone());
-            value.ok_or_else(|| invalid("the cutaway register is empty"))?
+            value.ok_or_else(|| {
+                invalid(&format!(
+                    "nothing is copied in register {name}; in Original select a moment with v and press y, then place the cutaway from register {name}",
+                    name = register.as_char()
+                ))
+            })?
         };
         if !matches!(value.as_ref(), RegisterValue::Original { .. }) {
             return Err(invalid(

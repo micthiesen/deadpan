@@ -188,7 +188,7 @@ fn preflight_with(
                         super::slice_physical(document, child)
                     };
                     endpoint.map_err(|error| {
-                        EditError::new(error.code, "Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures")
+                        EditError::new(error.code, "the range starts or ends inside a repeat, a speed change or another beat that cannot be cut from outside; select the whole beat, or press Enter to open it and select the range inside")
                     })?;
                 }
                 if matches!(mode, EndpointMode::Capture) {

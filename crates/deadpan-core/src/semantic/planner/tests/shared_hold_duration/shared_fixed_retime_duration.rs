@@ -731,7 +731,7 @@ fn shared_fixed_retime_duration_root_sound_policy_is_unchanged() {
     assert!(
         error
             .message
-            .contains("cannot yet preserve authored sound intervals")
+            .contains("move time under a placed sound effect")
     );
     assert_eq!(d.to_json().unwrap(), snapshot);
 }

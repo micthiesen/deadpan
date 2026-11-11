@@ -77,7 +77,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let history = reader
         .history_availability()
         .map_err(|error| error.to_string())?;
-    const UNSUPPORTED: &str = "Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures";
+    const UNSUPPORTED: &str = "the range starts or ends inside a repeat, a speed change or another beat that cannot be cut from outside; select the whole beat, or press Enter to open it and select the range inside";
     d.key(Key::D)?;
     d.wait_for(
         "Unsupported composite endpoint settles with its typed cut rejection",

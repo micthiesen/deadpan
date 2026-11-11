@@ -52,10 +52,7 @@ impl Constraints {
                     SourceTrimGeometryConstraint::PhysicalDuration
                     | SourceTrimGeometryConstraint::ProjectDuration
                     | SourceTrimGeometryConstraint::IntegerValue => TimeError::Overflow.into(),
-                    _ => invalid(&format!(
-                        "combined Source trim violates {:?} {:?}",
-                        constraint.owner, constraint.reason
-                    )),
+                    _ => invalid(refusal(constraint.owner, constraint.reason)),
                 });
             }
         }
@@ -281,4 +278,29 @@ pub(super) fn context_constraints(
 
 fn integer(value: i128) -> Result<ExactRatio, TimeError> {
     ExactRatio::new(value, 1)
+}
+
+/// What the editor can do about one exceeded Trim limit.
+fn refusal(owner: SourceTrimGeometryOwner, reason: SourceTrimGeometryConstraint) -> &'static str {
+    use SourceTrimGeometryConstraint as Limit;
+    use SourceTrimGeometryOwner as Owner;
+    match (owner, reason) {
+        (Owner::Right, Limit::PictureStart | Limit::PictureEnd) => {
+            "the next beat has no more Original picture on that side; use a smaller Roll"
+        }
+        (Owner::Right, _) => "the next beat would have no picture left; use a smaller Roll",
+        (_, Limit::PictureStart) => {
+            "this beat cannot start earlier: the Original has no earlier picture there; use a smaller In change"
+        }
+        (_, Limit::PictureEnd) => {
+            "this beat cannot end later: the Original ends there; use a smaller Out change"
+        }
+        (_, Limit::MinimumSelectedDuration | Limit::MinimumOutputDuration) => {
+            "this would leave the beat with no picture; use a smaller change"
+        }
+        (_, Limit::ScopeStart | Limit::ScopeEnd) => {
+            "the trim would move past the edge of the group it is in; use a smaller change"
+        }
+        _ => "this trim goes past what the beat and the Original allow; use a smaller change",
+    }
 }

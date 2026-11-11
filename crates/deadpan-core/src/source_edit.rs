@@ -206,7 +206,8 @@ fn target<'a>(
         _ => Err(EditError::new(
             EditErrorCode::WrongNodeKind,
             format!(
-                "{operation} requires a Source or one neutral unity Partition; nested, treated and repeated targets remain unsupported"
+                "{} works on one plain beat of the Original; this beat is a repeat, a group, a speed change or carries gain or framing. Press Enter to open it, select the Original beat inside, then try again",
+                plain_operation(operation)
             ),
         )),
     }
@@ -407,4 +408,13 @@ pub(crate) fn offset_audio_mapping(
         document.presentation_basis().frame_rate,
     )?;
     Ok(Some(mapping))
+}
+
+/// The user-facing name of an internal Source edit.
+fn plain_operation(operation: &str) -> &'static str {
+    match operation {
+        "source slip" => "Slip",
+        "source roll" => "Roll",
+        _ => "Trim",
+    }
 }

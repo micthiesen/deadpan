@@ -159,18 +159,14 @@ pub(crate) fn apply_validated(
     };
     let container = parent
         .is_some_and(|parent| !matches!(document.nodes[parent].kind, NodeKind::Sequence { .. }));
+    // The transport detaches sounds around the reducer.
+    let owns_sound = document.beat_sounds.contains_key(target)
+        || edit_context
+            .sound_clocks
+            .as_ref()
+            .is_some_and(|sounds| sounds.owns_events(target));
     let refinement = match &original.kind {
-        NodeKind::Retime { child, mapping, .. }
-            if refines_owner(
-                original,
-                // The transport detaches sounds around the reducer.
-                document.beat_sounds.contains_key(target)
-                    || edit_context
-                        .sound_clocks
-                        .as_ref()
-                        .is_some_and(|sounds| sounds.owns_events(target)),
-            ) =>
-        {
+        NodeKind::Retime { child, mapping, .. } if refines_owner(original, owns_sound) => {
             Some((child, *mapping))
         }
         _ => None,
@@ -190,6 +186,11 @@ pub(crate) fn apply_validated(
         return Err(limit("split exceeds the document node limit"));
     }
     if identities.nodes.len() < required {
+        // Callers size a plain cut; a beat with an attached sound needs a
+        // complete copy that only Split itself plans.
+        if owns_sound {
+            return Err(crate::sound_clock::edit::attached_sound_refusal());
+        }
         return Err(invalid("split needs more node identities"));
     }
     let mut supplied = identities.nodes.iter();

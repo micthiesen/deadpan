@@ -185,7 +185,9 @@ where
                 | SemanticVisualSelection::Ranges { .. }
                 | SemanticVisualSelection::TranscriptSearch { .. },
             ) => {
-                return Err(unavailable("framing does not accept a discontiguous set"));
+                return Err(unavailable(
+                    "zoom works on one range, and the selection covers several places; step to one match with n, press v on it, then try again",
+                ));
             }
             None => None,
         };

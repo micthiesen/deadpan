@@ -184,7 +184,8 @@ These keys refuse, with the earlier structural message, for All plays or
 several selected plays at any level. Deletion, Repeat, count and gap changes also
 refuse a play's whole contents (there is no group to close up; split it or press Enter first),
 a beat inside a speed change or crop in the play, and documents with placed
-sounds or beat sounds ("remove the sound events before editing time").
+sounds or beat sounds ("delete the placed sound, make the edit, then place it
+again").
 
 These keys commit through semantic Apply, so a recording macro records them and
 dot repeats them. The saved intent is `Split`, `Cut` of the selected beat
