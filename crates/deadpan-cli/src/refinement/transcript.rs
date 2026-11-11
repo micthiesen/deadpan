@@ -9,7 +9,7 @@
 //! recognizer times, and so does every word when the aligner is unavailable.
 
 use std::sync::atomic::AtomicBool;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use deadpan_analysis::Transcript;
 use deadpan_analysis::refinement::{RefinementControl, RefinementError as AlignError, propose};
@@ -44,6 +44,32 @@ impl TranscriptRefiner {
             self.models.checkpoint.sha256.as_str()
         )
     }
+}
+
+/// The refiner the installed pack and the bundled aligner provide, or why there
+/// is none. The app and the headless `transcribe` both decide through this, so
+/// a transcript is refined exactly when the pack and a qualified worker exist.
+pub fn installed_refiner(
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<TranscriptRefiner, String> {
+    let root = crate::models::default_root().map_err(|error| error.to_string())?;
+    let models = crate::models::installed_refinement_models(&root, cancelled, deadline)
+        .map_err(|error| format!("phoneme pack: {error}"))?
+        .ok_or("the phoneme-ctc-en pack is not installed")?;
+    let runtime = RefinementRuntime::beside_current_executable()
+        .map_err(|error| format!("aligner worker: {error}"))?;
+    Ok(TranscriptRefiner { runtime, models })
+}
+
+/// Words whose start or end differ between two timings of one transcript.
+pub fn changed_words(before: &Transcript, after: &Transcript) -> usize {
+    before
+        .words()
+        .iter()
+        .zip(after.words())
+        .filter(|(a, b)| (a.start_cs, a.end_cs) != (b.start_cs, b.end_cs))
+        .count()
 }
 
 /// End of the window starting at `start`: at most 40 words and 20 s, cut at the
@@ -89,6 +115,9 @@ fn refine_window(
     if to <= from || to - from < 401 || to - from > 480_000 {
         return Ok(result);
     }
+    // The worker bounds one inference to ten minutes, whatever the caller's
+    // overall deadline is.
+    let deadline = deadline.min(Instant::now() + Duration::from_secs(300));
     let emissions = infer(
         &refiner.runtime,
         &refiner.models.checkpoint,
@@ -152,6 +181,16 @@ fn refine_window(
     Ok(result)
 }
 
+/// A refined transcript and how the windows went; a failed window leaves its
+/// words at the recognizer's times, so callers should report `failed_windows`.
+#[derive(Debug, Clone)]
+pub struct Refined {
+    pub transcript: Transcript,
+    pub windows: usize,
+    pub failed_windows: usize,
+    pub first_error: Option<String>,
+}
+
 /// Replace word times by phoneme-aligned ones where the aligner places a word
 /// near its recognizer time. `samples` is the analysis PCM `transcript` timed.
 /// Only cancellation and the deadline are errors.
@@ -161,14 +200,16 @@ pub fn refine_transcript(
     samples: &[f32],
     cancelled: &AtomicBool,
     deadline: Instant,
-) -> Result<Transcript, RefinementError> {
+) -> Result<Refined, RefinementError> {
     let words = transcript.words();
+    let (mut windows, mut failed_windows, mut first_error) = (0, 0, None);
     let non_speech = transcript.non_speech();
     let mut refined = words.to_vec();
     let mut start = 0;
     while start < words.len() {
         check(cancelled, deadline)?;
         let end = window_end(words, start);
+        windows += 1;
         match refine_window(
             refiner,
             samples,
@@ -189,7 +230,10 @@ pub fn refine_transcript(
                 return Err(error);
             }
             // A missing or failing aligner leaves the recognizer's times.
-            Err(_) => {}
+            Err(error) => {
+                failed_windows += 1;
+                first_error.get_or_insert_with(|| error.to_string());
+            }
         }
         start = end;
     }
@@ -203,9 +247,15 @@ pub fn refine_transcript(
             refined[i].end_cs = refined[i].end_cs.max(refined[i].start_cs);
         }
     }
-    Transcript::new(transcript.audio(), refined)
+    let transcript = Transcript::new(transcript.audio(), refined)
         .and_then(|value| value.with_recognized_again(transcript.recognized_again().to_vec()))
-        .or_else(|_| Ok(transcript.clone()))
+        .unwrap_or_else(|_| transcript.clone());
+    Ok(Refined {
+        transcript,
+        windows,
+        failed_windows,
+        first_error,
+    })
 }
 
 #[cfg(test)]

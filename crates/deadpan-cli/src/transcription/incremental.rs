@@ -249,7 +249,8 @@ fn infer_range(
         .map_err(|error| match error {
             crate::refinement::RefinementError::Cancelled => TranscriptionError::Cancelled,
             other => TranscriptionError::Worker(other.to_string()),
-        })?;
+        })?
+        .transcript;
     }
     Ok((transcript, activity))
 }

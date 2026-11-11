@@ -96,6 +96,10 @@ fn main() -> Result<(), String> {
             Instant::now() + Duration::from_secs(300),
         )
         .map_err(|e| e.to_string())?;
+        if refined.failed_windows > 0 {
+            return Err(format!("aligner windows failed: {:?}", refined.first_error));
+        }
+        let refined = refined.transcript;
         let result = serde_json::json!({
             "file": file,
             "audio_seconds": pcm.len() as f64 / 16000.0,

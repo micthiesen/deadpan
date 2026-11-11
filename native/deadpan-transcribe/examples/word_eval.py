@@ -91,6 +91,63 @@ def fetch_truth(names, target):
 SEED = int(os.environ.get("WORD_EVAL_SEED", "7"))
 
 
+def media(root, per=50):
+    """Shipped-path inputs: the sample as long MP4s (black picture, AAC audio)
+    for `deadpan-cli project create-original` + `transcribe`; truth per file."""
+    d = evaldir(root, SEED)
+    truth = json.load(open(f"{d}/truth.json"))
+    utts = sorted(truth)
+    out = f"{d}/media"
+    os.makedirs(out, exist_ok=True)
+    for n in range(0, len(utts), per):
+        group, offset, words, pcm = utts[n:n + per], 0.0, [], b""
+        for utt in group:
+            raw = open(f"{d}/{utt}.f32", "rb").read()
+            words += [(w, a + offset, b + offset) for w, a, b in truth[utt]]
+            pcm += raw + b"\0" * 4 * 6400
+            offset += len(raw) / 4 / 16000 + 0.4
+        name = f"part{n // per}"
+        open(f"{out}/{name}.f32", "wb").write(pcm)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "f32le", "-ar", "16000", "-ac", "1",
+                        "-i", f"{out}/{name}.f32", "-f", "lavfi", "-i", f"color=black:s=320x240:r=30:d={offset:.2f}",
+                        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-shortest",
+                        f"{out}/{name}.mp4"], check=True)
+        json.dump(words, open(f"{out}/{name}.truth.json", "w"))
+        os.remove(f"{out}/{name}.f32")
+    print(len(utts), "utterances in", -(-len(utts) // per), "files")
+
+
+def bundle(root, cli):
+    """Score the shipped path: `cli` is a bundle's Contents/MacOS/deadpan-cli
+    with the packs installed; runs create-original + transcribe + transcript."""
+    d = evaldir(root, SEED) + "/media"
+    scratch = f"/tmp/deadpan-finish/words/bundle{SEED}"
+    subprocess.run(["rm", "-rf", scratch], check=True)
+    os.makedirs(scratch)
+    se, ee, total, matched = [], [], 0, 0
+    for mp4 in sorted(glob.glob(f"{d}/part*.mp4")):
+        name = os.path.basename(mp4)[:-4]
+        project = f"{scratch}/{name}.deadpan"
+        subprocess.run([cli, "project", "create-original", project, mp4], check=True, capture_output=True)
+        out = subprocess.run([cli, "transcribe", project], check=True, capture_output=True, text=True).stdout
+        info = json.loads(out)
+        print(name, "words", info["words"], "word_times", json.dumps(info["word_times"]))
+        listing = json.loads(subprocess.run([cli, "transcript", project], check=True, capture_output=True, text=True).stdout)
+        hyp = [(norm(w["text"]), w["start_cs"] / 100, w["end_cs"] / 100)
+               for w in listing["transcripts"][0]["transcript"]["words"]]
+        ref = [(norm(w), a, b) for w, a, b in json.load(open(f"{d}/{name}.truth.json"))]
+        total += len(ref)
+        m = difflib.SequenceMatcher(None, [h[0] for h in hyp], [x[0] for x in ref], autojunk=False)
+        for a, b, size in m.get_matching_blocks():
+            for k in range(size):
+                se.append(hyp[a + k][1] - ref[b + k][1])
+                ee.append(hyp[a + k][2] - ref[b + k][2])
+                matched += 1
+    print(f"bundled transcribe: truth words={total} matched={matched}")
+    stats("start", se)
+    stats("end  ", ee)
+
+
 def evaldir(root, seed):
     return f"{root}/eval" if seed == 7 else f"{root}/eval{seed}"
 
@@ -254,6 +311,10 @@ if __name__ == "__main__":
     cmd, root = sys.argv[1], os.path.expanduser(sys.argv[2])
     if cmd == "prep":
         prep(root, int(sys.argv[3]) if len(sys.argv) > 3 else 200)
+    elif cmd == "bundle":
+        bundle(root, sys.argv[3])
+    elif cmd == "media":
+        media(root)
     elif cmd == "run":
         run(root, sys.argv[3])
     else:

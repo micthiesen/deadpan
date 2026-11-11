@@ -1350,14 +1350,7 @@ fn run_transcription(
         // Phoneme-aligned word times are the default whenever the English
         // pack and its worker are installed; otherwise the recognizer's
         // DTW times stand.
-        let refiner = (|| {
-            let root = deadpan_cli::models::default_root().ok()?;
-            let models = deadpan_cli::models::installed_refinement_models(&root, cancel, deadline)
-                .ok()??;
-            let runtime =
-                deadpan_cli::refinement::RefinementRuntime::beside_current_executable().ok()?;
-            Some(deadpan_cli::refinement::TranscriptRefiner { runtime, models })
-        })();
+        let refiner = deadpan_cli::refinement::installed_refiner(cancel, deadline).ok();
         deadpan_cli::transcription::incremental::transcribe_original_ranges(
             &store,
             &runtime,

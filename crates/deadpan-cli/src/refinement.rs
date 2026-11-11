@@ -32,7 +32,9 @@ pub use acceptance::{AcceptanceRequest, execute_acceptance_on};
 mod command;
 pub use command::run;
 mod transcript;
-pub use transcript::{TranscriptRefiner, refine_transcript};
+pub use transcript::{
+    Refined, TranscriptRefiner, changed_words, installed_refiner, refine_transcript,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum RefinementError {

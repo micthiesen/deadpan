@@ -638,7 +638,7 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         },
     };
     let language_label: String = language.clone().into();
-    let result = transcribe(
+    let mut result = transcribe(
         &runtime,
         &model,
         &analysis.input,
@@ -648,6 +648,36 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         deadline,
         |_| {},
     )?;
+    // The app refines through the same function: phoneme-aligned word times
+    // whenever the pack and a qualified aligner exist, else the DTW times.
+    let word_times = match crate::refinement::installed_refiner(&cancelled, deadline) {
+        Ok(refiner) => {
+            let refined = crate::refinement::refine_transcript(
+                &refiner,
+                &result.transcript,
+                &analysis.input.samples,
+                &cancelled,
+                deadline,
+            )?;
+            let changed = crate::refinement::changed_words(&result.transcript, &refined.transcript);
+            let total = refined.transcript.words().len();
+            result.transcript = refined.transcript;
+            serde_json::json!({
+                "refined": changed > 0,
+                "refined_words": changed,
+                "dtw_words": total - changed,
+                "aligner": refiner.identity(),
+                "windows": refined.windows,
+                "failed_windows": refined.failed_windows,
+                "first_error": refined.first_error,
+            })
+        }
+        Err(reason) => serde_json::json!({
+            "refined": false,
+            "reason": reason,
+            "dtw_words": result.transcript.words().len(),
+        }),
+    };
     let key = deadpan_store::TranscriptKey {
         content: analysis.content,
         audio_stream: analysis.audio_stream,
@@ -710,6 +740,7 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         "worker_elapsed_ms": u64::try_from(result.elapsed.as_millis()).unwrap_or(u64::MAX),
         "audio_seconds": analysis.input.samples.len() as f64 / f64::from(ANALYSIS_SAMPLE_RATE),
         "words": words.len(),
+        "word_times": word_times,
         "approximate_words": words.iter().filter(|word| word.approximate()).count(),
         "speech_activity": activity_report,
         "recognition": crate::activity::recognition_report(&recognition, &result.transcript)?,
