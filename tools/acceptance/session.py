@@ -160,6 +160,13 @@ def child_at(frame):
     return chain[-2]["instance"]["node"] if len(chain) >= 2 else None
 
 
+def sound_state():
+    """The placed sound as the dump reports it (offset and any retained route)."""
+    d = dump()
+    return {"sounds": {k[:6]: v.get("offset") for k, v in (d.get("sounds") or {}).items()},
+            "routes": {k[:6]: [e["operation"] for e in v["edits"]] for k, v in (d.get("sound_routes") or {}).items()}}
+
+
 def at(orig_frame):
     """Edit frame of an Original frame that no authored change precedes in time order."""
     return orig_frame + SHIFT
@@ -313,6 +320,25 @@ def main():
         out = cli("sound", PROJECT, "--json", placed)[0]
         REGIONS.append((sound_orig, sound_orig + 48, 0))
         return {"frame": frame, "result": json.dumps(out)[:160]}
+
+    tape_orig = 2400  # 100 s: a different beat, before the sound
+    @step("change speed of a beat before the sound (pitch=tape); the sound follows")
+    def _():
+        global SHIFT
+        before = sound_state()
+        shift_before = sum(d for a, _, d in REGIONS if a < tape_orig)
+        frame = tape_orig + shift_before
+        for f in (frame, frame + 120):
+            commit([{"type": "split"}], cursor=f, selected=child_at(f))
+        out = commit([{"type": "retime", "speed": {"numerator": "2", "denominator": "1"},
+                       "pitch": "follow_speed", "wrap": False}],
+                     cursor=frame + 1, selected=child_at(frame + 1))
+        delta = out["edit"]["duration_delta"]
+        REGIONS.append((tape_orig, tape_orig + 120, delta))
+        CUTS.extend([frame, frame + 120 + delta])
+        SHIFT += delta
+        after = sound_state()
+        return {"delta": delta, "sound_before": before, "sound_after": after}
 
     @step("render")
     def _():
