@@ -1247,11 +1247,23 @@ fn run_transcription(
             .map_err(|error| error.to_string())?;
         let cache = deadpan_cli::storage::UserStorage::current()
             .map(|storage| storage.caches.join("AnalysisRanges"));
+        // Phoneme-aligned word times are the default whenever the English
+        // pack and its worker are installed; otherwise the recognizer's
+        // DTW times stand.
+        let refiner = (|| {
+            let root = deadpan_cli::models::default_root().ok()?;
+            let models = deadpan_cli::models::installed_refinement_models(&root, cancel, deadline)
+                .ok()??;
+            let runtime =
+                deadpan_cli::refinement::RefinementRuntime::beside_current_executable().ok()?;
+            Some(deadpan_cli::refinement::TranscriptRefiner { runtime, models })
+        })();
         deadpan_cli::transcription::incremental::transcribe_original_ranges(
             &store,
             &runtime,
             model,
             vad,
+            refiner.as_ref(),
             Language::Code("en".into()),
             cache.as_deref(),
             &ranges.cursor,

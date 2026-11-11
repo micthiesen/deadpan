@@ -40,6 +40,7 @@ pub fn detect_original_ranges(
             total_samples: total,
             model_sha256: vad.sha256.as_str().into(),
             vad_sha256: Some(vad.sha256.as_str().into()),
+            refinement: None,
             language: "speech-activity".into(),
             worker_sha256: worker_sha256.clone(),
             owned: range.owned.clone(),

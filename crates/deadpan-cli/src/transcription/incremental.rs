@@ -19,6 +19,7 @@ use deadpan_store::{ProjectStore, SpeechActivityKey, TranscriptKey};
 use serde::{Deserialize, Serialize};
 
 use super::{AnalysisInput, TranscriptionError, TranscriptionRuntime, open_original_analysis};
+use crate::refinement::TranscriptRefiner;
 
 mod activity;
 pub(crate) mod cache;
@@ -27,7 +28,7 @@ mod tests;
 pub use activity::detect_original_ranges;
 
 /// Changes whenever window ownership, context, stitching or model settings change.
-pub const RANGE_IMPLEMENTATION: &str = "deadpan-audio-ranges-1";
+pub const RANGE_IMPLEMENTATION: &str = "deadpan-audio-ranges-2";
 
 /// Completed proposals with explicit coverage. Missing intervals have no implied
 /// words or silence. Display-only consumers must retain this coverage label.
@@ -61,6 +62,8 @@ struct Key {
     total_samples: u64,
     model_sha256: String,
     vad_sha256: Option<String>,
+    /// The phoneme aligner that refined word times, if any.
+    refinement: Option<String>,
     language: String,
     /// Exact helper bytes include its engine, resampler and model settings.
     worker_sha256: String,
@@ -198,6 +201,7 @@ fn infer_range(
     runtime: &TranscriptionRuntime,
     model: &ModelInput,
     vad: Option<&ModelInput>,
+    refiner: Option<&TranscriptRefiner>,
     input: &AnalysisInput,
     language: Language,
     cancelled: &AtomicBool,
@@ -233,6 +237,20 @@ fn infer_range(
         deadline,
         |_| {},
     )?;
+    let mut transcript = transcript;
+    if let Some(refiner) = refiner {
+        transcript.transcript = crate::refinement::refine_transcript(
+            refiner,
+            &transcript.transcript,
+            &input.samples,
+            cancelled,
+            deadline,
+        )
+        .map_err(|error| match error {
+            crate::refinement::RefinementError::Cancelled => TranscriptionError::Cancelled,
+            other => TranscriptionError::Worker(other.to_string()),
+        })?;
+    }
     Ok((transcript, activity))
 }
 
@@ -245,6 +263,7 @@ pub fn transcribe_original_ranges(
     runtime: &TranscriptionRuntime,
     model: &ModelInput,
     vad: Option<&ModelInput>,
+    refiner: Option<&TranscriptRefiner>,
     language: Language,
     cache_path: Option<&Path>,
     cursor: &AtomicU64,
@@ -289,6 +308,7 @@ pub fn transcribe_original_ranges(
             total_samples: total,
             model_sha256: model.sha256.as_str().into(),
             vad_sha256: vad.map(|model| model.sha256.as_str().into()),
+            refinement: refiner.map(TranscriptRefiner::identity),
             language: language_label.clone(),
             worker_sha256: worker_sha256.clone(),
             owned: range.owned.clone(),
@@ -326,6 +346,7 @@ pub fn transcribe_original_ranges(
                 runtime,
                 model,
                 vad,
+                refiner,
                 &input,
                 language.clone(),
                 cancelled,

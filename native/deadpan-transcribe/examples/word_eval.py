@@ -121,6 +121,29 @@ def prep(root, n, seed=SEED):
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", f, "-ac", "1", "-ar", "16000",
                         "-f", "f32le", f"{d}/{utt}.f32"], check=True)
         keep[utt] = truth[utt]
+    k = int(os.environ.get("WORD_EVAL_CONCAT", "1"))
+    if k > 1:  # long clips: k same-speaker utterances 0.4 s apart, to exercise windows
+        import struct
+        by_speaker = {}
+        for utt in sorted(keep):
+            by_speaker.setdefault(utt.split("-")[0], []).append(utt)
+        joined = {}
+        for spk, group in by_speaker.items():
+            for g in range(0, len(group) - k + 1, k):
+                parts, offset, words, pcm = group[g:g + k], 0.0, [], b""
+                for utt in parts:
+                    raw = open(f"{d}/{utt}.f32", "rb").read()
+                    words += [(w, a + offset, b + offset) for w, a, b in keep[utt]]
+                    pcm += raw + struct.pack("<f", 0.0) * 6400
+                    offset += len(raw) / 4 / 16000 + 0.4
+                    os.remove(f"{d}/{utt}.f32")
+                name = parts[0] + f"+{k}"
+                open(f"{d}/{name}.f32", "wb").write(pcm)
+                joined[name] = words
+        for f in glob.glob(f"{d}/*.f32"):
+            if os.path.basename(f)[:-4] not in joined:
+                os.remove(f)
+        keep = joined
     json.dump(keep, open(f"{d}/truth.json", "w"))
     print(len(keep), "utterances")
 
@@ -193,12 +216,22 @@ def stats(label, errs):
 def score(root, mode):
     truth = json.load(open(f"{evaldir(root, SEED)}/truth.json"))
     se, ee, total, matched, secs, audio = [], [], 0, 0, 0.0, 0.0
+    refined, ai, aa = {}, 0.0, 0.0
+    path = f"{evaldir(root, SEED)}/refined.jsonl"
+    if mode == "aligner":
+        for line in open(path):
+            q = json.loads(line)
+            refined[q["file"]] = q
+            ai += q["seconds"]
+            aa += q["audio_seconds"]
     for line in open(f"{evaldir(root, SEED)}/run.jsonl"):
         r = json.loads(line)
         utt = os.path.basename(r["file"])[:-4]
         secs += r["seconds"]
         audio += os.path.getsize(r["file"]) / 4 / 16000
-        if mode == "worker":  # Transcript::from_segments over the worker's output
+        if mode == "aligner":  # words from refined.jsonl (word_refine_eval)
+            hyp = [(norm(t), s / 100, e / 100) for t, s, e in refined[r["file"]]["words"]]
+        elif mode == "worker":  # Transcript::from_segments over the worker's output
             hyp = [(norm(t), s / 100, e / 100) for t, s, e in r["words"]]
         else:
             hyp = words_from(r["segments"], mode)
@@ -213,6 +246,8 @@ def score(root, mode):
     print(f"mode={mode} truth words={total} matched={matched} recognizer {secs:.1f}s for {audio:.0f}s audio")
     stats("start", se)
     stats("end  ", ee)
+    if mode == "aligner":
+        print(f"aligner {ai:.1f}s for {aa/60:.1f} min of audio = {ai/(aa/60):.1f}s/min")
 
 
 if __name__ == "__main__":
