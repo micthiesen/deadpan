@@ -29,11 +29,14 @@ fn main() -> Result<(), String> {
             sample_rate: 48_000,
             duration_cs,
         };
-        let words: Vec<_> = deadpan_analysis::Transcript::from_segments(audio, &worker)
-            .map_err(|error| error.to_string())?
+        let transcript = deadpan_analysis::Transcript::from_segments(audio, &worker)
+            .map_err(|error| error.to_string())?;
+        let non_speech = transcript.non_speech();
+        let words: Vec<_> = transcript
             .words()
             .iter()
-            .map(|w| serde_json::json!([w.text, w.start_cs, w.end_cs]))
+            .zip(&non_speech)
+            .map(|(w, n)| serde_json::json!([w.text, w.start_cs, w.end_cs, n]))
             .collect();
         let segments: Vec<_> = segments
             .iter()

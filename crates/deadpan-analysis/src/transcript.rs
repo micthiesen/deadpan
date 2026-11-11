@@ -45,6 +45,9 @@ pub enum TranscriptError {
     Time(#[from] TimeError),
 }
 
+/// Longest bracketed annotation recognized as non-speech, in words.
+pub const MAX_ANNOTATION_WORDS: usize = 12;
+
 /// One recognizer token, with bounds relative to the analysed PCM start.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -372,7 +375,12 @@ impl Transcript {
                 let start = token.t0.clamp(segment_start, segment_end);
                 let end = token.t1.clamp(start, segment_end);
                 let punctuation = token.text.trim().chars().all(|c| !c.is_alphanumeric());
-                if punctuation && current.is_none() {
+                // whisper writes non-speech as "[music playing]" or "(sighs)"
+                // with the bracket as its own token; it opens a word of its own.
+                let opening = punctuation
+                    && !token.text.trim().is_empty()
+                    && token.text.trim().chars().all(|c| matches!(c, '[' | '('));
+                if punctuation && current.is_none() && !opening {
                     // Leading punctuation belongs to the previous word, if any.
                     if let Some(previous) = words.last_mut()
                         && previous.text.len() + token.text.trim().len() <= MAX_WORD_BYTES
@@ -381,8 +389,8 @@ impl Transcript {
                     }
                     continue;
                 }
-                let starts_word = token.text.starts_with(' ') || current.is_none();
-                if starts_word && !(punctuation && current.is_some()) {
+                let starts_word = token.text.starts_with(' ') || current.is_none() || opening;
+                if starts_word && !(punctuation && current.is_some() && !opening) {
                     if let Some(word) = current.take() {
                         floor = i64::from(word.end_cs).max(floor);
                         words.push(word);
@@ -422,6 +430,37 @@ impl Transcript {
 
     pub fn audio(&self) -> AnalysedAudio {
         self.audio
+    }
+
+    /// Per word: whether it lies wholly inside a bracketed non-speech
+    /// annotation such as "[music playing]" or "(sighs)". Derived from the text,
+    /// within one segment and at most [`MAX_ANNOTATION_WORDS`] words, so an
+    /// unclosed bracket never swallows the rest of the transcript.
+    pub fn non_speech(&self) -> Vec<bool> {
+        let words = &self.words;
+        let mut flags = vec![false; words.len()];
+        let mut i = 0;
+        while i < words.len() {
+            let close = match words[i].text.chars().next() {
+                Some('[') => ']',
+                Some('(') => ')',
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+            let end = (i..words.len().min(i + MAX_ANNOTATION_WORDS))
+                .take_while(|&j| words[j].segment == words[i].segment)
+                .find(|&j| words[j].text.ends_with(close));
+            match end {
+                Some(end) => {
+                    flags[i..=end].iter_mut().for_each(|flag| *flag = true);
+                    i = end + 1;
+                }
+                None => i += 1,
+            }
+        }
+        flags
     }
 
     pub fn words(&self) -> &[Word] {

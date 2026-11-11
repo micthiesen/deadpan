@@ -78,6 +78,7 @@ fn refine_window(
     refiner: &TranscriptRefiner,
     samples: &[f32],
     words: &[deadpan_analysis::Word],
+    non_speech: &[bool],
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<Vec<Option<(u32, u32)>>, RefinementError> {
@@ -97,8 +98,11 @@ fn refine_window(
         cancelled,
         deadline,
     )?;
-    // Words the dictionary rejects are left out of the aligned text.
-    let mut kept: Vec<usize> = (0..words.len()).collect();
+    // Annotations and words the dictionary rejects stay out of the aligned text.
+    let mut kept: Vec<usize> = (0..words.len()).filter(|&i| !non_speech[i]).collect();
+    if kept.is_empty() {
+        return Ok(result);
+    }
     let proposal = loop {
         let text = kept
             .iter()
@@ -159,12 +163,20 @@ pub fn refine_transcript(
     deadline: Instant,
 ) -> Result<Transcript, RefinementError> {
     let words = transcript.words();
+    let non_speech = transcript.non_speech();
     let mut refined = words.to_vec();
     let mut start = 0;
     while start < words.len() {
         check(cancelled, deadline)?;
         let end = window_end(words, start);
-        match refine_window(refiner, samples, &words[start..end], cancelled, deadline) {
+        match refine_window(
+            refiner,
+            samples,
+            &words[start..end],
+            &non_speech[start..end],
+            cancelled,
+            deadline,
+        ) {
             Ok(times) => {
                 for (offset, time) in times.into_iter().enumerate() {
                     if let Some((start_cs, end_cs)) = time {

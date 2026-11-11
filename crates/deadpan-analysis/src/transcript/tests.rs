@@ -488,3 +488,54 @@ fn a_second_pass_that_repeats_earlier_words_is_detected() {
     assert_eq!(transcript.sentence_start_before(100), Some(0));
     assert_eq!(transcript.sentence_start_before(0), None);
 }
+
+fn bracket_token(text: &str, t0: i64, t1: i64) -> RawToken {
+    RawToken {
+        text: text.into(),
+        t0,
+        t1,
+        p: 0.9,
+    }
+}
+
+#[test]
+fn bracketed_annotations_form_their_own_words() {
+    let segments = [RawSegment {
+        t0: 0,
+        t1: 400,
+        tokens: vec![
+            bracket_token(" Run", 0, 40),
+            bracket_token("!", 40, 45),
+            bracket_token(" [", 50, 55),
+            bracket_token("music", 55, 90),
+            bracket_token(" playing", 90, 150),
+            bracket_token("]", 150, 152),
+            bracket_token(" (", 160, 165),
+            bracket_token("sigh", 165, 190),
+            bracket_token("s", 190, 200),
+            bracket_token(")", 200, 202),
+            bracket_token(" Go", 210, 250),
+        ],
+    }];
+    let transcript = Transcript::from_segments(audio(), &segments).unwrap();
+    let text: Vec<&str> = transcript.words().iter().map(|w| w.text.as_str()).collect();
+    assert_eq!(text, ["Run!", "[music", "playing]", "(sighs)", "Go"]);
+    assert_eq!(transcript.non_speech(), [false, true, true, true, false]);
+}
+
+#[test]
+fn an_unclosed_bracket_marks_nothing_and_a_leading_one_opens_a_word() {
+    let segments = [RawSegment {
+        t0: 0,
+        t1: 400,
+        tokens: vec![
+            bracket_token("[", 0, 5),
+            bracket_token("sound", 5, 40),
+            bracket_token(" and", 40, 80),
+            bracket_token(" more", 80, 120),
+        ],
+    }];
+    let transcript = Transcript::from_segments(audio(), &segments).unwrap();
+    assert_eq!(transcript.words()[0].text, "[sound");
+    assert_eq!(transcript.non_speech(), [false, false, false]);
+}
