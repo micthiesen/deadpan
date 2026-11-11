@@ -181,8 +181,12 @@ candidates for the owner's first sessions, not agent work.
   inside a beat that carries an attached sound, refuse with a message.
 - Whisper base hears music as "[music playing]" and gives few words on
   music-heavy video (402 words in 12 minutes of Tears of Steel).
-- AI pauses need the 36 GB `ltx-2.3-q4-bridge` pack, which needs its
-  licences accepted in the app; it is not installed.
+- AI pauses work with the real model on the installed build (checked
+  2026-11-11 after the owner accepted the pack's licences): a 30-frame pause
+  takes about 3 minutes, accept, undo, redo, variants, revert and export all
+  verify. The model renders at 768x320, so generated frames are visibly
+  softer than a 1920x800 Original, and a "still" pause on a talking face
+  keeps moving its mouth.
 - Nobody has listened to the audio or used the keys by hand yet.
 
 ## Done
@@ -191,7 +195,8 @@ candidates for the owner's first sessions, not agent work.
 2. `cargo xtask gate` and `cargo xtask replays` pass at the installed commit.
 3. Each Simplify box is checked, or carries one line saying what was left
    and why.
-4. `/Applications/Deadpan.app` is that commit.
+4. `/Applications/Deadpan.app` is that commit. (Installed from ccbd351cc;
+   the commits after it only edit this document.)
 
 After that the owner's own sessions are the only source of new work.
 
