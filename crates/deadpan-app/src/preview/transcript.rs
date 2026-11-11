@@ -20,7 +20,7 @@ use deadpan_store::TranscriptKey;
 use super::*;
 
 /// Sentences shown on each side of the current one.
-const CONTEXT_SEGMENTS: usize = 4;
+const CONTEXT_SEGMENTS: usize = 40;
 
 enum Event {
     Progress(u8),
@@ -105,6 +105,9 @@ pub(super) struct Transcription {
     again: Option<recognition::Again>,
     /// Latest cursor and explicitly incomplete source-range proposals.
     ranges: incremental::RangeFeed,
+    /// The word the pane last scrolled to, in Your edit (`true`) or the
+    /// Original, so the text follows the cursor without fighting a scroll.
+    followed: Option<(bool, usize)>,
 }
 
 /// A recognition check and the published analyses it was derived from.
@@ -141,6 +144,7 @@ impl Default for Transcription {
             recognition: None,
             again: None,
             ranges: incremental::RangeFeed::default(),
+            followed: None,
         }
     }
 }
@@ -287,7 +291,6 @@ impl Transcription {
         self.step = Some(forward);
     }
 
-    #[cfg(feature = "ui-harness")]
     pub(super) fn search_text(&self) -> &str {
         &self.search
     }
@@ -902,8 +905,12 @@ impl DeadpanApp {
 
     /// The TRANSCRIPT rail section.
     pub(super) fn transcript_section(&mut self, ui: &mut egui::Ui) {
-        ui.add_space(12.0);
-        ui.label(style::section_title("TRANSCRIPT", false));
+        // The transcript pane has its own heading; the Original rail's
+        // section needs one.
+        if !self.words_rail_shown() {
+            ui.add_space(12.0);
+            ui.label(style::section_title("TRANSCRIPT", false));
+        }
         match self.transcription.status.clone() {
             Status::Unchecked | Status::Preparing => {
                 let waiting = self.service.jobs().waiting(
@@ -1055,14 +1062,20 @@ impl DeadpanApp {
         let start = words.partition_point(|word| word.segment < first);
         let end = words.partition_point(|word| word.segment <= last);
         let highlighted: Vec<Range<usize>> = self.transcription.matches.clone();
+        let annotation = transcript.transcript.non_speech();
         let mut clicked = None;
+        let height = words_height(ui);
+        let mut followed = self.transcription.followed;
         egui::ScrollArea::vertical()
             .id_salt("transcript-words")
-            .max_height(200.0)
+            .max_height(height)
+            .min_scrolled_height(height)
+            .auto_shrink([false, true])
             .show(ui, |ui| {
                 // Glyph ink can extend above nominal metrics at fractional
                 // scroll origins. Keep the first/last line inside the clip.
                 ui.add_space(2.0);
+                let mut lines = Vec::new();
                 let mut index = start;
                 while index < end {
                     let segment = words[index].segment;
@@ -1071,22 +1084,45 @@ impl DeadpanApp {
                             .iter()
                             .take_while(|word| word.segment == segment)
                             .count();
-                    let entries: Vec<Entry<'_>> = (index..line_end)
+                    lines.push(index..line_end);
+                    index = line_end;
+                }
+                let mut line = 0;
+                while line < lines.len() {
+                    let range = lines[line].clone();
+                    let repeats = repeated_annotations(&lines[line..], |word| {
+                        (annotation[word], words[word].text.as_str())
+                    });
+                    let shown = range.start..lines[line + repeats].end;
+                    let entries: Vec<Entry<'_>> = range
+                        .clone()
                         .map(|word| Entry {
                             text: &words[word].text,
                             approximate: words[word].approximate(),
-                            current: Some(word) == current,
+                            current: current.is_some_and(|current| {
+                                current == word
+                                    || (repeats > 0
+                                        && shown.contains(&current)
+                                        && word == range.start)
+                            }),
+                            selected: false,
+                            annotation: annotation[word],
                             matched: highlighted.iter().any(|range| range.contains(&word)),
                             corrected: transcript.corrected(word),
                         })
                         .collect();
-                    if let Some(offset) = phrase(ui, &entries) {
-                        clicked = Some(index + offset);
+                    let painted = phrase(ui, &entries, repeats);
+                    if let Some((offset, _)) = painted.clicked {
+                        clicked = Some(range.start + offset);
                     }
-                    index = line_end;
+                    if let Some(word) = current {
+                        follow(ui, &mut followed, (false, word), painted.current);
+                    }
+                    line += 1 + repeats;
                 }
                 ui.add_space(2.0);
             });
+        self.transcription.followed = followed;
         let approximate = words[start..end]
             .iter()
             .filter(|word| word.approximate())
@@ -1154,9 +1190,11 @@ impl DeadpanApp {
             }
         }
         let cursor = self.sequence_cursor as i64;
+        // The latest word begun at the cursor, so a pause keeps the previous
+        // word marked and the text follows the cursor.
         let current = runs
-            .iter()
-            .position(|run| run.range.start().0 <= cursor && cursor < run.range.end().0);
+            .partition_point(|run| run.range.start().0 <= cursor)
+            .checked_sub(1);
         let near = runs
             .partition_point(|run| run.range.end().0 <= cursor)
             .min(runs.len() - 1);
@@ -1167,13 +1205,33 @@ impl DeadpanApp {
         let shown = focus.saturating_sub(CONTEXT_SEGMENTS)
             ..(focus + CONTEXT_SEGMENTS + 1).min(sentences.len());
         let matches = self.transcription.matches.clone();
+        let annotation = transcript.transcript.non_speech();
+        let selected = self
+            .selected_edit_range()
+            .map(|range| range.start().0..range.end().0);
         let mut clicked = None;
+        let height = words_height(ui);
+        let mut followed = self.transcription.followed;
         egui::ScrollArea::vertical()
             .id_salt("transcript-edit-words")
-            .max_height(200.0)
+            .max_height(height)
+            .min_scrolled_height(height)
+            .auto_shrink([false, true])
             .show(ui, |ui| {
                 ui.add_space(2.0);
-                for sentence in &sentences[shown] {
+                let shown = &sentences[shown];
+                let mut line = 0;
+                while line < shown.len() {
+                    let sentence = &shown[line];
+                    let repeats = repeated_annotations(&shown[line..], |index| {
+                        let word = runs[index].word as usize;
+                        (
+                            annotation.get(word).copied().unwrap_or(false),
+                            words[word].text.as_str(),
+                        )
+                    });
+                    let covered = sentence.start..shown[line + repeats].end;
+                    line += 1 + repeats;
                     let entries: Vec<Entry<'_>> = sentence
                         .clone()
                         .map(|index| {
@@ -1181,7 +1239,20 @@ impl DeadpanApp {
                             Entry {
                                 text: &word.text,
                                 approximate: word.approximate(),
-                                current: Some(index) == current,
+                                current: current.is_some_and(|current| {
+                                    current == index
+                                        || (repeats > 0
+                                            && covered.contains(&current)
+                                            && index == sentence.start)
+                                }),
+                                annotation: annotation
+                                    .get(runs[index].word as usize)
+                                    .copied()
+                                    .unwrap_or(false),
+                                selected: selected.as_ref().is_some_and(|range| {
+                                    runs[index].range.start().0 < range.end
+                                        && range.start < runs[index].range.end().0
+                                }),
                                 matched: matches
                                     .iter()
                                     .any(|range| range.contains(&(runs[index].word as usize))),
@@ -1189,12 +1260,17 @@ impl DeadpanApp {
                             }
                         })
                         .collect();
-                    if let Some(offset) = phrase(ui, &entries) {
-                        clicked = Some(sentence.start + offset);
+                    let painted = phrase(ui, &entries, repeats);
+                    if let Some((offset, double)) = painted.clicked {
+                        clicked = Some((sentence.start + offset, double));
+                    }
+                    if let Some(index) = current {
+                        follow(ui, &mut followed, (true, index), painted.current);
                     }
                 }
                 ui.add_space(2.0);
             });
+        self.transcription.followed = followed;
         let kept: std::collections::BTreeSet<u32> = runs.iter().map(|run| run.word).collect();
         ui.label(
             egui::RichText::new(format!(
@@ -1206,12 +1282,16 @@ impl DeadpanApp {
             .size(11.0)
             .weak(),
         );
-        if let Some(index) = clicked {
+        if let Some((index, double)) = clicked {
             self.revoke_scoped_continuation();
             self.sequence_cursor = runs[index].range.start().0 as u64;
             self.edit_range.move_to(self.sequence_cursor);
             self.select_at_cursor();
             self.request_picture(false);
+            // A double click selects the word, ready for r, d or y.
+            if double {
+                self.select_speech(deadpan_core::SpeechObject::InnerWord);
+            }
         }
     }
 }
@@ -1332,18 +1412,57 @@ struct Entry<'a> {
     text: &'a str,
     approximate: bool,
     current: bool,
+    /// Inside the selected Edit range.
+    selected: bool,
+    /// A bracketed non-speech annotation such as "[music playing]".
+    annotation: bool,
     matched: bool,
     /// Set by a person; drawn with a thin lavender underline.
     corrected: bool,
 }
 
-/// One sentence as a single wrapped text run. Returns the clicked entry.
-fn phrase(ui: &mut egui::Ui, entries: &[Entry<'_>]) -> Option<usize> {
+/// What one painted sentence reports: a clicked entry (and whether it was a
+/// double click) and where its current word is.
+#[derive(Default)]
+struct Phrase {
+    clicked: Option<(usize, bool)>,
+    current: Option<egui::Rect>,
+}
+
+/// One sentence as a single wrapped text run.
+/// Consecutive later lines that repeat this line's annotation exactly, so
+/// "[music playing]" four times reads as one line marked ×4. Spoken lines
+/// never collapse.
+fn repeated_annotations<'a>(
+    lines: &[Range<usize>],
+    word: impl Fn(usize) -> (bool, &'a str),
+) -> usize {
+    let text = |line: &Range<usize>| -> Option<Vec<&'a str>> {
+        line.clone()
+            .map(|index| {
+                let (annotation, text) = word(index);
+                annotation.then_some(text)
+            })
+            .collect()
+    };
+    let Some(first) = lines.first().and_then(text) else {
+        return 0;
+    };
+    lines[1..]
+        .iter()
+        .take_while(|line| text(line).as_ref() == Some(&first))
+        .count()
+}
+
+/// `repeats` later identical annotation lines are shown as `×N`.
+fn phrase(ui: &mut egui::Ui, entries: &[Entry<'_>], repeats: usize) -> Phrase {
     let mut job = egui::text::LayoutJob::default();
     let mut spans = Vec::with_capacity(entries.len());
-    for entry in entries {
+    let mut current = None;
+    for (index, entry) in entries.iter().enumerate() {
         let mut format = egui::TextFormat {
-            font_id: egui::FontId::proportional(12.5),
+            font_id: egui::FontId::proportional(14.0),
+            line_height: Some(21.0),
             color: if entry.approximate {
                 style::muted(ui)
             } else {
@@ -1352,9 +1471,19 @@ fn phrase(ui: &mut egui::Ui, entries: &[Entry<'_>]) -> Option<usize> {
             italics: entry.approximate,
             ..Default::default()
         };
-        if entry.current {
+        if entry.annotation {
+            // Sounds, not speech: smaller and dimmer, so lines stand out.
+            format.font_id = egui::FontId::proportional(11.5);
+            format.color = style::muted(ui).gamma_multiply(0.75);
+            format.italics = true;
+        }
+        if entry.selected {
             format.background = style::SELECTED;
-            format.color = style::LAVENDER;
+        }
+        if entry.current {
+            format.background = style::CURSOR;
+            format.color = style::CANVAS;
+            current = Some(index);
         }
         if entry.corrected {
             format.underline = egui::Stroke::new(1.0, style::LAVENDER);
@@ -1369,8 +1498,26 @@ fn phrase(ui: &mut egui::Ui, entries: &[Entry<'_>]) -> Option<usize> {
             " ",
             0.0,
             egui::TextFormat {
-                background: egui::Color32::TRANSPARENT,
+                background: if entry.selected
+                    && entries.get(index + 1).is_some_and(|next| next.selected)
+                {
+                    style::SELECTED
+                } else {
+                    egui::Color32::TRANSPARENT
+                },
+                underline: egui::Stroke::NONE,
                 ..format
+            },
+        );
+    }
+    if repeats > 0 {
+        job.append(
+            &format!("×{}", repeats + 1),
+            0.0,
+            egui::TextFormat {
+                font_id: egui::FontId::monospace(10.5),
+                color: style::muted(ui),
+                ..Default::default()
             },
         );
     }
@@ -1379,11 +1526,52 @@ fn phrase(ui: &mut egui::Ui, entries: &[Entry<'_>]) -> Option<usize> {
     let text = galley.text().to_owned();
     let response = ui.add(egui::Label::new(Arc::clone(&galley)).sense(egui::Sense::click()));
     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, &text));
-    let position = response
+    let mut result = Phrase {
+        current: current.map(|index| {
+            let start = galley.pos_from_cursor(egui::text::CCursor::new(spans[index].start));
+            let end = galley.pos_from_cursor(egui::text::CCursor::new(spans[index].end));
+            start.union(end).translate(response.rect.min.to_vec2())
+        }),
+        ..Default::default()
+    };
+    let double = response.double_clicked();
+    if let Some(position) = response
         .interact_pointer_pos()
-        .filter(|_| response.clicked())?;
-    let offset = galley.cursor_from_pos(position - response.rect.min).index.0;
-    spans.iter().position(|chars| chars.contains(&offset))
+        .filter(|_| response.clicked() || double)
+    {
+        let offset = galley.cursor_from_pos(position - response.rect.min).index.0;
+        result.clicked = spans
+            .iter()
+            .position(|chars| chars.contains(&offset))
+            .map(|index| (index, double));
+    }
+    result
+}
+
+/// The words' scroll height: the rest of the pane, less its caption lines.
+fn words_height(ui: &egui::Ui) -> f32 {
+    (ui.available_height() - 72.0).max(120.0)
+}
+
+/// Scroll to the current word when it changes, until it is in view; after
+/// that, scrolling the text by hand is left alone.
+fn follow(
+    ui: &egui::Ui,
+    followed: &mut Option<(bool, usize)>,
+    key: (bool, usize),
+    rect: Option<egui::Rect>,
+) {
+    if *followed == Some(key) {
+        return;
+    }
+    if let Some(rect) = rect {
+        if ui.clip_rect().contains_rect(rect) {
+            *followed = Some(key);
+        } else {
+            ui.scroll_to_rect(rect, Some(egui::Align::Center));
+            ui.ctx().request_repaint();
+        }
+    }
 }
 
 /// Words on the Edit clock and in the Original, for motions and objects.

@@ -105,8 +105,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"gain_delta_mdb":[3000,0,3000],"Edit":240,"Original":original}),
         d.snapshot(),
     )?;
-    painted(d, "+ letter: record macro")?;
-    painted(d, "+ letter: run macro")?;
+    // The one-row footer leaves macro keys to Help at the minimum size.
     scenarios::footer_anchored(d, "Gain macro and dot keys fit the minimum workspace")?;
     d.capture("Relative gain dot retains the selected play and its independent peers")?;
     undo(d, &first)?;

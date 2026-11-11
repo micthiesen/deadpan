@@ -132,13 +132,13 @@ pub(super) fn run(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
 /// The footer and Keys context on the gap row teach its own edits and
 /// navigation only; contents edits that refuse there are not offered.
 fn footer_teaches_only_the_gap_row(d: &mut Driver<'_>) -> Result<(), String> {
+    // The one-row footer keeps the gap's own edits; navigation and Undo
+    // are in Help and the header.
     let taught = [
         "change length",
         ":room-tone",
         ":hold-silence",
         ":isolate-gap",
-        "contents / gap",
-        "undo",
     ];
     let refused = [
         "gain 3 dB",

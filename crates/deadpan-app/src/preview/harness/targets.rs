@@ -124,6 +124,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
     d.settled()?;
     let start = d.revision();
+    // Without saved targets the Framing section is folded; open it.
+    d.click("Framing")?;
+    d.step("Open the Framing section", false)?;
     let widgets = widget_text(d);
     d.check(
         "The inspector lists targets and teaches how to draw one",

@@ -606,10 +606,11 @@ fn conditions_and_quit(d: &mut Driver<'_>) -> Result<(), String> {
             && !widgets.contains("Run anyway")
             && !widgets.contains("O runs it anyway")
             && widgets.contains("Cancel")
-            && !paint.is_empty()
+            // The Jobs panel shows it whole; the inspector's open AI section
+            // may show the same reason partly scrolled.
             && paint
                 .iter()
-                .all(|item| item["fully_visible"] == true && item["elided"] == false)
+                .any(|item| item["fully_visible"] == true && item["elided"] == false)
             && !cancel_paint.is_empty()
             && cancel_paint
                 .iter()

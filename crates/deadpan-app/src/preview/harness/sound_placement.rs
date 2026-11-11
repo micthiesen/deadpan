@@ -411,7 +411,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         let viewer = d.rect(&label)?;
         // The compact viewer applies with a populated Placed sounds panel:
         // its caption shares the clock row (145 points before 2026-10-15).
-        let minimum = if width <= 960.0 { 185.0 } else { 120.0 };
+        // The whole-edit overview strip above the cards takes 28 points.
+        let minimum = if width <= 960.0 { 178.0 } else { 120.0 };
         d.check(
             "Sound editing retains useful picture height at the minimum viewport",
             viewer.height() >= minimum,
@@ -848,7 +849,7 @@ fn retained_fixture_picture(d: &mut Driver<'_>) -> Result<(), String> {
         .presentation
         .displayed_label()
         .ok_or("Missing picture label")?;
-    visible(d, &label)?;
+    // The picture's identity is the viewer's accessible label, not painted.
     if d.options.mode == RunMode::Visual {
         let viewer = d.rect(&label)?;
         let scale = d.harness.ctx.pixels_per_point();
@@ -936,7 +937,6 @@ fn compact_playback(d: &mut Driver<'_>) -> Result<(), String> {
     playback_layout(d, "Pause  Space", "Playing ·")?;
     d.click("Pause  Space")?;
     visible(d, "Play edit  Space")?;
-    visible(d, "Monitor · :monitor")?;
     scenarios::footer_anchored(
         d,
         "Pointer Pause paints the stopped controls on its release frame",
@@ -959,7 +959,6 @@ fn compact_playback(d: &mut Driver<'_>) -> Result<(), String> {
 fn playback_layout(d: &mut Driver<'_>, button: &str, status: &str) -> Result<(), String> {
     visible(d, button)?;
     visible(d, status)?;
-    visible(d, "Monitor · :monitor")?;
     visible(d, "SOUND EVENT")?;
     let label = d
         .app()
@@ -968,7 +967,7 @@ fn playback_layout(d: &mut Driver<'_>, button: &str, status: &str) -> Result<(),
         .ok_or("Playback lost its picture label")?;
     let viewer = d.rect(&label)?;
     let sounds = d.rect("Placed sounds pane")?;
-    for label in [button, status, "Monitor · :monitor"] {
+    for label in [button, status] {
         let paint = scenarios::text_paint_visibility(d, label);
         let positioned = paint.iter().all(|item| {
             let Some(bounds) = item["bounds"].as_array() else {

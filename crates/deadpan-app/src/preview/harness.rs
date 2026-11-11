@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 use super::*;
 use crate::ui_harness::{self, Options, gpu::Offscreen, report::*};
 
+mod acceptance_real;
 mod accessibility;
 mod ai_insertion;
 mod ai_pause;
@@ -91,6 +92,7 @@ mod telemetry;
 mod terminal_playback;
 mod transcript;
 mod trim;
+mod ui_real;
 mod wake;
 mod wave_range;
 mod wet_returns;
@@ -104,6 +106,8 @@ use wake::RepaintWake;
 #[derive(Default)]
 pub(super) struct Feedback {
     pub footer_bottom: Option<(f32, f32)>,
+    /// The painted picture rectangle in the viewer, when one is shown.
+    pub viewer_picture: Option<egui::Rect>,
     pub footer_command_open: bool,
     pub hold_project_updates: bool,
     /// One explicitly released real service update for delivery-order witnesses.
@@ -575,6 +579,9 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 if name == "linked-original" {
                     return linked_original::run(&mut driver);
                 }
+                if name == "acceptance-real" {
+                    return acceptance_real::run(&mut driver);
+                }
                 if name == "accessibility" {
                     return accessibility::run(&mut driver);
                 }
@@ -972,6 +979,13 @@ impl Driver<'_> {
             // and a correction repaint while their workers run: 6,040 and
             // 6,445 frames measured on 2026-11-09.
             8000
+        } else if self.report.name == "acceptance-real" {
+            // Real 1080p footage: decodes and renders repaint for many frames.
+            20_000
+        } else if self.report.name == "ui-real" {
+            // Ten batched 100-split macro runs on real footage repaint their
+            // busy state throughout: about 800 frames each.
+            20_000
         } else if self.report.name == "scoped-plays" {
             // Every module, including the fixed-window duration recording and
             // pause sections, measured 11,640 frames on 2026-11-07.

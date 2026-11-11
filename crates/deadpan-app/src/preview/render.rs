@@ -537,68 +537,108 @@ impl DeadpanApp {
                     context,
                 );
             }
-            return;
         }
-        if self.render.blocking() {
-            return;
-        }
-        if !self.render.open {
-            return;
-        }
-        let mut open = true;
+    }
+
+    /// Render's status in the right-hand pane while it is open: the
+    /// destination, progress and result in plain words. Internal identities
+    /// and paths fold into Details.
+    pub(super) fn render_panel(&mut self, ui: &mut egui::Ui) {
+        let layout = self.workspace_layout(ui);
+        let mut close = false;
         let mut cancel = None;
-        egui::Window::new("Render").id(egui::Id::new("render-status")).open(&mut open)
-            .default_width(430.0).resizable(true).scroll([false, true]).show(context, |ui| {
-                ui.label("Full edit · automatic MP4");
-                if let Some(error) = &self.render.error { ui.colored_label(style::LAVENDER, error); }
-                let Some(workflow) = self.current_render() else {
-                    ui.weak("Choose Render to save your complete edit as a movie.");
-                    return;
-                };
-                let status = &workflow.status;
-                ui.label(format!("Saved revision {}", workflow.revision.as_str()));
-                if let Some((capture, revision, summary)) = &self.render.summary
-                    && capture == &workflow.context && revision == &workflow.revision { ui.label(summary); }
-                ui.heading(stage_label(status.stage, status.outcome, status.observed_movie_commit));
-                if let Some(progress) = &status.progress {
-                    use deadpan_cli::encoded_render::workflow::WorkflowProgress;
-                    match progress {
-                        WorkflowProgress::Qualification { completed_frames, total_frames, .. } => { ui.label(format!("Encoder check: {completed_frames} / {total_frames} frames")); }
-                        WorkflowProgress::Encoding { completed_frames, total_frames, .. } => { ui.label(format!("{completed_frames} / {total_frames} frames")); }
-                        _ => {}
+        egui::Panel::right("workspace-inspector")
+            .resizable(false)
+            .default_size(layout.inspector)
+            .min_size(layout.inspector)
+            .max_size(layout.inspector)
+            .frame(style::panel())
+            .show(ui, |ui| {
+                super::pane_heading(ui, "RENDER", false);
+                ui.separator();
+                style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("render-panel"), |ui| {
+                    ui.weak("Full edit · automatic MP4");
+                    if let Some(error) = &self.render.error {
+                        ui.colored_label(style::LAVENDER, error);
                     }
-                }
-                for diagnostic in [&status.diagnostic, &status.journal_diagnostic].into_iter().flatten() {
-                    ui.label(format!("{} ({})", diagnostic.detail, diagnostic.code));
-                }
-                if let Some(receipt) = &status.receipt {
-                    ui.label(format!("Movie: {}", receipt.movie.display()));
-                    ui.label(format!("Local report: {}", receipt.report.display()));
-                    if receipt.contains_generated_pictures {
-                        ui.weak("This movie contains generated pictures. Review the upload platform's synthetic-content disclosure requirements.");
+                    let Some(workflow) = self.current_render() else {
+                        ui.add(egui::Label::new(egui::RichText::new("Choose Render to save your complete edit as a movie.").weak()).wrap());
+                        if ui.add(egui::Button::new("Close").min_size(egui::vec2(ui.available_width(), 28.0))).clicked() { close = true; }
+                        return;
+                    };
+                    let status = &workflow.status;
+                    ui.add_space(4.0);
+                    style::ink_padded_rows(ui, style::semibold(stage_label(status.stage, status.outcome, status.observed_movie_commit)).size(16.0), 2);
+                    if let Some(progress) = &status.progress {
+                        use deadpan_cli::encoded_render::workflow::WorkflowProgress;
+                        let frames = match progress {
+                            WorkflowProgress::Qualification { completed_frames, total_frames, .. } => Some(("Encoder check", *completed_frames, *total_frames)),
+                            WorkflowProgress::Encoding { completed_frames, total_frames, .. } => Some(("Frames", *completed_frames, *total_frames)),
+                            _ => None,
+                        };
+                        if let Some((label, done, total)) = frames {
+                            let fraction = if total == 0 { 0.0 } else { done as f32 / total as f32 };
+                            ui.add(egui::ProgressBar::new(fraction).desired_height(8.0));
+                            ui.label(egui::RichText::new(format!("{label} {done} / {total} · {:.0}%", fraction * 100.0)).size(12.0).weak());
+                        }
                     }
-                }
-                if status.outcome.is_some() && status.outcome != Some(WorkflowOutcome::Published) {
-                    for (label, path) in [
-                        ("Movie staging path", &status.retained.partial_movie),
-                        ("Report staging path", &status.retained.partial_report),
-                        ("Published report", &status.retained.published_report),
-                    ] {
-                        if let Some(path) = path { ui.label(format!("{label}: {}", path.display())); }
+                    let movie = status.receipt.as_ref().map(|receipt| receipt.movie.clone())
+                        .or_else(|| self.render.destination.as_ref().map(|(_, path)| path.clone()));
+                    if let Some(movie) = &movie {
+                        ui.add_space(6.0);
+                        let name = movie.file_name().map_or_else(|| movie.display().to_string(), |name| name.to_string_lossy().into_owned());
+                        let folder = movie.parent().map(home_relative).unwrap_or_default();
+                        style::value_grid(ui, "render-destination", [("Movie", name.as_str()), ("Folder", folder.as_str())]);
                     }
-                }
-                if status.outcome.is_none() && !status.cancellation_requested && status.stage != WorkflowStage::Unresolved
-                    && ui.button("Cancel render").clicked() {
-                    cancel = status.identity.clone().map(|identity| (workflow.context.clone(), identity));
-                }
-                if !status.cleanup_confirmed
-                    && (status.cancellation_requested || status.outcome.is_some()
-                        || matches!(status.stage, WorkflowStage::Releasing | WorkflowStage::Unresolved))
-                {
-                    ui.weak("Worker cleanup is not confirmed; this render still owns its slot.");
-                }
+                    if let Some(receipt) = &status.receipt {
+                        ui.colored_label(style::SAVED, "Verified against your edit");
+                        if receipt.contains_generated_pictures {
+                            ui.add(egui::Label::new(egui::RichText::new("This movie contains generated pictures. Review the upload platform's synthetic-content disclosure requirements.").size(12.0).weak()).wrap());
+                        }
+                    }
+                    for diagnostic in [&status.diagnostic, &status.journal_diagnostic].into_iter().flatten() {
+                        ui.add(egui::Label::new(egui::RichText::new(&diagnostic.detail).color(style::WARNING)).wrap())
+                            .on_hover_text(format!("Code {}", diagnostic.code));
+                    }
+                    ui.add_space(6.0);
+                    if status.outcome.is_none() && !status.cancellation_requested && status.stage != WorkflowStage::Unresolved
+                        && ui.add(egui::Button::new("Cancel render").min_size(egui::vec2(ui.available_width(), 28.0))).clicked() {
+                        cancel = status.identity.clone().map(|identity| (workflow.context.clone(), identity));
+                    }
+                    if ui.add(egui::Button::new("Close").min_size(egui::vec2(ui.available_width(), 28.0))).on_hover_text("Close Render. A running render continues; :renders lists saved renders.").clicked() {
+                        close = true;
+                    }
+                    if !status.cleanup_confirmed
+                        && (status.cancellation_requested || status.outcome.is_some()
+                            || matches!(status.stage, WorkflowStage::Releasing | WorkflowStage::Unresolved))
+                    {
+                        ui.add(egui::Label::new(egui::RichText::new("Finishing worker cleanup; another render waits until it ends.").size(12.0).weak()).wrap());
+                    }
+                    egui::CollapsingHeader::new(egui::RichText::new("Details").size(12.5)).id_salt("render-details").default_open(false).show(ui, |ui| {
+                        let mut rows = vec![("Saved revision", workflow.revision.as_str().to_owned())];
+                        if let Some((capture, revision, summary)) = &self.render.summary
+                            && capture == &workflow.context && revision == &workflow.revision {
+                            rows.push(("Output", summary.clone()));
+                        }
+                        if let Some(receipt) = &status.receipt {
+                            rows.push(("Report", receipt.report.display().to_string()));
+                        }
+                        if status.outcome.is_some() && status.outcome != Some(WorkflowOutcome::Published) {
+                            for (label, path) in [
+                                ("Movie staging", &status.retained.partial_movie),
+                                ("Report staging", &status.retained.partial_report),
+                                ("Published report", &status.retained.published_report),
+                            ] {
+                                if let Some(path) = path { rows.push((label, path.display().to_string())); }
+                            }
+                        }
+                        style::value_grid(ui, "render-details-values", rows.iter().map(|(label, value)| (*label, value.as_str())));
+                    });
+                });
             });
-        self.render.open = open;
+        if close {
+            self.render.open = false;
+        }
         if let Some((context, identity)) = cancel {
             self.submit_render_cancel(context, identity);
         }
@@ -647,6 +687,16 @@ impl DeadpanApp {
         let context = workflow.context.clone();
         self.submit_render_cancel(context, identity);
         true
+    }
+}
+
+/// A folder path with the home directory shown as `~`.
+fn home_relative(path: &std::path::Path) -> String {
+    match std::env::var_os("HOME").map(PathBuf::from) {
+        Some(home) if path.starts_with(&home) => {
+            format!("~/{}", path.strip_prefix(&home).unwrap_or(path).display())
+        }
+        _ => path.display().to_string(),
     }
 }
 

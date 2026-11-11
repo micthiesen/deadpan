@@ -118,7 +118,11 @@ fn minimum_size(d: &mut Driver<'_>) -> Result<(), String> {
         .ok_or("Missing keymap replay viewport")?
         .inner_rect = Some(rect);
     d.step("Custom key hints at the minimum native window size", true)?;
-    for label in ["ob", "pause", "oc", "z"] {
+    // The footer keeps one row: the remapped command key stays in it; the
+    // remapped pause key is on its inspector action, and the frame cut (z)
+    // is taught by Help and the shared-prefix continuations below.
+    scenarios::unfold_inspector(d, "Insert pause  ob")?;
+    for label in ["ob", "pause", "oc"] {
         painted(d, label)?;
     }
     d.events(

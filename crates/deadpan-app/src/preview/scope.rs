@@ -128,23 +128,40 @@ impl DeadpanApp {
         }
     }
 
+    /// The Edit clock as time with frames, then the exact frame boundary.
     pub(super) fn scope_clock_label(&self) -> String {
+        let time = |frame: u64| self.project_time(frame);
         if self.sequence_scope.groups().is_empty() {
             format!(
-                "Edit boundary {} / {}",
+                "{} / {} · frame {}",
+                time(self.sequence_cursor),
+                time(self.sequence_length()),
                 self.sequence_cursor,
-                self.sequence_length()
             )
         } else if (self.scope_start..=self.scope_end).contains(&self.sequence_cursor) {
             format!(
-                "Group {} / {} f · Edit {} f",
-                self.sequence_cursor - self.scope_start,
-                self.scope_end - self.scope_start,
+                "Group {} / {} · Edit {} f",
+                time(self.sequence_cursor - self.scope_start),
+                time(self.scope_end - self.scope_start),
                 self.sequence_cursor
             )
         } else {
-            format!("Cursor outside group · Edit {} f", self.sequence_cursor)
+            format!(
+                "Cursor outside group · {} · Edit {} f",
+                time(self.sequence_cursor),
+                self.sequence_cursor
+            )
         }
+    }
+
+    /// A project frame as time with frames at the project rate.
+    pub(super) fn project_time(&self, frame: u64) -> String {
+        self.workspace.as_ref().map_or_else(
+            || format!("{frame} f"),
+            |workspace| {
+                super::clock::time(frame, workspace.document.presentation_basis().frame_rate)
+            },
+        )
     }
 
     pub(super) fn sequence_heading(

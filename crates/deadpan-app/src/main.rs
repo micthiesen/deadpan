@@ -27,6 +27,22 @@ use std::rc::Rc;
 use eframe::egui;
 use preview::DeadpanApp;
 
+/// `Deadpan VERSION (COMMIT)`; the commit comes from the bundle's build
+/// provenance, so a bare development executable reports none.
+fn version_line() -> String {
+    let version = env!("CARGO_PKG_VERSION");
+    let commit = deadpan_cli::bundle::running_contents()
+        .and_then(|contents| {
+            std::fs::read(contents.join("Resources/build-provenance.json")).ok()
+        })
+        .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+        .and_then(|value| value["git_commit"].as_str().map(str::to_owned));
+    match commit {
+        Some(commit) => format!("Deadpan {version} ({commit})"),
+        None => format!("Deadpan {version} (development build)"),
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
     if arguments
@@ -37,6 +53,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return ui_harness::entry(&arguments[1..]).map_err(Into::into);
         #[cfg(not(feature = "ui-harness"))]
         return Err("UI replay requires the developer build: cargo run -p deadpan-app --features ui-harness -- --ui-check --help".into());
+    }
+    if arguments.as_slice() == ["--version"] {
+        println!("{}", version_line());
+        return Ok(());
     }
     let headless = arguments
         .first()

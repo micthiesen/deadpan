@@ -79,10 +79,64 @@ fn painted(d: &Driver<'_>) -> Vec<String> {
 /// regression in teaching fails the session.
 fn taught(d: &mut Driver<'_>, step: &str, needles: &[&str]) -> Result<(), String> {
     d.step(&format!("Paint before {step}"), false)?;
-    let visible = needles.iter().find(|needle| {
-        let paint = scenarios::text_paint_visibility(d, needle);
-        !paint.is_empty() && paint.iter().any(|item| item["fully_visible"] == true)
-    });
+    let shown = |d: &Driver<'_>| {
+        needles.iter().copied().find(|needle| {
+            let paint = scenarios::text_paint_visibility(d, needle);
+            !paint.is_empty() && paint.iter().any(|item| item["fully_visible"] == true)
+        })
+    };
+    // The footer holds one row of keys; the rest are where their actions
+    // are, in the inspector's folded sections. Open a section as a person
+    // would, and fold it again when the key is not there.
+    if shown(d).is_none() && d.app().trim.is_none() && d.app().camera.is_none() {
+        for section in scenarios::INSPECTOR_SECTIONS {
+            if shown(d).is_some() || d.rect(section).is_err() {
+                continue;
+            }
+            d.click(section)?;
+            d.step(&format!("Open {section} to find {step}"), false)?;
+            if shown(d).is_none() {
+                d.click(section)?;
+                d.step(&format!("Fold {section}"), false)?;
+            }
+        }
+    }
+    // Help is the reference for every other key.
+    if shown(d).is_none()
+        && d.app().trim.is_none()
+        && d.app().camera.is_none()
+        && !d.app().help_open
+    {
+        d.key(Key::Questionmark)?;
+        d.step(&format!("Open Help for {step}"), false)?;
+        // Search Help by the action's name, its last listed needle.
+        d.events(
+            &format!("Search Help for {step}"),
+            [
+                stroke(Key::Slash, Modifiers::NONE, Some("/")),
+                vec![Event::Text(
+                    needles.last().copied().unwrap_or_default().into(),
+                )],
+            ]
+            .concat(),
+        )?;
+        d.step(&format!("Look up {step} in Help"), false)?;
+        let found = shown(d);
+        d.check(
+            &format!("Discoverable: {step} is in Help"),
+            found.is_some(),
+            json!({"any_of":needles}),
+            json!({"help_open":d.app().help_open,"painted":painted(d)}),
+        )?;
+        // Escape leaves the search field, then closes Help.
+        d.key(Key::Escape)?;
+        if d.app().help_open {
+            d.key(Key::Escape)?;
+        }
+        d.step(&format!("Close Help after {step}"), false)?;
+        return Ok(());
+    }
+    let visible = shown(d);
     let texts = painted(d);
     d.check(
         &format!("Discoverable: {step} is taught on screen before use"),
@@ -525,7 +579,7 @@ fn caption(d: &mut Driver<'_>) -> Result<(), String> {
     // Typing the start of a command lists the matching commands.
     d.key(Key::Colon)?;
     d.events("Type cap", vec![Event::Text("cap".into())])?;
-    taught(d, "caption", &[":caption TEXT"])?;
+    taught(d, "caption", &[":caption TEXT", "Caption"])?;
     d.capture("Typed :cap lists the caption command")?;
     edit(d, |d| {
         d.events(
@@ -683,7 +737,11 @@ fn macro_and_dot(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.settled()?;
     let before = frames(d);
-    taught(d, "record a macro", &["+ letter: record / run macro"])?;
+    taught(
+        d,
+        "record a macro",
+        &["+ letter: record / run macro", "Record a macro"],
+    )?;
     plain(d, "qa")?;
     d.check(
         "qa starts recording macro a",
@@ -715,7 +773,11 @@ fn macro_and_dot(d: &mut Driver<'_>) -> Result<(), String> {
     })?;
     d.settled()?;
     let recorded = frames(d);
-    taught(d, "run a macro", &["+ letter: record / run macro"])?;
+    taught(
+        d,
+        "run a macro",
+        &["+ letter: record / run macro", "Run a macro"],
+    )?;
     let before_run = d.revision();
     d.events(
         "@a",

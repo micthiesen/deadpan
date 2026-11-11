@@ -178,14 +178,18 @@ fn original_layout(
         .workspace
         .as_ref()
         .ok_or("Missing Original layout workspace")?;
+    let rate = workspace.document.presentation_basis().frame_rate;
+    let time = |frames: i64| crate::preview::clock::time(u64::try_from(frames).unwrap_or(0), rate);
     let original_clock = format!(
-        "Original {} f",
-        workspace
-            .original_duration
-            .ok_or("Missing Original duration")?
-            .frames(),
+        "Original {}",
+        time(
+            workspace
+                .original_duration
+                .ok_or("Missing Original duration")?
+                .frames()
+        ),
     );
-    let edit_clock = format!("Your edit {} f", workspace.plan.duration().frames());
+    let edit_clock = format!("Your edit {}", time(workspace.plan.duration().frames()));
     let playback = transport_label(d, playback, EditorKey::Playback);
     let audition = transport_label(d, "Loop selection", EditorKey::Audition);
     let select = format!("Select moment  {}", d.app().editor_key(EditorKey::Visual));
@@ -204,7 +208,6 @@ fn original_layout(
         copy.as_str(),
         cancel.as_str(),
         audition.as_str(),
-        "Monitor · :monitor",
         playback.as_str(),
         original_clock.as_str(),
         edit_clock.as_str(),
@@ -216,10 +219,9 @@ fn original_layout(
     if d.harness.ctx.content_rect().height() >= 700.0 {
         labels.push("Copied Original [10..20)");
     }
+    // Loop context and monitor volume are set by command, not painted.
     if let Some(status) = status {
-        labels.extend([status, "Loop context"]);
-    } else if long_transport(d) {
-        labels.push("Loop context");
+        labels.push(status);
     }
     let paint = labels
         .iter()
@@ -236,7 +238,6 @@ fn original_layout(
             copy.as_str(),
             cancel.as_str(),
             audition.as_str(),
-            "Monitor · :monitor",
             playback.as_str(),
         ],
     );
@@ -252,23 +253,11 @@ fn original_layout(
             && paint.iter().all(|(_, items)| !items.is_empty()
                 && items.iter().all(|item| item["fully_visible"] == true))
             && hits.iter().all(|hit| hit["complete_hit"] == true
-                && hit["enabled"] == (hit["label"] != "Monitor · :monitor" || d.app().transport.is_none())),
+                && hit["enabled"] == true),
         json!({"minimum_picture_height":minimum_picture,"complete_labels":labels}),
         json!({"viewer_height":viewer.height(),"picture_height":picture_paint.height,
             "picture_paint":picture_paint.details,"paint":paint,"hits":hits}),
     )?;
-    if long_transport(d) && status.is_none() && d.harness.ctx.content_rect().height() < 700.0 {
-        let play = d.rect(&playback)?;
-        let audition = d.rect(&audition)?;
-        let monitor = d.rect("Monitor · :monitor")?;
-        d.check(
-            "Long stopped action paths retain whole hit areas above the separate Monitor row",
-            monitor.top() >= play.bottom() && monitor.top() >= audition.bottom()
-                && !monitor.intersects(play) && !monitor.intersects(audition),
-            json!({"Monitor":"second row below both complete action controls","minimum_picture_height":100}),
-            json!({"play":format!("{play:?}"),"audition":format!("{audition:?}"),"monitor":format!("{monitor:?}")}),
-        )?;
-    }
     // An empty list is always a summary beside Beats; a populated list keeps
     // its panel at ordinary heights.
     if d.harness.ctx.content_rect().height() < 700.0 || count == 0 {

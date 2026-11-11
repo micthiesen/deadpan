@@ -36,6 +36,7 @@ mod attached;
 mod camera_fields;
 mod captions;
 mod cards;
+mod clock;
 mod command_guide;
 mod copied;
 mod corrections;
@@ -60,6 +61,7 @@ mod marks;
 mod model_packs;
 mod moment;
 mod operators;
+mod overview;
 mod palette;
 mod playback;
 mod proxies;
@@ -201,6 +203,10 @@ pub struct DeadpanApp {
     room_tone: Option<room_tone::Draft>,
     wave: Option<wave_range::WaveRange>,
     timing: timing::Timing,
+    overview: overview::Overview,
+    /// The left rail's tab: the transcript (`Some(true)`), the Original
+    /// and sounds (`Some(false)`), or automatic: the transcript once ready.
+    words_rail: Option<bool>,
     /// `:correct`: the transcript and pause correction sheet.
     correction: Option<corrections::Draft>,
     refinement: refinement::State,
@@ -433,6 +439,8 @@ impl DeadpanApp {
             room_tone: None,
             wave: None,
             timing: timing::Timing::default(),
+            overview: overview::Overview::default(),
+            words_rail: None,
             correction: None,
             refinement: refinement::State::default(),
             gain_command_target: None,
@@ -2522,11 +2530,18 @@ impl DeadpanApp {
                 // With a transcript, / searches its words; n and N then step
                 // through matches in the current context.
                 if self.transcription_ready() && !self.sound_focused() {
+                    self.words_rail = Some(true);
                     context.memory_mut(|m| m.request_focus(egui::Id::new(TRANSCRIPT_SEARCH_ID)));
+                    select_all_text(
+                        context,
+                        TRANSCRIPT_SEARCH_ID,
+                        self.transcription.search_text(),
+                    );
                     return;
                 }
                 self.pane = Pane::Sources;
                 context.memory_mut(|m| m.request_focus(egui::Id::new(SEARCH_ID)));
+                select_all_text(context, SEARCH_ID, &self.source_search);
             }
             Action::SearchStep { forward } => self.search_step(forward),
             Action::Command => {
@@ -4105,8 +4120,12 @@ impl DeadpanApp {
             ui.horizontal_wrapped(|ui| {
                 ui.label(egui::RichText::new(mode).monospace().strong());
                 ui.separator();
-                ui.label(egui::RichText::new(if self.sound_focused() { "SOUND" } else { match (self.focused_workflow(), self.view) { (true, View::Source) => "ORIGINAL", (true, View::Sequence) => "YOUR EDIT", (false, View::Source) => "SOURCE", (false, View::Sequence) => "SEQUENCE" } }).monospace());
-                ui.separator();
+                // The viewer's tabs name the view and the inspector the beat;
+                // the row keeps its width for keys.
+                if self.sound_focused() {
+                    ui.label(egui::RichText::new("SOUND").monospace());
+                    ui.separator();
+                }
                 if self.view == View::Sequence && self.edit_role != deadpan_core::MediaRole::Linked {
                     ui.colored_label(style::LAVENDER, egui::RichText::new(match self.edit_role {
                         deadpan_core::MediaRole::Audio => "AUDIO ROLE",
@@ -4114,43 +4133,40 @@ impl DeadpanApp {
                     }).monospace());
                     ui.separator();
                 }
-                if self.presentation.loading() || self.presentation.needs_render() { crate::preview::accessibility::busy(ui); ui.weak("Updating picture"); }
                 if self.sound_focused() {
                     ui.weak("Catalog audition");
                 } else if self.event_focused() {
                     if let Some(event) = self.workspace.as_ref().and_then(|w| w.document.sounds().get(self.selected_event.as_ref()?)) {
-                        ui.label(format!("Sound: {}", event.label));
+                        let label = format!("Sound: {}", event.label);
+                        footer_label(ui, &label).on_hover_text(label);
                     }
                 } else if self.view == View::Sequence {
                     if let Some(label) = self.edit_range_label() {
-                        ui.colored_label(style::LAVENDER, label);
-                    } else if self.scoped.is_some() {
+                        let width = if ui.max_rect().width() < 1100.0 { 150.0 } else { 260.0 };
+                        let galley = egui::WidgetText::from(egui::RichText::new(&label).color(style::LAVENDER)).into_galley(ui, Some(egui::TextWrapMode::Truncate), width, egui::TextStyle::Body);
+                        accessibility::full_text(ui.add(egui::Label::new(galley)), &label).on_hover_text(label);
+                    } else if self.scoped.is_some() || !self.sequence_scope.groups().is_empty() {
                         let label = self.beat_scope_label();
-                        accessibility::full_text(ui.add(egui::Label::new(&label).truncate()), &label).on_hover_text(label);
-                    } else if let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) {
-                        { let text = format!("{} · {}", beat.label, self.beat_scope_label()); accessibility::full_text(ui.add(egui::Label::new(&text).truncate()), &text) }.on_hover_text(format!("{} · {} · {} frames · {}", beat.label, beat.kind, beat.frames, self.beat_scope_label()));
-                    } else { ui.weak("No beat selected"); }
-                } else { ui.weak("Unchanged source"); }
+                        footer_label(ui, &label).on_hover_text(label);
+                    }
+                }
                 ui.colored_label(style::LAVENDER, format!("Focus: {}", if self.pane == Pane::Sources && self.focused_workflow() { "Original / sounds" } else { pane_name(self.pane) }));
                 if let Some(label) = self.register_status() {
                     ui.colored_label(style::LAVENDER, label);
                 }
+                // Its save and cancel keys lead the key hints that follow.
                 if let Some(label) = self.macros.label() {
                     ui.colored_label(style::CURSOR, label);
-                    style::key_hint(ui, &self.editor_key(EditorKey::MacroRecord), "save macro");
-                    style::key_hint(ui, "Esc", if self.macros.recording_original() || self.edit_selection() == navigation::EditSelection::None || self.macros.is_pending() { "cancel recording" } else { "clear selection" });
-                }
-                if !self.command_open && !self.sound_focused() && self.pane != Pane::Sounds && !self.event_focused()
-                    && !(self.scoped.is_some() && self.macros.recording())
-                    && ui.add(egui::Button::new(format!("Marks  {}", self.editor_pair(EditorKey::MarkSet, EditorKey::MarkJump, " / "))).small().wrap()).on_hover_text(format!("{} + letter saves this position; {} + letter returns. Browse with :marks.", self.editor_key(EditorKey::MarkSet), self.editor_key(EditorKey::MarkJump))).clicked()
-                {
-                    self.open_marks(ui.ctx());
                 }
                 if !pending.is_empty() { key_labels::keycap(ui, &pending); }
                 if let Some(hint) = self.bindings.pending_hint() {
                     let next = self.bindings.pending_next_keys().unwrap_or_else(|| hint.clone());
                     key_labels::pending_guidance(ui, &hint, &next);
                 }
+                if !self.command_open {
+                    self.footer_keys(ui);
+                }
+                // Keys first; a quiet notice takes what is left of the row.
                 inline_notice(ui);
             });
             if self.command_open {
@@ -4214,217 +4230,6 @@ impl DeadpanApp {
                 if let Some(hint) = self.delete_hint() { ui.colored_label(style::LAVENDER, hint); }
                 if let Some(hint) = self.cutaway_hint() { ui.colored_label(style::LAVENDER, hint); }
                 if let Some(hint) = self.frame_delete_hint() { ui.colored_label(style::LAVENDER, hint); }
-            } else {
-                ui.horizontal_wrapped(|ui| {
-                    let clock = if self.sound_focused() { format!("Sound {}", playback::sound_time(self.sound_cursor)) } else if self.view == View::Source { format!("Original boundary {}/{}", self.source_cursor, self.source_length()) } else { self.scope_clock_label() };
-                    ui.label(egui::RichText::new(clock).monospace().color(style::CURSOR));
-                    let mut hints = key_labels::Hints::new();
-                    if self.macros.recording() {
-                        // The way out of recording comes first; the footer keeps
-                        // as many of the remaining keys as fit.
-                        let original = self.macros.recording_original();
-                        let scoped = self.scoped.is_some();
-                        let visual = !original && !scoped && self.edit_selection() != navigation::EditSelection::None;
-                        hints.push(("Esc".into(), if visual && !self.macros.is_pending() { "clear selection".into() } else { "cancel recording".into() }));
-                        self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
-                        if scoped && self.scoped_shared_gap().is_some() {
-                            self.shared_gap_hints(&mut hints, true);
-                        } else if scoped {
-                            if !self.has_scoped_visual_selection() {
-                            self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
-                            self.add_editor_hint(&mut hints, EditorKey::Mute, "mute / unmute");
-                            self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
-                            }
-                            self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
-                            if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
-                        } else {
-                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "frame");
-                        if original {
-                            self.add_editor_pair_hint(&mut hints, EditorKey::First, EditorKey::Last, " / ", "Original bounds");
-                            self.add_editor_hint(&mut hints, EditorKey::MarkSet, "+ letter: save mark");
-                            self.add_editor_hint(&mut hints, EditorKey::MarkJump, "+ letter: jump mark");
-                        } else {
-                            self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " / ", "beat");
-                            self.add_editor_pair_hint(&mut hints, EditorKey::First, EditorKey::Last, " / ", "group bounds");
-                            self.add_editor_hint(&mut hints, EditorKey::Visual, if self.edit_range.active { "finish range" } else { "start range" });
-                            self.add_editor_hint(&mut hints, if visual { EditorKey::CutRange } else { EditorKey::CutFrames }, if visual { "cut range" } else { "cut frames" });
-                            self.add_editor_hint(&mut hints, EditorKey::Copy, if visual { "copy range" } else { "copy beat" });
-                            self.add_editor_hint(&mut hints, EditorKey::Repeat, if visual { "repeat range" } else { "repeat beat" });
-                            self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
-                            self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if visual { "replace range" } else { "paste" });
-                        }
-                        }
-                        self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: record call");
-                    } else if self.sound_focused() {
-                        self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "sound");
-                        self.add_editor_hint(&mut hints, EditorKey::Playback, "play / pause");
-                        self.add_editor_hint(&mut hints, EditorKey::Audition, "loop sound");
-                        self.add_editor_hint(&mut hints, EditorKey::PlaceSound, "place at edit cursor");
-                    } else if self.pane == Pane::Sounds || self.event_focused() {
-                        self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "sound");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "nudge frame");
-                        hints.push(("Enter".into(), "position".into()));
-                        self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
-                        self.add_editor_hint(&mut hints, EditorKey::CutBeat, "remove");
-                        self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
-                    } else if self.view == View::Sequence && self.scoped_shared_gap().is_some() {
-                        self.shared_gap_hints(&mut hints, false);
-                    } else if self.view == View::Sequence && self.scoped.is_some() {
-                        let ranged = self.has_scoped_visual_selection();
-                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "picture frame");
-                        if ranged {
-                            self.add_editor_hint(&mut hints, EditorKey::Visual, if self.edit_range.active { "finish framing range" } else { "start new range" });
-                            self.add_editor_hint(&mut hints, EditorKey::Escape, "clear range");
-                            self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "range zoom / creep");
-                            self.add_editor_hint(&mut hints, EditorKey::Command, ":zoom / :creep");
-                            if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
-                            self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record framing");
-                            self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run framing");
-                            self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
-                        } else {
-                        self.add_editor_pair_hint(&mut hints, EditorKey::BeatPrevious, EditorKey::BeatNext, " / ", "child");
-                        self.add_editor_hint(&mut hints, EditorKey::EnterGroup, if self.scoped_hold_parameter().is_some() { "pause length" } else { "enter contents" });
-                        self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::PlayNext, EditorKey::PlayPrevious, " ", "Repeat play");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
-                        self.add_editor_hint(&mut hints, EditorKey::Mute, "mute / unmute");
-                        self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
-                        if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
-                        self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record macro");
-                        self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
-                        hints.push((":scope".into(), "all / play N / plays 2-3".into()));
-                        self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
-                        if self.scoped_target().ok().flatten().is_some_and(|target| target.has_single_play_authority()) {
-                            hints.tier(key_labels::Tier::More);
-                            self.add_editor_hint(&mut hints, EditorKey::Split, "split in this play");
-                            self.add_editor_hint(&mut hints, EditorKey::CopyBeat, "copy in this play");
-                            self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut in this play");
-                            if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", "paste in this play"); }
-                            self.add_editor_hint(&mut hints, EditorKey::Repeat, "repeat in this play");
-                        }
-                        }
-                    } else if self.view == View::Sequence && self.edit_range.has_set() {
-                        hints.tier(key_labels::Tier::Core);
-                        self.add_editor_hint(&mut hints, EditorKey::Copy, "copy union");
-                        self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut union");
-                        self.add_editor_hint(&mut hints, EditorKey::Escape, "clear set");
-                        self.add_editor_hint(&mut hints, EditorKey::Visual, "select time");
-                        self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
-                        self.add_editor_hint(&mut hints, EditorKey::Command, "command");
-                        if self.semantic.snapshot().and_then(|snapshot| snapshot.edit.as_ref()).is_some_and(|edit| edit.uses_register()) {
-                            self.add_editor_hint(&mut hints, EditorKey::RepeatLast, "cut union again");
-                        }
-                        hints.tier(key_labels::Tier::Context);
-                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "frame");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::BeatPrevious, EditorKey::BeatNext, " / ", "beat");
-                        if self.selected_group() { self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group"); }
-                        if !self.sequence_scope.groups().is_empty() { self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent"); }
-                        self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::MacroRecord, EditorKey::MacroExecute, " / ", "+ letter: record / run");
-                    } else if self.view == View::Sequence {
-                        // Tiers decide what survives the two rows (see
-                        // key_labels::Tier); this order is the painted order.
-                        let selection = self.edit_selection();
-                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "beat");
-                        let words = self.workspace.as_ref().is_some_and(|workspace| workspace.transcript.is_some());
-                        let pauses = self.workspace.as_ref().is_some_and(|workspace| workspace.speech_activity.is_some());
-                        hints.tier(key_labels::Tier::Context);
-                        if words { self.add_editor_pair_hint(&mut hints, EditorKey::WordNext, EditorKey::WordPrevious, " ", "word"); }
-                        if pauses { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
-                        let shots = self.workspace.as_ref().is_some_and(|workspace| workspace.shot_analysis.is_some());
-                        if shots { self.add_editor_pair_hint(&mut hints, EditorKey::ShotNext, EditorKey::ShotPrevious, " ", "shots"); }
-                        if let Some(hold) = self.ai_hold() {
-                            match self.ai_offered_variants(&hold) {
-                                0 => hints.push((":hold-provider ai".into(), "pictures for this pause".into())),
-                                count => {
-                                    self.add_editor_hint(&mut hints, EditorKey::CompareAi, "AI before / after");
-                                    if count > 1 { self.add_editor_hint(&mut hints, EditorKey::NextAi, "next AI variant"); }
-                                }
-                            }
-                        }
-                        // The selected beat's attached sounds (its ♫ badge).
-                        if self.attached_target().is_some() || self.only_attached().is_some() {
-                            hints.push((":sound-detach".into(), "detach its sound".into()));
-                        }
-                        hints.tier(key_labels::Tier::Core);
-                        self.add_editor_hint(&mut hints, EditorKey::Visual, if selection == navigation::EditSelection::Object { if self.edit_range.active { "retain object" } else { "select time" } } else if self.edit_range.active { "finish range" } else { "select range" });
-                        self.add_editor_hint(&mut hints, EditorKey::Repeat, if selection == navigation::EditSelection::None { "repeat beat" } else if selection == navigation::EditSelection::Object { "repeat object" } else { "repeat range" });
-                        match selection {
-                            navigation::EditSelection::Object => self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut object"),
-                            navigation::EditSelection::Range => self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut range"),
-                            navigation::EditSelection::Empty => self.add_editor_hint(&mut hints, EditorKey::CutRange, "empty range"),
-                            navigation::EditSelection::None => self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut beat"),
-                        };
-                        // Without a selection the cursor's frame is a cut target too.
-                        if selection == navigation::EditSelection::None && self.pane != Pane::Sources {
-                            self.add_editor_hint(&mut hints, EditorKey::CutFrames, "cut frame");
-                        }
-                        self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
-                        // Parameter entry: :hold, :repeat, :retime and the rest.
-                        self.add_editor_hint(&mut hints, EditorKey::Command, "command");
-                        if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
-                        self.add_editor_hint(&mut hints, EditorKey::Copy, if self.copied.is_pending() { "copy pending…" } else if selection == navigation::EditSelection::None { "copy beat" } else if selection == navigation::EditSelection::Object { "copy object" } else { "copy range" });
-                        if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.edit_range.has_set() { "clear set before paste" } else if selection == navigation::EditSelection::Object { "replace object" } else if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
-                        hints.tier(key_labels::Tier::Context);
-                        if self.selected_group() { self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group"); }
-                        if self.selected_repeat() { self.add_editor_pair_hint(&mut hints, EditorKey::PlayNext, EditorKey::PlayPrevious, " ", "open a play"); }
-                        if !self.sequence_scope.groups().is_empty() { self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent"); }
-                        if selection != navigation::EditSelection::None {
-                            if words {
-                                self.add_editor_hint(&mut hints, EditorKey::InnerWord, "word");
-                                self.add_editor_hint(&mut hints, EditorKey::InnerSentence, "sentence");
-                            }
-                            if pauses { self.add_editor_hint(&mut hints, EditorKey::InnerPause, "pause"); }
-                            if shots { self.add_editor_hint(&mut hints, EditorKey::InnerShot, "shot"); }
-                            self.add_editor_hint(&mut hints, EditorKey::InnerBeat, "beat contents");
-                            self.add_editor_hint(&mut hints, EditorKey::AroundBeat, "beat + attachments");
-                            self.add_editor_hint(&mut hints, EditorKey::InnerGroup, "group contents");
-                            self.add_editor_hint(&mut hints, EditorKey::AroundGroup, "whole group");
-                        }
-                        hints.tier(key_labels::Tier::More);
-                        self.add_editor_hint(&mut hints, EditorKey::Split, "split");
-                        self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
-                        self.add_editor_hint(&mut hints, EditorKey::GenerateAi, "AI pause");
-                        // Within a tier earlier hints win the row budget.
-                        if selection == navigation::EditSelection::None && self.pane != Pane::Sources {
-                            // Operators take any motion or object: d3l, y]s.
-                            self.add_editor_pair_hint(&mut hints, EditorKey::CutOperator, EditorKey::YankOperator, " / ", "+ motion: cut / copy");
-                            self.add_editor_pair_hint(&mut hints, EditorKey::MacroRecord, EditorKey::MacroExecute, " / ", "+ letter: record / run macro");
-                        }
-                        self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
-                        self.add_editor_hint(&mut hints, EditorKey::Trim, "Trim beat");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", if selection == navigation::EditSelection::None { "gain 3 dB" } else { "range gain 3 dB" });
-                        self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
-                        self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
-                    } else {
-                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
-                        hints.tier(key_labels::Tier::Context);
-                        if self.workspace.as_ref().is_some_and(|workspace| workspace.transcript.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::WordNext, EditorKey::WordPrevious, " ", "word"); }
-                        if self.workspace.as_ref().is_some_and(|workspace| workspace.speech_activity.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
-                        if self.workspace.as_ref().is_some_and(|workspace| workspace.shot_analysis.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::ShotNext, EditorKey::ShotPrevious, " ", "shots"); }
-                        hints.tier(key_labels::Tier::Core);
-                        if self.focused_workflow() && !self.beat_rows.is_empty() { self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "edit beat"); }
-                        self.add_editor_hint(&mut hints, EditorKey::Visual, if self.moment.active { "finish selection" } else { "select moment" });
-                        if self.moment_routing_selection() == navigation::EditSelection::None { self.add_editor_hint(&mut hints, EditorKey::YankOperator, "+ motion: copy"); } else { self.add_editor_hint(&mut hints, EditorKey::Copy, "copy moment"); }
-                        self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
-                        hints.push((":sequence".into(), if self.focused_workflow() { "Your edit" } else { "Sequence" }.into()));
-                        if self.workspace.is_some() && self.selected_source.is_some() { self.add_editor_hint(&mut hints, EditorKey::Insert, if self.focused_workflow() { "reuse all" } else { "insert source" }); }
-                    }
-                    hints.tier(key_labels::Tier::Context);
-                    self.add_editor_hint(&mut hints, EditorKey::PaneNext, "pane");
-                    hints.tier(key_labels::Tier::Core);
-                    if !hints.iter().any(|(_, description)| description == "command") {
-                        self.add_editor_hint(&mut hints, EditorKey::Command, "command");
-                    }
-                    self.add_editor_hint(&mut hints, EditorKey::Help, "keys");
-                    // At most two hint rows; the picture keeps the remaining
-                    // height and Help lists every key.
-                    let budget = 2.0 * ui.spacing().interact_size.y + ui.spacing().item_spacing.y;
-                    key_labels::footer_hints(ui, &hints, &self.editor_key(EditorKey::Help), budget);
-                });
             }
         });
         // Bottom panels initially anchor using their previous height. If this
@@ -4440,6 +4245,740 @@ impl DeadpanApp {
             self.feedback.footer_bottom = Some((panel.response.rect.bottom(), available_bottom));
             self.feedback.footer_command_open = self.command_open;
         }
+    }
+
+    /// The footer's single row of keys after its mode and context labels:
+    /// the cursor clock, then the hints that fit, with Help always last.
+    fn footer_keys(&mut self, ui: &mut egui::Ui) {
+        let clock = if self.sound_focused() {
+            format!("Sound {}", playback::sound_time(self.sound_cursor))
+        } else if self.view == View::Source {
+            format!(
+                "{} / {} · frame {}",
+                self.project_time(self.source_cursor),
+                self.project_time(self.source_length()),
+                self.source_cursor
+            )
+        } else {
+            self.scope_clock_label()
+        };
+        // Time first, in the cursor's colour; the exact frame after it.
+        let mut job = egui::text::LayoutJob::default();
+        let (time, frames) = clock
+            .split_once(" · ")
+            .map_or((clock.as_str(), None), |(time, frames)| {
+                (time, Some(frames))
+            });
+        let font = egui::FontId::monospace(12.0);
+        job.append(
+            time,
+            0.0,
+            egui::TextFormat {
+                font_id: font.clone(),
+                color: style::CURSOR,
+                ..Default::default()
+            },
+        );
+        if let Some(frames) = frames {
+            job.append(
+                &format!("  {frames}"),
+                0.0,
+                egui::TextFormat {
+                    font_id: egui::FontId::monospace(10.5),
+                    color: style::muted(ui),
+                    valign: egui::Align::Center,
+                    ..Default::default()
+                },
+            );
+        }
+        accessibility::full_text(ui.label(job), &clock);
+        let mut hints = key_labels::Hints::new();
+        if self.macros.recording() {
+            // The way out of recording comes first; the footer keeps
+            // as many of the remaining keys as fit.
+            let original = self.macros.recording_original();
+            let scoped = self.scoped.is_some();
+            let visual =
+                !original && !scoped && self.edit_selection() != navigation::EditSelection::None;
+            hints.push((
+                "Esc".into(),
+                if visual && !self.macros.is_pending() {
+                    "clear selection".into()
+                } else {
+                    "cancel recording".into()
+                },
+            ));
+            self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
+            if scoped && self.scoped_shared_gap().is_some() {
+                self.shared_gap_hints(&mut hints, true);
+            } else if scoped {
+                if !self.has_scoped_visual_selection() {
+                    self.add_editor_pair_hint(
+                        &mut hints,
+                        EditorKey::GainUp,
+                        EditorKey::GainDown,
+                        " / ",
+                        "gain 3 dB",
+                    );
+                    self.add_editor_hint(&mut hints, EditorKey::Mute, "mute / unmute");
+                }
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::PunchIn,
+                    EditorKey::Creep,
+                    " / ",
+                    "punch in / creep",
+                );
+                if !self.has_scoped_visual_selection() {
+                    self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
+                }
+                if let Some(label) = self.repeat_hint() {
+                    self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label);
+                }
+            } else {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::FramePrevious,
+                    EditorKey::FrameNext,
+                    " / ",
+                    "frame",
+                );
+                if original {
+                    self.add_editor_pair_hint(
+                        &mut hints,
+                        EditorKey::First,
+                        EditorKey::Last,
+                        " / ",
+                        "Original bounds",
+                    );
+                    self.add_editor_hint(&mut hints, EditorKey::MarkSet, "+ letter: save mark");
+                    self.add_editor_hint(&mut hints, EditorKey::MarkJump, "+ letter: jump mark");
+                } else {
+                    self.add_editor_pair_hint(
+                        &mut hints,
+                        EditorKey::BeatNext,
+                        EditorKey::BeatPrevious,
+                        " / ",
+                        "beat",
+                    );
+                    self.add_editor_pair_hint(
+                        &mut hints,
+                        EditorKey::First,
+                        EditorKey::Last,
+                        " / ",
+                        "group bounds",
+                    );
+                    self.add_editor_hint(
+                        &mut hints,
+                        EditorKey::Visual,
+                        if self.edit_range.active {
+                            "finish range"
+                        } else {
+                            "start range"
+                        },
+                    );
+                    self.add_editor_hint(
+                        &mut hints,
+                        if visual {
+                            EditorKey::CutRange
+                        } else {
+                            EditorKey::CutFrames
+                        },
+                        if visual { "cut range" } else { "cut frames" },
+                    );
+                    self.add_editor_hint(
+                        &mut hints,
+                        EditorKey::Copy,
+                        if visual { "copy range" } else { "copy beat" },
+                    );
+                    self.add_editor_hint(
+                        &mut hints,
+                        EditorKey::Repeat,
+                        if visual {
+                            "repeat range"
+                        } else {
+                            "repeat beat"
+                        },
+                    );
+                    self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
+                    self.add_editor_pair_hint(
+                        &mut hints,
+                        EditorKey::PasteAfter,
+                        EditorKey::PasteBefore,
+                        " / ",
+                        if visual { "replace range" } else { "paste" },
+                    );
+                }
+            }
+            self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: record call");
+        } else if self.sound_focused() {
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::BeatNext,
+                EditorKey::BeatPrevious,
+                " ",
+                "sound",
+            );
+            self.add_editor_hint(&mut hints, EditorKey::Playback, "play / pause");
+            self.add_editor_hint(&mut hints, EditorKey::Audition, "loop sound");
+            self.add_editor_hint(&mut hints, EditorKey::PlaceSound, "place at edit cursor");
+        } else if self.pane == Pane::Sounds || self.event_focused() {
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::BeatNext,
+                EditorKey::BeatPrevious,
+                " ",
+                "sound",
+            );
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::FramePrevious,
+                EditorKey::FrameNext,
+                " ",
+                "nudge frame",
+            );
+            hints.push(("Enter".into(), "position".into()));
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::GainUp,
+                EditorKey::GainDown,
+                " / ",
+                "gain 3 dB",
+            );
+            self.add_editor_hint(&mut hints, EditorKey::CutBeat, "remove");
+            self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+        } else if self.view == View::Sequence && self.scoped_shared_gap().is_some() {
+            self.shared_gap_hints(&mut hints, false);
+        } else if self.view == View::Sequence && self.scoped.is_some() {
+            let ranged = self.has_scoped_visual_selection();
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::FramePrevious,
+                EditorKey::FrameNext,
+                " / ",
+                "picture frame",
+            );
+            if ranged {
+                self.add_editor_hint(
+                    &mut hints,
+                    EditorKey::Visual,
+                    if self.edit_range.active {
+                        "finish framing range"
+                    } else {
+                        "start new range"
+                    },
+                );
+                self.add_editor_hint(&mut hints, EditorKey::Escape, "clear range");
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::PunchIn,
+                    EditorKey::Creep,
+                    " / ",
+                    "range zoom / creep",
+                );
+                self.add_editor_hint(&mut hints, EditorKey::Command, ":zoom / :creep");
+                if let Some(label) = self.repeat_hint() {
+                    self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label);
+                }
+                self.add_editor_hint(
+                    &mut hints,
+                    EditorKey::MacroRecord,
+                    "+ letter: record framing",
+                );
+                self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run framing");
+                self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+            } else {
+                hints.tier(key_labels::Tier::Now);
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::PlayNext,
+                    EditorKey::PlayPrevious,
+                    " ",
+                    "Repeat play",
+                );
+                if let Some(label) = self.repeat_hint() {
+                    self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label);
+                }
+                hints.tier(key_labels::Tier::Core);
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::BeatPrevious,
+                    EditorKey::BeatNext,
+                    " / ",
+                    "child",
+                );
+                self.add_editor_hint(
+                    &mut hints,
+                    EditorKey::EnterGroup,
+                    if self.scoped_hold_parameter().is_some() {
+                        "pause length"
+                    } else {
+                        "enter contents"
+                    },
+                );
+                self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent");
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::PunchIn,
+                    EditorKey::Creep,
+                    " / ",
+                    "punch in / creep",
+                );
+                hints.tier(key_labels::Tier::Context);
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::GainUp,
+                    EditorKey::GainDown,
+                    " / ",
+                    "gain 3 dB",
+                );
+                self.add_editor_hint(&mut hints, EditorKey::Mute, "mute / unmute");
+                self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
+                self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record macro");
+                self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
+                hints.push((":scope".into(), "all / play N / plays 2-3".into()));
+                self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+                if self
+                    .scoped_target()
+                    .ok()
+                    .flatten()
+                    .is_some_and(|target| target.has_single_play_authority())
+                {
+                    hints.tier(key_labels::Tier::More);
+                    self.add_editor_hint(&mut hints, EditorKey::Split, "split in this play");
+                    self.add_editor_hint(&mut hints, EditorKey::CopyBeat, "copy in this play");
+                    self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut in this play");
+                    if self.copied.selected_content().is_some() {
+                        self.add_editor_pair_hint(
+                            &mut hints,
+                            EditorKey::PasteAfter,
+                            EditorKey::PasteBefore,
+                            " / ",
+                            "paste in this play",
+                        );
+                    }
+                    self.add_editor_hint(&mut hints, EditorKey::Repeat, "repeat in this play");
+                }
+            }
+        } else if self.view == View::Sequence && self.edit_range.has_set() {
+            hints.tier(key_labels::Tier::Core);
+            self.add_editor_hint(&mut hints, EditorKey::Copy, "copy union");
+            self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut union");
+            self.add_editor_hint(&mut hints, EditorKey::Escape, "clear set");
+            self.add_editor_hint(&mut hints, EditorKey::Visual, "select time");
+            self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+            self.add_editor_hint(&mut hints, EditorKey::Command, "command");
+            if self
+                .semantic
+                .snapshot()
+                .and_then(|snapshot| snapshot.edit.as_ref())
+                .is_some_and(|edit| edit.uses_register())
+            {
+                self.add_editor_hint(&mut hints, EditorKey::RepeatLast, "cut union again");
+            }
+            hints.tier(key_labels::Tier::Context);
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::FramePrevious,
+                EditorKey::FrameNext,
+                " / ",
+                "frame",
+            );
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::BeatPrevious,
+                EditorKey::BeatNext,
+                " / ",
+                "beat",
+            );
+            if self.selected_group() {
+                self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group");
+            }
+            if !self.sequence_scope.groups().is_empty() {
+                self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent");
+            }
+            self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::MacroRecord,
+                EditorKey::MacroExecute,
+                " / ",
+                "+ letter: record / run",
+            );
+        } else if self.view == View::Sequence {
+            // Tiers decide what survives the two rows (see
+            // key_labels::Tier); this order is the painted order.
+            let selection = self.edit_selection();
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::FramePrevious,
+                EditorKey::FrameNext,
+                " ",
+                "frame",
+            );
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::BeatNext,
+                EditorKey::BeatPrevious,
+                " ",
+                "beat",
+            );
+            let words = self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.transcript.is_some());
+            let pauses = self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.speech_activity.is_some());
+            hints.tier(key_labels::Tier::Context);
+            if words {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::WordNext,
+                    EditorKey::WordPrevious,
+                    " ",
+                    "word",
+                );
+            }
+            if pauses {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::PauseNext,
+                    EditorKey::PausePrevious,
+                    " ",
+                    "pauses",
+                );
+            }
+            let shots = self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.shot_analysis.is_some());
+            if shots {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::ShotNext,
+                    EditorKey::ShotPrevious,
+                    " ",
+                    "shots",
+                );
+            }
+            hints.tier(key_labels::Tier::Now);
+            if let Some(hold) = self.ai_hold() {
+                match self.ai_offered_variants(&hold) {
+                    0 => hints.push((":hold-provider ai".into(), "pictures for this pause".into())),
+                    count => {
+                        self.add_editor_hint(&mut hints, EditorKey::CompareAi, "AI before / after");
+                        if count > 1 {
+                            self.add_editor_hint(&mut hints, EditorKey::NextAi, "next AI variant");
+                        }
+                    }
+                }
+            }
+            // The selected beat's attached sounds (its ♫ badge).
+            if self.attached_target().is_some() || self.only_attached().is_some() {
+                hints.push((":sound-detach".into(), "detach its sound".into()));
+            }
+            hints.tier(key_labels::Tier::Core);
+            self.add_editor_hint(
+                &mut hints,
+                EditorKey::Visual,
+                if selection == navigation::EditSelection::Object {
+                    if self.edit_range.active {
+                        "retain object"
+                    } else {
+                        "select time"
+                    }
+                } else if self.edit_range.active {
+                    "finish range"
+                } else {
+                    "select"
+                },
+            );
+            // With a selection, what acts on it comes first.
+            if selection != navigation::EditSelection::None {
+                hints.tier(key_labels::Tier::Now);
+            }
+            self.add_editor_hint(
+                &mut hints,
+                EditorKey::Repeat,
+                if selection == navigation::EditSelection::None {
+                    "repeat"
+                } else if selection == navigation::EditSelection::Object {
+                    "repeat object"
+                } else {
+                    "repeat range"
+                },
+            );
+            match selection {
+                navigation::EditSelection::Object => {
+                    self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut object")
+                }
+                navigation::EditSelection::Range => {
+                    self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut range")
+                }
+                navigation::EditSelection::Empty => {
+                    self.add_editor_hint(&mut hints, EditorKey::CutRange, "empty range")
+                }
+                // Operators teach dd, yy and every motion at once.
+                navigation::EditSelection::None if self.pane != Pane::Sources => self
+                    .add_editor_pair_hint(
+                        &mut hints,
+                        EditorKey::CutOperator,
+                        EditorKey::YankOperator,
+                        " / ",
+                        "+ motion: cut / copy",
+                    ),
+                navigation::EditSelection::None => {
+                    self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut beat")
+                }
+            };
+            hints.tier(key_labels::Tier::Core);
+            self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::PunchIn,
+                EditorKey::Creep,
+                " / ",
+                "punch in / creep",
+            );
+            // Undo also sits in the header with its key.
+            hints.tier(key_labels::Tier::Context);
+            self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+            hints.tier(key_labels::Tier::Core);
+            // Parameter entry: :hold, :repeat, :retime and the rest.
+            self.add_editor_hint(&mut hints, EditorKey::Command, "command");
+            // The edit just made, again: the most current key of all.
+            hints.tier(key_labels::Tier::Now);
+            if self.pane != Pane::Sources
+                && let Some(label) = self.repeat_hint()
+            {
+                self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label);
+            }
+            hints.tier(key_labels::Tier::Core);
+            self.add_editor_hint(
+                &mut hints,
+                EditorKey::Copy,
+                if self.copied.is_pending() {
+                    "copy pending…"
+                } else if selection == navigation::EditSelection::None {
+                    "copy beat"
+                } else if selection == navigation::EditSelection::Object {
+                    "copy object"
+                } else {
+                    "copy range"
+                },
+            );
+            if self.copied.selected_content().is_some() {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::PasteAfter,
+                    EditorKey::PasteBefore,
+                    " / ",
+                    if self.edit_range.has_set() {
+                        "clear set before paste"
+                    } else if selection == navigation::EditSelection::Object {
+                        "replace object"
+                    } else if self.selected_edit_range().is_some() {
+                        "replace range"
+                    } else {
+                        "paste after / before"
+                    },
+                );
+            }
+            hints.tier(key_labels::Tier::Now);
+            if self.selected_group() {
+                self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group");
+            }
+            if self.selected_repeat() {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::PlayNext,
+                    EditorKey::PlayPrevious,
+                    " ",
+                    "open a play",
+                );
+            }
+            if !self.sequence_scope.groups().is_empty() {
+                self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent");
+            }
+            hints.tier(key_labels::Tier::Context);
+            if selection != navigation::EditSelection::None {
+                if words {
+                    self.add_editor_hint(&mut hints, EditorKey::InnerWord, "word");
+                    self.add_editor_hint(&mut hints, EditorKey::InnerSentence, "sentence");
+                }
+                if pauses {
+                    self.add_editor_hint(&mut hints, EditorKey::InnerPause, "pause");
+                }
+                if shots {
+                    self.add_editor_hint(&mut hints, EditorKey::InnerShot, "shot");
+                }
+                self.add_editor_hint(&mut hints, EditorKey::InnerBeat, "beat contents");
+                self.add_editor_hint(&mut hints, EditorKey::AroundBeat, "beat + attachments");
+                self.add_editor_hint(&mut hints, EditorKey::InnerGroup, "group contents");
+                self.add_editor_hint(&mut hints, EditorKey::AroundGroup, "whole group");
+            }
+            hints.tier(key_labels::Tier::More);
+            // Without a selection the cursor's frame is a cut target too.
+            if selection == navigation::EditSelection::None && self.pane != Pane::Sources {
+                self.add_editor_hint(&mut hints, EditorKey::CutFrames, "cut frame");
+            }
+            self.add_editor_hint(&mut hints, EditorKey::Split, "split");
+            self.add_editor_hint(&mut hints, EditorKey::GenerateAi, "AI pause");
+            // Within a tier earlier hints win the row budget.
+            if selection == navigation::EditSelection::None && self.pane != Pane::Sources {
+                self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut beat");
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::MacroRecord,
+                    EditorKey::MacroExecute,
+                    " / ",
+                    "+ letter: record / run macro",
+                );
+            }
+            self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
+            self.add_editor_hint(&mut hints, EditorKey::Trim, "Trim beat");
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::GainUp,
+                EditorKey::GainDown,
+                " / ",
+                if selection == navigation::EditSelection::None {
+                    "gain 3 dB"
+                } else {
+                    "range gain 3 dB"
+                },
+            );
+            self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
+            self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
+        } else {
+            self.add_editor_pair_hint(
+                &mut hints,
+                EditorKey::FramePrevious,
+                EditorKey::FrameNext,
+                " ",
+                "frame",
+            );
+            hints.tier(key_labels::Tier::Context);
+            if self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.transcript.is_some())
+            {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::WordNext,
+                    EditorKey::WordPrevious,
+                    " ",
+                    "word",
+                );
+            }
+            if self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.speech_activity.is_some())
+            {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::PauseNext,
+                    EditorKey::PausePrevious,
+                    " ",
+                    "pauses",
+                );
+            }
+            if self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.shot_analysis.is_some())
+            {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::ShotNext,
+                    EditorKey::ShotPrevious,
+                    " ",
+                    "shots",
+                );
+            }
+            hints.tier(key_labels::Tier::Core);
+            hints.push((
+                ":sequence".into(),
+                if self.focused_workflow() {
+                    "Your edit"
+                } else {
+                    "Sequence"
+                }
+                .into(),
+            ));
+            if self.workspace.is_some() && self.selected_source.is_some() {
+                self.add_editor_hint(
+                    &mut hints,
+                    EditorKey::Insert,
+                    if self.focused_workflow() {
+                        "reuse all"
+                    } else {
+                        "insert source"
+                    },
+                );
+            }
+            self.add_editor_hint(
+                &mut hints,
+                EditorKey::Visual,
+                if self.moment.active {
+                    "finish selection"
+                } else {
+                    "select moment"
+                },
+            );
+            if self.moment_routing_selection() == navigation::EditSelection::None {
+                self.add_editor_hint(&mut hints, EditorKey::YankOperator, "+ motion: copy");
+            } else {
+                self.add_editor_hint(&mut hints, EditorKey::Copy, "copy moment");
+            }
+            hints.tier(key_labels::Tier::Context);
+            if self.focused_workflow() && !self.beat_rows.is_empty() {
+                self.add_editor_pair_hint(
+                    &mut hints,
+                    EditorKey::BeatNext,
+                    EditorKey::BeatPrevious,
+                    " ",
+                    "edit beat",
+                );
+            }
+            self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
+        }
+        hints.tier(key_labels::Tier::Context);
+        self.add_editor_hint(&mut hints, EditorKey::PaneNext, "pane");
+        hints.tier(key_labels::Tier::Core);
+        if !hints
+            .iter()
+            .any(|(_, description)| description == "command")
+        {
+            self.add_editor_hint(&mut hints, EditorKey::Command, "command");
+        }
+        self.add_editor_hint(&mut hints, EditorKey::Help, "keys");
+        // One row: the keys that matter here. Help lists every key. A
+        // macro recording is a mode, like command entry, and keeps a
+        // second row for the edits it records.
+        let rows = if self.macros.recording() { 2.0 } else { 1.0 };
+        let budget =
+            rows * ui.spacing().interact_size.y + (rows - 1.0) * ui.spacing().item_spacing.y;
+        // A short inline notice keeps its room at the row's end.
+        let reserve = ui
+            .ctx()
+            .data(|data| data.get_temp::<NoticeLine>(egui::Id::new(NOTICE_LINE)))
+            .and_then(|line| line.inline.and(line.width))
+            // Only a notice that fits whole keeps room; a longer one elides
+            // into what the keys leave.
+            .filter(|width| *width <= NOTICE_MAX)
+            .map_or(0.0, |width| width + NOTICE_GAP);
+        key_labels::footer_hints(
+            ui,
+            &hints,
+            &self.editor_key(EditorKey::Help),
+            budget,
+            reserve,
+        );
     }
 
     fn notice(&self, ui: &mut egui::Ui) {
@@ -4470,10 +5009,10 @@ impl DeadpanApp {
                 .or(self.message.as_ref())
                 .map(|message| egui::RichText::new(message).weak().size(12.0))
         };
-        // Below 700 points a quiet notice joins the end of the footer's mode
-        // row when it fits there whole, instead of taking a row of its own.
-        // The room is the previous pass's measurement; `inline_notice`
-        // retries the pass whenever this decision would change.
+        // Below 700 points a quiet notice ends the footer's row, elided to
+        // the room its keys leave; at full height it keeps its own line above
+        // the one row of keys. `inline_notice` retries the pass when the row
+        // first appears.
         let candidate = (!urgent && ui.ctx().content_rect().height() < 700.0)
             .then(|| text.as_ref().map(|text| text.text().to_owned()))
             .flatten();
@@ -4561,12 +5100,20 @@ impl DeadpanApp {
             .max_size(layout.sources)
             .frame(style::panel())
             .show(ui, |ui| {
-                let heading = pane_heading(ui, if focused { "ORIGINAL" } else { "SOURCES" }, self.pane == Pane::Sources);
-                if pane_focus(ui, Pane::Sources, heading.rect, if focused { "Original and sounds pane" } else { "Legacy sources pane" }).has_focus() {
+                let words = self.words_rail_shown();
+                let heading = pane_heading(ui, if words { "TRANSCRIPT" } else if focused { "ORIGINAL" } else { "SOURCES" }, self.pane == Pane::Sources);
+                if pane_focus(ui, Pane::Sources, heading.rect, if words { "Transcript pane" } else if focused { "Original and sounds pane" } else { "Legacy sources pane" }).has_focus() {
                     self.focus_scoped_pane(Pane::Sources);
+                }
+                if matches!(profile, Some(SingleSourceState::Ready { .. })) {
+                    self.rail_tabs(ui, words);
                 }
                 ui.separator();
                 self.sound_preview_controls(ui);
+                if words {
+                    self.transcript_section(ui);
+                    return;
+                }
                 style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("original-rail"), |ui| {
                     if matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
                         ui.label("Project created. Original not ready.");
@@ -4716,9 +5263,11 @@ impl DeadpanApp {
                         }
                         if self.importing() && ui.button("Cancel import").clicked() { self.submit(ProjectRequest::CancelImport); }
                     }
-                    if matches!(profile, Some(SingleSourceState::Ready { .. })) {
+                    if matches!(profile, Some(SingleSourceState::Ready { .. })) && !self.transcription_ready() {
                         self.transcript_section(ui);
                     }
+                    // Scrolled to its end, the last control clears the clip.
+                    ui.add_space(8.0);
                 });
             });
     }
@@ -4756,6 +5305,7 @@ impl DeadpanApp {
             {
                 self.focus_scoped_pane(Pane::Sequence);
             }
+            self.overview(ui);
             if beats.is_empty() {
                 ui.add_space(16.0);
                 if !self.sequence_scope.groups().is_empty() {
@@ -4789,7 +5339,7 @@ impl DeadpanApp {
                 None
             };
             let analysis = self.edit_analysis_marks();
-            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), ranges: self.selected_range_set().ok().flatten().map_or_else(Vec::new, |set|set.ranges), analysis, repeats: self.workspace.as_ref().map(|workspace| beats.iter().filter_map(|beat| Some((beat.id.clone(), timing::repeat_play_starts(&workspace.document, &beat.id)?))).collect()).unwrap_or_default(), ai: self.ai_badges(), sounds: self.attached_badges(&beats) };
+            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, rate: self.workspace.as_ref().map(|workspace| workspace.document.presentation_basis().frame_rate), range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), ranges: self.selected_range_set().ok().flatten().map_or_else(Vec::new, |set|set.ranges), analysis, repeats: self.workspace.as_ref().map(|workspace| beats.iter().filter_map(|beat| Some((beat.id.clone(), timing::repeat_play_starts(&workspace.document, &beat.id)?))).collect()).unwrap_or_default(), ai: self.ai_badges(), sounds: self.attached_badges(&beats) };
             if self.timing.mode != timing::TimelineMode::Story {
                 let range = markers.range.clone();
                 if let Some(frame) =
@@ -4849,7 +5399,75 @@ impl DeadpanApp {
 
     fn workspace_layout(&self, ui: &egui::Ui) -> style::Layout {
         let size = ui.ctx().input(|input| input.content_rect().size());
-        style::Layout::for_size(size.x, size.y)
+        let layout = style::Layout::for_size(size.x, size.y);
+        if self.words_rail_shown() {
+            layout.with_transcript_rail(size.x)
+        } else {
+            layout
+        }
+    }
+
+    /// The left rail shows the transcript: chosen with its tab or `/`, or by
+    /// default once the Original's words are ready.
+    fn words_rail_shown(&self) -> bool {
+        self.transcription_ready()
+            && matches!(
+                self.workspace
+                    .as_ref()
+                    .and_then(|workspace| workspace.single_source.as_ref()),
+                Some(SingleSourceState::Ready { .. })
+            )
+            && self.words_rail.unwrap_or(true)
+    }
+
+    /// The rail's Original / Words tabs, once the transcript is ready.
+    fn rail_tabs(&mut self, ui: &mut egui::Ui, words: bool) {
+        if !self.transcription_ready() {
+            return;
+        }
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 0.0;
+            let search = self.editor_key(EditorKey::Search);
+            for (index, (label, key, tab)) in
+                [("Original", String::new(), false), ("Words", search, true)]
+                    .into_iter()
+                    .enumerate()
+            {
+                let corners = if index == 0 {
+                    egui::CornerRadius {
+                        nw: 5,
+                        sw: 5,
+                        ne: 0,
+                        se: 0,
+                    }
+                } else {
+                    egui::CornerRadius {
+                        nw: 0,
+                        sw: 0,
+                        ne: 5,
+                        se: 5,
+                    }
+                };
+                let selected = words == tab;
+                let text = if selected {
+                    style::semibold(label).color(style::LAVENDER)
+                } else {
+                    egui::RichText::new(label).weak()
+                };
+                let mut button = egui::Button::new(text)
+                    .min_size(egui::vec2(0.0, 24.0))
+                    .corner_radius(corners)
+                    .selected(selected);
+                if !key.is_empty() {
+                    button =
+                        button.right_text(egui::RichText::new(key).monospace().size(10.5).weak());
+                }
+                if ui.add(button).clicked() && !selected {
+                    self.words_rail = Some(tab);
+                    ui.ctx().request_discard("rail tab changed width");
+                }
+            }
+        });
     }
 
     fn inspector_visible(&self) -> bool {
@@ -5153,6 +5771,15 @@ impl DeadpanApp {
     }
 
     fn inspector(&mut self, ui: &mut egui::Ui) {
+        // Render's status takes the pane unless a Camera draft owns it.
+        if self.render.open
+            && !self.render.blocking()
+            && self.workspace.is_some()
+            && self.camera.is_none()
+        {
+            self.render_panel(ui);
+            return;
+        }
         if self.event_focused() {
             self.event_inspector(ui);
             return;
@@ -5263,6 +5890,16 @@ impl DeadpanApp {
                             self.focus_scoped_pane(Pane::Inspector);
                             self.open_command(command.clone(), ui.ctx());
                         }
+                        // A picture beat's main action: its edges.
+                        if data.parameter.is_none()
+                            && matches!(data.kind, "Source" | "Fragment")
+                            && ui.add_enabled(ready, style::row_action(ui, "Trim edges…", self.editor_key(EditorKey::Trim)).fill(style::SELECTED))
+                                .on_hover_text("Adjust In, Out, Slip and Roll with the outgoing and incoming pictures side by side. Enter applies one edit; Escape cancels.")
+                                .clicked()
+                        {
+                            self.action(Action::Trim, ui.ctx());
+                            return;
+                        }
                         ui.add_space(4.0);
                         let scope = self.beat_scope_label();
                         style::value_grid(
@@ -5276,25 +5913,30 @@ impl DeadpanApp {
                             .into_iter()
                             .chain(data.fields.iter().map(|(label, value)| (*label, value.as_str()))),
                         );
-                        ui.label(
-                            egui::RichText::new(format!("Project clock {frame_rate}. {}", data.note))
-                                .size(12.0)
-                                .weak(),
-                        );
-                        // The beat's own sounds first: they are what the
-                        // card's badge points at.
+                        // The main values stay visible; everything else
+                        // folds, each section remembering whether it is open.
+                        ui.add_space(6.0);
+                        // The beat's own sounds stay unfolded: they are what
+                        // the card's badge points at.
                         self.attached_inspector(ui, ready);
                         if data.kind == "Hold" {
-                            self.ai_inspector(ui, ready);
+                            // A pause's pictures are one of its main values.
+                            inspector_section_open(ui, "inspector-ai", "AI pictures", true, |ui| self.ai_inspector(ui, ready));
                         }
-                        // Split fragments and Repeats with a gap carry a
-                        // pause sound too, with the same room-tone action.
-                        if self.inspected_pause_sound().is_some() {
-                            self.hold_audio_controls(ui, ready);
-                        }
-                        self.gain_inspector(ui, ready);
-                        ui.add_space(8.0);
-                        ui.label(style::section_title("EDIT", false));
+                        // A pause's sound is one of its main values, as is any
+                        // sound the beat already shapes: those open.
+                        let sounding = data.kind == "Hold"
+                            || self.inspected_pause_sound().is_some()
+                            || self.workspace.as_ref().zip(self.selected_beat.as_ref()).and_then(|(workspace, node)| workspace.document.nodes().get(node)).is_some_and(|node| !node.audio_treatments.is_empty());
+                        inspector_section_open(ui, if sounding { "inspector-pause-sound" } else { "inspector-sound" }, "Sound and gain", sounding, |ui| {
+                            // Split fragments and Repeats with a gap carry a
+                            // pause sound too, with the same room-tone action.
+                            if self.inspected_pause_sound().is_some() {
+                                self.hold_audio_controls(ui, ready);
+                            }
+                            self.gain_inspector(ui, ready);
+                        });
+                        inspector_section(ui, "inspector-edit", "Edit actions", |ui| {
                         ui.add_enabled_ui(ready, |ui| {
                             if data.kind != "Retime"
                                 && ui.add_enabled(can_retime, style::row_action(ui, "Change speed…", ":retime"))
@@ -5364,6 +6006,13 @@ impl DeadpanApp {
                             {
                                 self.edit(BeatEdit::Delete);
                             }
+                        });
+                        });
+                        // Saved targets are worth seeing; none folds away.
+                        let targets = self.workspace.as_ref().is_some_and(|workspace| !workspace.document.targets().is_empty());
+                        inspector_section_open(ui, if targets { "inspector-targets-saved" } else { "inspector-targets" }, "Framing", targets, |ui| {
+                            self.targets_inspector(ui);
+                            // Punch in and creep frame the shown target.
                             let presets = format!("Framing presets  {}", self.editor_pair(EditorKey::PunchIn, EditorKey::Creep, " / "));
                             ui.collapsing(presets, |ui| {
                                 for (label, key, action) in [
@@ -5376,7 +6025,13 @@ impl DeadpanApp {
                                 }
                             });
                         });
-                        self.targets_inspector(ui);
+                        inspector_section(ui, "inspector-details", "Details", |ui| {
+                            ui.add(egui::Label::new(
+                                egui::RichText::new(format!("Project clock {frame_rate}. {}", data.note))
+                                    .size(12.0)
+                                    .weak(),
+                            ).wrap());
+                        });
                     });
             });
     }
@@ -5441,8 +6096,21 @@ impl DeadpanApp {
             // The duration-difference chip adds one point of margin above and below.
             let compact_clock = (ui.fonts_mut(|fonts| fonts.row_height(&egui::TextStyle::Monospace.resolve(ui.style()))) + 2.0).max(14.0);
             let merged_saving = if merged_caption { caption_row } else { 0.0 };
+            // With the Original ready, actions and clocks share one row.
+            let one_row = merged_caption;
+            let row = ui.spacing().interact_size.y;
             let controls_height = if start_surface {
                 0.0
+            } else if one_row {
+                let body = ui.fonts_mut(|fonts| fonts.row_height(&egui::TextStyle::Body.resolve(ui.style())));
+                let extra = if self.view == View::Sequence {
+                    if self.copied.selected_content().is_some() { row + spacing } else { 0.0 }
+                } else if self.moment_identity().is_some() {
+                    26.0 + spacing + body + spacing
+                } else {
+                    0.0
+                };
+                spacing + extra + self.transport_height(ui) + spacing
             } else if self.gain.is_some() {
                 54.0
             } else if self.camera.is_some() {
@@ -5529,6 +6197,10 @@ impl DeadpanApp {
             ui.painter().rect_stroke(rect, 2.0, egui::Stroke::new(1.0, if self.pane == Pane::Viewer { style::LAVENDER } else { accessibility::border(ui.ctx()) }), egui::StrokeKind::Inside);
             let painted = self.target.as_ref().map(|target| fit_rect(rect,
                 target.target.width() as f32 / target.target.height() as f32));
+            #[cfg(feature = "ui-harness")]
+            {
+                self.feedback.viewer_picture = painted.filter(|_| self.presentation.has_displayed());
+            }
             self.camera_pointer_surface(ui, painted);
             if let Some(painted) = painted { self.camera_overlay(ui, painted); }
             // At minimum height the displayed-picture caption shares the
@@ -5540,7 +6212,12 @@ impl DeadpanApp {
             } else {
                 self.viewer_caption(ui, displayed_label.as_deref(), start_surface);
             }
-            if let Some(workspace) = &self.workspace && let Some(original) = workspace.original_duration {
+            if one_row {
+                if self.camera.is_none() {
+                    if self.gain.is_none() { self.moment_controls(ui); }
+                    self.transport_row(ui, displayed_label.as_deref());
+                }
+            } else if let Some(workspace) = &self.workspace && let Some(original) = workspace.original_duration {
                 // These clocks are read-only. At minimum height, reserve text
                 // height instead of the ordinary 28-point button row, and keep
                 // the row single-line so its reserve stays exact.
@@ -5564,7 +6241,7 @@ impl DeadpanApp {
             }
             if self.camera.is_some() {
                 ui.weak("Apply or cancel Camera to resume navigation and playback.");
-            } else if !start_surface {
+            } else if !start_surface && !one_row {
                 if self.gain.is_none() { self.moment_controls(ui); }
                 self.playback_controls(ui);
                 ui.horizontal_wrapped(|ui| {
@@ -6364,6 +7041,8 @@ const NOTICE_LINE: &str = "workspace-notice-line";
 const NOTICE_ROOM: &str = "workspace-notice-room";
 /// Separator and spacing before an inline notice.
 const NOTICE_GAP: f32 = 24.0;
+/// The most row an inline notice keeps from the keys; longer ones elide.
+const NOTICE_MAX: f32 = 120.0;
 
 /// This pass's quiet compact notice: its one-line width, and its text when
 /// it is painted on the footer's mode row rather than in its own panel.
@@ -6389,10 +7068,65 @@ fn notice_width(ui: &egui::Ui, text: &str) -> f32 {
         .x
 }
 
-fn notice_fits(context: &egui::Context, width: f32) -> bool {
+fn notice_fits(context: &egui::Context, _width: f32) -> bool {
     context
         .data(|data| data.get_temp::<f32>(egui::Id::new(NOTICE_ROOM)))
-        .is_some_and(|room| width + NOTICE_GAP <= room)
+        .is_some()
+}
+
+/// The width an inline notice may take from the room left on the row.
+fn notice_room(room: f32) -> f32 {
+    (room - NOTICE_GAP).max(40.0)
+}
+
+/// A folded inspector section, closed until opened; egui remembers its state
+/// per section, so an opened section stays open from beat to beat.
+fn inspector_section(ui: &mut egui::Ui, id: &str, title: &str, add: impl FnOnce(&mut egui::Ui)) {
+    inspector_section_open(ui, id, title, false, add);
+}
+
+fn inspector_section_open(
+    ui: &mut egui::Ui,
+    id: &str,
+    title: &str,
+    open: bool,
+    add: impl FnOnce(&mut egui::Ui),
+) {
+    egui::CollapsingHeader::new(egui::RichText::new(title).size(12.5))
+        .id_salt(id)
+        .default_open(open)
+        .show(ui, add);
+}
+
+/// Select a search field's existing text, so typing replaces the query.
+fn select_all_text(context: &egui::Context, id: &str, text: &str) {
+    let id = egui::Id::new(id);
+    let mut state = egui::text_edit::TextEditState::load(context, id).unwrap_or_default();
+    state
+        .cursor
+        .set_char_range(Some(egui::text::CCursorRange::two(
+            egui::text::CCursor::new(0),
+            egui::text::CCursor::new(text.chars().count()),
+        )));
+    state.store(context, id);
+}
+
+/// A context label in the footer's single row: at most 170 points (130 in a
+/// narrow window), elided,
+/// so it never claims the rest of the row from the keys.
+fn footer_label(ui: &mut egui::Ui, text: &str) -> egui::Response {
+    let width = if ui.max_rect().width() < 1100.0 {
+        130.0
+    } else {
+        170.0
+    };
+    let galley = egui::WidgetText::from(text).into_galley(
+        ui,
+        Some(egui::TextWrapMode::Truncate),
+        width,
+        egui::TextStyle::Body,
+    );
+    accessibility::full_text(ui.add(egui::Label::new(galley)), text)
 }
 
 /// Record the mode row's remaining room, retry the pass when it changes this
@@ -6405,18 +7139,28 @@ fn inline_notice(ui: &mut egui::Ui) {
         .unwrap_or_default();
     ui.ctx()
         .data_mut(|data| data.insert_temp(egui::Id::new(NOTICE_ROOM), room));
-    let fits = line.width.is_some_and(|width| width + NOTICE_GAP <= room);
+    let fits = line.width.is_some();
     if fits != line.inline.is_some() {
         ui.ctx().request_discard("inline notice changed placement");
     }
-    if let Some(text) = line.inline {
+    // Without room left on the row, painting would wrap a second row.
+    if let Some(text) = line.inline.filter(|_| room - NOTICE_GAP >= 40.0) {
         ui.separator();
+        // Elided to the room the keys leave; the whole notice is in its
+        // hover and accessible label.
+        let galley = egui::WidgetText::from(notice_text(&text)).into_galley(
+            ui,
+            Some(egui::TextWrapMode::Truncate),
+            notice_room(room),
+            egui::TextStyle::Body,
+        );
         // The same fixed live region as the notice panel's text.
         let response = ui
             .push_id("workspace-notice-text", |ui| {
-                ui.add(egui::Label::new(notice_text(&text)).extend())
+                ui.add(egui::Label::new(galley))
             })
             .inner;
+        let response = accessibility::full_text(response, &text).on_hover_text(&text);
         accessibility::live(&response, false);
     }
 }
@@ -6433,7 +7177,7 @@ fn no_inline_notice(context: &egui::Context) {
 }
 
 /// Paint the Edit cursor over a card and return its badge's rectangle.
-fn paint_cursor(ui: &egui::Ui, rect: egui::Rect, fraction: f32, cursor: u64) -> egui::Rect {
+fn paint_cursor(ui: &egui::Ui, rect: egui::Rect, fraction: f32, cursor: &str) -> egui::Rect {
     let x = egui::lerp(rect.left()..=rect.right(), fraction);
     ui.painter().line_segment(
         [
@@ -6443,7 +7187,7 @@ fn paint_cursor(ui: &egui::Ui, rect: egui::Rect, fraction: f32, cursor: u64) -> 
         egui::Stroke::new(1.0, style::CURSOR),
     );
     let text = ui.painter().layout_no_wrap(
-        cursor.to_string(),
+        cursor.to_owned(),
         egui::FontId::monospace(10.0),
         style::CANVAS,
     );

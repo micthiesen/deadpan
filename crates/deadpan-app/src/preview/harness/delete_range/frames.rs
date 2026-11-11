@@ -114,7 +114,9 @@ fn interior(d: &mut Driver<'_>) -> Result<(), String> {
         )?;
     }
     at(d, 20)?;
-    paint(d, "cut frame")
+    // The one-row footer offers the frame cut again with dot; the frame
+    // cut key itself is in Help.
+    paint(d, "repeat cut")
 }
 
 fn refusals(d: &mut Driver<'_>) -> Result<(), String> {

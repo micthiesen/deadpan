@@ -243,6 +243,30 @@ pub(super) fn attachments(
     found
 }
 
+/// Placed root sounds and beat-attached stings over `beats`, as absolute
+/// Edit frame intervals, for the whole-edit overview.
+pub(super) fn placed_sounds(
+    document: &deadpan_core::ProjectDocument,
+    beats: &[BeatRow],
+) -> Vec<(f64, f64)> {
+    let rate = document.presentation_basis().frame_rate;
+    let mut found: Vec<(f64, f64)> = stings(document, beats)
+        .into_iter()
+        .map(|sting| sting.frames)
+        .collect();
+    for event in document.sounds().values() {
+        if let Ok(selected) = event.mapping.selection_frames_with_offset(
+            deadpan_core::FrameDuration::ZERO,
+            event.offset,
+            rate,
+        ) {
+            found.push((ratio(selected.start), ratio(selected.end)));
+        }
+    }
+    found.retain(|(start, end)| start < end);
+    found
+}
+
 /// Sounds attached to beats (`:sound-attach`), at their exact Edit frames:
 /// in every play of an enclosing Repeat that uses the owner (an override
 /// branch without it, as `rib` leaves later plays, carries none), scaled by

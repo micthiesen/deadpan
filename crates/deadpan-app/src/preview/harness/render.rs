@@ -69,9 +69,16 @@ fn picker_finished(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 fn close_status(d: &mut Driver<'_>) -> Result<(), String> {
-    if d.app().render.open {
+    // A Camera draft keeps the pane, and Gain and Room tone drafts disable
+    // it; Render's status waits until they close.
+    if d.app().render.open
+        && d.app().camera.is_none()
+        && d.app().gain.is_none()
+        && d.app().room_tone.is_none()
+    {
         d.capture("Render status remains separate from editor feedback")?;
-        d.click("Close window")?;
+        d.click("Close")?;
+        d.step("Render status closed", false)?;
     }
     Ok(())
 }
@@ -449,16 +456,20 @@ fn actual_export(d: &mut Driver<'_>, movie: &Path) -> Result<(), String> {
     for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
         resize(d, width, height)?;
         d.capture(&format!("Verified Render outcome at {width}x{height}"))?;
+        let name = receipt
+            .movie
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .ok_or("Published movie has no file name")?;
         for label in [
             "Full edit · automatic MP4".to_owned(),
             "Movie exported".to_owned(),
-            format!("Saved revision {}", committed.as_str()),
-            format!("Movie: {}", receipt.movie.display()),
-            format!("Local report: {}", receipt.report.display()),
+            name,
+            "Verified against your edit".to_owned(),
         ] {
             visible_text(d, &label, "Published Render status stays readable")?;
         }
-        let close = d.rect("Close window")?;
+        let close = d.rect("Close")?;
         d.check(
             "Published status close control remains reachable",
             d.harness.ctx.content_rect().contains_rect(close),

@@ -693,10 +693,8 @@ fn compact_workspace_picture(d: &mut Driver<'_>) -> Result<(), String> {
         "Copied Original [10..20)",
         "Paste after  p",
         "Paste before  P",
-        "Monitor · :monitor",
         "PLACED SOUNDS 0 · ,s place",
         "Loop selection  Shift+Space",
-        "Loop context",
     ];
     let action = if let Some(run) = &d.app().transport {
         if run.phase == deadpan_playback::Phase::Preparing {
@@ -716,7 +714,6 @@ fn compact_workspace_picture(d: &mut Driver<'_>) -> Result<(), String> {
             "Paste after  p",
             "Paste before  P",
             "Loop selection  Shift+Space",
-            "Monitor · :monitor",
             action,
         ],
     );
@@ -727,11 +724,9 @@ fn compact_workspace_picture(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "Copied Original controls and empty Sounds retain at least 140 points of picture",
         viewer.height() >= 140.0
-            && hits.iter().all(|hit| {
-                hit["complete_hit"] == true
-                    && hit["enabled"]
-                        == (hit["label"] != "Monitor · :monitor" || d.app().transport.is_none())
-            })
+            && hits
+                .iter()
+                .all(|hit| hit["complete_hit"] == true && hit["enabled"] == true)
             && paint.iter().all(|(_, items)| {
                 !items.is_empty() && items.iter().all(|item| item["fully_visible"] == true)
             }),

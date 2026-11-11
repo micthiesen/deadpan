@@ -10,6 +10,8 @@ pub(super) struct Controls {
     pub inline_monitor: bool,
     pub status_in_context: bool,
     pub height: f32,
+    /// The monitor slider and its label: one unit that cannot wrap.
+    pub monitor: egui::Vec2,
 }
 
 impl Controls {
@@ -128,46 +130,44 @@ impl Controls {
             ui.spacing().slider_width + ui.spacing().item_spacing.x + monitor_text.size().x,
             ui.spacing().interact_size.y.max(monitor_text.size().y),
         );
-        let inline_monitor = !active
-            && status.is_none()
-            && !app.sound_focused()
-            && (app.compact_sound_layout(ui.ctx()) || app.compact_original_controls(ui.ctx()))
-            && play_size.x + audition_size.x + monitor_size.x + 2.0 * ui.spacing().item_spacing.x
-                <= width;
-        // In a compact Original, the live clock shares the context/monitor
-        // row when it fits. Long action paths then keep both buttons together.
-        let status_in_context = app.compact_original_controls(ui.ctx())
-            && !app.sound_focused()
-            && status.as_ref().is_some_and(|status| {
-                status.size().x
-                    + context.size().x
-                    + monitor_size.x
-                    + 2.0 * ui.spacing().item_spacing.x
-                    <= width
-            });
-        let mut height = 0.0;
+        // One row when actions, live status, loop context and the monitor all
+        // fit; otherwise the loop context and monitor take a second row. The
+        // monitor slider and its label lay out as one unit that cannot wrap.
+        let spacing = ui.spacing().item_spacing.x;
+        let mut first = Vec::new();
         if !app.sound_focused() {
-            let mut widgets = vec![play_size, audition_size];
-            if let Some(status) = &status
-                && !status_in_context
-            {
-                widgets.push(status.size());
-            }
-            if inline_monitor {
-                widgets.push(monitor_size);
-            }
-            height += row_height(ui, width, &widgets) + ui.spacing().item_spacing.y;
+            first.extend([play_size, audition_size]);
         }
-        if !inline_monitor {
-            let mut widgets = Vec::new();
+        let status_in_context = app.sound_focused() && status.is_some();
+        if let Some(status) = &status
+            && !status_in_context
+        {
+            first.push(status.size());
+        }
+        let inline_monitor = !app.sound_focused()
+            && first.iter().map(|size| size.x + spacing).sum::<f32>()
+                + context.size().x
+                + spacing
+                + monitor_size.x
+                <= width;
+        let height = if inline_monitor {
+            first.extend([context.size(), monitor_size]);
+            row_height(ui, width, &first) + ui.spacing().item_spacing.y
+        } else {
+            let mut second = Vec::new();
             if let Some(status) = &status
                 && status_in_context
             {
-                widgets.push(status.size());
+                second.push(status.size());
             }
-            widgets.extend([context.size(), monitor_size]);
-            height += row_height(ui, width, &widgets) + ui.spacing().item_spacing.y;
-        }
+            second.extend([context.size(), monitor_size]);
+            let first_height = if first.is_empty() {
+                0.0
+            } else {
+                row_height(ui, width, &first) + ui.spacing().item_spacing.y
+            };
+            first_height + row_height(ui, width, &second) + ui.spacing().item_spacing.y
+        };
         Self {
             play,
             audition,
@@ -176,6 +176,7 @@ impl Controls {
             inline_monitor,
             status_in_context,
             height,
+            monitor: monitor_size,
         }
     }
 }

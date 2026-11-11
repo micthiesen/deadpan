@@ -461,6 +461,15 @@ impl Thumbnails {
     }
 
     #[cfg(feature = "ui-harness")]
+    /// Every visible card's thumbnail is resolved: nothing is decoding,
+    /// waiting to render or still missing.
+    pub fn settled(&self) -> bool {
+        self.pending.is_none()
+            && self.received.is_none()
+            && self.cache.missing(&self.wanted).is_none()
+    }
+
+    #[cfg(feature = "ui-harness")]
     pub fn retained(&self) -> usize {
         self.cache.entries.len()
     }

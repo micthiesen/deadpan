@@ -691,7 +691,7 @@ impl JunctionDisplay {
     pub(in crate::preview) fn show_retained(&mut self, ui: &mut egui::Ui, height: f32) {
         self.required_key = None;
         let layout = allocate_junction_layout(ui, height);
-        self.paint_pair(ui, &layout, None, "No accepted junction picture");
+        self.paint_pair(ui, &layout, None, "Preparing junction…");
     }
 
     fn paint_pair(

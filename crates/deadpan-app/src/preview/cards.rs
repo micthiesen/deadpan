@@ -63,6 +63,8 @@ pub(super) struct Markers {
     pub cursor: Option<(usize, f32)>,
     /// The Edit frame the badge reports.
     pub frame: u64,
+    /// The project rate, to show the badge and card boundaries as time.
+    pub rate: Option<deadpan_core::FrameRate>,
     pub range: Option<std::ops::Range<u64>>,
     /// Individual structural selections; never their outer envelope.
     pub members: Vec<deadpan_core::SemanticNodeSetMember>,
@@ -185,7 +187,7 @@ pub(super) fn strip(
                 rect,
                 (beat, index, sounds),
                 selected == Some(&beat.id),
-                reserve,
+                (reserve, markers.rate),
                 thumbnail,
             );
             paint_analysis(ui, rect, beat, &markers);
@@ -307,7 +309,11 @@ pub(super) fn strip(
             if let Some((marker_index, fraction)) = markers.cursor
                 && marker_index == index
             {
-                badge = Some(paint_cursor(ui, rect, fraction, markers.frame));
+                let label = markers.rate.map_or_else(
+                    || markers.frame.to_string(),
+                    |rate| super::clock::time(markers.frame, rate),
+                );
+                badge = Some(paint_cursor(ui, rect, fraction, &label));
             }
             if response.clicked() {
                 clicked = Some(index);
@@ -383,6 +389,13 @@ fn edges(
     badge: Option<egui::Rect>,
 ) {
     let (before, after) = hidden_cards(count, layout.card_width, viewport);
+    // The overview brackets this stretch of beats.
+    ui.ctx().data_mut(|data| {
+        data.insert_temp(
+            egui::Id::new(super::overview::VISIBLE_CARDS),
+            (before, count.saturating_sub(after)),
+        );
+    });
     let visible = ui.clip_rect();
     let x = |canvas_x: f32| canvas.left() + canvas_x;
     let cards = egui::Rect::from_x_y_ranges(
@@ -538,7 +551,7 @@ fn beat_card(
     rect: egui::Rect,
     card: (&BeatRow, usize, usize),
     selected: bool,
-    title_reserve: f32,
+    (title_reserve, rate): (f32, Option<deadpan_core::FrameRate>),
     thumbnail: &mut dyn FnMut(&BeatRow) -> Option<Painted>,
 ) -> egui::Response {
     let (beat, index, sounds) = card;
@@ -622,10 +635,17 @@ fn beat_card(
     content.add(egui::Label::new(duration).truncate().selectable(false));
     content.add(
         egui::Label::new(
-            egui::RichText::new(format!("{}–{}", beat.start, beat.start + beat.frames))
-                .monospace()
-                .size(11.5)
-                .weak(),
+            egui::RichText::new(match rate {
+                Some(rate) => format!(
+                    "{}–{}",
+                    super::clock::time(beat.start, rate),
+                    super::clock::time(beat.start + beat.frames, rate)
+                ),
+                None => format!("{}–{}", beat.start, beat.start + beat.frames),
+            })
+            .monospace()
+            .size(11.5)
+            .weak(),
         )
         .truncate()
         .selectable(false),
@@ -1002,7 +1022,10 @@ mod tests {
                     egui::pos2(10.0 + index as f32 * 220.0, 10.0),
                     egui::vec2(210.0, 92.0),
                 );
-                let response = beat_card(ui, rect, (&beat, index, 0), true, 0.0, &mut |_| None);
+                let response =
+                    beat_card(ui, rect, (&beat, index, 0), true, (0.0, None), &mut |_| {
+                        None
+                    });
                 assert_eq!(response.rect, rect);
                 if index == 0 {
                     id = Some(response.id);

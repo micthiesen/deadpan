@@ -435,7 +435,8 @@ fn minimum_window(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.settled()?;
     let painted = [
-        "Edit boundary",
+        // The Edit clock, as time over the edit's total.
+        " / 0:0",
         "frame",
         "command",
         "keys",

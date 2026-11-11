@@ -67,12 +67,15 @@ pub(super) fn hint(ui: &mut egui::Ui, key: &str, description: &str) {
     );
 }
 
-/// Footer teaching priority. When the two footer rows cannot hold every hint
+/// Footer teaching priority. When the footer row cannot hold every hint
 /// a context offers, no hint of a higher tier is dropped to keep one of a
 /// lower tier; within a tier the caller's order decides. Kept hints paint in
 /// the caller's order, so related keys stay together at every width.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) enum Tier {
+    /// Keys that exist because of the selected target itself: opening a
+    /// group or a Repeat's play, leaving one, its AI pictures or sound.
+    Now,
     /// The context's own motions, the edits that act on its current target
     /// (the selection, or the cursor's frame and beat without one), Undo,
     /// command entry and the way out of a mode.
@@ -150,8 +153,15 @@ fn hint_size(ui: &egui::Ui, width: f32, key: &str, description: &str) -> egui::V
 /// caller's order and always ends with the complete reference shortcut. No
 /// individual key path is shortened; a hint that does not fit is left to the
 /// reference and the action controls.
-pub(super) fn footer_hints(ui: &mut egui::Ui, hints: &Hints, help: &str, budget: f32) {
-    let width = ui.max_rect().width().max(1.0);
+/// `reserve` is row width kept free after the hints, for an inline notice.
+pub(super) fn footer_hints(
+    ui: &mut egui::Ui,
+    hints: &Hints,
+    help: &str,
+    budget: f32,
+    reserve: f32,
+) {
+    let width = (ui.max_rect().width() - reserve).max(1.0);
     // A wrapping row reports its full width as available; measure the
     // content already placed on the current row from the cursor instead.
     let start = (ui.cursor().min.x - ui.max_rect().min.x).max(0.0);
@@ -181,10 +191,18 @@ pub(super) fn footer_hints(ui: &mut egui::Ui, hints: &Hints, help: &str, budget:
         total + row
     };
     let more = hint_size(ui, width, help, "all editor keys");
+    // Command entry reaches every action and Esc leaves a mode, so both
+    // stay beside Help.
+    let mandatory = |index: &usize| optional[*index].1 == "command" || optional[*index].0 == "Esc";
     let mut order = (0..optional.len()).collect::<Vec<_>>();
-    order.sort_by_key(|index| (hints.tiers[*index], *index));
+    order.sort_by_key(|index| (!mandatory(index), hints.tiers[*index], *index));
     let mut chosen = Vec::with_capacity(optional.len());
     for index in order {
+        if mandatory(&index) {
+            let slot = chosen.partition_point(|kept| *kept < index);
+            chosen.insert(slot, index);
+            continue;
+        }
         let slot = chosen.partition_point(|kept| *kept < index);
         chosen.insert(slot, index);
         if height(&chosen, more) > budget {
@@ -402,7 +420,7 @@ mod tests {
                 row = ui
                     .horizontal_wrapped(|ui| {
                         ui.label("Edit 123 / 456 f");
-                        footer_hints(ui, &hints, &help, 102.4);
+                        footer_hints(ui, &hints, &help, 102.4, 0.0);
                     })
                     .response
                     .rect;
@@ -467,7 +485,7 @@ mod tests {
             |ui| {
                 ui.horizontal_wrapped(|ui| {
                     ui.label("Edit 20 / 120");
-                    footer_hints(ui, &hints, "?", 54.0);
+                    footer_hints(ui, &hints, "?", 54.0, 0.0);
                 });
             },
         );
@@ -534,7 +552,7 @@ mod tests {
             |ui| {
                 ui.horizontal_wrapped(|ui| {
                     ui.label("Edit 123 / 456 f");
-                    footer_hints(ui, &hints, "?", 102.4);
+                    footer_hints(ui, &hints, "?", 102.4, 0.0);
                 });
             },
         );

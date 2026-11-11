@@ -126,6 +126,8 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "jobs",
     "full-session",
     "layouts",
+    "acceptance-real",
+    "ui-real",
 ];
 
 pub(crate) struct Options {

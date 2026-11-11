@@ -227,14 +227,13 @@ impl DeadpanApp {
             })
     }
 
-    /// The compact viewer below 700 points: the caption shares the read-only
-    /// clock row and the controls reserve text height. A populated Placed
-    /// sounds panel in Your edit keeps that compaction.
-    pub(super) fn compact_viewer(&self, context: &egui::Context) -> bool {
+    /// The compact viewer, at every height: the caption shares the read-only
+    /// clock row and the controls reserve text height, so the picture keeps
+    /// the space.
+    pub(super) fn compact_viewer(&self, _context: &egui::Context) -> bool {
         self.focused_workflow()
             && self.gain.is_none()
             && self.camera.is_none()
-            && compact_height(context)
             && self.workspace.is_some()
     }
 

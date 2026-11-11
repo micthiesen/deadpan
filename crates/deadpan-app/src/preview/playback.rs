@@ -682,7 +682,12 @@ impl DeadpanApp {
                 let response = ui.label(Arc::clone(status));
                 if self.transport.is_none() { response.on_hover_text(self.idle_audio_detail()); }
             }
-            if layout.inline_monitor { self.monitor_slider(ui); }
+            if layout.inline_monitor {
+                ui.label(Arc::clone(&layout.context))
+                    .on_hover_text("Lead-in / follow-through, clamped to this source or edit. Change with :audition-context lead=500ms follow=750ms. Playback uses edge fades and a safety limiter; full voice effects and mastering remain unavailable.");
+                if ui.available_size_before_wrap().x < layout.monitor.x { ui.end_row(); }
+                self.monitor_slider(ui);
+            }
         });
         }
         if !layout.inline_monitor {
@@ -693,6 +698,7 @@ impl DeadpanApp {
             }
             ui.label(Arc::clone(&layout.context))
                 .on_hover_text("Lead-in / follow-through, clamped to this source or edit. Change with :audition-context lead=500ms follow=750ms. Playback uses edge fades and a safety limiter; full voice effects and mastering remain unavailable.");
+            if ui.available_size_before_wrap().x < layout.monitor.x { ui.end_row(); }
             self.monitor_slider(ui);
         });
         }
@@ -705,6 +711,178 @@ impl DeadpanApp {
             || layout.status_in_context != next.status_in_context
         {
             ui.ctx().request_discard("playback controls changed height");
+        }
+    }
+
+    /// The one row under the picture: play and loop, then the Original and
+    /// edit durations as time. Loop context and monitor volume are set with
+    /// `:audition-context` and `:monitor`; the picture's identity is the
+    /// viewer's accessible label and this row's hover.
+    /// The durations as time: Original, Your edit and their difference.
+    fn clock_galley(&self, ui: &egui::Ui) -> Option<(Arc<egui::Galley>, i64, i64)> {
+        let workspace = self.workspace.as_ref()?;
+        let rate = workspace.document.presentation_basis().frame_rate;
+        let original = workspace
+            .original_duration
+            .map_or(0, |duration| duration.frames());
+        let edit = workspace.plan.duration().frames();
+        let time = |frames: i64| super::clock::time(u64::try_from(frames).unwrap_or(0), rate);
+        let mut job = egui::text::LayoutJob::default();
+        let mut text = |value: &str, color: egui::Color32| {
+            job.append(
+                value,
+                0.0,
+                egui::TextFormat {
+                    font_id: egui::FontId::monospace(11.5),
+                    color,
+                    ..Default::default()
+                },
+            );
+        };
+        text(&format!("Original {}", time(original)), style::TEXT);
+        text("  ·  ", style::muted(ui));
+        text(&format!("Your edit {}", time(edit)), style::TEXT);
+        text(
+            &format!("  {}", super::clock::signed(edit - original, rate)),
+            style::LAVENDER,
+        );
+        let galley = egui::WidgetText::from(job).into_galley(
+            ui,
+            Some(egui::TextWrapMode::Extend),
+            f32::INFINITY,
+            egui::TextStyle::Monospace,
+        );
+        Some((galley, original, edit))
+    }
+
+    fn transport_actions(&self) -> bool {
+        !self.sound_focused() && self.gain.is_none() && self.slip.is_none() && self.trim.is_none()
+    }
+
+    /// Which parts leave the action row for lines of their own below it:
+    /// `(status, clocks)`. Only long key paths or a long live status need
+    /// them; otherwise everything shares one row.
+    pub(super) fn transport_split(&self, ui: &egui::Ui) -> (bool, bool) {
+        if !self.transport_actions() {
+            return (false, false);
+        }
+        let Some((clock, ..)) = self.clock_galley(ui) else {
+            return (false, false);
+        };
+        let layout = controls::Controls::new(self, ui);
+        let spacing = ui.spacing().item_spacing.x;
+        let width = ui.available_width();
+        let button =
+            |galley: &egui::Galley| galley.size().x + 2.0 * ui.spacing().button_padding.x + spacing;
+        let actions = button(&layout.play) + button(&layout.audition);
+        let status = layout
+            .status
+            .as_ref()
+            .map_or(0.0, |status| status.size().x + spacing);
+        // The separator before the clocks takes about two spacings.
+        let clocks = 2.0 * spacing + clock.size().x;
+        if actions + status + clocks <= width {
+            (false, false)
+        } else if actions + status <= width {
+            (false, true)
+        } else {
+            (layout.status.is_some(), true)
+        }
+    }
+
+    /// The transport's height: its action row and any lines below it.
+    pub(super) fn transport_height(&self, ui: &egui::Ui) -> f32 {
+        let (status, clocks) = self.transport_split(ui);
+        let line = |height: f32| ui.spacing().item_spacing.y + height;
+        let layout = controls::Controls::new(self, ui);
+        ui.spacing().interact_size.y
+            + if status {
+                line(layout.status.as_ref().map_or(0.0, |status| status.size().y))
+            } else {
+                0.0
+            }
+            + if clocks {
+                line(
+                    self.clock_galley(ui)
+                        .map_or(0.0, |(clock, ..)| clock.size().y),
+                )
+            } else {
+                0.0
+            }
+    }
+
+    pub(super) fn transport_row(&mut self, ui: &mut egui::Ui, picture: Option<&str>) {
+        self.monitor_control = None;
+        let Some((clock, original, edit)) = self.clock_galley(ui) else {
+            return;
+        };
+        let layout = controls::Controls::new(self, ui);
+        let (status_below, split) = self.transport_split(ui);
+        let height = ui.spacing().interact_size.y;
+        let difference = edit - original;
+        let spoken = format!(
+            "Original {original} frames, Your edit {edit} frames, {difference:+} frames{}",
+            picture
+                .map(|picture| format!(". {picture}"))
+                .unwrap_or_default()
+        );
+        let hover = format!(
+            "Original {original} f · Your edit {edit} f · {difference:+} f on the project clock{}",
+            picture
+                .map(|picture| format!(" · {picture}"))
+                .unwrap_or_default()
+        );
+        let paint_clock = |ui: &mut egui::Ui| {
+            accessibility::full_text(ui.add(egui::Label::new(Arc::clone(&clock))), &spoken)
+                .on_hover_text(&hover);
+        };
+        ui.allocate_ui_with_layout(
+            egui::vec2(ui.available_width(), height),
+            egui::Layout::left_to_right(egui::Align::Center),
+            |ui| {
+                if self.transport_actions() {
+                    let active = self.transport.is_some();
+                    let enabled = active || (!self.service.is_busy() && self.playback_domain().and_then(|domain| domain.end()).is_ok_and(|end| end.0 > 0));
+                    if ui.add_enabled(enabled, egui::Button::new(egui::WidgetText::from(Arc::clone(&layout.play))).fill(style::SELECTED))
+                        .on_hover_text(format!("Monitor volume {:.0}% · change with :monitor. Does not change export gain.", self.monitor_gain * 100.0))
+                        .clicked()
+                    {
+                        self.toggle_playback();
+                    }
+                    let looping = self.transport.as_ref().is_some_and(|run| run.window().looping());
+                    if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(egui::WidgetText::from(Arc::clone(&layout.audition))))
+                        .on_hover_text(format!("Loop the selected Original moment, Edit range or edited beat with {} lead-in and {} follow-through. {} pauses and resumes the exact heard position. Change context with :audition-context.", self.audition_context.lead_label(), self.audition_context.follow_label(), self.editor_key(EditorKey::Playback)))
+                        .clicked()
+                    {
+                        self.audition_selection();
+                    }
+                    if let Some(status) = layout.status.as_ref().filter(|_| !status_below) {
+                        let response = ui.label(Arc::clone(status));
+                        if self.transport.is_none() { response.on_hover_text(self.idle_audio_detail()); }
+                    }
+                    if !split {
+                        ui.separator();
+                    }
+                }
+                if !split {
+                    paint_clock(ui);
+                }
+            },
+        );
+        if status_below && let Some(status) = &layout.status {
+            let response = ui.label(Arc::clone(status));
+            if self.transport.is_none() {
+                response.on_hover_text(self.idle_audio_detail());
+            }
+        }
+        if split {
+            paint_clock(ui);
+        }
+        let next = controls::Controls::new(self, ui);
+        if layout.status.is_some() != next.status.is_some()
+            || (status_below, split) != self.transport_split(ui)
+        {
+            ui.ctx().request_discard("transport row changed");
         }
     }
 

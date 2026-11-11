@@ -532,11 +532,11 @@ impl Layout {
         };
         let sources = (width * 0.15).clamp(144.0, 196.0);
         let inspector = (width * 0.185).clamp(192.0, 236.0);
-        let (card_height, beats) = if height < 700.0 {
-            (64.0, 128.0)
-        } else {
-            (92.0, 164.0)
-        };
+        // The whole-edit overview strip sits above the cards.
+        let overview = super::overview::HEIGHT + 4.0;
+        let card_height = if height < 700.0 { 56.0 } else { 88.0 };
+        // Heading, row gaps, the cursor badge band and panel margins: 64.
+        let beats = card_height + 64.0 + overview;
         Self {
             sources,
             inspector,
@@ -545,6 +545,23 @@ impl Layout {
             beats,
             card_width: ((width - sources - 24.0) / 4.0).clamp(210.0, 340.0),
             card_height,
+        }
+    }
+}
+
+impl Layout {
+    /// The left rail widened for readable transcript text.
+    pub fn with_transcript_rail(self, width: f32) -> Self {
+        let width = if width.is_finite() {
+            width.max(1.0)
+        } else {
+            960.0
+        };
+        let sources = (width * 0.22).clamp(212.0, 300.0);
+        Self {
+            sources,
+            card_width: ((width - sources - 24.0) / 4.0).clamp(210.0, 340.0),
+            ..self
         }
     }
 }
@@ -616,7 +633,7 @@ mod tests {
             assert!((144.0..=196.0).contains(&layout.sources));
             assert!((192.0..=236.0).contains(&layout.inspector));
             assert!((210.0..=340.0).contains(&layout.card_width));
-            assert!((128.0..=164.0).contains(&layout.beats));
+            assert!((128.0..=200.0).contains(&layout.beats));
         }
     }
 }

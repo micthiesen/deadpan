@@ -92,6 +92,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "jobs" => super::jobs::run(d),
         "full-session" => super::full_session::run(d),
         "layouts" => super::layouts::run(d),
+        "ui-real" => super::ui_real::run(d),
         _ => Err(format!("Unknown scenario {name}")),
     }
 }
@@ -366,48 +367,18 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
             d.settled()?;
         }
     }
-    // Exercise actual pointer capture and dragging on a real continuous control.
+    // Monitor volume is set by command; it changes monitoring, never the edit.
     let before = d.revision();
     let initial = d.app().monitor_gain;
-    let slider = d.rect("Monitor · :monitor")?;
-    let start = slider.left_center() + egui::vec2(15.0, 0.0);
-    d.events(
-        "Begin monitor drag",
-        vec![
-            egui::Event::PointerMoved(start),
-            egui::Event::PointerButton {
-                pos: start,
-                button: egui::PointerButton::Primary,
-                pressed: true,
-                modifiers: egui::Modifiers::NONE,
-            },
-        ],
-    )?;
-    for index in 1..=6 {
-        d.events(
-            "Drag monitor",
-            vec![egui::Event::PointerMoved(
-                start + egui::vec2(index as f32 * 6.0, 0.0),
-            )],
-        )?;
-    }
-    let end = start + egui::vec2(36.0, 0.0);
-    d.events(
-        "End monitor drag",
-        vec![egui::Event::PointerButton {
-            pos: end,
-            button: egui::PointerButton::Primary,
-            pressed: false,
-            modifiers: egui::Modifiers::NONE,
-        }],
-    )?;
+    d.command("monitor 40%")?;
+    d.step("Monitor volume set", false)?;
     d.check(
-        "Monitor drag changes monitoring without an edit",
+        "Monitor volume changes monitoring without an edit",
         d.app().monitor_gain != initial && d.revision() == before,
         json!("gain changed, revision unchanged"),
         json!({"before_gain":initial,"after_gain":d.app().monitor_gain,"revision":d.revision()}),
     )?;
-    d.capture("Workspace after pointer drag")
+    d.capture("Workspace after monitor volume")
 }
 
 pub(super) const PICTURE_TOLERANCE_PIXELS: f64 = 0.01;
@@ -717,8 +688,7 @@ fn inspector_unelided(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 /// At the minimum window the viewer keeps most of the remaining height while
-/// the read-only clocks, the displayed-picture caption and the transport stay
-/// completely painted. The 2026-10-15 bounds replace 163/149-point viewers;
+/// the transport and its duration clocks stay completely painted. The 2026-10-15 bounds replace 163/149-point viewers;
 /// the later inline notice raises them from 200/175 to 225/200.
 fn minimum_picture_priority(d: &mut Driver<'_>, play: &str, minimum: f32) -> Result<(), String> {
     let label = d
@@ -727,13 +697,19 @@ fn minimum_picture_priority(d: &mut Driver<'_>, play: &str, minimum: f32) -> Res
         .displayed_label()
         .ok_or("No displayed picture at the minimum window")?;
     let viewer = d.rect(&label)?;
-    let texts = [
-        label.as_str(),
-        play,
-        "Loop selection  Shift+Space",
-        "Monitor · :monitor",
-        "Original 120 f",
-    ];
+    // The picture's identity is the viewer's accessible label (checked by
+    // `d.rect(&label)` above); the row shows both durations as time.
+    let workspace = d.app().workspace.as_ref().ok_or("No workspace")?;
+    let original = format!(
+        "Original {}",
+        crate::preview::clock::time(
+            workspace
+                .original_duration
+                .map_or(0, |duration| u64::try_from(duration.frames()).unwrap_or(0)),
+            workspace.document.presentation_basis().frame_rate,
+        )
+    );
+    let texts = [play, "Loop selection  Shift+Space", original.as_str()];
     let paint = texts
         .iter()
         .map(|text| (*text, text_paint_visibility(d, text)))
@@ -1879,7 +1855,34 @@ pub(super) fn reveal_in_rail(d: &mut Driver<'_>, label: &str) -> Result<(), Stri
     }
 }
 
+/// The beat inspector's folded sections, in painted order.
+pub(super) const INSPECTOR_SECTIONS: [&str; 4] =
+    ["Sound and gain", "AI pictures", "Edit actions", "Framing"];
+
+/// Open folded inspector sections until `label` is present, as a person
+/// opens the section that holds an action.
+pub(super) fn unfold_inspector(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
+    for section in INSPECTOR_SECTIONS {
+        if d.rect(label).is_ok() {
+            break;
+        }
+        if d.rect(section).is_ok() {
+            d.click(section)?;
+            for frame in 0..3 {
+                d.step(&format!("Unfold {section} {frame}"), false)?;
+            }
+            if d.rect(label).is_err() {
+                // Not here: fold it again, as it was.
+                d.click(section)?;
+                d.step(&format!("Fold {section}"), false)?;
+            }
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
+    unfold_inspector(d, label)?;
     let fully_visible = |d: &Driver<'_>| {
         let Ok(rect) = d.rect(label) else {
             return false;
