@@ -88,9 +88,14 @@ and write that evidence as one line under the item. No other records.
   beat's main values first and folds the rest; the footer is one row of the
   keys that matter in the current context. Evidence: replay frames at
   1280x820 and 960x640.
-- [ ] **F6 Word timing.** Word boundaries are good enough that a word repeat
+- [x] **F6 Word timing.** Word boundaries are good enough that a word repeat
   does not clip the word. Evidence: measured median word-start error under
   60 ms on real speech, with refinement on by default.
+  Done 2026-11-10 (77668e18e and the commit after it): on LibriSpeech
+  test-clean against forced-alignment truth, word starts are a 20 ms median,
+  93% within 60 ms, p90 50 ms with the phoneme aligner (50 ms median with
+  DTW alone). Needs the `phoneme-ctc-en` pack installed; install it with the
+  app (F1).
 - [ ] **F7 Picture first.** The picture is the largest thing on screen and is
   never clipped at 1280x820 or 960x640; a settled frame never shows
   "Preparing picture". Evidence: replay frames.
