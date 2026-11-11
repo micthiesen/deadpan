@@ -37,7 +37,6 @@ fn headless_delete_previews_and_commits_retained_timing_with_one_undo() -> Resul
     )?;
     let preview = success(&["command", path, "--json", file, "--dry-run"])?;
     assert_eq!(preview["edit"]["duration_delta"], -1);
-    assert!(preview["edit"]["forward"]["audio_bindings"].is_object());
     assert_eq!(
         ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?,
         before
@@ -46,15 +45,6 @@ fn headless_delete_previews_and_commits_retained_timing_with_one_undo() -> Resul
     assert_eq!(committed["outcome"]["edit"], preview["edit"]);
     let after = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     assert_eq!(after.duration()?.frames(), 4);
-    // The moved suffix keeps the sampling lattice captured before deletion.
-    // Its unsplit entry already is its anchor, so no inert reanchor step is
-    // stored (docs/TIMING_STORAGE.md).
-    let suffix = &after.audio_bindings().bindings()[&NodeId::new("suffix")?];
-    assert_eq!(
-        suffix.lattice.reference.timing.allocation.as_str(),
-        "deleted"
-    );
-    assert!(suffix.reanchors.is_empty());
     let database = rusqlite::Connection::open(package.join("project.sqlite"))?;
     let encoded: String = database.query_row(
         "SELECT request FROM history WHERE revision_id='deleted'",

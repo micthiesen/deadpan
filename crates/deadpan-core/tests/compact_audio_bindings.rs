@@ -447,59 +447,6 @@ fn document_with_hold() -> ProjectDocument {
 }
 
 #[test]
-fn captured_binding_state_and_insert_history_patch_roundtrip_compact_wire() {
-    let unbound = document_with_hold();
-    let captured = capture_unbound_audio_bindings(
-        &unbound,
-        AudioTimingId {
-            allocation: revision("capture"),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let captured_wire = captured.to_json().unwrap();
-    let captured_again = AudioBindingState::from_json(&captured_wire).unwrap();
-    assert_eq!(captured_again, captured);
-
-    let mut document_wire = serde_json::to_value(unbound).unwrap();
-    document_wire["audio_bindings"] = serde_json::from_str(&captured_wire).unwrap();
-    let bound = ProjectDocument::from_json(&document_wire.to_string()).unwrap();
-    let request = CommandRequest {
-        project_id: bound.project_id().clone(),
-        expected_revision: bound.revision_id().clone(),
-        new_revision: revision("pause"),
-        command: Command::InsertTime {
-            at: ProjectFrame(1),
-            hold: HoldRecipe {
-                picture_context: None,
-                duration: FrameDuration::new(1).unwrap(),
-                video: HoldVideo::Background,
-                audio: HoldAudio::Silence,
-            },
-            id: id("pause-node"),
-            identities: SplitIdentities {
-                nodes: (0..3).map(|n| id(&format!("split-{n}"))).collect(),
-            },
-            timing: AudioTimingId {
-                allocation: revision("pause"),
-                ordinal: 0,
-            },
-        },
-    };
-    let transaction = apply(&bound, &request).unwrap();
-    assert!(transaction.forward.audio_bindings.is_some());
-    let history_json = serde_json::to_string(&transaction.forward).unwrap();
-    let decoded: DocumentPatch = serde_json::from_str(&history_json).unwrap();
-    assert_eq!(decoded, transaction.forward);
-    let after = decoded.apply(&bound).unwrap();
-    assert_eq!(decoded.inverse().apply(&after).unwrap(), bound);
-    assert_eq!(
-        AudioBindingState::from_json(&after.audio_bindings().to_json().unwrap()).unwrap(),
-        *after.audio_bindings()
-    );
-}
-
-#[test]
 fn compact_document_size_matches_nested_binding_bytes_without_changing_wire() {
     let document = document_with_hold();
     let state = nested_state();

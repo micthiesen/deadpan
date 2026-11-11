@@ -492,49 +492,6 @@ fn duration_changes_and_internal_insertions_retain_fixed_keys_and_hidden_suffix(
     assert!(ungrouped.nodes()[&id("hold")].audio_treatments.is_empty());
 }
 
-#[test]
-fn postmapping_gain_preserves_raw_lineage_and_preserve_sample_bindings() {
-    let retimed = edit(
-        &fixture(),
-        Command::WrapRetime {
-            node: id("hold"),
-            id: id("preserve"),
-            duration: frames(11),
-            pitch: PitchPolicy::Preserve,
-        },
-    )
-    .0;
-    let split = split(&retimed, "preserve", 5, "part");
-    assert!(!split.audio_lineage().is_empty());
-    let bindings = capture_unbound_audio_bindings(
-        &split,
-        AudioTimingId {
-            allocation: RevisionId::new("timing").unwrap(),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    assert!(!bindings.is_empty());
-    let mut wire = serde_json::to_value(&split).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let (after, transaction) = edit(
-        &before,
-        Command::SetAudioTreatments {
-            node: id("preserve"),
-            treatments: treatment(GainCurve::Linear),
-        },
-    );
-    assert_eq!(after.audio_lineage(), before.audio_lineage());
-    assert_eq!(after.audio_bindings(), before.audio_bindings());
-    assert_eq!(
-        FrozenAudioLayout::capture(&after).unwrap(),
-        FrozenAudioLayout::capture(&before).unwrap()
-    );
-    assert!(transaction.forward.audio_lineage.is_empty());
-    assert!(transaction.forward.audio_bindings.is_none());
-}
-
 fn dense() -> AudioTreatments {
     let curve = GainCurve::Cubic {
         control1: gain(-12_000),

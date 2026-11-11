@@ -214,6 +214,7 @@ fn independent_eq_automation_keeps_rebound_input_history_across_a_new_pause() {
     }});
     wire["beat_sounds"] = serde_json::json!({});
     wire["audio_bindings"]["sound_clocks"] = serde_json::json!({});
+    wire["audio_bindings"]["timings"] = serde_json::json!([]);
     wire["nodes"]["root"]["audio_treatments"] = wire["nodes"]["owner"]["audio_treatments"].take();
     wire["nodes"]["owner"]
         .as_object_mut()

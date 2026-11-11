@@ -86,18 +86,6 @@ fn native_nested_delete_retains_suffix_timing_in_one_transaction_and_undo() {
             timing: timing.clone(),
         }
     );
-    let bindings = after.document.audio_bindings();
-    assert!(bindings.timings().contains_key(&timing));
-    assert!(bindings.bindings()[&node("leading")].reanchors.is_empty());
-    assert!(!bindings.bindings().contains_key(&node("cut")));
-    // Both moved owners keep the lattice captured before deletion. Their
-    // unsplit entries already are their anchors, so no inert reanchor step is
-    // stored (docs/TIMING_STORAGE.md).
-    for owner in ["suffix", "tail"] {
-        let binding = &bindings.bindings()[&node(owner)];
-        assert_eq!(binding.lattice.reference.timing, timing);
-        assert!(binding.reanchors.is_empty());
-    }
     let database = rusqlite::Connection::open(after.path.join("project.sqlite")).unwrap();
     assert_eq!(
         database

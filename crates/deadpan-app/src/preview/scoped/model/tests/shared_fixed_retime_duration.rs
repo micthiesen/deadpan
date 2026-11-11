@@ -385,44 +385,9 @@ fn native_this_play_fixed_retime_hold_duration_offers_entry_after_public_isolati
     assert_eq!(presentation(&after_state).frames, 10..13);
     assert_eq!(after_state.cursor, ProjectFrame(10));
 
-    // These are silent structural recipes. Fresh public captures verify their
-    // exact placement lattices, not retention of an audible pre-edit phase.
-    // Silence intentionally acquires no new retained clock during the resize.
-    let lattice = |document: &ProjectDocument, instance: &InstancePath| {
-        deadpan_core::capture_unbound_audio_bindings(
-            document,
-            deadpan_core::AudioTimingId {
-                allocation: revision("this-play-fixed-retime-lattice-control"),
-                ordinal: 0,
-            },
-        )
-        .unwrap()
-        .resolve(&instance.node, instance, deadpan_core::MAX_DOCUMENT_NODES)
-        .unwrap()
-        .lattice
-    };
-    let old_speech = lattice(&before, &speech);
-    let isolated_speech = lattice(isolated, &mapped_speech);
-    let new_speech = lattice(&after, &mapped_speech);
-    assert_eq!(old_speech.origin, ExactRatio::integer(12));
-    assert_eq!(isolated_speech.origin, old_speech.origin);
-    assert_eq!(new_speech.origin, ExactRatio::new(27, 2).unwrap());
-    for placement in [&old_speech, &isolated_speech, &new_speech] {
-        assert_eq!(
-            placement.frames_per_local_frame,
-            ExactRatio::new(3, 4).unwrap()
-        );
-    }
     for ordinal in [0, 2] {
         let mut untouched = speech.clone();
         untouched.repeats[0].iteration = outer_iteration(&before, ordinal);
-        let old = lattice(&before, &untouched);
-        let current = lattice(&after, &untouched);
-        assert_eq!(current.origin, old.origin);
-        assert_eq!(current.frames_per_local_frame, old.frames_per_local_frame);
-        assert_eq!(current.grid_origin, old.grid_origin);
-        assert_eq!(current.frames_per_sample, old.frames_per_sample);
-        assert_eq!(current.local_support, old.local_support);
         assert_eq!(
             exact_occurrence_boundary(&after, "held", untouched.repeats[0].iteration.clone(), 2),
             ExactRatio::integer(6 + 6 * i64::from(ordinal))

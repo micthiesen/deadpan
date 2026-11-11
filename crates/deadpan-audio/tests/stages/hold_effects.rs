@@ -505,7 +505,7 @@ fn the_source_stage_explains_that_a_tail_is_read_from_the_processed_stages() {
 /// sides are marked editorial, then fades both sides when automatic and
 /// cuts when Hard. Exact PCM, not plan metadata.
 #[test]
-fn marked_fragment_seams_fade_or_cut_the_sound_and_a_split_seam_stays_continuous() {
+fn fragment_cuts_fade_unless_hard_and_a_split_seam_stays_continuous() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let level = GainDb::new(-6_000).unwrap();
     let tone = || {
@@ -567,7 +567,6 @@ fn marked_fragment_seams_fade_or_cut_the_sound_and_a_split_seam_stays_continuous
         .copied()
         .collect();
     let unmarked = read((0, 600), (700, 1_200), false, false);
-    assert_pcm_close(&unmarked[500..700], &expected_cut[500..700]);
     let hard = read((0, 600), (700, 1_200), true, true);
     assert_pcm_close(&hard[500..700], &expected_cut[500..700]);
     let faded = read((0, 600), (700, 1_200), true, false);
@@ -585,6 +584,9 @@ fn marked_fragment_seams_fade_or_cut_the_sound_and_a_split_seam_stays_continuous
     assert!(peak(&faded[599..601]) < 0.02, "{:?}", &faded[599..601]);
     assert_pcm_close(&faded[400..500], &expected_cut[400..500]);
     assert_pcm_close(&faded[800..900], &expected_cut[800..900]);
+    // A cut fades whether or not its sides were marked: the plan derives
+    // the editorial edge from the discontinuous neighbor.
+    assert_eq!(unmarked, faded);
 }
 
 /// Two cuts of speech, the second inside a group trimmed by -6 dB, a silent

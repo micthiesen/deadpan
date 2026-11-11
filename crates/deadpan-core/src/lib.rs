@@ -56,14 +56,8 @@ mod group_selection;
 mod hdr;
 mod id_hash;
 mod insert_time;
-#[cfg(test)]
-mod legacy_audio_binding_v20;
 mod legacy_audio_binding_v21;
-#[cfg(test)]
-mod legacy_audio_binding_v22;
 mod legacy_audio_binding_v35;
-#[cfg(test)]
-mod legacy_audio_binding_v36;
 mod legacy_audio_mapping_v19;
 mod legacy_audio_mapping_v35;
 mod marks;

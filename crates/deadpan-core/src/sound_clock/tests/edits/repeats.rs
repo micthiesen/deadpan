@@ -396,6 +396,7 @@ fn a_sound_on_a_dormant_final_gap_is_born_only_when_that_gap_activates() {
         .insert(last, node("dormant"));
     let events = before.beat_sounds.remove(&node("owner")).unwrap();
     before.audio_bindings.sound_clocks.clear();
+    before.audio_bindings.timings.clear();
     before.beat_sounds.insert(node("dormant"), events);
     before.validate().unwrap();
     let grown = plays(&before, "grown", 3);
@@ -415,6 +416,7 @@ fn repeat_owned_sound_refuses_a_changed_processing_extent_atomically() {
     let mut before = wrap(&fixture(), "wrapped");
     let events = before.beat_sounds.remove(&node("owner")).unwrap();
     before.audio_bindings.sound_clocks.clear();
+    before.audio_bindings.timings.clear();
     before.beat_sounds.insert(node("repeat"), events);
     before.validate().unwrap();
     let snapshot = before.to_json().unwrap();

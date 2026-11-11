@@ -561,9 +561,9 @@ fn marked_fragment_play_seams_fade_or_cut_by_their_policy() {
         );
     }
     let cut = seam(&hard);
-    // Unmarked fragment sides add no seam edge; marked ones fade both sides
-    // of the seam automatically, and Hard suppresses that fade.
-    assert!(unmarked.is_empty(), "{unmarked:?}");
+    // A play seam is a cut, so the fragment's sides fade on both sides of
+    // the seam whether or not they were marked; Hard suppresses that fade.
+    assert_eq!(unmarked, [(true, false), (true, false)]);
     assert_eq!(faded, [(true, false), (true, false)]);
     assert_eq!(cut, [(true, true), (true, true)]);
     // Marking needs a fragment.

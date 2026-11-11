@@ -142,17 +142,25 @@ policies, and `plays` or `gaps` on a beat that is not a Repeat, refuse. The
 inspector lists any hard edges. Macros record it and `.` repeats it on another
 beat.
 
-A split fragment (Partition) adds no fade of its own: a Repeat of a Visual
-range inside a beat therefore cuts its play seams with no envelope. Hard
-policies on a fragment are valid only on sides marked as editorial edges, so
+A split fragment (Partition) has no audio edge of its own, so the plan derives
+one from the current tree (`deadpan-plan` `cut_edges`): every fragment side
+that meets anything other than its own continuation (another recipe, a
+Hold, a Repeat play seam or gap, a speed or reverse stage) is an editorial
+edge with the shared automatic fade, as if marked. A side that continues the
+same sound (a pure Split: equal fragment contents and contiguous mappings)
+stays continuous. A mark applies at every occurrence of the node, so a word
+Repeat's play-seam marks also fade its first play's start and last play's
+end, and both incident sides of each such boundary fade. Ordinary commands
+(word repeat, pause, cutaway, speed, reverse) therefore never leave a raw
+join. Hard policies on a fragment are still valid only on sides marked as
+editorial edges, so
 `:edge` on a fragment (directly, or through `plays` on a Repeat of one) first
 marks the touched sides with the reversible `SetEditorialEdges { node, edges }`
 command, in the same transaction. Like a Trim, a side next to another fragment
 marks both incident sides, so the cut fades on both; the policy is set on the
 selected side, and any coincident Hard suppresses the fade. A side that simply
-continues the same sound (a pure Split: equal fragment contents and
-contiguous mappings) refuses, because a fade there would dip continuous sound.
-`plays` refuses on a Repeat whose plays have their own contents (per-play
+continues the same sound refuses, because a fade there would dip continuous
+sound. `plays` refuses on a Repeat whose plays have their own contents (per-play
 overrides): set those seams inside each play. Marked, `auto` fades each seam with the
 shared short envelope and `hard` cuts it explicitly; filtering support, timing
 and every clock are unchanged. The command refuses any node other than a
@@ -161,12 +169,14 @@ fragment, and clearing a mark is not exposed. Evidence:
 `a_split_fragments_play_seams_are_marked_before_their_policy_applies` (core,
 one compound with an exact inverse), `a_split_seam_has_no_edge_while_a_cut_between_fragments_marks_both_sides`
 (including Undo and Redo), `marked_fragment_play_seams_fade_or_cut_by_their_policy`
-(plan: no seam edge unmarked, an automatic editorial edge on both sides of the
-seam when marked, Hard origins when cut),
-`marked_fragment_seams_fade_or_cut_the_sound_and_a_split_seam_stays_continuous`
-(exact PCM of a synthesized tone: a pure Split seam is the continuous tone, an
-unmarked or Hard cut is the raw jump, a marked automatic cut fades to silence
-at the seam and is untouched 100 samples away), `edge_and_gag_set_commands_parse_their_choices`,
+(plan: an automatic editorial edge on both sides of a play seam, marked or
+not, Hard origins when cut),
+`fragment_cuts_fade_unless_hard_and_a_split_seam_stays_continuous`
+(exact PCM of a synthesized tone: a pure Split seam is the continuous tone, a
+Hard cut is the raw jump, any other cut fades to silence at the seam and is
+untouched 100 samples away), `ordinary_cuts_and_repeat_seams_do_not_click`
+(a word Repeat with a gain step, a pause and a speed change at 24 and
+30000/1001 fps: no seam steps above the local median step), `edge_and_gag_set_commands_parse_their_choices`,
 the `creative-dot` replay and the release `micro-loop` preview/export fixture.
 
 ## Verification and remaining scope

@@ -189,34 +189,6 @@ fn exact_room_tone_and_silence_preserve_picture_timing_and_round_trip() {
 }
 
 #[test]
-fn policy_replacement_keeps_retained_sampling_lattice() {
-    let document = fixture();
-    let binding = capture_unbound_audio_bindings(
-        &document,
-        AudioTimingId {
-            allocation: RevisionId::new("captured").unwrap(),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(&document).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(&binding).unwrap();
-    let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let (changed, transaction) = edit(
-        &bound,
-        Command::SetHoldAudio {
-            node: node("hold"),
-            audio: HoldAudio::RoomTone {
-                source: source(137, 24_691),
-            },
-        },
-    );
-    assert_eq!(changed.audio_bindings(), &binding);
-    assert!(transaction.forward.audio_bindings.is_none());
-    assert_eq!(changed.duration().unwrap(), bound.duration().unwrap());
-}
-
-#[test]
 fn invalid_audio_and_targets_fail_without_mutating_the_document() {
     let before = fixture();
     let cases = [

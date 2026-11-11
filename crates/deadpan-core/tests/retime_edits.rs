@@ -64,19 +64,6 @@ fn set(duration: i64, pitch: PitchPolicy) -> Command {
         pitch,
     }
 }
-fn capture(document: &ProjectDocument) -> ProjectDocument {
-    let state = capture_unbound_audio_bindings(
-        document,
-        AudioTimingId {
-            allocation: document.revision_id().clone(),
-            ordinal: 0,
-        },
-    )
-    .unwrap();
-    let mut wire = serde_json::to_value(document).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(state).unwrap();
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
-}
 
 #[test]
 fn wrap_and_update_retain_child_framing_marks_and_exact_mapping() {
@@ -151,38 +138,6 @@ fn wrap_and_update_retain_child_framing_marks_and_exact_mapping() {
     );
     assert_eq!(updated.nodes()[&id("a")], marked.nodes()[&id("a")]);
     assert_eq!(updated.nodes()[&id("rate")].framing, Some(framing));
-}
-
-#[test]
-fn changed_output_releases_only_its_binding_and_noop_keeps_all_clocks() {
-    let (retimed, _) = edit(&fixture(), wrap(8, PitchPolicy::Preserve), "retimed");
-    let bound = capture(&retimed);
-    assert!(bound.audio_bindings().bindings().contains_key(&id("rate")));
-    let (noop, _) = edit(&bound, set(8, PitchPolicy::Preserve), "noop");
-    assert_eq!(noop.audio_bindings(), bound.audio_bindings());
-    for (duration, pitch) in [
-        (6, PitchPolicy::Preserve),
-        (8, PitchPolicy::FollowSpeed),
-        (12, PitchPolicy::Preserve),
-    ] {
-        let (changed, tx) = edit(&bound, set(duration, pitch), "changed");
-        assert!(
-            !changed
-                .audio_bindings()
-                .bindings()
-                .contains_key(&id("rate"))
-        );
-        for owner in ["a", "suffix"] {
-            assert_eq!(
-                changed.audio_bindings().bindings()[&id(owner)],
-                bound.audio_bindings().bindings()[&id(owner)]
-            );
-        }
-        assert!(tx.changed_ids.contains(&id("rate")));
-    }
-    let bound = capture(&fixture());
-    let (wrapped, _) = edit(&bound, wrap(18, PitchPolicy::Preserve), "wrapped");
-    assert_eq!(wrapped.audio_bindings(), bound.audio_bindings());
 }
 
 #[test]

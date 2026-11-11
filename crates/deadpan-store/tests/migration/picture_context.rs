@@ -64,7 +64,6 @@ fn captured_picture_context_survives_current_history_and_pending_redo() -> Resul
     };
     assert_eq!(recipe.picture_context, Some(captured()));
     assert_eq!(after.duration()?, before_capture.duration()?);
-    assert_eq!(after.audio_bindings(), before_capture.audio_bindings());
     store.undo(after.revision_id(), RevisionId::new("undo-capture")?)?;
     store.redo(
         &RevisionId::new("undo-capture")?,

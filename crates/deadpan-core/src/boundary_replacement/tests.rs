@@ -259,30 +259,6 @@ fn assert_net(
 }
 
 #[test]
-fn ordinary_insertion_preserves_allocation_timing_and_sound_transforms_once() {
-    let before = fixture();
-    let base = request(&before, "insert", insert("insert"));
-    let replacement = entry(&before, target("held"));
-    let effective = wrapped(&base, vec![replacement.clone()]);
-    let after = assert_net(&before, &base, &effective, &[replacement]);
-    assert!(after.nodes().contains_key(&node("inserted")));
-    assert_ne!(after.audio_bindings(), before.audio_bindings());
-    // Ripple keeps the original sound recipe and appends one clock transform.
-    assert_eq!(after.sounds(), before.sounds());
-    assert!(before.sound_routes().is_empty());
-    let route = &after.sound_routes()[&SoundId::new("sound-event").unwrap()];
-    assert_eq!(route.edits.len(), 1);
-    assert_eq!(
-        route.edits[0].operation,
-        RootSoundOperation::Insert {
-            at: ProjectFrame(4),
-            duration: frames(2),
-        }
-    );
-    assert_eq!(after.revision_id(), &revision("insert"));
-}
-
-#[test]
 fn compound_keeps_leaf_revisions_frozen_capture_and_register_writes() {
     let before = fixture();
     let first = request(&before, "leaf", insert("leaf"));

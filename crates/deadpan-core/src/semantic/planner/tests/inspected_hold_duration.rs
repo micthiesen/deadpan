@@ -230,38 +230,6 @@ fn tone_fixture() -> (ProjectDocument, SourceAudio) {
 }
 
 #[test]
-fn inspected_hold_duration_named_counted_calls_revalidate_after_each_physical_capture() {
-    let (before, _) = tone_fixture();
-    let bank = BTreeMap::from([
-        (name('a'), macro_value(vec![call('b', 1)])),
-        (name('b'), macro_value(vec![duration(4), duration(2)])),
-    ]);
-    let snapshot = bank.clone();
-    let planned = plan(&before, entry(), vec![call('a', 2)], &bank).unwrap();
-    assert!(!planned.document.audio_bindings().timings.is_empty());
-    assert_eq!(
-        planned
-            .document
-            .node_duration(&node("held"))
-            .unwrap()
-            .frames(),
-        2
-    );
-    assert_eq!(planned.context.cursor, ProjectFrame(5));
-    assert_eq!(planned.context.hold_duration, entry().hold_duration);
-    assert_eq!(planned.context.selected_child, entry().selected_child);
-    let Command::Compound { transaction } = &planned.request.as_ref().unwrap().command else {
-        panic!()
-    };
-    assert_eq!(transaction.steps().len(), 4);
-    assert!(transaction.steps().iter().all(|step| matches!(
-        step.edit().unwrap().command.as_command(), Command::SetHoldDuration { node: target, .. } if target == &node("held")
-    )));
-    assert_eq!(bank, snapshot);
-    reversible(&before, &planned);
-}
-
-#[test]
 fn inspected_hold_duration_output_owned_sound_eligibility_uses_existing_reducer() {
     let (mut before, mut source) = tone_fixture();
     source.span = SourceSpan::new(

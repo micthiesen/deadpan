@@ -124,7 +124,6 @@ fn integral_child_cuts_keep_ordinary_recipes_and_the_live_speed_owner() {
     );
     assert_eq!(after.durations().unwrap()[&id("pause-p")], duration(2));
     // The copied right fragment resumes its own retained clock.
-    assert!(after.audio_bindings().bindings().contains_key(&id("p-2")));
 }
 
 #[test]

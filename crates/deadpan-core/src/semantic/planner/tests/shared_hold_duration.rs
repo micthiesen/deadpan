@@ -319,59 +319,6 @@ fn shared_hold_duration_changes_only_live_defaults_and_moves_same_representative
     }
 }
 
-#[test]
-fn shared_hold_duration_retains_every_live_source_roomtone_clock_with_partial_bindings() {
-    for partial in [false, true] {
-        let mut before = fixture(true);
-        let old = crate::capture_unbound_audio_bindings(
-            &before,
-            AudioTimingId {
-                allocation: revision("old-clock"),
-                ordinal: 0,
-            },
-        )
-        .unwrap();
-        if partial {
-            before.audio_bindings = old.clone();
-            before.audio_bindings.bindings.remove(&node("tail"));
-            before.validate().unwrap();
-        }
-        for frames in [1, 4] {
-            let planned = plan(
-                &before,
-                entry(Some(1)),
-                vec![duration(frames)],
-                &BTreeMap::new(),
-            )
-            .unwrap();
-            for (owner, outer, inner) in [
-                ("held", 0, Some(0)),
-                ("after", 0, Some(0)),
-                ("held", 1, Some(0)),
-                ("after", 1, Some(0)),
-                ("inner-after", 1, Some(1)),
-                ("outer-after", 2, None),
-            ] {
-                let instance = instance(owner, outer, inner);
-                let before = old
-                    .resolve(&instance.node, &instance, crate::MAX_DOCUMENT_NODES)
-                    .unwrap();
-                let after = planned
-                    .document
-                    .audio_bindings()
-                    .resolve(&instance.node, &instance, crate::MAX_DOCUMENT_NODES)
-                    .unwrap();
-                assert_eq!(after.lattice.origin, before.lattice.origin);
-                assert_eq!(
-                    after.lattice.sample_boundary(ExactRatio::ZERO).unwrap(),
-                    before.lattice.sample_boundary(ExactRatio::ZERO).unwrap()
-                );
-            }
-            reversible(&before, &planned);
-        }
-    }
-}
-
 fn dormant(outer: bool) -> ProjectDocument {
     let mut document = fixture(true);
     if outer {
@@ -403,43 +350,6 @@ fn dormant(outer: bool) -> ProjectDocument {
     .unwrap();
     document.validate().unwrap();
     document
-}
-
-#[test]
-fn shared_hold_duration_proves_inner_or_outer_dormancy_and_preserves_all_binding_history() {
-    for outer in [false, true] {
-        let before = dormant(outer);
-        let context = entry(None);
-        assert_eq!(visible(&before, &context), None);
-        let bank = BTreeMap::from([(name('a'), macro_value(vec![duration(4), duration(2)]))]);
-        let planned = plan(&before, context.clone(), vec![call('a', 3)], &bank).unwrap();
-        assert_eq!(planned.context, context);
-        assert_eq!(
-            planned.document.duration().unwrap(),
-            before.duration().unwrap()
-        );
-        assert_eq!(planned.document.audio_bindings(), before.audio_bindings());
-        assert_eq!(planned.document.overrides(), before.overrides());
-        assert!(
-            planned
-                .trace
-                .iter()
-                .filter(|trace| matches!(
-                    &trace.instruction,
-                    SemanticInstruction::SetHoldDuration { .. }
-                ))
-                .all(|trace| trace.resolved_range.is_none())
-        );
-        reversible(&before, &planned);
-        assert!(
-            before
-                .shared_hold_duration_visibility(
-                    &node("root"),
-                    entry(Some(0)).shared_hold_duration.as_ref().unwrap()
-                )
-                .is_err()
-        );
-    }
 }
 
 #[test]

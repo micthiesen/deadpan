@@ -414,7 +414,6 @@ fn composite_fixture() -> ProjectDocument {
 fn partial_repeat_preserve_group_and_ordinary_ungroup_keep_authored_pcm_and_routes() {
     let before = composite_fixture();
     assert_eq!(before.duration().unwrap().frames(), 19);
-    assert!(!before.audio_bindings().is_empty());
     assert!(!before.sound_routes().is_empty());
     assert!(!before.sound_allowances().is_empty());
     // Scope is [3,16): Repeat [3,9), partial Preserve [9,14), silence [14,16).

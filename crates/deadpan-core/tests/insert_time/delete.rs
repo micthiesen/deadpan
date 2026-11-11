@@ -15,43 +15,6 @@ fn deletion(document: &ProjectDocument, target: &str, name: &str) -> CommandRequ
 }
 
 #[test]
-fn nested_delete_keeps_every_surviving_suffix_clock_and_one_inverse() {
-    // Asserts the authored reference representation (every reanchor step
-    // and complete timing tables). tests/timing_representation.rs proves the
-    // compact storage resolves and renders identically.
-    deadpan_core::with_reference_timing_representation(|| {
-        let original = tree(
-            &["prefix", "group", "tail"],
-            vec![
-                ("prefix", source(1)),
-                (
-                    "group",
-                    BeatNode::sequence("Group", vec![id("a"), id("removed"), id("b")]),
-                ),
-                ("a", source(2)),
-                ("removed", BeatNode::sequence("Removed", vec![id("inside")])),
-                ("inside", source(1)),
-                ("b", source(3)),
-                ("tail", source(4)),
-            ],
-        );
-        let after = edit(&original, deletion(&original, "removed", "deleted"));
-        assert_eq!(after.duration().unwrap(), duration(10));
-        assert_eq!(children(&after), children(&original));
-        assert!(!after.nodes().contains_key(&id("removed")));
-        assert!(!after.nodes().contains_key(&id("inside")));
-        for name in ["prefix", "a", "b", "tail"] {
-            assert_eq!(after.nodes()[&id(name)], original.nodes()[&id(name)]);
-            assert_eq!(
-                after.audio_bindings().bindings()[&id(name)].reanchors.len(),
-                usize::from(matches!(name, "b" | "tail")),
-                "{name}"
-            );
-        }
-    })
-}
-
-#[test]
 fn zero_and_terminal_deletion_do_not_capture_unmoved_sampling() {
     let original = tree(
         &["empty", "a", "tail"],
@@ -70,23 +33,6 @@ fn zero_and_terminal_deletion_do_not_capture_unmoved_sampling() {
     assert_eq!(all_removed.duration().unwrap(), FrameDuration::ZERO);
     assert_eq!(all_removed.nodes().len(), 1);
     assert!(all_removed.audio_bindings().is_empty());
-}
-
-#[test]
-fn deletion_retains_previous_lattice_and_appends_one_resume() {
-    // Asserts the authored reference representation (every reanchor step
-    // and complete timing tables). tests/timing_representation.rs proves the
-    // compact storage resolves and renders identically.
-    deadpan_core::with_reference_timing_representation(|| {
-        let original = tree(&["a", "b"], vec![("a", source(2)), ("b", source(4))]);
-        let inserted = edit(&original, insertion(&original, "pause", 2, 1));
-        let after = edit(&inserted, deletion(&inserted, "a", "delete"));
-        let old = &inserted.audio_bindings().bindings()[&id("b")];
-        let new = &after.audio_bindings().bindings()[&id("b")];
-        assert_eq!(new.lattice, old.lattice);
-        assert_eq!(new.reanchors.len(), old.reanchors.len() + 1);
-        assert_eq!(&new.reanchors[..old.reanchors.len()], old.reanchors);
-    })
 }
 
 #[test]

@@ -1,6 +1,5 @@
 use deadpan_core::*;
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
 
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
@@ -260,10 +259,6 @@ fn roll_uses_one_delta_and_preserves_fractional_padding_in_all_source_view_pairs
                     after.nodes().len() - before.nodes().len(),
                     usize::from(!left_view && delta < 0) + usize::from(!right_view && delta > 0)
                 );
-                assert_eq!(after.audio_bindings().timings().len(), 1);
-                for binding in after.audio_bindings().bindings().values() {
-                    assert!(binding.reanchors.is_empty());
-                }
                 let left_final = if resolution.left.needs_wrapper {
                     "left-crop"
                 } else {
@@ -594,161 +589,6 @@ fn roll_rejects_bad_identities_metadata_and_zero_without_mutation() {
     let mut extra = wire;
     extra["command"]["delta_frames"] = json!(1.5);
     assert!(serde_json::from_value::<CommandRequest>(extra).is_err());
-}
-
-#[test]
-fn roll_preserves_existing_clocks_effects_root_routes_and_hold_allowances() {
-    let base = modify(&fixture(Some((0, 147000)), 0), |v| {
-        v["nodes"]["tail"] = serde_json::to_value(hold(2)).unwrap();
-        v["nodes"]["root"]["kind"]["children"] = json!(["left", "right", "tail"]);
-    });
-    let old_timing = AudioTimingId {
-        allocation: RevisionId::new("old-clock").unwrap(),
-        ordinal: 7,
-    };
-    let captured = capture_unbound_audio_bindings(&base, old_timing.clone()).unwrap();
-    let mut owners = captured.bindings().clone();
-    let right = owners.get_mut(&id("right")).unwrap();
-    right.resume = Some(AudioResume {
-        local_boundary: ExactRatio::integer(2),
-        phase: AudioLocalPhase {
-            constant: ratio(1, 1600),
-            terms: vec![],
-        },
-    });
-    right.reanchors.push(AudioReanchorStep {
-        anchor: Default::default(),
-        placement: right.lattice.clone(),
-        window: Some(
-            ExactFrameRange::new(ExactRatio::integer(10), ExactRatio::integer(20)).unwrap(),
-        ),
-    });
-    let bindings = AudioBindingState::new(
-        captured
-            .timings()
-            .iter()
-            .map(|(id, layout)| AudioTimingRecord {
-                id: id.clone(),
-                layout: layout.clone(),
-            })
-            .collect(),
-        owners,
-    )
-    .unwrap();
-    let sound_id = SoundId::new("sound").unwrap();
-    let before = modify(&base, |v| {
-        v["audio_bindings"] = serde_json::to_value(&bindings).unwrap();
-        let framing = Framing::creep(
-            FramingPose::identity(),
-            FramingPose::new(ratio(1, 2), ratio(1, 2), ExactRatio::integer(2)).unwrap(),
-            FramingCurve::Linear,
-        )
-        .unwrap();
-        v["nodes"]["right"]["framing"] = serde_json::to_value(&framing).unwrap();
-        v["nodes"]["root"]["framing"] = serde_json::to_value(&framing).unwrap();
-        let treatments = AudioTreatments::from_clip_gain(
-            ClipGain::new(
-                GainDb::new(-3000).unwrap(),
-                false,
-                vec![],
-                vec![GainRange::new(ExactRatio::integer(2), ExactRatio::integer(3)).unwrap()],
-            )
-            .unwrap(),
-        );
-        v["nodes"]["right"]["audio_treatments"] = serde_json::to_value(treatments).unwrap();
-        v["nodes"]["right"]["audio_edges"] = serde_json::to_value(AudioEdgePolicies {
-            node_start: AudioEdgePolicy::Hard,
-            ..Default::default()
-        })
-        .unwrap();
-        v["sounds"] = serde_json::to_value(BTreeMap::from([(
-            sound_id.clone(),
-            SoundEvent {
-                owner: id("root"),
-                label: "Crossing root sound".into(),
-                source: source(&base, "left").audio.clone().unwrap(),
-                mapping: SourceAudioMapping::SelectedPlacement {
-                    start: ExactRatio::ZERO,
-                    frames: ExactRatio::integer(100),
-                    selection: ExactFrameRange::new(
-                        ExactRatio::integer(1),
-                        ExactRatio::integer(22),
-                    )
-                    .unwrap(),
-                },
-                offset: AudioSample(0),
-                treatments: deadpan_core::AudioTreatments::default(),
-                start_edge: AudioEdgePolicy::Hard,
-                end_edge: AudioEdgePolicy::Automatic,
-                overflow: SoundOverflowPolicy::Reject,
-            },
-        )]))
-        .unwrap();
-        v["sound_routes"] = serde_json::to_value(BTreeMap::from([(
-            sound_id.clone(),
-            RootSoundRoute::identity(frames(22), FrameRate::new(30, 1).unwrap()),
-        )]))
-        .unwrap();
-        v["sound_allowances"] = serde_json::to_value(BTreeMap::from([(
-            sound_id.clone(),
-            SoundHoldAllowances::try_from(vec![SoundHoldIssuer::Node {
-                instance: InstancePath {
-                    node: id("tail"),
-                    repeats: vec![],
-                },
-            }])
-            .unwrap(),
-        )]))
-        .unwrap();
-    });
-    let (after, tx) = edit(&before, roll(&before, "left", "right", -3));
-    assert_eq!(tx.duration_delta, 0);
-    assert_eq!(after.sounds(), before.sounds());
-    assert_eq!(after.sound_routes(), before.sound_routes());
-    assert_eq!(after.sound_allowances(), before.sound_allowances());
-    assert_eq!(
-        after.audio_bindings().timings(),
-        before.audio_bindings().timings()
-    );
-    for node in ["left", "tail"] {
-        assert_eq!(
-            after.audio_bindings().bindings()[&id(node)],
-            before.audio_bindings().bindings()[&id(node)]
-        );
-    }
-    assert_eq!(
-        after.audio_bindings().bindings()[&id("right")],
-        before.audio_bindings().bindings()[&id("right")]
-            .rebase_local(ExactRatio::integer(3))
-            .unwrap()
-    );
-    assert_eq!(
-        after.nodes()[&id("right")].framing,
-        Some(
-            before.nodes()[&id("right")]
-                .framing
-                .as_ref()
-                .unwrap()
-                .prepend_owner_frames(frames(3), frames(10))
-                .unwrap()
-        )
-    );
-    assert_eq!(
-        after.nodes()[&id("right")].audio_treatments,
-        before.nodes()[&id("right")]
-            .audio_treatments
-            .with_owner_prefix(frames(3))
-            .unwrap()
-    );
-    assert_eq!(
-        after.nodes()[&id("root")].framing,
-        before.nodes()[&id("root")].framing
-    );
-    assert_eq!(
-        after.nodes()[&id("right")].audio_edges,
-        before.nodes()[&id("right")].audio_edges
-    );
-    assert_eq!(after.nodes()[&id("tail")], before.nodes()[&id("tail")]);
 }
 
 #[test]

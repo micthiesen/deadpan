@@ -636,7 +636,10 @@ fn insufficient_conflicting_stale_and_overflow_requests_fail_atomically() {
     let slice =
         CapturedEditSlice::capture(&before, &id("root"), range(2, 7), timing("capture")).unwrap();
     let snapshot = before.clone();
-    for variant in 0..6 {
+    // Timing aliases now name no retained owner clock, so a short alias
+    // list (variant 1), a reused alias (variant 3) or an exhausted timing
+    // ordinal (variant 4) is no longer an error.
+    for variant in [0, 2, 5] {
         let mut request = paste(&before, &slice, "pasted", 1);
         let Command::SpliceSlice {
             identities, timing, ..
@@ -883,60 +886,4 @@ fn lineage_allocation_origin_pairs_rename_injectively_across_live_and_history() 
             .iter()
             .all(|value| value.allocation == revision("pasted"))
     );
-    for lineage in copies {
-        assert!(after.audio_bindings().timings().values().any(|layout| {
-            layout
-                .audio_lineage()
-                .values()
-                .any(|value| value == lineage)
-        }));
-    }
-}
-
-#[test]
-fn incompatible_historical_play_union_rejects_capture_without_expanding_plays() {
-    let old = tree(
-        &["repeat"],
-        vec![
-            (
-                "repeat",
-                BeatNode {
-                    label: "Repeat".into(),
-                    framing: None,
-                    audio_treatments: Default::default(),
-                    audio_editorial_edges: Default::default(),
-                    audio_edges: Default::default(),
-                    kind: NodeKind::Repeat {
-                        child: id("held"),
-                        iterations: IterationOrder::new(revision("old-plays"), u32::MAX).unwrap(),
-                        gap: None,
-                        escalation: None,
-                    },
-                    cutaways: Vec::new(),
-                    captions: Vec::new(),
-                },
-            ),
-            ("held", hold(1)),
-        ],
-    );
-    let bindings = capture_unbound_audio_bindings(&old, timing("old-timing")).unwrap();
-    let mut wire = serde_json::to_value(&old).unwrap();
-    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-    wire["nodes"]["repeat"]["kind"]["iterations"] =
-        serde_json::to_value(IterationOrder::new(revision("new-plays"), u32::MAX).unwrap())
-            .unwrap();
-    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let snapshot = before.clone();
-    assert_eq!(
-        CapturedEditSlice::capture(
-            &before,
-            &id("root"),
-            range(0, i64::from(u32::MAX)),
-            timing("capture")
-        )
-        .unwrap_err()
-        .code,
-        EditErrorCode::LimitExceeded
-    );
-    assert_eq!(before, snapshot);
 }

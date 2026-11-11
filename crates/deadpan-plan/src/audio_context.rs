@@ -300,6 +300,14 @@ impl RenderPlan {
             ..StorageStats::default()
         };
         let mut nodes = Vec::with_capacity(by_id.len());
+        let cuts = super::cut_edges::derive(layout);
+        let editorial = |id: &NodeId, own: deadpan_core::AudioEditorialEdges| {
+            let derived = cuts.get(id).copied().unwrap_or_default();
+            deadpan_core::AudioEditorialEdges {
+                start: own.start || derived.start,
+                end: own.end || derived.end,
+            }
+        };
         for (id, node) in layout.nodes() {
             let (kind, node_type) = match &node.kind {
                 FrozenAudioKind::Source { .. } => {
@@ -427,7 +435,7 @@ impl RenderPlan {
                 },
                 kind,
                 audio_edges: node.edges,
-                audio_editorial_edges: node.editorial_edges,
+                audio_editorial_edges: editorial(id, node.editorial_edges),
                 audio_treatments: context
                     .audio_treatments()
                     .get(id)
@@ -481,8 +489,8 @@ impl RenderPlan {
             ),
             has_audio_editorial_edges: layout
                 .nodes()
-                .values()
-                .any(|node| !node.editorial_edges.is_empty()),
+                .iter()
+                .any(|(id, node)| !editorial(id, node.editorial_edges).is_empty()),
             audio_bindings: Default::default(),
             sound_clock_layout: Some(std::sync::Arc::new(layout.clone())),
             sound_clock_correspondences: BTreeMap::new(),

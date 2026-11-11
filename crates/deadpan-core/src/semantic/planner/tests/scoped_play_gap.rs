@@ -2,10 +2,7 @@
 //! Compound isolates that gap and applies the pause edit to the copy only.
 
 use super::*;
-use crate::{
-    AudioRecipeKind, AudioTimingId, GainDb, OccurrenceEdit, PauseLength, PlayGapChange,
-    capture_unbound_audio_bindings,
-};
+use crate::{AudioTimingId, GainDb, PauseLength, PlayGapChange, capture_unbound_audio_bindings};
 
 fn tone() -> HoldAudio {
     HoldAudio::Tone {
@@ -141,76 +138,6 @@ fn check_undo(before: &ProjectDocument, plan: &SemanticPlan) {
 
 fn gap_branch(document: &ProjectDocument, repeat: &NodeId, play: &IterationId) -> NodeId {
     document.gap_overrides()[repeat].get(play).unwrap().clone()
-}
-
-#[test]
-fn nested_shared_gap_length_changes_only_this_occurrence_in_one_undo() {
-    let before = gapped();
-    let plan = plan(&before, &play_context(1, Some(0)), length(5)).unwrap();
-    let leaves = leaves(&plan, &before);
-    assert_eq!(leaves.len(), 2, "gap isolation and the pause length");
-    let Command::EditOccurrence {
-        instance,
-        edit: OccurrenceEdit::IsolateGap { iteration, id, .. },
-        ..
-    } = &leaves[0]
-    else {
-        panic!("first leaf isolates the gap: {:?}", leaves[0]);
-    };
-    assert_eq!(instance.node, node("inner"));
-    assert_eq!(instance.repeats, presentation(1, 0).repeats[..1].to_vec());
-    assert_eq!(iteration, &iteration_of("inner", 0));
-    // Exactly one gap occurrence grows from 2 to 5 frames.
-    assert_eq!(
-        plan.document.duration().unwrap().frames(),
-        before.duration().unwrap().frames() + 3
-    );
-    // Outer plays 0 and 2 keep the shared definition and its default gap.
-    assert_eq!(
-        plan.document.nodes()[&node("inner")],
-        before.nodes()[&node("inner")]
-    );
-    assert!(!plan.document.gap_overrides().contains_key(&node("inner")));
-    let mapped = plan.context.scoped.as_ref().unwrap();
-    assert_eq!(&mapped.target.node, id);
-    let NodeKind::Hold { recipe } = &plan.document.nodes()[id].kind else {
-        panic!("the play's gap is an ordinary Hold");
-    };
-    assert_eq!(recipe.duration.frames(), 5);
-    assert_eq!(recipe.audio, tone());
-    let copy = &mapped.presentation.repeats[1].node;
-    assert_ne!(copy, &node("inner"), "outer play 1 owns its copied Repeat");
-    assert_eq!(
-        &gap_branch(&plan.document, copy, &iteration_of("inner", 0)),
-        id
-    );
-    // Every previously bound owner keeps its initial clock; the new gap Hold
-    // binds the old default-gap clock rather than starting a fresh one.
-    for (owner, binding) in before.audio_bindings().bindings().iter() {
-        if let Some(after) = plan.document.audio_bindings().bindings().get(owner) {
-            assert_eq!(after.lattice, binding.lattice, "{owner}");
-        }
-    }
-    assert!(
-        before
-            .audio_bindings()
-            .bindings()
-            .contains_key(&node("tail"))
-    );
-    assert_eq!(
-        plan.document.audio_bindings().bindings()[id]
-            .lattice
-            .reference
-            .recipe,
-        AudioRecipeKind::RepeatGap
-    );
-    check_undo(&before, &plan);
-    assert!(
-        mapped
-            .target
-            .matches_instance(&plan.document, &mapped.presentation)
-            .unwrap()
-    );
 }
 
 #[test]

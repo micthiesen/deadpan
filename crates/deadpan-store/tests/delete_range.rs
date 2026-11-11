@@ -126,7 +126,6 @@ fn range_delete_previews_once_and_replays_mixed_history_after_reopen() -> Result
     store.commit(&legacy)?;
     let before = store.snapshot()?;
     assert_eq!(before.duration()?.frames(), 10);
-    assert!(before.audio_bindings().is_empty());
     let removal = range_request(&before, "range-delete")?;
     let stale = range_request(&before, "stale-delete")?;
     let cells = authored(&path)?;
@@ -145,7 +144,6 @@ fn range_delete_previews_once_and_replays_mixed_history_after_reopen() -> Result
         .map(|id| after.node_duration(id).unwrap().frames())
         .collect();
     assert_eq!(durations, vec![1, 4]);
-    assert!(!after.audio_bindings().is_empty());
     let committed = authored(&path)?;
     assert!(store.commit(&stale).is_err());
     assert_eq!(authored(&path)?, committed);

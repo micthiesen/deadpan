@@ -68,7 +68,6 @@ fn headless_range_delete_dry_run_commit_and_history_keep_the_captured_ids() -> R
     let preview = success(&["command", path, "--json", file, "--dry-run"])?;
     assert_eq!(preview["committed"], false);
     assert_eq!(preview["edit"]["duration_delta"], -2);
-    assert!(preview["edit"]["forward"]["audio_bindings"].is_object());
     assert_eq!(authored(&package)?, cells);
     let committed = success(&["command", path, "--json", file])?;
     assert_eq!(committed["committed"], true);

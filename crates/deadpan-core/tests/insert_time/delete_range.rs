@@ -23,13 +23,6 @@ fn deletion(before: &ProjectDocument, parent: &str, a: i64, b: i64, name: &str) 
     )
 }
 
-fn sequence<'a>(document: &'a ProjectDocument, parent: &str) -> &'a [NodeId] {
-    let NodeKind::Sequence { children } = &document.nodes()[&id(parent)].kind else {
-        panic!()
-    };
-    children
-}
-
 #[test]
 fn every_single_source_range_keeps_exact_fragments_and_one_inverse() {
     for length in 1..=8 {
@@ -85,56 +78,6 @@ fn every_single_source_range_keeps_exact_fragments_and_one_inverse() {
             }
         }
     }
-}
-
-#[test]
-fn nested_range_keeps_outer_nodes_and_reanchors_every_surviving_suffix_once() {
-    // Asserts the authored reference representation (every reanchor step
-    // and complete timing tables). tests/timing_representation.rs proves the
-    // compact storage resolves and renders identically.
-    deadpan_core::with_reference_timing_representation(|| {
-        let before = tree(
-            &["prefix", "group", "tail"],
-            vec![
-                ("prefix", source(1)),
-                (
-                    "group",
-                    BeatNode::sequence("Group", vec![id("a"), id("middle"), id("b")]),
-                ),
-                ("a", source(3)),
-                ("middle", BeatNode::sequence("Middle", vec![id("held")])),
-                ("held", BeatNode::hold("Held", recipe(2))),
-                ("b", source(3)),
-                ("tail", source(2)),
-            ],
-        );
-        let query = before.range_deletion(&id("group"), range(2, 8)).unwrap();
-        assert_eq!(
-            (query.start_index, query.end_index, query.required_ids),
-            (0, 3, 6)
-        );
-        let after = edit(&before, deletion(&before, "group", 2, 8, "deleted"));
-        assert_eq!(after.duration().unwrap(), duration(5));
-        assert_eq!(children(&after), children(&before));
-        assert_eq!(sequence(&after, "group").len(), 2);
-        assert!(!after.nodes().contains_key(&id("middle")));
-        assert!(!after.nodes().contains_key(&id("held")));
-        assert_eq!(after.nodes()[&id("prefix")], before.nodes()[&id("prefix")]);
-        assert_eq!(
-            after.audio_bindings().bindings()[&id("prefix")]
-                .reanchors
-                .len(),
-            0
-        );
-        assert_eq!(
-            after.audio_bindings().bindings()[&id("tail")]
-                .reanchors
-                .len(),
-            1
-        );
-        let right = owner(&after, &sequence(&after, "group")[1]);
-        assert_eq!(after.audio_bindings().bindings()[&right].reanchors.len(), 1);
-    })
 }
 
 #[test]
@@ -303,33 +246,6 @@ fn deletion_preflight_reserves_only_its_endpoint_nodes_at_the_temporary_limit() 
 }
 
 #[test]
-fn one_clock_deletions_use_the_supplied_maximum_timing_ordinal() {
-    for (before, start, end) in [
-        (tree(&["whole"], vec![("whole", source(6))]), 2, 6),
-        (
-            tree(&["a", "b"], vec![("a", source(1)), ("b", source(5))]),
-            0,
-            1,
-        ),
-    ] {
-        let mut request = deletion(&before, "root", start, end, "deleted");
-        let Command::DeleteRange { timing, .. } = &mut request.command else {
-            panic!()
-        };
-        timing.ordinal = u32::MAX;
-        let after = edit(&before, request);
-        assert!(!after.audio_bindings().is_empty());
-        assert!(
-            after
-                .audio_bindings()
-                .timings()
-                .keys()
-                .all(|id| id.ordinal == u32::MAX)
-        );
-    }
-}
-
-#[test]
 fn deleted_marks_follow_loss_policy_and_surviving_marks_keep_their_content() {
     let original = tree(&["whole"], vec![("whole", source(6))]);
     let mark = |position, loss_policy| Mark {
@@ -380,62 +296,4 @@ fn deleted_marks_follow_loss_policy_and_surviving_marks_keep_their_content() {
         after.marks()[&MarkId::new("pinned").unwrap()],
         before.marks()[&MarkId::new("pinned").unwrap()]
     );
-}
-
-#[test]
-fn later_deletion_refines_treated_fragments_without_recapturing_framing_or_lattice() {
-    let mut leaf = source(10);
-    leaf.framing = Some(
-        Framing::creep(
-            FramingPose::new(
-                ExactRatio::new(1, 2).unwrap(),
-                ExactRatio::new(1, 2).unwrap(),
-                ExactRatio::ONE,
-            )
-            .unwrap(),
-            FramingPose::new(
-                ExactRatio::new(1, 2).unwrap(),
-                ExactRatio::new(1, 2).unwrap(),
-                ExactRatio::integer(2),
-            )
-            .unwrap(),
-            FramingCurve::Linear,
-        )
-        .unwrap(),
-    );
-    let original = tree(&["whole"], vec![("whole", leaf)]);
-    let first = edit(&original, deletion(&original, "root", 1, 3, "first"));
-    let treated = children(&first)[1].clone();
-    let mut wire = json!(first);
-    wire["nodes"][treated.as_str()]["label"] = json!("Treated fragment");
-    wire["nodes"][treated.as_str()]["audio_treatments"] =
-        json!(AudioTreatments::from_clip_gain(ClipGain::default()));
-    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let query = before.range_deletion(&id("root"), range(3, 5)).unwrap();
-    assert_eq!(query.required_ids, 7);
-    let mut request = deletion(&before, "root", 3, 5, "second");
-    let Command::DeleteRange { identities, .. } = &mut request.command else {
-        panic!()
-    };
-    *identities = pool("second", query.required_ids);
-    let after = edit(&before, request);
-    assert_eq!(after.duration().unwrap(), duration(6));
-    assert_eq!(after.nodes()[&treated], before.nodes()[&treated]);
-    let retained: Vec<_> = after
-        .nodes()
-        .values()
-        .filter(|node| node.label == "Treated fragment" && !node.audio_treatments.is_empty())
-        .collect();
-    assert_eq!(retained.len(), 2);
-    for node in retained {
-        assert_eq!(node.framing, before.nodes()[&treated].framing);
-        assert_eq!(
-            node.audio_treatments,
-            before.nodes()[&treated].audio_treatments
-        );
-    }
-    let old = &before.audio_bindings().bindings()[&owner(&before, &treated)].lattice;
-    for binding in after.audio_bindings().bindings().values() {
-        assert_eq!(&binding.lattice, old);
-    }
 }

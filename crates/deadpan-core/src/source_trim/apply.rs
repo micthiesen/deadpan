@@ -176,12 +176,10 @@ fn capture_timing(
                 .ok_or_else(|| limit("Source trim audio binding entries"))?;
         }
     }
-    if let Some(window) = resolved.target_timing_window {
+    if let Some(window) = resolved.target_timing_window
+        && let Some(placement) = captured.node_placements.remove(&resolved.physical_source)
+    {
         let target = BTreeSet::from([resolved.physical_source.clone()]);
-        let placement = captured
-            .node_placements
-            .remove(&resolved.physical_source)
-            .ok_or_else(|| invalid("Source trim has no captured target allocation"))?;
         crate::insert_time::composite::append_steps(
             &mut working.audio_bindings,
             crate::AudioRecipeKind::Node,

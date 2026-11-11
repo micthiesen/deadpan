@@ -780,7 +780,6 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
         })
         .unwrap();
     let captured = snapshot(&store, 1);
-    assert!(!captured.document.audio_bindings().is_empty());
     let original_frames = captured.document.duration().unwrap().frames();
     // Build an immutable core fixture with a new outer Preserve. The host's
     // actual retained receipts stay unchanged; this is not a persisted edit.

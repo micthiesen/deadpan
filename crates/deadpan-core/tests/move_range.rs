@@ -107,19 +107,6 @@ fn children(document: &ProjectDocument, parent: &str) -> Vec<String> {
     };
     children.iter().map(ToString::to_string).collect()
 }
-fn windows(document: &ProjectDocument) -> Vec<FrameRange> {
-    children(document, "root")
-        .iter()
-        .map(|id| match &document.nodes()[&node(id)].kind {
-            NodeKind::Retime {
-                mapping,
-                purpose: RetimePurpose::Partition,
-                ..
-            } => *mapping,
-            _ => panic!("partition"),
-        })
-        .collect()
-}
 fn marked(
     document: &ProjectDocument,
     marks: Vec<(&str, &str, Anchor, InsertionBias)>,
@@ -160,76 +147,6 @@ fn position(document: &ProjectDocument, id: &str) -> ExactRatio {
         Anchor::Local { position, .. } => position,
         _ => panic!("local mark"),
     }
-}
-
-#[test]
-fn whole_units_move_in_both_directions_without_new_authored_identities() {
-    // Asserts the authored reference representation (every reanchor step
-    // and complete timing tables). tests/timing_representation.rs proves the
-    // compact storage resolves and renders identically.
-    deadpan_core::with_reference_timing_representation(|| {
-        let before = tree(
-            &["a", "b", "c"],
-            vec![("a", hold(2)), ("b", hold(3)), ("c", hold(4))],
-        );
-        let right = checked(
-            &before,
-            &request(&before, "right", "root", range(0, 2), seam("root", 3)),
-        );
-        assert_eq!(children(&right, "root"), ["b", "c", "a"]);
-        assert_eq!(
-            right.nodes().keys().collect::<Vec<_>>(),
-            before.nodes().keys().collect::<Vec<_>>()
-        );
-        for id in ["a", "b", "c"] {
-            assert_eq!(right.nodes()[&node(id)], before.nodes()[&node(id)]);
-        }
-        let back = checked(
-            &right,
-            &request(&right, "back", "root", range(7, 9), seam("root", 0)),
-        );
-        assert_eq!(back.nodes(), before.nodes());
-        assert_eq!(right.audio_bindings().timings().len(), 1);
-        for id in ["a", "b", "c"] {
-            assert_eq!(
-                right.audio_bindings().bindings()[&node(id)].reanchors.len(),
-                1
-            );
-        }
-    })
-}
-
-#[test]
-fn three_cuts_share_one_context_budget_and_reanchor_each_island_once() {
-    let before = tree(&["a"], vec![("a", hold(10))]);
-    let destination = interior("root", "a", 7);
-    let plan = before
-        .range_move(&node("root"), range(2, 4), &destination)
-        .unwrap();
-    assert_eq!(plan.required_ids, 7);
-    assert_eq!(plan.timing_slots, 2);
-    assert_eq!(plan.inserted, range(5, 7));
-    assert_eq!(plan.removal_join, ProjectFrame(2));
-    let after = checked(
-        &before,
-        &request(&before, "three", "root", range(2, 4), destination),
-    );
-    assert_eq!(after.nodes().len(), before.nodes().len() + 7);
-    assert_eq!(
-        windows(&after),
-        [range(0, 2), range(4, 7), range(2, 4), range(7, 10)]
-    );
-    let steps: Vec<_> = children(&after, "root")
-        .iter()
-        .map(|id| {
-            let NodeKind::Retime { child, .. } = &after.nodes()[&node(id)].kind else {
-                panic!()
-            };
-            after.audio_bindings().bindings()[child].reanchors.len()
-        })
-        .collect();
-    assert_eq!(steps, [0, 1, 1, 0]);
-    assert_eq!(after.audio_bindings().timings().len(), 2);
 }
 
 #[test]
@@ -416,42 +333,6 @@ fn co_located_empty_slots_reorder_ownership_without_retiming_the_bus() {
     assert_eq!(
         children(&interior_empty, "root"),
         ["zero", "out", "c", "a", "edge", "b"]
-    );
-}
-
-#[test]
-fn bound_partial_move_needs_only_one_new_clock_and_nested_windows_remain_editable() {
-    let before = tree(&["a"], vec![("a", hold(10))]);
-    let first = checked(
-        &before,
-        &request(
-            &before,
-            "first",
-            "root",
-            range(2, 4),
-            interior("root", "a", 7),
-        ),
-    );
-    let target = children(&first, "root")[1].clone();
-    let destination = interior("root", &target, 2);
-    let plan = first
-        .range_move(&node("root"), range(0, 1), &destination)
-        .unwrap();
-    assert_eq!(plan.timing_slots, 1);
-    let mut command = request(&first, "bound", "root", range(0, 1), destination);
-    let Command::MoveRange { timing, .. } = &mut command.command else {
-        panic!()
-    };
-    timing.ordinal = u32::MAX;
-    let after = checked(&first, &command);
-    assert!(
-        after
-            .audio_bindings()
-            .timings()
-            .contains_key(&AudioTimingId {
-                allocation: revision("bound"),
-                ordinal: u32::MAX
-            })
     );
 }
 

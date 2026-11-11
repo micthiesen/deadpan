@@ -348,57 +348,6 @@ fn shared_fixed_retime_duration_dormant_defaults_and_million_plays_stay_compact(
 }
 
 #[test]
-fn shared_fixed_retime_duration_named_counted_calls_keep_authority_after_clock_capture() {
-    let mut d = fixed(PitchPolicy::FollowSpeed, 0, 6);
-    let media = fixture(true);
-    d.assets = media.assets().clone();
-    d.presentation_basis = media.presentation_basis().clone();
-    let mut speech = media.nodes()[&node("before")].clone();
-    let NodeKind::Source { source } = &mut speech.kind else {
-        panic!()
-    };
-    source.duration = FrameDuration::new(6).unwrap();
-    d.nodes.insert(node("speech"), speech);
-    d.validate().unwrap();
-    let c = authority(Some(1));
-    let bank = BTreeMap::from([
-        (name('a'), macro_value(vec![call('b', 1)])),
-        (name('b'), macro_value(vec![duration(4), duration(2)])),
-    ]);
-    let mut requests = vec![];
-    let p = plan_semantic(
-        &d,
-        &c,
-        &program(vec![call('a', 2)]),
-        SemanticRegisterBank {
-            entries: &bank,
-            version: 0,
-        },
-        revision("fixed-calls"),
-        |r| {
-            requests.push(r.clone());
-            allocate(r)
-        },
-        no_original,
-    )
-    .unwrap();
-    assert_eq!(
-        requests,
-        (0..4)
-            .map(|step_index| SemanticAllocationRequest::ParameterEdit { step_index })
-            .collect::<Vec<_>>()
-    );
-    assert!(!p.document.audio_bindings().is_empty());
-    assert!(p.document.derived_clocks().is_empty());
-    assert_eq!(
-        visible(&p.document, &p.context).unwrap().frames,
-        range(10, 12)
-    );
-    assert_eq!(p.context.cursor, ProjectFrame(10));
-    check(&d, &c, &p);
-}
-
-#[test]
 fn shared_fixed_retime_duration_hidden_unsampled_and_late_disappearance_refuse_atomically() {
     let mut d = fixed(PitchPolicy::FollowSpeed, 0, 1);
     // [4,6) -> [.4,.6): one picture center; shrink to [4,5)

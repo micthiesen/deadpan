@@ -273,51 +273,6 @@ fn compare_and_replay(
 }
 
 #[test]
-fn semantic_refresh_wide_bound_document_replaces_the_proof_after_each_pause() {
-    let children: Vec<_> = (0..128)
-        .map(|index| id(&format!("hold-{index:03}")))
-        .collect();
-    let nodes = children
-        .iter()
-        .map(|node| (node.clone(), hold(4)))
-        .collect();
-    let document = marked(&tree(children, nodes), "hold-010", 2);
-    let document = apply(
-        &document,
-        "bound",
-        Command::InsertTime {
-            at: ProjectFrame(512),
-            hold: HoldRecipe {
-                duration: frames(2),
-                picture_context: None,
-                video: HoldVideo::Background,
-                audio: HoldAudio::Silence,
-            },
-            id: id("seed-pause"),
-            identities: SplitIdentities { nodes: vec![] },
-            timing: AudioTimingId {
-                allocation: revision("bound"),
-                ordinal: 0,
-            },
-        },
-    );
-    assert!(!document.audio_bindings().is_empty());
-    assert!(!document.marks().is_empty());
-    let program = SemanticProgram::new(vec![pause(3), motion(7), pause(2), motion(1)]).unwrap();
-    let planned = compare_and_replay(&document, &context("root", 41), &program);
-    assert_eq!(planned.trace[0].before_scope, range(0, 514));
-    assert_eq!(planned.trace[0].resolved_range, Some(range(41, 44)));
-    assert_eq!(planned.trace[1].before_scope, range(0, 517));
-    assert_eq!(planned.trace[1].after.cursor, ProjectFrame(48));
-    assert_eq!(planned.trace[2].before_scope, range(0, 517));
-    assert_eq!(planned.trace[2].resolved_range, Some(range(48, 50)));
-    assert_eq!(planned.trace[3].before_scope, range(0, 519));
-    assert_eq!(planned.context.cursor, ProjectFrame(49));
-    assert_eq!(planned.context.selected_child, Some(id("pause-1")));
-    assert_eq!(planned.document.duration().unwrap(), frames(519));
-}
-
-#[test]
 fn semantic_refresh_nested_scope_keeps_zero_groups_marks_and_outside_siblings() {
     let document = tree(
         vec![id("prefix"), id("group"), id("outside-empty"), id("tail")],

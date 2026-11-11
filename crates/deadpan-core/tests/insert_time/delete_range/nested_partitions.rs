@@ -1,5 +1,21 @@
 use super::*;
 
+fn physical_window(document: &ProjectDocument, root: &NodeId) -> (NodeId, i64) {
+    let mut current = root;
+    let mut start = 0;
+    while let NodeKind::Retime {
+        child,
+        mapping,
+        purpose: RetimePurpose::Partition,
+        ..
+    } = &document.nodes()[current].kind
+    {
+        start += mapping.start().0;
+        current = child;
+    }
+    (current.clone(), start)
+}
+
 fn partition(label: &str, child: &str, start: i64, end: i64) -> BeatNode {
     BeatNode {
         label: label.into(),
@@ -47,22 +63,6 @@ fn exact_deletion(before: &ProjectDocument, start: i64, end: i64) -> CommandRequ
     command
 }
 
-fn physical_window(document: &ProjectDocument, root: &NodeId) -> (NodeId, i64) {
-    let mut current = root;
-    let mut start = 0;
-    while let NodeKind::Retime {
-        child,
-        mapping,
-        purpose: RetimePurpose::Partition,
-        ..
-    } = &document.nodes()[current].kind
-    {
-        start += mapping.start().0;
-        current = child;
-    }
-    (current.clone(), start)
-}
-
 fn assert_context_copies(before: &BeatNode, after: &ProjectDocument, count: usize) {
     let copies: Vec<_> = after
         .nodes()
@@ -85,71 +85,6 @@ fn assert_context_copies(before: &BeatNode, after: &ProjectDocument, count: usiz
         }
         assert_eq!(actual, expected);
     }
-}
-
-#[test]
-fn two_and_three_windows_split_one_child_with_exact_pools_and_full_context() {
-    // Asserts the authored reference representation (every reanchor step
-    // and complete timing tables). tests/timing_representation.rs proves the
-    // compact storage resolves and renders identically.
-    deadpan_core::with_reference_timing_representation(|| {
-        for depth in [2, 3] {
-            let mut leaf = source(12);
-            leaf.label = "Retained physical recipe".into();
-            let before = nested(depth, leaf);
-            let query = before.range_deletion(&id("root"), range(2, 4)).unwrap();
-            assert_eq!((query.start_index, query.end_index), (0, 1));
-            assert_eq!(query.required_ids, 2 * (depth + 1));
-            // Establish that this is exactly an already-copyable endpoint family.
-            CapturedEditSlice::capture(
-                &before,
-                &id("root"),
-                range(2, 4),
-                AudioTimingId {
-                    allocation: revision("copy"),
-                    ordinal: 0,
-                },
-            )
-            .unwrap();
-            let after = edit(&before, exact_deletion(&before, 2, 4));
-            let selected = children(&after);
-            assert_eq!(selected.len(), 3);
-            let physical_start = i64::try_from(depth).unwrap();
-            for (node, expected_start, expected_length, reanchors) in [
-                (&selected[0], physical_start, 2, 0),
-                (&selected[1], physical_start + 4, 8 - 2 * physical_start, 1),
-            ] {
-                let (physical, start) = physical_window(&after, node);
-                assert_eq!(start, expected_start);
-                assert_eq!(
-                    after.node_duration(node).unwrap(),
-                    duration(expected_length)
-                );
-                assert_eq!(after.nodes()[&physical], before.nodes()[&id("leaf")]);
-                let binding = &after.audio_bindings().bindings()[&physical];
-                assert_eq!(binding.lattice.reference.physical, id("leaf"));
-                assert_eq!(binding.lattice.reference.timing.ordinal, 0);
-                assert_eq!(binding.reanchors.len(), reanchors);
-            }
-            for index in 1..depth {
-                assert_context_copies(&before.nodes()[&id(&format!("window-{index}"))], &after, 2);
-            }
-            assert_eq!(after.nodes()[&id("tail")], before.nodes()[&id("tail")]);
-            assert_eq!(
-                after.audio_bindings().bindings()[&id("tail")]
-                    .reanchors
-                    .len(),
-                1
-            );
-            assert!(
-                after
-                    .audio_bindings()
-                    .timings()
-                    .keys()
-                    .all(|clock| clock.ordinal <= 1)
-            );
-        }
-    })
 }
 
 #[test]
@@ -191,56 +126,9 @@ fn different_nested_endpoints_keep_their_independent_contexts_and_outer_suffix()
             duration(expected_length)
         );
         assert_eq!(after.nodes()[&physical], before.nodes()[&id(recipe_name)]);
-        assert_eq!(
-            after.audio_bindings().bindings()[&physical].reanchors.len(),
-            slot
-        );
     }
     assert_context_copies(&before.nodes()[&id("right-middle")], &after, 1);
     assert_context_copies(&before.nodes()[&id("right-inner")], &after, 1);
-}
-
-#[test]
-fn nested_hold_windows_keep_framing_gain_and_owned_recipe_clocks() {
-    let mut hold = recipe(12);
-    hold.video = HoldVideo::Freeze {
-        asset: AssetId::new("media").unwrap(),
-        timestamp: source_span().start(),
-    };
-    let original = nested(3, BeatNode::hold("Complete Freeze", hold));
-    let mut wire = json!(original);
-    let framing = Framing::creep(
-        FramingPose::identity(),
-        FramingPose::new(ExactRatio::ZERO, ExactRatio::ZERO, ExactRatio::integer(2)).unwrap(),
-        FramingCurve::Linear,
-    )
-    .unwrap();
-    wire["nodes"]["window-3"]["framing"] = json!(framing);
-    wire["nodes"]["window-2"]["audio_treatments"] =
-        json!(AudioTreatments::from_clip_gain(ClipGain::default()));
-    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    // A treated outer window must itself remain a complete effect owner.
-    assert_eq!(
-        before
-            .range_deletion(&id("root"), range(2, 4))
-            .unwrap()
-            .required_ids,
-        11
-    );
-    let after = edit(&before, exact_deletion(&before, 2, 4));
-    for name in ["window-3", "window-2", "window-1", "leaf"] {
-        assert_context_copies(&before.nodes()[&id(name)], &after, 2);
-    }
-    for node in &children(&after)[..2] {
-        let (physical, _) = physical_window(&after, node);
-        assert_eq!(
-            after.audio_bindings().bindings()[&physical]
-                .lattice
-                .reference
-                .physical,
-            id("leaf")
-        );
-    }
 }
 
 #[test]

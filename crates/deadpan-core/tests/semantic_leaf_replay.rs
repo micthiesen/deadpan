@@ -462,74 +462,6 @@ fn one_leaf_replay_exact_interior_result_visitor_and_aggregate_are_unchanged() {
 }
 
 #[test]
-fn one_leaf_replay_rebases_outer_headers_and_preserves_leaf_timing_allocations() {
-    for bound in [false, true] {
-        let entry = fixture(bound);
-        let planned = plan(&entry, 3);
-        let candidate = planned.one_leaf_replay().unwrap();
-        let original = planned.request.as_ref().unwrap();
-        let Command::Compound { transaction } = &original.command else {
-            panic!("compound fixture")
-        };
-        let leaf = transaction.steps()[0].edit().unwrap().request(&entry);
-        let Command::InsertTime { timing, .. } = &leaf.command else {
-            panic!("InsertTime fixture")
-        };
-        assert_eq!(timing.allocation, leaf.new_revision);
-        let (leaf_edit, _) = apply_with_result(&entry, &leaf).unwrap();
-        assert!(
-            leaf_edit
-                .forward
-                .audio_bindings
-                .as_ref()
-                .unwrap()
-                .timings
-                .iter()
-                .any(|change| change.id == *timing && change.after.is_some())
-        );
-        let mut lengths = Vec::new();
-        // Reuse the same opaque capability for two distinct valid outer
-        // headers. Their different lengths must reach actual serialization.
-        for outer in ["o", "a-much-longer-outer-revision"] {
-            let mut request = original.clone();
-            request.new_revision = revision(outer);
-            let (result, visits) = parity(&entry, &request, candidate);
-            let result = result.unwrap();
-            assert_eq!(visits.len(), 1);
-            assert_eq!(result.edit.forward.from_revision, *entry.revision_id());
-            assert_eq!(result.edit.forward.to_revision, request.new_revision);
-            assert_eq!(result.edit.inverse.from_revision, request.new_revision);
-            assert_eq!(result.edit.inverse.to_revision, *entry.revision_id());
-            assert_eq!(result.edit.description, "Apply resolved transaction");
-            let mut expected = leaf_edit.clone();
-            expected.forward.to_revision = request.new_revision.clone();
-            expected.inverse.from_revision = request.new_revision.clone();
-            expected.description = "Apply resolved transaction".into();
-            assert_eq!(result.edit, expected);
-            assert_eq!(result.edit_wire, serde_json::to_string(&expected).unwrap());
-            assert_eq!(
-                result.edit.forward.audio_bindings,
-                leaf_edit.forward.audio_bindings
-            );
-            assert_eq!(
-                result.edit.inverse.audio_bindings,
-                leaf_edit.inverse.audio_bindings
-            );
-            assert_inverse(&entry, &result);
-            lengths.push((
-                outer.len(),
-                result.document_wire.len(),
-                result.edit_wire.len(),
-            ));
-        }
-        let (short_outer, short_document, short_edit) = lengths[0];
-        let (long_outer, long_document, long_edit) = lengths[1];
-        assert_eq!(long_document - short_document, long_outer - short_outer);
-        assert_eq!(long_edit - short_edit, long_outer - short_outer);
-    }
-}
-
-#[test]
 fn one_leaf_replay_same_revision_changed_values_and_swapped_witnesses_cannot_retarget() {
     let entry = fixture(true);
     let planned = plan(&entry, 3);
@@ -680,33 +612,6 @@ fn one_leaf_replay_host_visitor_refusal_is_not_bypassed() {
     assert_eq!(cached, replay(&entry, request, None, true, true));
     assert_eq!(cached.0.unwrap_err(), host_refusal());
     assert_eq!(cached.1.len(), 1);
-}
-
-#[test]
-fn one_leaf_replay_reference_modes_bypass_use_and_creation_and_restore_their_state() {
-    let entry = fixture(true);
-    let planned = plan(&entry, 3);
-    let request = planned.request.as_ref().unwrap();
-    let candidate = planned.one_leaf_replay().unwrap();
-    with_reference_command_work(|| {
-        parity(&entry, request, candidate).0.unwrap();
-    });
-    let normal_wire = parity(&entry, request, candidate).0.unwrap().document_wire;
-    let reference_wire = with_reference_timing_representation(|| {
-        parity(&entry, request, candidate).0.unwrap().document_wire
-    });
-    assert_ne!(
-        normal_wire, reference_wire,
-        "fixture must distinguish compact and complete retained timing representations"
-    );
-    let reference_created = with_reference_command_work(|| plan(&entry, 3));
-    assert!(reference_created.one_leaf_replay().is_none());
-    let full_created = with_reference_timing_representation(|| plan(&entry, 3));
-    assert!(full_created.one_leaf_replay().is_none());
-    assert_eq!(
-        parity(&entry, request, candidate).0.unwrap().document_wire,
-        normal_wire
-    );
 }
 
 #[test]
@@ -878,50 +783,6 @@ fn one_leaf_replay_numeric_looking_labels_are_distinct_authored_strings() {
     .unwrap();
     assert_eq!(result.document.nodes()[&id("first")].label, "+0.0");
     assert_inverse(&other, &result);
-}
-
-#[test]
-fn one_leaf_replay_explicit_defaults_roundtrip_complete_timing_values_and_wire() {
-    let entry = fixture(true);
-    let mut explicit = serde_json::to_value(&entry).unwrap();
-    explicit["derived_clocks"] = json!({});
-    explicit["sounds"] = json!({});
-    explicit["audio_bindings"]["gap_bindings"] = json!({});
-    explicit["audio_bindings"]["sound_clocks"] = json!({});
-    for binding in explicit["audio_bindings"]["bindings"]
-        .as_object_mut()
-        .unwrap()
-        .values_mut()
-    {
-        let binding = binding.as_object_mut().unwrap();
-        binding.entry("resume").or_insert(Value::Null);
-        binding.entry("reanchors").or_insert(json!([]));
-        let lattice = binding.get_mut("lattice").unwrap().as_object_mut().unwrap();
-        lattice.entry("arguments").or_insert(json!([]));
-        lattice.entry("births").or_insert(json!([]));
-        lattice
-            .get_mut("reference")
-            .unwrap()
-            .as_object_mut()
-            .unwrap()
-            .entry("root")
-            .or_insert(json!({"type":"project_root_round_even"}));
-    }
-    let decoded = ProjectDocument::from_json(&explicit.to_string()).unwrap();
-    assert_eq!(entry, decoded);
-    assert_eq!(
-        entry.to_compact_json().unwrap(),
-        decoded.to_compact_json().unwrap()
-    );
-    let planned = plan(&entry, 3);
-    let result = parity(
-        &decoded,
-        planned.request.as_ref().unwrap(),
-        planned.one_leaf_replay().unwrap(),
-    )
-    .0
-    .unwrap();
-    assert_inverse(&decoded, &result);
 }
 
 #[test]

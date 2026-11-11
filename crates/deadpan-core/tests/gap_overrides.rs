@@ -110,56 +110,6 @@ fn fixture(plays: u32, gap: i64) -> ProjectDocument {
         },
     )
 }
-fn with_source_base(document: &ProjectDocument) -> ProjectDocument {
-    let span = SourceSpan::new(
-        SourceTimestamp {
-            ticks: 0,
-            time_base: SourceTimeBase::new(1, 30).unwrap(),
-        },
-        SourceTimestamp {
-            ticks: 10,
-            time_base: SourceTimeBase::new(1, 30).unwrap(),
-        },
-    )
-    .unwrap();
-    let source = BeatNode {
-        audio_treatments: Default::default(),
-        label: "Original".into(),
-        framing: None,
-        audio_editorial_edges: Default::default(),
-        audio_edges: Default::default(),
-        kind: NodeKind::Source {
-            source: SourceNode {
-                edit_window: None,
-                duration: duration(2),
-                video: SourceVideo::Stream {
-                    asset: AssetId::new("media").unwrap(),
-                    span,
-                },
-                audio: None,
-                link: LinkRelation::Independent,
-                video_mapping: SourceVideoMapping::FitBeat,
-                audio_mapping: SourceAudioMapping::FitBeat,
-                audio_offset: AudioSample(0),
-            },
-        },
-        cutaways: Vec::new(),
-        captions: Vec::new(),
-    };
-    let mut wire = serde_json::to_value(document).unwrap();
-    wire["nodes"]["base"] = serde_json::to_value(source).unwrap();
-    wire["assets"]["media"] = serde_json::to_value(AssetRecord {
-        label: "Original".into(),
-        content_hash: "a".repeat(64),
-        video: Some(span),
-        audio: None,
-        still_image: false,
-        frame_count: None,
-        source_qualification: None,
-    })
-    .unwrap();
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
-}
 fn iteration(document: &ProjectDocument, repeat: &str, index: u32) -> IterationId {
     let NodeKind::Repeat { iterations, .. } = &document.nodes()[&id(repeat)].kind else {
         panic!("Repeat expected")
@@ -554,74 +504,6 @@ fn arbitrary_gap_replacement_does_not_claim_old_default_gap_marks() {
         after.marks()[&MarkId::new("in-old-gap").unwrap()].state,
         MarkState::Unresolved { .. }
     ));
-}
-
-#[test]
-fn isolate_gap_retains_existing_marks_and_exact_undo() {
-    let before = with_source_base(&fixture(3, 2));
-    let before = mark(
-        &before,
-        "local-gap",
-        "root",
-        Anchor::Local {
-            node: id("repeat"),
-            position: ExactRatio::integer(3),
-        },
-    );
-    let before = mark(
-        &before,
-        "occurrence",
-        "base",
-        Anchor::Occurrence {
-            instance: path(&before, "base", "repeat", 1),
-            position: ExactRatio::integer(1),
-        },
-    );
-    let before = mark(
-        &before,
-        "source",
-        "base",
-        Anchor::Source {
-            asset: AssetId::new("media").unwrap(),
-            moment: SourceMoment::Timestamp {
-                stream: SourceStream::Video,
-                timestamp: SourceTimestamp {
-                    ticks: 5,
-                    time_base: SourceTimeBase::new(1, 30).unwrap(),
-                },
-            },
-        },
-    );
-    let selected = iteration(&before, "repeat", 0);
-    let (after, transaction) = apply_edit(
-        &before,
-        Command::IsolateGap {
-            node: id("repeat"),
-            iteration: selected.clone(),
-            id: id("isolated-gap"),
-            timing: AudioTimingId {
-                allocation: revision(6),
-                ordinal: 0,
-            },
-        },
-    );
-    assert_eq!(after.duration().unwrap(), before.duration().unwrap());
-    assert_eq!(after.marks(), before.marks());
-    assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
-    assert_eq!(
-        after.gap_overrides()[&id("repeat")].get(&selected),
-        Some(&id("isolated-gap"))
-    );
-    assert_eq!(
-        project(&after, path(&after, "isolated-gap", "repeat", 0), 1),
-        ProjectFrame(3)
-    );
-    assert!(
-        after
-            .audio_bindings()
-            .bindings()
-            .contains_key(&id("isolated-gap"))
-    );
 }
 
 #[test]

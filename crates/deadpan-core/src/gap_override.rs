@@ -71,10 +71,10 @@ pub(crate) fn capture_gap_clock(
         return Ok(());
     }
     let mut captured = crate::capture_unbound_audio_bindings(result, timing.clone())?;
-    let binding = captured
-        .gap_bindings
-        .remove(repeat)
-        .ok_or_else(|| invalid("could not capture the Repeat's gap clock"))?;
+    // Gap placement is derived from the tree; nothing is captured.
+    let Some(binding) = captured.gap_bindings.remove(repeat) else {
+        return Ok(());
+    };
     let layout = captured
         .timings
         .remove(timing)
@@ -98,25 +98,26 @@ pub(crate) fn materialize(
     recipe: &crate::HoldRecipe,
     edges: &AudioEdgePolicies,
 ) -> Result<(), EditError> {
-    let mut binding = result
-        .audio_bindings
-        .gap_bindings
-        .get(repeat)
-        .cloned()
-        .ok_or_else(|| invalid("gap isolation requires a captured gap clock"))?;
-    close(&mut binding.lattice, &result.audio_bindings.timings, after)?;
-    if let Some(resume) = &mut binding.resume {
-        for term in &mut resume.phase.terms {
-            close(&mut term.placement, &result.audio_bindings.timings, after)?;
+    // A retained gap clock moves onto the new Hold; a derived one needs none.
+    let binding = match result.audio_bindings.gap_bindings.get(repeat).cloned() {
+        Some(mut binding) => {
+            close(&mut binding.lattice, &result.audio_bindings.timings, after)?;
+            if let Some(resume) = &mut binding.resume {
+                for term in &mut resume.phase.terms {
+                    close(&mut term.placement, &result.audio_bindings.timings, after)?;
+                }
+            }
+            for step in &mut binding.reanchors {
+                if close(&mut step.placement, &result.audio_bindings.timings, after)? {
+                    // A born gap had discarded its old enclosing cut. Closing the
+                    // dispatch into a canonical gap clock must retain that decision.
+                    step.window = None;
+                }
+            }
+            Some(binding)
         }
-    }
-    for step in &mut binding.reanchors {
-        if close(&mut step.placement, &result.audio_bindings.timings, after)? {
-            // A born gap had discarded its old enclosing cut. Closing the
-            // dispatch into a canonical gap clock must retain that decision.
-            step.window = None;
-        }
-    }
+        None => None,
+    };
     let mut hold = BeatNode::hold("Gap", recipe.clone());
     hold.audio_edges = AudioEdgePolicies {
         node_start: edges.repeat_gap_start,
@@ -129,7 +130,9 @@ pub(crate) fn materialize(
         .entry(repeat.clone())
         .or_default()
         .insert(after.clone(), id.clone());
-    result.audio_bindings.bindings.insert(id.clone(), binding);
+    if let Some(binding) = binding {
+        result.audio_bindings.bindings.insert(id.clone(), binding);
+    }
     Ok(())
 }
 

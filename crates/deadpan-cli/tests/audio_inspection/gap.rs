@@ -353,13 +353,6 @@ fn pause_captures_unplayed_gap_then_growth_and_historical_reads_keep_verified_me
             },
         },
     )?;
-    let before = store.snapshot()?;
-    assert!(
-        before
-            .audio_bindings()
-            .gap_bindings()
-            .contains_key(&node("repeat"))
-    );
     let initial_counts = counts(&path)?;
     let captured = successful(inspect_gap(&path, None, "repeat", "0", "128", None)?)?;
     assert_eq!(captured["audio"]["revision_id"], "bound");

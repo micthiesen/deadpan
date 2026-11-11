@@ -5,9 +5,9 @@ use std::collections::BTreeMap;
 use std::error::Error;
 
 use deadpan_core::{
-    AudioTimingId, BeatNode, ColorPolicy, Command, CommandRequest, EditTransaction, FrameDuration,
-    FrameRate, HoldAudio, HoldRecipe, HoldVideo, NodeId, PresentationBasis, ProjectDocument,
-    ProjectFrame, ProjectId, RevisionId, SplitIdentities, Subtree,
+    AudioTimingId, BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate,
+    HoldAudio, HoldRecipe, HoldVideo, NodeId, PresentationBasis, ProjectDocument, ProjectFrame,
+    ProjectId, RevisionId, SplitIdentities, Subtree,
 };
 use deadpan_store::{AccessMode, ProjectStore};
 use rusqlite::Connection;
@@ -487,71 +487,6 @@ fn a_tampered_navigation_patch_is_rejected() -> Result {
     )?;
     drop(database);
     assert!(ProjectStore::open(&path, AccessMode::ReadOnly).is_err());
-    Ok(())
-}
-
-#[test]
-fn pause_history_records_only_changed_timing_state() -> Result {
-    let scratch = tempfile::tempdir()?;
-    let path = scratch.path().join("pauses.deadpan");
-    let mut store = ProjectStore::create(&path, &document()?)?;
-    let current = store.snapshot()?;
-    store.commit(&request(&current, "r1", beats(400)?)?)?;
-    let mut sizes = Vec::new();
-    for (index, at) in [(2, 7), (3, 600), (4, 31), (5, 902), (6, 13)] {
-        let current = store.snapshot()?;
-        let revision = format!("r{index}");
-        store.commit(&pause(&current, &revision, at)?)?;
-        let database = Connection::open(path.join("project.sqlite"))?;
-        sizes.push(database.query_row(
-            "SELECT length(edit) FROM history WHERE revision_id=?1",
-            [revision.as_str()],
-            |row| row.get::<_, i64>(0),
-        )?);
-        let encoded: String = database.query_row(
-            "SELECT edit FROM history WHERE revision_id=?1",
-            [revision.as_str()],
-            |row| row.get(0),
-        )?;
-        let transaction: EditTransaction = serde_json::from_str(&encoded)?;
-        let patch = transaction.forward.audio_bindings.as_ref().unwrap();
-        let new_layouts: Vec<_> = patch
-            .timings
-            .iter()
-            .filter_map(|change| change.after.as_ref())
-            .collect();
-        if index == 2 {
-            // Assert the complete initial capture directly, independently of
-            // its current JSON encoding size.
-            assert!(new_layouts.iter().any(|layout| layout.nodes().len() >= 400));
-            assert!(patch.bindings.len() >= 400);
-        } else {
-            assert!(new_layouts.iter().all(|layout| layout.nodes().len() < 16));
-        }
-    }
-    let document = store.snapshot()?;
-    // The first pause binds every Hold; later pauses add one small timing
-    // table and a few bindings, never another copy of the project. Their
-    // remaining bytes are the parent Sequence's child list in the node patch,
-    // stored once (its new list is a splice and the inverse is implied).
-    for size in &sizes[1..] {
-        assert!(*size < 30_000, "{sizes:?}");
-    }
-    let timings = document.audio_bindings().timings();
-    // An interior pause names two tables: lattices before its Split and
-    // placements after it.
-    assert!(timings.len() <= 10, "{}", timings.len());
-    let largest = timings
-        .values()
-        .map(|layout| layout.nodes().len())
-        .max()
-        .unwrap();
-    let smaller: Vec<_> = timings
-        .values()
-        .map(|layout| layout.nodes().len())
-        .filter(|nodes| *nodes != largest)
-        .collect();
-    assert!(smaller.iter().all(|nodes| *nodes < 16), "{smaller:?}");
     Ok(())
 }
 

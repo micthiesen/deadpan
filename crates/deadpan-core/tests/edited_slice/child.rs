@@ -246,49 +246,6 @@ fn owned_empty_metadata_and_marks_survive_with_fresh_identities() {
 }
 
 #[test]
-fn zero_paste_preserves_existing_bound_clocks_root_bus_routes_allowances_and_marks() {
-    let initial = marked(
-        &tree(
-            &["empty", "lead", "middle", "tail"],
-            vec![
-                ("empty", BeatNode::sequence("Empty", Vec::new())),
-                ("lead", hold(2)),
-                ("middle", hold(4)),
-                ("tail", hold(4)),
-            ],
-        ),
-        vec![("root-mark", mark("root", 8, InsertionBias::Right))],
-    );
-    let sounded = super::placement::with_sound(&initial);
-    let positive = CapturedEditSlice::capture(
-        &sounded,
-        &id("root"),
-        range(0, 2),
-        timing("positive-capture"),
-    )
-    .unwrap();
-    let before = edit(&sounded, &paste(&sounded, &positive, "positive", 2));
-    assert!(!before.audio_bindings().is_empty());
-    assert!(!before.sound_routes().is_empty());
-    assert!(!before.sound_allowances().is_empty());
-    let slice = child(&before, "root", "empty");
-    assert_eq!(slice.identity_requirements().unwrap().timings, 0);
-    for slot in [0, 2, children(&before, "root").len()] {
-        let after = edit(
-            &before,
-            &paste(&before, &slice, &format!("zero-{slot}"), slot),
-        );
-        assert_eq!(after.audio_bindings(), before.audio_bindings());
-        assert_eq!(after.audio_lineage(), before.audio_lineage());
-        assert_eq!(after.marks(), before.marks());
-        assert_eq!(after.sounds(), before.sounds());
-        assert_eq!(after.sound_routes(), before.sound_routes());
-        assert_eq!(after.sound_allowances(), before.sound_allowances());
-        assert_eq!(after.duration().unwrap(), before.duration().unwrap());
-    }
-}
-
-#[test]
 fn child_scope_and_historical_payload_are_explicit_and_closed() {
     let before = empty_tree();
     let slice = child(&before, "root", "a");

@@ -57,7 +57,6 @@ fn selected_audio_preserves_captured_views_current_history_and_pending_redo() ->
     assert_eq!(source.audio_mapping, selected());
     assert_eq!(source.audio_offset, AudioSample(-31));
     assert_eq!(baseline.duration()?, after.duration()?);
-    assert_eq!(baseline.audio_bindings(), after.audio_bindings());
     assert!(after.nodes().values().any(
         |node| matches!(&node.kind,NodeKind::Hold{recipe} if recipe.picture_context.is_some())
     ));

@@ -1,6 +1,5 @@
 //! Literal range command shapes survive the deliberate development-format break.
 use super::*;
-use deadpan_core::AudioEdgePolicies;
 use deadpan_store::StoreError;
 use serde_json::Value;
 
@@ -32,60 +31,6 @@ fn current_test_document(old_json: &str) -> Result<ProjectDocument> {
 
 // Adapt only the expected current writer value. The literal historical
 // capture and database rows remain unchanged and still decode directly.
-fn compact_expected_audio_defaults(capture: &mut Value) {
-    let automatic = serde_json::to_value(AudioEdgePolicies::default()).unwrap();
-    for timing in capture["audio_bindings"]["timings"].as_array_mut().unwrap() {
-        for node in timing["layout"]["nodes"]
-            .as_object_mut()
-            .unwrap()
-            .values_mut()
-        {
-            let removed = node.as_object_mut().unwrap().remove("edges");
-            assert_eq!(removed.as_ref(), Some(&automatic));
-        }
-    }
-    // This immutable schema-34 fixture predates compact binding defaults.
-    // Project only exact default values in its closed audio-binding graph;
-    // retain every nondefault path, clock and rational unchanged.
-    let defaults = [
-        (
-            "root",
-            serde_json::json!({"type":"project_root_round_even"}),
-        ),
-        ("arguments", serde_json::json!([])),
-        ("births", serde_json::json!([])),
-        ("resume", Value::Null),
-        (
-            "local_boundary",
-            serde_json::json!({"numerator":"0","denominator":"1"}),
-        ),
-        (
-            "constant",
-            serde_json::json!({"numerator":"0","denominator":"1"}),
-        ),
-    ];
-    fn project(value: &mut Value, defaults: &[(&str, Value)]) {
-        match value {
-            Value::Object(fields) => {
-                for child in fields.values_mut() {
-                    project(child, defaults);
-                }
-                for (key, default) in defaults {
-                    if fields.get(*key) == Some(default) {
-                        fields.remove(*key);
-                    }
-                }
-            }
-            Value::Array(values) => {
-                for child in values {
-                    project(child, defaults);
-                }
-            }
-            _ => {}
-        }
-    }
-    project(&mut capture["audio_bindings"], &defaults);
-}
 
 // Restore literal old rows into a fresh package shell. No request is applied to
 // generate expected history; the old writer's JSON strings enter SQLite intact.
@@ -120,101 +65,6 @@ fn restore_rows(path: &Path, original: &ProjectDocument, tables: &Value) -> Resu
     transaction.pragma_update(None, "user_version", 43)?;
     transaction.commit()?;
     Ok(())
-}
-
-#[test]
-fn literal_range_command_shapes_match_on_test_only_current_header_documents() -> Result {
-    // Asserts the authored reference representation (every reanchor step
-    // and complete timing tables). tests/timing_representation.rs proves the
-    // compact storage resolves and renders identically.
-    deadpan_core::with_reference_timing_representation(|| {
-        let literal = literal()?;
-        let original = current_test_document(text(&literal, "original"))?;
-        let slice = CapturedEditSlice::from_json(text(&literal, "capture"))?;
-        assert_eq!(
-            slice.selection(),
-            &SliceCaptureSelection::Range {
-                range: slice.range()
-            }
-        );
-        // Current slices explicitly serialize the new empty attachment map. Keep
-        // the historical literal intact and adapt only this expected test value.
-        let mut expected_capture: Value = serde_json::from_str(text(&literal, "capture"))?;
-        assert!(expected_capture.get("beat_sounds").is_none());
-        expected_capture["beat_sounds"] = serde_json::json!({});
-        compact_expected_audio_defaults(&mut expected_capture);
-        assert_eq!(
-            serde_json::from_str::<Value>(&slice.to_json()?)?,
-            expected_capture
-        );
-        assert_eq!(capture(&original)?, slice);
-        assert_eq!(
-            serde_json::from_str::<Value>(&capture(&original)?.to_json()?)?,
-            expected_capture
-        );
-        assert!(serde_json::to_value(&slice)?.get("selection").is_none());
-        let removal: CommandRequest = serde_json::from_str(text(&literal, "removal_request"))?;
-        let removal_edit: EditTransaction =
-            serde_json::from_str(text(&literal, "removal_transaction"))?;
-        assert_eq!(apply(&original, &removal)?, removal_edit);
-        assert_eq!(
-            serde_json::to_string(&removal)?,
-            text(&literal, "removal_request")
-        );
-        // The current writer stores the compact transaction form (no inverse
-        // when it is the forward patch's reverse); the literal complete row
-        // still decodes to the same transaction, and so does the compact one.
-        assert_eq!(
-            serde_json::from_str::<EditTransaction>(&serde_json::to_string(&removal_edit)?)?,
-            removal_edit
-        );
-        assert_eq!(literal["cases"].as_array().unwrap().len(), 3);
-        for case in literal["cases"].as_array().unwrap() {
-            let before = current_test_document(text(case, "before"))?;
-            let after = current_test_document(text(case, "after"))?;
-            let command: CommandRequest = serde_json::from_str(text(case, "request"))?;
-            let expected: EditTransaction = serde_json::from_str(text(case, "transaction"))?;
-            assert_eq!(removal_edit.forward.apply(&original)?, before);
-            let embedded = match &command.command {
-                Command::SpliceSlice { slice, .. } => {
-                    assert_eq!(case["kind"], "seam");
-                    slice
-                }
-                Command::SpliceSliceAt { slice, .. } => {
-                    assert_eq!(case["kind"], "interior");
-                    slice
-                }
-                Command::ReplaceSlice { slice, .. } => {
-                    assert_eq!(case["kind"], "replacement");
-                    slice
-                }
-                _ => panic!("literal must cover each placement envelope"),
-            };
-            assert_eq!(embedded, &slice);
-            let mut expected_request: Value = serde_json::from_str(text(case, "request"))?;
-            assert!(
-                expected_request["command"]["slice"]
-                    .get("beat_sounds")
-                    .is_none()
-            );
-            expected_request["command"]["slice"]["beat_sounds"] = serde_json::json!({});
-            compact_expected_audio_defaults(&mut expected_request["command"]["slice"]);
-            assert_eq!(serde_json::to_value(&command)?, expected_request);
-            let actual = apply(&before, &command)?;
-            assert_eq!(
-                actual, expected,
-                "complete transaction for {}",
-                case["kind"]
-            );
-            assert_eq!(
-                serde_json::from_str::<EditTransaction>(&serde_json::to_string(&actual)?)?,
-                expected
-            );
-            assert_eq!(actual.forward.apply(&before)?, after);
-            assert_eq!(actual.inverse.apply(&after)?, before);
-        }
-        Ok(())
-    })
 }
 
 #[test]

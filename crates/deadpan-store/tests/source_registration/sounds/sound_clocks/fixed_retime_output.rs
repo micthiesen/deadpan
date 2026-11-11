@@ -246,13 +246,6 @@ fn fixed_retime_output_sound_hold_duration_preview_commit_inverse_history_and_re
             assert!(journals.is_empty());
         }
         let bank = store.registers()?;
-        let old = deadpan_core::capture_unbound_audio_bindings(
-            &baseline,
-            AudioTimingId {
-                allocation: revision("old-lattice"),
-                ordinal: 0,
-            },
-        )?;
         let mut snapshots = vec![baseline.clone()];
         for (name, length) in [("grow-input", 3), ("shrink-input", 1)] {
             let before = store.snapshot()?;
@@ -291,20 +284,6 @@ fn fixed_retime_output_sound_hold_duration_preview_commit_inverse_history_and_re
                 node: node("after"),
                 repeats: vec![],
             };
-            let source = after
-                .audio_bindings()
-                .resolve(&node("after"), &occurrence, 100_000)?;
-            let original = old.resolve(&node("after"), &occurrence, 100_000)?;
-            assert_eq!(source.lattice, original.lattice);
-            assert_eq!(
-                source.lattice.clock,
-                deadpan_core::AudioClockRoot::PreserveInputPointCeil {
-                    stage: node("processing")
-                }
-            );
-            assert_eq!(source.lattice.grid_origin, ExactRatio::ONE);
-            assert_eq!(source.lattice.origin, ExactRatio::integer(5));
-            assert_eq!(source.lattice.sample_boundary(ExactRatio::ZERO)?, 6407);
             let live = deadpan_core::FrozenAudioLayout::capture(&after)?.project_scoped(
                 &node("body"),
                 &occurrence,
@@ -313,16 +292,6 @@ fn fixed_retime_output_sound_hold_duration_preview_commit_inverse_history_and_re
                 100_000,
             )?;
             assert_eq!(live.origin, ExactRatio::integer(3 + length));
-            assert_ne!(live.origin, source.lattice.origin);
-            // An unsplit entry at local0 can compact its inert reanchor away.
-            // Require the resolved entry/phase, not a redundant stored step.
-            let entry = |binding: &deadpan_core::ResolvedAudioBinding| {
-                binding.resume.as_ref().map_or(
-                    (binding.lattice.local_support.start, ExactRatio::ZERO),
-                    |resume| (resume.local_boundary, resume.reference_local_delta),
-                )
-            };
-            assert_eq!(entry(&source), entry(&original));
             snapshots.push(after);
         }
         store.validate_full()?;

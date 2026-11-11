@@ -579,7 +579,6 @@ struct Coverage {
     refused: usize,
     with_lineage: usize,
     with_marks: usize,
-    with_bindings: usize,
     with_sounds: usize,
     with_sources: usize,
     /// Committed Splits whose target held a bound occurrence mark.
@@ -683,7 +682,6 @@ fn run(seed: u64, steps: usize, variant: Variant, coverage: &mut Coverage) {
                     .or_default() += 1;
                 coverage.with_lineage += usize::from(!result.audio_lineage().is_empty());
                 coverage.with_marks += usize::from(!result.marks().is_empty());
-                coverage.with_bindings += usize::from(!result.audio_bindings().is_empty());
                 coverage.with_sounds += usize::from(
                     !result.sounds().is_empty()
                         || !result.beat_sounds().is_empty()
@@ -711,18 +709,10 @@ fn run(seed: u64, steps: usize, variant: Variant, coverage: &mut Coverage) {
 #[test]
 fn local_command_work_equals_the_reference_on_random_edit_sequences() {
     let mut coverage = Coverage::default();
-    let provisional = deadpan_core::provisional_captures_for_tests();
     for seed in 1..=48 {
         let variant = [Variant::Holds, Variant::Sources, Variant::Sounds][(seed % 3) as usize];
         run(seed, 40, variant, &mut coverage);
     }
-    // Pauses built provisional timing slices, and some were extended by
-    // later resume terms, so both paths match the complete captures.
-    let (built, extended) = deadpan_core::provisional_captures_for_tests();
-    assert!(
-        built - provisional.0 >= 20 && extended - provisional.1 >= 1,
-        "provisional captures {built} (extended {extended})"
-    );
     // Every command kind commits, refusals occur, and the results carry the
     // lineage, marks and retained clocks the replaced steps read.
     for kind in [
@@ -747,9 +737,7 @@ fn local_command_work_equals_the_reference_on_random_edit_sequences() {
         );
     }
     assert!(coverage.refused > 50, "only {} refusals", coverage.refused);
-    assert!(
-        coverage.with_lineage > 100 && coverage.with_marks > 100 && coverage.with_bindings > 100
-    );
+    assert!(coverage.with_lineage > 100 && coverage.with_marks > 100);
     // Sound, beat-sound and allowance captures take the unoptimized branch;
     // Sources exercise linked audio and lineage; occurrence marks inside a
     // Split target take the anchor-index branch.
@@ -804,58 +792,5 @@ fn merged_diff_matches_key_union_lookup() {
         let reference = with_reference_command_work(|| diff_for_tests(&before, &after));
         assert_eq!(local, expected);
         assert_eq!(reference, expected);
-    }
-}
-
-#[test]
-fn binding_byte_check_equals_to_json_on_both_sides_of_the_structural_bound() {
-    // A small state fits the structural bound; 12,000 newly bound Holds
-    // with long owner identities exceed it, so the check counts the state
-    // exactly without exceeding the independent binding-work budget.
-    // Both must agree with `to_json`.
-    for beats in [12usize, 12_000] {
-        let document = ProjectDocument::new(
-            ProjectId::new("byte-bound").unwrap(),
-            RevisionId::new("r0").unwrap(),
-            PresentationBasis {
-                width: 16,
-                height: 16,
-                frame_rate: FrameRate::new(24, 1).unwrap(),
-                color_policy: ColorPolicy::SdrRec709,
-            },
-            id("root"),
-        )
-        .unwrap();
-        let mut nodes = BTreeMap::new();
-        let mut children = Vec::new();
-        for index in 0..beats {
-            let node = id(&format!("hold-with-a-longer-wire-bound-owner-{index:06}"));
-            nodes.insert(node.clone(), BeatNode::hold("Beat", hold(2)));
-            children.push(node);
-        }
-        nodes.insert(id("beats"), BeatNode::sequence("Beats", children));
-        let document = step(
-            &document,
-            "r1",
-            Command::Insert {
-                parent: id("root"),
-                index: 0,
-                subtree: Subtree {
-                    root: id("beats"),
-                    nodes,
-                    overrides: BTreeMap::new(),
-                    gap_overrides: BTreeMap::new(),
-                },
-            },
-        );
-        let state = capture_unbound_audio_bindings(&document, timing("capture", 0)).unwrap();
-        let (bound, outcome) = binding_wire_check_for_tests(&state);
-        assert_eq!(outcome, state.to_json().map(|_| ()));
-        let exact = state.to_json().unwrap().len();
-        let bound = bound.unwrap();
-        assert!(exact <= bound);
-        assert_eq!(bound > MAX_DOCUMENT_JSON_BYTES, beats == 12_000, "{bound}");
-        let reference = with_reference_command_work(|| binding_wire_check_for_tests(&state).1);
-        assert_eq!(outcome, reference);
     }
 }

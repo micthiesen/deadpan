@@ -1831,6 +1831,10 @@ fn apply_with_durations_captured(
         &document.audio_bindings,
         &mut result.audio_bindings,
     )?;
+    // Original audio placement is derived from the current tree, so a saved
+    // revision keeps only the independent sound clocks and the timing tables
+    // they name; owner bindings from an older revision are dropped.
+    result.audio_bindings = result.audio_bindings.sound_clocks_only();
     let basis = result.basis_state.clone();
     result.lock_timed_basis(document)?;
     result.revision_id = request.new_revision.clone();

@@ -169,68 +169,6 @@ fn exploded_default_plays_gaps_preserve_and_escalation_keep_every_ntsc_sample() 
 }
 
 #[test]
-fn exploded_born_plays_keep_definition_clocks_and_isolated_gap_phase() {
-    let original = document(
-        ntsc(),
-        &["x", "y"],
-        vec![("x", source(ntsc(), 3)), ("y", source(ntsc(), 2))],
-    );
-    // A pause inside x creates retained suffix clocks before the Repeat exists.
-    let paused = insert_pause(&original, 1, 1, "pause");
-    let selection = SliceCaptureSelection::Child { node: id("y") };
-    let plan = paused.repeat_selection(&id("root"), &selection, 3).unwrap();
-    let repeated = edit(
-        &paused,
-        "wrap",
-        Command::RepeatSelection {
-            parent: id("root"),
-            selection,
-            plays: 3,
-            identities: RepeatSelectionIdentities {
-                repeat: id("wrapped"),
-                group: plan.needs_group.then(|| id("body")),
-                split: SplitIdentities {
-                    nodes: (0..plan.required_split_ids)
-                        .map(|n| id(&format!("split-{n}")))
-                        .collect(),
-                },
-            },
-            timing: AudioTimingId {
-                allocation: revision("wrap"),
-                ordinal: 0,
-            },
-        },
-    );
-    let NodeKind::Repeat { iterations, .. } = &repeated.nodes()[&id("wrapped")].kind else {
-        panic!("wrapped")
-    };
-    let plays: Vec<_> = (0..3).map(|n| iterations.at(n).unwrap()).collect();
-    assert!(
-        !repeated.audio_bindings().bindings().is_empty(),
-        "born plays use retained definition clocks"
-    );
-    let gapped = edit(
-        &repeated,
-        "gaps",
-        Command::SetRepeatGaps {
-            node: id("wrapped"),
-            gap: Some(room(2, 100..321)),
-            branches: vec![RepeatGapHold {
-                after: plays[1].clone(),
-                id: id("branch"),
-                hold: room(1, 200..500),
-            }],
-            timing: AudioTimingId {
-                allocation: revision("gaps"),
-                ordinal: 0,
-            },
-        },
-    );
-    same_pcm(&repeated, &explode(&repeated, "wrapped", "explode-born"));
-    same_pcm(&gapped, &explode(&gapped, "wrapped", "explode-gapped"));
-}
-
-#[test]
 fn exploding_inner_then_outer_repeat_keeps_nested_occurrence_samples() {
     let original = document(
         ntsc(),

@@ -174,65 +174,6 @@ fn mixed_hold_duration_branch_orders_preserve_sparse_overrides_and_exact_proof()
 }
 
 #[test]
-fn mixed_hold_duration_preserves_partial_physical_clocks_across_both_branch_orders() {
-    for partial in [false, true] {
-        let mut before = fixture(true);
-        let old = crate::capture_unbound_audio_bindings(
-            &before,
-            AudioTimingId {
-                allocation: revision("mixed-old-clock"),
-                ordinal: 0,
-            },
-        )
-        .unwrap();
-        if partial {
-            before.audio_bindings = old.clone();
-            before.audio_bindings.bindings.remove(&node("tail"));
-            before.validate().unwrap();
-        }
-        for outer_play in [false, true] {
-            for frames in [1, 3] {
-                let (request, prepared) = prepare(&before, &mixed(outer_play, 1), frames);
-                for (owner, outer, inner) in [
-                    ("held", 0, Some(0)),
-                    ("after", 0, Some(0)),
-                    ("held", 1, Some(0)),
-                    ("after", 1, Some(0)),
-                    ("inner-after", 1, Some(1)),
-                    ("outer-after", 2, None),
-                ] {
-                    let original = instance(owner, outer, inner);
-                    let mapped = prepared.map_instance(&before, &original).unwrap();
-                    let old_clock = old
-                        .resolve(&original.node, &original, crate::MAX_DOCUMENT_NODES)
-                        .unwrap();
-                    let new_clock = prepared
-                        .document
-                        .audio_bindings()
-                        .resolve(&mapped.node, &mapped, crate::MAX_DOCUMENT_NODES)
-                        .unwrap();
-                    assert_eq!(
-                        new_clock.lattice.origin, old_clock.lattice.origin,
-                        "{outer_play} {frames} {original:?}"
-                    );
-                    assert_eq!(
-                        new_clock.lattice.sample_boundary(ExactRatio::ZERO).unwrap(),
-                        old_clock.lattice.sample_boundary(ExactRatio::ZERO).unwrap()
-                    );
-                }
-                for (owner, binding) in &before.audio_bindings.bindings {
-                    assert_eq!(
-                        prepared.document.audio_bindings.bindings[owner].lattice,
-                        binding.lattice
-                    );
-                }
-                check_inverse(&before, &request, &prepared);
-            }
-        }
-    }
-}
-
-#[test]
 fn mixed_hold_duration_exact_marks_are_copied_then_resized_not_dropped() {
     let mut before = fixture(false);
     before.marks.insert(

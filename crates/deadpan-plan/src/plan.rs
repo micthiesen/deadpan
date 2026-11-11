@@ -19,6 +19,9 @@ mod follow_context;
 
 #[path = "plan_fragments.rs"]
 mod fragments;
+
+#[path = "cut_edges.rs"]
+mod cut_edges;
 pub use fragments::with_full_compile_oracle;
 
 #[cfg(test)]
@@ -1029,6 +1032,26 @@ impl RenderPlan {
             nodes.push(fragment);
         }
         let reused_fragments = reuse.map_or(0, |reuse| reuse.reused);
+        // Cut sides derive from neighbors, not from a node's own inputs, so
+        // they are applied after fragment reuse on every compilation.
+        let cuts = cut_edges::derive(&cut_edges::Document {
+            document,
+            positive: |id: &NodeId| durations[id].frames() > 0,
+        });
+        let mut has_editorial = false;
+        for (index, (id, node)) in document.nodes().iter().enumerate() {
+            let derived = cuts.get(id).copied().unwrap_or_default();
+            let edges = deadpan_core::AudioEditorialEdges {
+                start: node.audio_editorial_edges.start || derived.start,
+                end: node.audio_editorial_edges.end || derived.end,
+            };
+            has_editorial |= !edges.is_empty();
+            if nodes[index].audio_editorial_edges != edges {
+                let mut copy = (*nodes[index]).clone();
+                copy.audio_editorial_edges = edges;
+                nodes[index] = Arc::new(copy);
+            }
+        }
         let root = position(document.root());
         let mut parents = vec![None; nodes.len()];
         for (parent, (id, node)) in document.nodes().iter().enumerate() {
@@ -1127,10 +1150,7 @@ impl RenderPlan {
                     )
                 }),
             ),
-            has_audio_editorial_edges: document
-                .nodes()
-                .values()
-                .any(|node| !node.audio_editorial_edges.is_empty()),
+            has_audio_editorial_edges: has_editorial,
         };
         let (correspondences, sound_processing_assets, remaining) =
             sound_clock_cache::compile(&plan)?;

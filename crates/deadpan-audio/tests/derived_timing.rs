@@ -470,6 +470,14 @@ impl Editor {
         });
         repeat
     }
+    fn escalate(&mut self, repeat: &NodeId, gain_step_mb: i32) {
+        let escalation: RepeatEscalation =
+            serde_json::from_value(serde_json::json!({ "gain_step": gain_step_mb })).unwrap();
+        self.run(Command::SetRepeatEscalation {
+            node: repeat.clone(),
+            escalation: Some(escalation),
+        });
+    }
     fn set_plays(&mut self, repeat: &NodeId, plays: u32) {
         self.run(Command::SetRepeatPlays {
             node: repeat.clone(),
@@ -974,4 +982,65 @@ fn derived_original_audio_stays_within_one_sample_of_the_original() {
         }
     }
     assert_eq!(failures, 0, "segments outside the one-sample tolerance");
+}
+
+/// Largest sample-to-sample step of either channel between `n - 1` and `n`.
+fn step(pcm: &[[f32; 2]], n: usize) -> f32 {
+    (0..2)
+        .map(|c| (pcm[n][c] - pcm[n - 1][c]).abs())
+        .fold(0.0, f32::max)
+}
+
+/// A word repeated with a gain step, a pause and a speed change, all made
+/// by ordinary commands on fragments of the Original, must not click: at
+/// every cut the sample step stays within a small multiple of the local
+/// signal's own median step (the automatic short edge fade, not a raw jump).
+#[test]
+fn ordinary_cuts_and_repeat_seams_do_not_click() {
+    for setup in [
+        Setup {
+            rate: (24, 1),
+            clock: 48_000,
+        },
+        Setup {
+            rate: (30_000, 1001),
+            clock: 48_000,
+        },
+    ] {
+        let mut provider = Provider::new(setup);
+        let mut editor = Editor::new(setup, "clicks");
+        let s = second(setup);
+        editor.split(s + 2);
+        editor.split(s + 9);
+        let repeat = editor.wrap_repeat(s + 4, 3, None);
+        editor.escalate(&repeat, 3_000);
+        let after = s + 2 + 3 * 7;
+        editor.pause(after + 5, 4, HoldAudio::Silence);
+        editor.split(after + 20);
+        editor.wrap_retime(after + 21, 40, PitchPolicy::Preserve);
+        let (pcm, segments) = render(&editor.document, &mut provider);
+        let mut checked = 0;
+        for segment in &segments {
+            let at = segment.samples.start;
+            if at < 2_048 || at + 2_048 > pcm.len() {
+                continue;
+            }
+            let mut local: Vec<f32> = (at - 1_024..at - 16)
+                .chain(at + 16..at + 1_024)
+                .map(|n| step(&pcm, n))
+                .collect();
+            local.sort_by(f32::total_cmp);
+            let median = local[local.len() / 2];
+            let seam = (at - 2..at + 3).map(|n| step(&pcm, n)).fold(0.0, f32::max);
+            // A raw join of unrelated material steps several times the
+            // signal's median step; a faded one is far below it. The
+            // -60 dBFS floor covers joins next to silence.
+            assert!(
+                seam <= median + 1e-3,
+                "{setup:?}: step {seam} at sample {at} against local median {median}"
+            );
+            checked += 1;
+        }
+        assert!(checked >= 6, "{setup:?}: only {checked} cuts checked");
+    }
 }

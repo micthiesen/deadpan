@@ -169,51 +169,6 @@ fn sound_only_clocks_roundtrip_and_retain_distinct_equal_layouts() {
 }
 
 #[test]
-fn pruning_tracks_exact_event_addresses_and_shared_physical_clocks() {
-    let mut doc = fixture();
-    let event = doc.beat_sounds[&node("owner")][&sound("effect")].clone();
-    doc.beat_sounds
-        .get_mut(&node("owner"))
-        .unwrap()
-        .insert(sound("second"), event);
-    let mut journals = clocks(vec![clock(0)]);
-    journals.get_mut(&node("owner")).unwrap().insert(
-        sound("second"),
-        SoundClockJournal::new(node("top"), vec![reference(clock(0))]).unwrap(),
-    );
-    doc.audio_bindings = state(vec![record(&doc, 0)], journals);
-    doc.beat_sounds
-        .get_mut(&node("owner"))
-        .unwrap()
-        .remove(&sound("effect"));
-    crate::audio_binding_lifecycle::prune(&mut doc);
-    assert_eq!(
-        doc.audio_bindings.sound_clocks()[&node("owner")]
-            .keys()
-            .cloned()
-            .collect::<Vec<_>>(),
-        vec![sound("second")]
-    );
-    assert_eq!(doc.audio_bindings.timings().len(), 1);
-    doc.validate().unwrap();
-    doc.beat_sounds.clear();
-    crate::audio_binding_lifecycle::prune(&mut doc);
-    assert!(doc.audio_bindings.is_empty());
-
-    let mut doc = fixture();
-    let mut physical = capture_unbound_audio_bindings(&doc, clock(0)).unwrap();
-    physical.sound_clocks = clocks(vec![clock(0)]);
-    doc.audio_bindings = physical;
-    doc.validate().unwrap();
-    doc.beat_sounds.clear();
-    crate::audio_binding_lifecycle::prune(&mut doc);
-    assert!(doc.audio_bindings.sound_clocks().is_empty());
-    assert_eq!(doc.audio_bindings.timings().len(), 1);
-    assert!(!doc.audio_bindings.bindings().is_empty());
-    doc.validate().unwrap();
-}
-
-#[test]
 fn missing_addresses_roots_and_timing_references_refuse() {
     let doc = fixture();
     assert!(

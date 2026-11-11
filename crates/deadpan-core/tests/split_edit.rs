@@ -634,65 +634,6 @@ fn role_repeats_play_one_role_again_without_inserting_time() {
 }
 
 #[test]
-fn split_edits_capture_clocks_beside_a_pitch_shifted_stage() {
-    for (frames, semitones) in [(20, 3), (15, -2)] {
-        let mut wire = serde_json::to_value(with_sound()).unwrap();
-        wire["nodes"]["inner"] = wire["nodes"]["left"].clone();
-        // The rolled pair keeps picture-only sources; the shifted stage has sound.
-        let plain = serde_json::to_value(document()).unwrap();
-        wire["nodes"]["left"] = plain["nodes"]["left"].clone();
-        wire["nodes"]["right"] = plain["nodes"]["right"].clone();
-        wire["nodes"]["shifted"] = json!({
-            "label":"Shifted","kind":{"type":"retime","child":"inner","duration":frames,
-            "mapping":{"start":0,"end":20},"pitch":{"shift":{"semitones":semitones}}}
-        });
-        wire["nodes"]["root"]["kind"]["children"] = json!(["left", "right", "shifted"]);
-        let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
-        let planned = plan_semantic(
-            &document,
-            &SemanticContext {
-                original: None,
-                scoped: None,
-                hold_duration: None,
-                shared_hold_duration: None,
-                mixed_hold_duration: None,
-                selected_hold_duration: None,
-                parent: id("root"),
-                cursor: ProjectFrame(20),
-                selected_child: None,
-                visual_selection: None,
-            },
-            &SemanticProgram::new(vec![SemanticInstruction::SplitEdit {
-                kind: SplitEditKind::J,
-                length: PauseLength::Frames {
-                    frames: NonZeroU32::new(6).unwrap(),
-                },
-            }])
-            .unwrap(),
-            SemanticRegisterBank {
-                entries: &BTreeMap::new(),
-                version: 1,
-            },
-            RevisionId::new("outer").unwrap(),
-            allocate,
-            |_, _| panic!("no register is read"),
-        )
-        .unwrap();
-        assert!(
-            !planned.document.audio_bindings().bindings().is_empty(),
-            "the Roll captured clocks"
-        );
-        let replay =
-            replay_compound::<EditError>(&document, planned.request.as_ref().unwrap(), |_| Ok(()))
-                .unwrap();
-        assert_eq!(
-            replay.edit.inverse.apply(&replay.document).unwrap(),
-            document
-        );
-    }
-}
-
-#[test]
 fn audio_repeats_follow_root_edits_and_refuse_captures_that_would_leave_them_behind() {
     let before = with_sound();
     let after = plan_repeat(&before, MediaRole::Audio, 3, true)

@@ -107,42 +107,6 @@ fn watched(
 }
 
 #[test]
-fn resolved_and_two_lane_values_zip_without_new_work_or_allocation_requests() {
-    let (state, path) = fixture(2);
-    let mut p = policy(usize::MAX);
-    let mut resolved = admitted(&state, &path, &mut p).unwrap();
-    let expected = resolved.value().clone();
-    let mut nodes = value_with_both_charges(&mut p);
-    let node_buffer = nodes.value().as_ptr();
-    let a = lanes(&resolved);
-    let b = lanes(&nodes);
-    let billed = consume(&mut resolved, &p) + consume(&mut nodes, &p);
-    assert_eq!(p.0.borrow().work, billed);
-    let before = counters(&p);
-    {
-        let mut state = p.0.borrow_mut();
-        state.cap = state.live;
-        state.work_cap = state.work;
-    }
-    let mut adapter = composing::<true>(&p);
-    let mut result = resolved.zip_value(nodes, &mut adapter).unwrap();
-    assert_eq!(result.value().0, expected);
-    assert_eq!(result.value().1.as_ptr(), node_buffer);
-    assert_eq!(lanes(&result), (a.0 + b.0, a.1 + b.1));
-    assert_eq!(counters(&p), before);
-    assert!(result.take_work(&p).is_err(), "zip must not mint a receipt");
-    result.validate_composition(&p).unwrap();
-    let result = result
-        .map_value(&p, |(resolved, nodes)| (nodes, resolved))
-        .unwrap();
-    assert_eq!(result.value().0.as_ptr(), node_buffer);
-    assert_eq!(result.value().1, expected);
-    assert_eq!(counters(&p), before);
-    drop(result);
-    assert_eq!(p.0.borrow().live, 0);
-}
-
-#[test]
 fn both_independent_lanes_survive_zip_and_all_values_drop_before_charges() {
     let mut p = policy(usize::MAX);
     let watch = DropWatch::new();

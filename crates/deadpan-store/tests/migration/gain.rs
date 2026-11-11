@@ -36,7 +36,6 @@ fn authored_gain_is_durable_reversible_and_revision_guarded_from_current_snapsho
     let after = store.snapshot()?;
     assert_eq!(after, preview.forward.apply(&before)?);
     assert_eq!(after.duration()?, before.duration()?);
-    assert_eq!(after.audio_bindings(), before.audio_bindings());
     assert_eq!(after.audio_lineage(), before.audio_lineage());
     assert!(store.commit(&request).is_err());
     store.undo(after.revision_id(), RevisionId::new("authored-gain-undo")?)?;
