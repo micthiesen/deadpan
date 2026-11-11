@@ -1,7 +1,7 @@
 # Audio gain and owner clocks
 
-Specification sections 7.5, 8, 10 and 17 require selective emphasis, preserved
-intentional dynamics and shared preview/export treatment semantics. The
+Gain supports selective emphasis, preserved intentional dynamics and shared
+preview/export treatment semantics. The
 [gain interface board](design/boards/clip-gain-board-v2.png) is the native target.
 
 ## Current boundary
@@ -19,20 +19,10 @@ Original/root sound scopes remain independent. The native app now implements
 captured beat gain commands, an unsaved exact envelope/mute editor and
 same-window Before/Draft audition. Its focused Metal replay passes 266 gain
 checks and the 5,456-case shortcut audit; all 298 app/harness tests pass.
-The [native-gain qualification](qualification/native-gain-2026-09-28.md)
-records corrected visual runs, native CUA editing/cancellation, retained failures
-and the separate performance and listening limits.
-The [measured beat overview](WAVEFORMS.md) now has scoped
-[qualification](qualification/gain-waveform-2026-09-28.md). It measures the
+The [measured beat overview](WAVEFORMS.md). It measures the
 committed owner before effects, separately from full-mix Before/Draft audition.
 [Waveform ranges](#waveform-ranges) select exact samples on the Edit mix. Encoded export is exercised by the `gain-trim` and
-`saturation` fixtures in
-[preview-export-2026-10-04](qualification/preview-export-2026-10-04.md).
-The [earlier foundation qualification](qualification/gain-clocks-2026-09-27.md)
-records the pure recipe and owner-query checkpoint; it does not qualify this
-later persistence and PCM integration.
-The [authored-gain record](qualification/authored-gain-2026-09-28.md) tracks the
-persisted treatment and PCM increment's review, verification and remaining limits.
+`saturation` fixtures of the preview/export verification suite.
 
 Relative whole-owner gain steps also support recording and dot with explicit
 This play at every enclosing Repeat. Each invocation uses the selected play's
@@ -53,8 +43,7 @@ their direct behavior. See
 
 The [equalizer processor](EQUALIZER.md) stores its validated static recipe as an
 ordered treatment and recursively processes shared Original/sound owners.
-See [shared EQ qualification](qualification/shared-eq-2026-10-12.md).
-[Native EQ](qualification/native-eq-2026-10-12.md) now uses the captured draft,
+Native EQ now uses the captured draft,
 Before/Draft comparison and one-step Apply/Cancel lifecycle through `:eq`, with
 complete typed recipes for dot and macros. Selected tail sends and continuous
 wet returns exist (see below); group automation beyond the cited
@@ -141,9 +130,7 @@ recognizes that strict half-open overlap without clamping the exact signed
 lookup clock. The following Hold can therefore own an allocated sample at a
 negative local coordinate; an envelope beginning at zero does not apply there.
 Empty and genuinely exhausted support remain inactive, and nonzero Original
-PCM under inactive support still refuses. See the
-[fractional owner-support qualification](qualification/fractional-owner-support-2026-10-21.md)
-for independent gain, complete nonlinear master and emitted-file evidence.
+PCM under inactive support still refuses.
 
 ## Structural and persistence behavior
 
@@ -182,7 +169,7 @@ exactly once, no absent stage is listed, and balance is last
 the memoryless soft clipper `tanh(drive · x)`: small signals gain the drive,
 peaks approach ±1, digital silence stays exact silence, and because it keeps no
 state it evaluates identically at any read or tile boundary in preview and
-export. A new stage is appended after clip gain (specification §10.2 order);
+export. A new stage is appended after clip gain (the fixed treatment order);
 a recipe authored with `Saturation` first trims after the clipper.
 
 Owners are evaluated innermost first. Linear stretches accumulate gain factors
@@ -212,11 +199,7 @@ read window cannot change the arithmetic path. A provably silent Original
 leaf supplies no input. Stable occurrence order fixes sibling
 reduction order across partitions and cold reads. Nonfinite inputs, sums and
 results reject explicitly; only the final bus converts back to f32. Raw
-edge-faded inspection still excludes treatments. See the
-[group-mixing qualification](qualification/group-mix-2026-10-11.md) and
-[retained-clock regression](qualification/group-clocks-2026-10-11.md), followed
-by the [independent input-automation qualification](qualification/input-automation-2026-10-12.md)
-and [automation through shared stages](qualification/shared-automation-2026-10-12.md).
+edge-faded inspection still excludes treatments.
 
 `:saturate 12dB` and `:saturate off` change the captured beat as one semantic
 `SetAudio { change: saturation }` instruction (recorded in macros and repeated
@@ -269,11 +252,11 @@ output after its gain and edges. These feed explicit later tail pauses. Ordinary
 continuous wet returns are implemented (`wet_sends`,
 [finite wet effects](FINITE_WET_EFFECTS.md)); group automation beyond the
 cited qualifications remains open. This stage does not qualify
-the complete master. See [balance qualification](qualification/stereo-balance-2026-10-11.md).
+the complete master.
 
 ## Range steps
 
-Specification §5 has `+`/`-` change the selected audio's gain. With an Edit
+`+`/`-` change the selected audio's gain. With an Edit
 range inside one beat, `+`/`-` changes only that range: `SetAudio { change:
 range_step }` (distinct from the whole-beat `step`, which refuses a Visual
 range) adds one constant `Step` envelope over exactly that range, in the
@@ -296,7 +279,7 @@ drops its peak to 0.079 while the next tone keeps 0.316).
 
 ## Waveform ranges
 
-Specification §8.3 asks for click, breath and syllable emphasis and sudden
+Click, breath and syllable emphasis and sudden
 silence with sample-level control. `GainRange` endpoints were already exact
 owner-frame ratios; `GainRange::from_mix_samples(rate, owner_start, first, end)`
 names exactly the 48 kHz mix samples `[first, end)` of an owner starting at
@@ -383,8 +366,7 @@ Injected delivery proves UI handling, not device output. Physical keyboard/IME
 and VoiceOver acceptance, long-source performance, listening and export remain
 required. Native CUA also exercised exact trim/key edits, focus reveal, literal
 shortcut text and Escape; the before/after project dumps were identical. This
-increment does not close the complete DP-09 audio workflow.
-
+increment does not close the complete audio workflow.
 
 A Repeat's per-play [escalation](REPEAT_ESCALATION.md) gain is added on the
 Repeat owner like an authored factor, from the span's play position.

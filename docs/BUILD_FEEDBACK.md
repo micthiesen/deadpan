@@ -52,9 +52,7 @@ When validating an isolated source copy, finish its checks and pin its executabl
 before switching source roots. If reusing a Cargo target, invalidate the copied
 workspace's path-crate artifacts before rebuilding the checkout: older original
 source mtimes can otherwise leave stale dependency artifacts marked fresh.
-The [constant-block continuation](qualification/constant-sound-blocks-2026-10-26.md)
-retains one such failed diagnostic build and its fresh-build correction. Do not
-change correct source to match stale artifacts.
+Do not change correct source to match stale artifacts.
 
 Deadline-sensitive audio/media tests still require the optimized Cargo profile
 described in [Development](DEVELOPMENT.md), and physical-Mac qualification stays
@@ -140,9 +138,4 @@ confirming no compiler is using it:
 CARGO_TARGET_DIR=target/blaze CARGO_BUILD_TARGET_DIR=target/blaze cargo xtask hygiene
 ```
 
-Raw commands, output, executable/source pins, worker panic logs, expected
-negative tests and the replay report are retained in
-[the trial evidence](../tools/build-qualification/evidence/2026-10-26-blaze/inventory.json).
-Two source-copy setup mistakes and three hygiene-test fixture corrections are
-retained as such, separately from the compiler failures. No shipping gate,
-performance target or product requirement closes from this tooling trial.
+No shipping gate or performance target closes from this tooling trial.

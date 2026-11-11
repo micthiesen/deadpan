@@ -2,23 +2,20 @@
 
 The sampled route supports chronological occurrence windows with independent
 rounding anchors while retaining complete processing input. Intermediate crops
-cannot be undone by a later move or wider output allocation. See the
-[transport qualification](qualification/sound-occurrence-windows-2026-10-12.md).
+cannot be undone by a later move or wider output allocation.
 Partial attached-sound capture and matching gate transport remain to be integrated.
 
 Independent event EQ and returns share bounded ordered-prefix tiles within each
 preparation request. This prevents overlapping histories from repeatedly
 evaluating the same input and exhausting plan work. Source admission, exact
-clocks and resource limits remain unchanged. See the
-[regression and loop/Tail qualification](qualification/event-prefix-cache-2026-10-12.md).
+clocks and resource limits remain unchanged.
 
 `StageAudio::read_retained_sound_input` reads a checked sound route's complete
 input on its original sample clock, before saved cuts/moves and current Hold
 gates. Its explicit allocation can extend beyond the shortened live project;
 source selection, resampling phase and nested Preserve history remain intact.
 Ordinary routed reads share this preparation boundary. Independent event
-returns now consume it without granting extra audible time. See the
-[retained-input qualification](qualification/retained-sound-input-2026-10-12.md).
+returns now consume it without granting extra audible time.
 
 Root and attached sounds carry one `AudioTreatments` recipe in `treatments`,
 including trim, gain/mute envelopes, EQ, saturation, balance and independent
@@ -40,7 +37,7 @@ Holds at other boundaries keep their own policies. Direct and retained root
 routes carry the same distinction through exact frames and transported physical
 sample labels. Preparation skips the second envelope only when the canonical
 event-return predicate is false; the first gate query and source admission still
-run. See [post-treatment gate qualification](qualification/post-treatment-gates-2026-10-27.md).
+run.
 
 The sound inspector exposes `:sound-eq`, `:sound-saturate`, `:sound-balance`,
 `:sound-mute on|off` and `:sound-envelope 0f 30f -12dB 0dB smoothstep`.
@@ -49,7 +46,7 @@ their dB values. `sound-envelope clear` removes curves while preserving trim,
 mute and other stages. Headless `SetSound`/`SetBeatSound` accepts the complete
 bounded recipe, including cubic curves, mute ranges and explicit effect order.
 All native commands capture the selected event, session and revision and commit
-one reversible transaction. See [qualification](qualification/event-treatments-2026-10-12.md).
+one reversible transaction.
 
 Root and attached sounds carry independent `treatments.wet_sends`. Native
 `:sound-wet-send reverb|delay -6dB|off` changes the captured placed sound through
@@ -60,8 +57,7 @@ through cuts, inserted gaps and repeated copies. The dry sound and its return
 obey current selection/cut fades and silence permissions before
 entering group treatments. Returns stop at the existing audible allocation.
 The event's own allocated-Tail tap excludes its continuous return; parent sends
-can include it. See [finite effects](FINITE_WET_EFFECTS.md#independent-sound-returns)
-and the [event-return qualification](qualification/event-returns-2026-10-12.md).
+can include it. See [finite effects](FINITE_WET_EFFECTS.md#independent-sound-returns).
 
 Selected root and attached sounds carry independent reverb/delay `treatments.tail_sends`.
 Native `:sound-tail-send reverb|delay -6dB|off` edits the captured placed sound
@@ -73,9 +69,8 @@ create an ordinary continuous wet return. See
 
 External sound effects must become editable sound events over the existing edit.
 Catalog import retains and qualifies audio-only sources. Catalog audition uses
-the shared playback engine; it does not place an event. The complete requirement remains in specification Sections 4.2,
-5.3–5.4, 8.3, 9.3 and 10. A separate audio player, blank-picture Source insertion
-or a sum added after the limiter would not implement that requirement.
+the shared playback engine; it does not place an event. A separate audio player, blank-picture Source insertion
+or a sum added after the limiter would not implement external sound effects.
 
 ## Required ownership and timing
 
@@ -83,7 +78,7 @@ A sound belongs to a host's output clock. A sound inside a Repeat child plays wi
 each effective child; a sound on the Repeat itself spans the repeated passage.
 A sound inside a Retime child enters that stage's input. A sound on the Retime
 itself enters after that stage. Enclosing time maps affect each child voice in
-its declared clock. Specification Section 10.2 places time/pitch processing on
+its declared clock. Time/pitch processing is placed on
 each voice before the group bus. Keep the existing sequential Original voice's
 complete continuous processing history; do not split it into independent
 per-beat processors. Distinct attached sounds retain their own complete voice
@@ -95,10 +90,8 @@ proof may stop at that exact owner after checking the output contract and
 placement ancestry. It never supplies aliases for omitted input children.
 Changed child-owned processing dependencies still reject atomically. Current
 source admission, suppression and owner/ancestor treatments apply to the
-current mixed bus. See the
-[output-sound qualification](qualification/fixed-retime-output-sound-2026-10-21.md).
-The subsequent
-[fractional owner-support qualification](qualification/fractional-owner-support-2026-10-21.md)
+current mixed bus. A later
+fractional owner-support change
 repairs retained overlap at the following Hold's allocation without changing
 the independent event's phase or applying that Hold's gain to it. Its complete
 nonzero Original/event master and release export pass; genuine physical
@@ -183,13 +176,11 @@ Nested owners, Repeat/Retime sound transforms, send/tail allowances, effects,
 full mastering and export remain open.
 
 The [placement board](design/boards/sound-placement-board-v2.png) is the visual
-target for this subset. The [native placement qualification record](qualification/native-sound-placement-2026-09-27.md)
-tracks its checks and limits; this increment completes no product requirement or
-release gate.
+target for this subset.
 
 ### Bundled sting
 
-`:sting` adds Deadpan's own "wrongly triumphant" sting (specification §8.3) to
+`:sting` adds Deadpan's own "wrongly triumphant" sting to
 the sound catalog: an original brass-like fanfare (three G4 pickups, then a
 held C major chord with a slow vibrato and release, 1.8 s, peaking at -3 dBFS)
 synthesized deterministically by `deadpan_audio::triumphant_sting_wav`, so no
@@ -214,7 +205,7 @@ end past the edit); store admission still rechecks the receipt. The
 
 A bed is a sound owned by the edit itself (a root `SoundEvent`); a sting is a
 sound attached to a beat (`BeatSound`, `:sound-attach`). They follow different
-anchors (specification Section 5.4):
+anchors:
 
 | Edit | Root bed | Beat-attached sting |
 | --- | --- | --- |
@@ -368,8 +359,6 @@ This root subset is not full sound editing or a completed audio master.
 preserving the root owner clock. Root sound recipes and existing routes remain
 unchanged; final live Hold gates and retained allowances still apply. It adds
 no ripple journal. See [atomic moves](ATOMIC_MOVES.md).
-See the [qualification record](qualification/root-sounds-2026-09-27.md) for
-review findings, real-PCM comparisons, resource limits and verification evidence.
 
 ## Persisted root ripple edits
 
@@ -470,8 +459,6 @@ restrictions are checked before modern apply, including a formerly forbidden
 Split whose modern snapshots and patches contain no new route field. The actual
 old-CLI fixture retains qualified media, two sounds, abandoned sound parameters
 and pending redo. Migration adds no journals to old snapshots.
-See the [routing qualification](qualification/root-sound-routing-2026-09-27.md)
-for review corrections, decoded-PCM comparisons and verification scope.
 
 ## Structural edit contract
 
@@ -489,7 +476,7 @@ for review corrections, decoded-PCM comparisons and verification scope.
 | Ungroup | Redistribute exact projections of the removed bus, retaining its complete recipe and continuity. Independent shortened source copies are insufficient. |
 | InsertTime or source splice | Capture old clocks first, exclude inserted content from default event support, and resume surviving sound on its prior phase. Preserve input clocks and moved opaque processing outputs remain distinct. |
 
-This follows the ownership distinction in specification Sections 5.3 and 5.4.
+This follows the ownership distinction between root beds and beat-attached sounds.
 Moving a group moves its owned attachments; it does not turn every overlapping
 ancestor event into a child attachment. Ordinary internal reordering or retiming
 therefore requires no implicit cross-clock transport of a parent sound. Explicit
@@ -716,9 +703,7 @@ does not make an unrelated owner eligible for that stage.
 These operands read real qualified catalog PCM without adding a Source node or
 changing history. They do not persist a sound, grant scoped Hold allowances,
 add sound effects or populate the final bus.
-The continuous Original reader remains separate and unchanged. See
-[source-voice qualification](qualification/source-voices-2026-09-27.md) for the
-measured fixture, verification results and remaining acceptance limits.
+The continuous Original reader remains separate and unchanged.
 
 The [occurrence preparation boundary](OWNED_SOUND_VOICES.md) now resolves one
 explicit current owner through its concrete Sequence, Repeat and Retime ancestry.
@@ -764,9 +749,7 @@ scoped allowances and creative edges still belong after this routed preparation;
 moving an old gate does not implement a current allowance. The source case always
 uses the input view, preserving the sound beneath current structural Holds.
 Raw root routes now feed persisted root events into the shared pre-master bus.
-The broader projected APIs remain preparation interfaces. See
-[routed-voice qualification](qualification/routed-voices-2026-09-27.md) for
-decoded-PCM witnesses, review, verification and acceptance limits.
+The broader projected APIs remain preparation interfaces.
 
 ## Remaining integration
 

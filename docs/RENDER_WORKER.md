@@ -69,7 +69,3 @@ recovery, priority scheduling, full picture/audio graphs, production emitted-fil
 verification, atomic publication, native Render controls, HDR and complete
 preview/export equivalence remain required. Raw I420 admission
 does not establish an encoded file or a usable export workflow.
-
-[Qualification](qualification/render-worker-2026-09-29.md) records the real CLI,
-actual Metal output, complete comparisons, hostile process/artifact cases,
-cancellation/recovery, independent review and full workspace gate.

@@ -42,7 +42,7 @@ starting target. Native capability admission requires both VideoToolbox
 properties. The measured OS software H.264 encoder does not expose the QP
 property, so it fails preflight instead of accepting FFmpeg's ignored setter.
 The selection order above is unchanged; quality-control rejection does not
-authorize another attempt. See [quality qualification](qualification/encoder-quality-2026-10-10.md).
+authorize another attempt.
 ABI 4 additionally disables AAC noise substitution at the unchanged 384 kbit/s
 target; prior ABI observations remain historical and cannot grant live admission.
 
@@ -92,8 +92,7 @@ OS software PQ declaring top-left chroma, is an `Output` rejection and never an
 eligible fallback. For HEVC the verifier's `maximum_b_run` is the packet reorder
 delay, bounded by the same B-frame policy.
 
-Measured on the M5 Max (2026-10-05), see
-[the qualification record](qualification/hdr-automatic-admission-2026-10-05.md):
+Measured on the M5 Max (2026-10-05):
 supervised admission selected hardware TargetTwo on the first probe for PQ and
 HLG at 320x180 and 1920x1080 (30000/1001) and 3840x2160 (60/1). SDR kept its
 measured hardware TargetTwo PTS<DTS rejection followed by hardware None. The
@@ -213,7 +212,3 @@ Cold encoding retries qualify again; checkpoint verification and publication
 reconciliation retain the original decision. Full mastering/effects, HDR
 listening/viewing qualification, quality policy and the supported hardware/OS
 release matrix remain open.
-
-See [probe qualification](qualification/encoder-admission-2026-09-30.md),
-[runtime-bound project qualification](qualification/encoder-runtime-2026-09-30.md)
-and [durable workflow qualification](qualification/automatic-render-jobs-2026-09-30.md).

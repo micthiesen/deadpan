@@ -190,8 +190,8 @@ owner is the action the router actually takes. The Marks, Jobs and Storage
 panels and the Keys sheet read their keys from those declarations through
 typed tables that a test proves cover exactly them; mode footers and
 Apply/Cancel buttons take their key labels from them, and a test checks every
-label the interface paints. Mode keys are not configurable: the specification
-fixes Camera's and Trim's keys, and the panels follow the same rule. Native
+label the interface paints. Mode keys are not configurable: Camera's and Trim's keys
+are fixed, and the panels follow the same rule. Native
 shortcuts (menus, ⌘ chords, Models and YouTube panel controls) are described
 in the registry but not router-verified.
 
@@ -421,10 +421,6 @@ including branches without annotations. It tests each with absent, positive,
 zero and overflowing counts, alongside text, composition, Visual selection and
 the existing modal routers. The live registry digest remains a separate check.
 See [shortcut compatibility](KEYBINDING_COMPATIBILITY.md).
-The [configuration qualification](qualification/configurable-bindings-2026-10-01.md)
-retains startup, custom-map and native-input checks and their limits. The earlier
-[compiler qualification](qualification/declarative-bindings-2026-10-01.md)
-retains the original held-key regression.
 
 ## Command arguments
 
@@ -519,5 +515,4 @@ native settings editor and live map replacement are not implemented. Semantic
 [dot-repeat supports picture cuts](SEMANTIC_REPEAT.md); [macros](SEMANTIC_MACROS.md)
 support frame/beat/group motions, Visual selections, copies, cuts, pastes and
 named calls. Remaining edit kinds and selectors
-remain DP-06 work. No requirement
-or product gate is complete on the basis of this increment.
+remain open.

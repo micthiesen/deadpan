@@ -41,8 +41,6 @@ sibling if there is no following one. The cursor remains at the old group start.
 Group also accepts [Visual group objects](EDITED_SLICES.md#group-objects):
 `vig` retains exact child roots and `vag` retains the group as an owned unit.
 Empty endpoint children remain selected; no-child contents refuse grouping.
-The [group-object qualification record](qualification/group-objects-2026-10-03.md)
-tracks that later keyboard, register, semantic and Place integration.
 
 ## Effect distribution
 
@@ -71,7 +69,7 @@ group's exact clock, and applies everything in one reversible transaction.
 - **Refusals.** Saturation shapes the children's combined mix, EQ filters it
   continuously across their cuts, balance applies to the mixed sum and sends
   route the group's whole output; none has a per-child equivalent, so Ungroup
-  refuses before any change (specification §6.3). The message names the
+  refuses before any change The message names the
   effect and the way forward, for example: "ungroup cannot keep this group's
   saturation, which acts on its children's combined mix and has no per-child
   equivalent; remove the group's saturation first, or keep the group". The

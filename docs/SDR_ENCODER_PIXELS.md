@@ -76,11 +76,6 @@ in the report. Only the actual renderer planes may enter the encoder check.
 The reference comparison and the later lossy encode/decode comparison are
 distinct measurements; correct tags alone do not qualify either one.
 
-The [measured qualification](qualification/sdr-encoder-pixels-2026-09-28.md)
-records 22 real Metal checks, exact equality across all 172,260 reference codes,
-and the normal/sanitized hardware H.264 round trip, including complete planes
-and the initial compile failures.
-
 The full immutable project renderer, media provider ownership, audio mastering,
 AAC/mux policy, encoded-file verification, atomic publication, native workflow,
 HDR and complete resolution/OS qualification remain separate required work.

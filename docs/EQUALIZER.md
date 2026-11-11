@@ -1,6 +1,6 @@
 # Equalizer processing
 
-Specification §§10.2 and 17 require shared EQ/filter processing with explicit
+Shared EQ/filter processing has explicit
 history, latency and tails. `AudioTreatments` now stores an explicit `equalizer`
 stage, and semantic `set_audio` changes commit or remove its bounded recipe.
 The shared authored bus recursively evaluates EQ on Original and independent
@@ -42,7 +42,7 @@ The interactive EQ draft keeps its separate Apply/Cancel lifecycle. See
 [one-play literal audio intent](SEMANTIC_MACROS.md#one-play-literal-audio-setters).
 A selected Repeat play is
 isolated through the same captured reversible edit path. Stale or absent targets
-cannot adopt a later selection. See [native EQ qualification](qualification/native-eq-2026-10-12.md).
+cannot adopt a later selection.
 
 ## Stored and recursive processing
 
@@ -80,7 +80,6 @@ does not survive the request, and no realtime latency claim is made.
 Tail input uses the same ordered processing while omitting shared exterior
 owners. Those owners process the tail's output once. The tail recursion guard
 remains separate from each EQ graph, and source dependencies cover all halos.
-See [authored EQ qualification](qualification/authored-eq-2026-10-11.md).
 
 ## Shared independent sounds
 
@@ -91,7 +90,7 @@ Per-sample contribution permission sets select complete filtered prefixes, so an
 allowed sound cannot release forbidden Original or peer history during a Hold.
 The permission set participates in tile identity; all intermediates remain f64.
 Neutral EQ executes as an identity on current delivery, preserving saved crop
-resampling exactly. See [shared EQ qualification](qualification/shared-eq-2026-10-12.md).
+resampling exactly.
 
 Each contribution evaluates the linear prefix before its first shared stage in
 its own clock. A temporal stage recursively prepares its complete prefix, so a
@@ -102,8 +101,7 @@ reads a selected contribution through the complete jointly driven prefix;
 selection never changes the inputs driving saturation. Tiles retain both the
 selected output and full permission set. All outputs share one active EQ input
 context while their gain clocks stay independent. Decoded PCM, all six orders
-of gain/EQ/saturation, cold reads and exact cancellation are covered by the
-[shared-automation qualification](qualification/shared-automation-2026-10-12.md).
+of gain/EQ/saturation, cold reads and exact cancellation are covered by tests.
 
 ## Owner input contexts
 
@@ -113,13 +111,12 @@ structural input behind exterior crops, including negative sample positions,
 without adopting an Original's retained clock. Enclosing Preserve input and
 inner selections remain intact, and Hold policy follows the current structure.
 Cold decoded PCM matches uncropped references across split reads and nested
-Preserve. See [sound history qualification](qualification/sound-owner-context-2026-10-11.md).
+Preserve.
 The beat-sound preparer now consumes this handle with saved move/copy clocks.
 `read_beat_sound_owner_input` reads their full input with current Hold gates,
 event edges and gain, retaining f64 sums. Expanded history keeps the original
 rounded delivery anchor instead of rounding a new crop boundary; a fractional
 copy regression caught a one-sample shift in the first implementation.
-See [saved sound input qualification](qualification/beat-sound-owner-input-2026-10-11.md).
 The shared graph now consumes these per-voice preparations with authored stage
 ordering and final per-voice policy, as described above.
 
@@ -151,12 +148,12 @@ gain/mute, saturation and balance, excluding exterior owners and independent
 sounds. The latter evaluates the complete current treatment chain. A temporal
 graph must choose explicit stage boundaries before using it as filter input.
 
-[Owner-input qualification](qualification/owner-input-2026-10-11.md) compares
+Owner-input tests compare
 cold reads against uncropped PCM, feeds a cropped group's complete history into
 the actual EQ processor, and verifies retained history before current delivery.
 It does not qualify authored EQ, mixed-voice permissions or the editor workflow.
-The subsequent [retained-treatment qualification](qualification/retained-treatments-2026-10-11.md)
-checks transported fades, reference-clock gain/mute and ordered memoryless
+Retained-treatment tests
+check transported fades, reference-clock gain/mute and ordered memoryless
 treatments. The stored recursive path described above extends that foundation
 to authored EQ; the later shared graph now consumes independent sound input.
 
@@ -185,9 +182,8 @@ The private controller inherits work, deadline and depth, charges tile PCM to
 the shared residency limit, and returns dependencies covering every halo.
 Construction opens no media. Every read admits its sources, including muted
 input and warm Preserve caches. EQ tiles are currently recomputed; no filtered
-tile cache or realtime latency claim exists. The
-[ordered-owner qualification](qualification/owner-eq-2026-10-11.md) records
-direct-convolution, cold partition, retained-clock and policy checks on decoded
+tile cache or realtime latency claim exists. Ordered-owner tests
+cover direct-convolution, cold partition, retained-clock and policy checks on decoded
 fixture audio. This is one owner evaluation, not the recursive authored graph.
 
 ## Recipe
@@ -220,7 +216,7 @@ low-pass basis uses a Blackman window and unit DC response. That coefficient
 normalization does not measure, normalize or level the source audio.
 
 `EQ_FILTER_ID` versions the coefficient design. The underlying
-[`FiniteStereoFilter`](qualification/finite-filter-2026-10-11.md) versions FFT
+`FiniteStereoFilter` versions FFT
 evaluation separately. Cache consumers must retain both identities, the exact
 recipe/kernel and admitted input/context identity. Native processing keeps
 signed f64 channels independent until a later bus conversion; there is no
@@ -229,7 +225,7 @@ crossfeed, limiter or automatic per-word level change here.
 Cutoffs and crossovers are transition centers. An isolated cut is approximately
 −6.02 dB at its cutoff; this is a finite transition, not a brick wall or a
 biquad's usual −3 dB corner. Tone bands blend in amplitude across that transition.
-The [response qualification](qualification/eq-recipe-2026-10-11.md) records the
+The tests cover the
 actual response, including the lowest/highest cutoff and narrowest passband.
 
 One call supplies 2,048 preceding samples, 1,024 core samples and 2,048 following
@@ -248,7 +244,6 @@ time/pitch interactions, and complete arbitrary sends with incoming-tail policy.
 Request-local filtering is implemented; persistent cache reuse across preview,
 cold seeks, loops and export, and measured interactive latency remain required.
 
-DP-09 remains partial. The qualified shared preview/export path does not close
-the remaining voice/send/tail interactions or all native audio workflows. These remain
-agent work under the full specification. Listening and other hardware remain
+The shared preview/export path does not close
+the remaining voice/send/tail interactions or all native audio workflows. Listening and other hardware remain
 subject to the existing owner-verification scope.

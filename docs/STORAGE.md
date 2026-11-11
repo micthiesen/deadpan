@@ -1,8 +1,7 @@
 # Storage, cleanup and portable copies
 
-This page covers DP-19's reference tracking, explicit cleanup, portable
-project copies and offline rendering of accepted AI pauses. Specification
-Sections 19.2 and 20.1 set the storage classes. The code is
+This page covers reference tracking, explicit cleanup, portable
+project copies and offline rendering of accepted AI pauses. The code is
 [`deadpan_store::storage`](../crates/deadpan-store/src/storage.rs),
 [`deadpan_store::portable`](../crates/deadpan-store/src/portable.rs),
 [`deadpan_cli::storage`](../crates/deadpan-cli/src/storage.rs) and the native
@@ -130,7 +129,7 @@ those caches without a lock it can observe.
 
 ## Retention of unaccepted AI variants
 
-Specification Section 19.2 makes unaccepted candidates evictable under a
+Unaccepted candidates are evictable under a
 visible retention policy. The code is
 [`deadpan_store::generation_retention`](../crates/deadpan-store/src/generation_retention.rs).
 
@@ -331,8 +330,7 @@ while editing continues. Escape closes it.
 
 Rendering an accepted AI pause reads only the project's verified objects; it
 never consults a model pack, runtime, proxy, helper or the network.
-[`offline_portable`](../crates/deadpan-cli/tests/offline_portable.rs) proves
-it with the real `deadpan-cli`:
+The offline procedure with the real `deadpan-cli`:
 
 - it builds the `black_pause` recipe, generates two variants with the
   synthetic worker (real conditioning, host qualification, six-object
@@ -353,7 +351,7 @@ it with the real `deadpan-cli`:
 
 ## Source-clock and colour evidence
 
-DP-19 listed "source-clock/colour evidence" for accepted media. Conditioning
+Source-clock/colour evidence for accepted media: conditioning
 decodes the frames on both sides of the pause from the request's origin
 revision through the shared project picture path. The bridge context manifest
 (schema 2) binds the plan and both prepared pictures' SHA-256, declares the

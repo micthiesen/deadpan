@@ -1,1 +1,0 @@
-The before/ files are baseline snapshots and are checked against original-source-identities.json. The after/ files are formatted release sources and are checked against instrumented-source-identities.json. The new work_profile.rs module has no before-version.

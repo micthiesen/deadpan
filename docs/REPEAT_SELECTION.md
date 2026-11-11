@@ -93,9 +93,4 @@ at its absolute start. Saved intent is retained before workspace refresh; exact
 retries cannot reinstall an older candidate.
 
 This does not implement temporal edits inside occurrences, text or role selectors,
-all Section 8 operations, or the full product acceptance gates.
-
-See [qualification and retained evidence](qualification/repeat-operator-2026-10-03.md)
-for actual PCM, picture-plan, persistence, keyboard and native checks.
-The [count-setter qualification](qualification/repeat-count-2026-10-03.md)
-records the later semantic setter work.
+or all operations.

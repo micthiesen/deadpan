@@ -1,6 +1,6 @@
 # Combined Trim foundation
 
-Full [Trim mode](spec/DEADPAN_SPEC.md#77-trim-mode) needs one temporary draft
+Full Trim mode needs one temporary draft
 and one Enter transaction across In, Out, Slip and Roll. This work prepares its
 shared geometry and audio timing. Native controls, overwrite structure,
 boundary pictures, waveform and audition remain required.
@@ -80,15 +80,8 @@ this complete-intent policy.
 
 ## Verification status
 
-The [verification record](qualification/trim-foundation-2026-10-01.md) covers
-independent source review and focused runtime checks for all three primitives,
-including 57 new tests across core, indexed planning and decoded PCM. Test-fixture
-and oracle corrections are retained in the verification record. The complete
-workspace passed 3,333 unit/integration tests and both documentation tests.
-Strict workspace/all-target lint and final formatting passed on the same
-unchanged source inventory. Core schema 42/database 51 identify the new persisted
+Core schema 42/database 51 identify the new persisted
 timing vocabulary; unused development databases 39 through 50 are refused
 without migration.
 
 No complete combined authoring command or native Trim interaction is claimed.
-DP-02/DP-05 and all product gates retain their current partial/open status.

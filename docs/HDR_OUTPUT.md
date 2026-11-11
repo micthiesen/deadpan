@@ -1,6 +1,6 @@
 # Automatic HDR output
 
-Specification 22.5 requires one automatic action to produce HDR only when the
+One automatic action produces HDR only when the
 picture-bearing sources are HDR, the committed effects path preserves it and a
 qualified encoder supports the profile and metadata; otherwise SDR with real
 tone mapping. Preview uses the same branch decision as export. This document
@@ -104,5 +104,4 @@ The finished-file verifier checks the HEVC Main10 sample description, `colr`,
 `mdcv`/`clli` against the contract and recomputes MaxCLL/MaxFALL from the
 decoded 10-bit pictures. `verify-export` compares decoded 10-bit planes with
 the committed picture path converted at the same HDR boundary; PSNR is
-measured in 10-bit PQ or HLG code values. See the
-[qualification record](qualification/hdr-output-2026-10-05.md).
+measured in 10-bit PQ or HLG code values.

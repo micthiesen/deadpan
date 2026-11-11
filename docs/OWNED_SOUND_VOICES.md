@@ -123,7 +123,7 @@ That input may extend outside the nominal current owner range. Its transported
 grid preserves half-sample tie ownership through odd integral shifts. Ordinary
 delivery still applies every historical clip. A newly introduced outer treatment
 owner consumes only delivered sound; it cannot expose another owner's hidden
-history. See [partial-copy qualification](qualification/partial-sound-copies-2026-10-12.md).
+history.
 
 All plans share one preparation controller, deadline, work budget, source
 admission and PCM residency cap. Intrinsic prepared-stage cache entries include
@@ -210,7 +210,6 @@ Only intervals suppressed in every contribution are reported as suppressed.
 A window with no contributing occurrences still revalidates the source.
 This remains raw preparation, without event gain, creative edges, allowances
 or authored bus placement.
-See the [batch qualification record](qualification/occurrence-batches-2026-10-03.md).
 
 ## Retained occurrence sample routing
 
@@ -226,7 +225,6 @@ query limits still apply to silent or absent contributions.
 The existing PCM readers consume these checked handles, including negative
 history positions. Cold, split and nested-Preserve reads match uncropped
 references; fractional phase and exact sound endpoints have planner checks.
-See [sound history qualification](qualification/sound-owner-context-2026-10-11.md).
 `StageAudio::read_beat_sound_owner_input` now applies saved sound journals,
 current Hold gates, event edges and event gain to this full history. It retains
 the attachment sum as f64 and excludes Original audio, root SoundEvents and all
@@ -240,7 +238,6 @@ of the larger processing extent. `AudioSoundRoute::with_identity_anchor` accepts
 only a complete identity chain; it cannot change a Window or edited map. The
 occurrence capture and routed gate envelope check the same anchor. This avoids
 the one-sample shift exposed by an NTSC cropped-copy regression.
-See [saved sound input qualification](qualification/beat-sound-owner-input-2026-10-11.md).
 The full group EQ graph and final per-voice delivery policy remain required.
 
 `AudioRoutedRoot::occurrence` captures a complete checked independent occurrence,
@@ -262,8 +259,6 @@ This borrowed route does not itself persist a sound clock or lift a temporal
 command guard. The saved-clock integration above supplies the sound's own
 processing definition, stable occurrence correspondence and chronological
 placements. Original audio bindings cannot substitute for those records.
-See the [routed occurrence qualification](qualification/routed-occurrence-pcm-2026-10-03.md)
-for sample comparisons, exact rounding checks, review and limits.
 
 ## Neutral grouping
 
@@ -284,9 +279,6 @@ without changing their recipes.
 Core tests cover direct, child, sibling and range groups plus refusals; the audio
 definition test compares rendered occurrence PCM before grouping, after a later
 Hold insertion and deletion, and after Ungroup.
-See [endpoint grouping qualification](qualification/sound-group-endpoints-2026-10-22.md)
-for complete PCM, durable history, native workflow and real-media checks, plus
-the current qualification status and retained failures.
 
 An aligned `GroupSelection` can also wrap one complete direct Source or Hold
 inside an ordinary Sequence retained by a sound journal. It preserves every old
@@ -322,9 +314,7 @@ complete input across certified fragments, while each fragment retains its own
 delivery crop, gain, edges and Hold policy. Label and trim edits preserve this
 family; replacing the sound recipe retires it. Pre-birth gaps remain gaps, even
 when a later treatment could produce a filter tail there. Unsupported scope
-changes still refuse atomically. See the
-[aligned-scope qualification](qualification/aligned-sound-scope-2026-10-23.md)
-for measured controls, source identities and remaining vertical checks.
+changes still refuse atomically.
 
 ## Authored bus and remaining work
 
@@ -371,12 +361,3 @@ The final product still requires all of the following:
   attached sounds, and listening remain.
 
 Root sound editing and its guards remain described in [sound events](SOUND_EVENTS.md).
-The [qualification record](qualification/owned-sound-voices-2026-10-03.md)
-retains the initial preparation checks. The
-[saved-sound record](qualification/saved-beat-sounds-2026-10-03.md) covers
-persisted recipes and the authored bus. The
-[saved-clock record](qualification/sound-clocks-2026-10-03.md) covers supported
-temporal transport. The
-[copied-clock record](qualification/sound-slice-clocks-2026-10-03.md) records
-whole-owner copy and register verification. No full-product requirement or release
-gate is complete.

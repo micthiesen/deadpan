@@ -73,8 +73,7 @@ The existing frozen adapters for databases 1 through 38 remain supported.
 
 Verification covers exact curve/endpoint preservation, checked failure,
 current and historical serialization, picture identity through Partition/Split,
-Camera draft retention, and independent PCM/gain comparisons. See
-[qualification](qualification/source-effects-2026-10-01.md) for actual results.
+Camera draft retention, and independent PCM/gain comparisons.
 [Exact editorial windows](SOURCE_EDIT_WINDOWS.md) and a bounded
 [atomic Slip command](SOURCE_SLIP.md) now use the retained full Source context.
 In/Out/Roll, physical growth, their mark/sound transforms and native Trim previews

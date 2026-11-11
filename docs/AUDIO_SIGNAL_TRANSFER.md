@@ -96,8 +96,7 @@ feed it through another Preserve operation. Native decoder integration covers
 qualified source PCM, root silence, room-tone/Preserve context reuse, shared
 work exhaustion and a source-layout change between halo reads.
 
-The [qualification record](qualification/audio-transfer-2026-09-23.md) records
-actual checks and limitations. The [splice design](STRUCTURAL_SPLICE_DESIGN.md)
+The [splice design](STRUCTURAL_SPLICE_DESIGN.md)
 still requires authored live-to-frozen domain bindings, compact Repeat lifecycle,
 composed resume anchors, edited-policy replacement, new seam envelopes, strict
 history migration and the atomic inserted-time command. This adapter provides

@@ -85,8 +85,8 @@ axis to the closest positive even dimension, downward on a tie. It records the
 exact display dimensions and relative aspect error. Each axis differs by at
 most one pixel, including the minimum 2-pixel raster. There is no enlargement to
 a target resolution. The source decoder removes codec padding and compacts
-[pixel-aligned clean apertures](qualification/clean-aperture-2026-10-09.md).
-[Fractional clean apertures](qualification/fractional-aperture-2026-10-09.md)
+pixel-aligned clean apertures.
+Fractional clean apertures
 remain exact rectangles over the complete decoded backing raster. Geometry uses
 those clean extents before SAR and rotation; the shared renderer samples their
 offset and extent after color interpretation. HDR interpretation
@@ -100,8 +100,8 @@ The helper borrows the source metadata unchanged; qualification receipts
 retain it separately from the presentation basis.
 
 The provisional audio-only basis is 1920×1080 at 30 fps. The separate
-[presentation host](PRESENTATION_BASIS.md) records adoption and timed-rate locking
-under specification Section 4. Geometry-only candidate derivation is independent
+[presentation host](PRESENTATION_BASIS.md) records adoption and timed-rate locking.
+Geometry-only candidate derivation is independent
 of cadence, so ambiguous VFR cadence need not block explicit later geometry adoption.
 
 ## Persistence and evidence
@@ -114,6 +114,5 @@ rows, revisions, branches, marks and pending redo with a pre-migration backup.
 Schema-13 placements remain unchanged, and old assets gain no inferred source
 qualification. See [source registration](SOURCE_REGISTRATION.md).
 
-[Qualification](qualification/import-timing-2026-09-21.md) records actual media
-fixtures, exact timing cases and the old-binary migration fixture. No playback,
+No playback,
 audio resampling, authored import UI or export is established by this slice.

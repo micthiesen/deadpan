@@ -183,8 +183,6 @@ timeline splice. Native selected-moment paste uses the new command. The
 [moment-reuse board](design/boards/original-moment-reuse-v1.png) and
 [interaction contract](design/README.md) remain its visual target. Actual GUI
 and performance evidence must be recorded separately from state-only tests.
-The [qualification record](qualification/moment-paste-2026-09-27.md) retains the
-checks, review and unresolved native acceptance.
 
 ### Required splice boundary
 

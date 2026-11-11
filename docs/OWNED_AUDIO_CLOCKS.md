@@ -136,6 +136,3 @@ this owned-recipe reader. Neither this API nor the timing-only proposal proves
 the complete binding lifecycle. The separate persisted representation now has
 [policy and PCM consumers](OWNED_AUDIO_BINDINGS.md) that honor authored clocks;
 its remaining lifecycle and insertion limits are recorded there.
-
-[Qualification](qualification/owned-audio-clock-2026-09-23.md) records the actual
-PCM/current-recipe tests, independent review and full 1,108-test repository gate.

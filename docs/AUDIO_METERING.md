@@ -3,7 +3,7 @@
 `deadpan-audio` exposes independent integrated-loudness and true-peak meters for
 the fixed 48 kHz stereo mix. Both consume immutable PCM. Neither changes gain,
 normalizes passages, enforces a ceiling, or makes pre-effects source PCM a final
-master. Specification Section 10.3's limiter, reduction reporting and final
+master. The limiter, reduction reporting and final
 preview/export integration remain open.
 
 ## Streaming contract
@@ -60,19 +60,16 @@ true-peak amplitudes, and dBTP. Digital silence has a zero amplitude and `None`
 for dBTP. This finite standardized reconstruction is not an exact continuous-time
 oracle. Passing it alone does not qualify a limiter against other reconstruction
 filters, difficult near-Nyquist signals, or the final encoded file.
-The [post-mask limiter experiment](qualification/audio-limiter-postmask-2026-09-22.md)
-retains concrete outputs that pass this meter while exceeding the intended
-ceiling under a broader complete-sinc reconstruction. The subsequent
-[gain-search experiment](qualification/audio-limiter-gain-search-2026-09-24.md)
-adds independently audited global solutions and a longer finite-context
+An earlier post-mask limiter experiment
+produced outputs that pass this meter while exceeding the intended
+ceiling under a broader complete-sinc reconstruction, and a gain-search
+experiment added a longer finite-context
 counterexample. Both designs remain unadopted. [Mastering qualification](AUDIO_MASTERING.md)
 distinguishes the required finite output contract from that broader diagnostic.
 
 ## Qualification
 
-The [measurement report](qualification/audio-metering-2026-09-21.md) records
-generated EBU/ITU cases, a separate FFmpeg reference, throughput, failure paths,
-review and repository checks. Rust tests cover chunk independence, final filter
+Rust tests cover chunk independence, final filter
 context, stereo polarity, quiet passages, frequency response and transactional
 rejection. These are mathematically generated fixtures, not the official EBU
 audio archive or a claim of full conformance.
@@ -83,7 +80,6 @@ Build and run the developer harness using the qualified media prefix from
 ```sh
 cargo build -p deadpan-audio --example measure_pcm --release --locked
 cargo run -p deadpan-audio --example measure_pcm --release --locked -- INPUT.f32le NEW_REPORT.json
-python3 tools/audio-metering-qualification/run.py --measure target/release/examples/measure_pcm --output /tmp/deadpan-metering-new-run
 ```
 
 Input is trusted generated raw little-endian f32, interleaved stereo, 48 kHz.

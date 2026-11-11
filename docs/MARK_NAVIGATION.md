@@ -77,7 +77,7 @@ older valid positions. Saved marks are the durable way to follow edited content.
 
 This does not add structural-edit rebasing for transient history, history for
 every motion, persistent named registers, motion/text-object operators or native
-navigation inside Repeat/Retime occurrence scopes. DP-05 and DP-20 remain partial.
+navigation inside Repeat/Retime occurrence scopes.
 
 ## Recording
 

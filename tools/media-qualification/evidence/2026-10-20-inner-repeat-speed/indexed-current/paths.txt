@@ -1,3 +1,0 @@
-crates/deadpan-core/src/audio_binding/repeat_rates.rs
-crates/deadpan-core/src/audio_binding.rs
-crates/deadpan-core/src/audio_binding/repeat_rates/tests.rs

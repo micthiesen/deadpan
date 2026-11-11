@@ -2,8 +2,7 @@
 
 [`deadpan-store`](../crates/deadpan-store/src/generation.rs) persists immutable
 generation request inputs, per-Hold request clocks, and current/stale/detached
-relevance. This implements the storage boundary for specification Sections 12.6
-and 12.7. [Attempt storage](GENERATION_ATTEMPTS.md) adds durable worker state and
+relevance. This implements the storage boundary for request relevance. [Attempt storage](GENERATION_ATTEMPTS.md) adds durable worker state and
 restart recovery. Neither module resolves source context, accepts candidates, or
 promotes media into a project. The development MLX worker remains separate from
 the native application.
@@ -101,7 +100,6 @@ The schema-5 request implementation passed formatting, workspace Clippy with war
 The audio and model qualification suites also pass 20 and 47 Python tests.
 The current diagnostics distinguish database schema 9 from core document schema 5
 and continue to report application AI generation as unimplemented.
-
 
 ## Host resolver for ordinary writes
 

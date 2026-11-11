@@ -3,8 +3,6 @@
 The core/headless command is implemented and verified. The native `:splice`
 draft uses `m` to select Move, with `s/f` inspecting removal/insertion sites.
 Its interaction and receipt contract is in [visual placement](SLICE_PLACEMENT.md).
-See [core qualification](qualification/atomic-move-2026-09-30.md) and
-[native qualification](qualification/native-move-2026-09-30.md) for evidence and limits.
 
 `Command::MoveRange` relocates current authored content in one reversible edit.
 It preserves the identities of whole moved units and does not import a copied

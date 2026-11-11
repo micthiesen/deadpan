@@ -91,10 +91,6 @@ reference recipe kind agree. Audio contexts use schema 3; schemas 1 and 2 retain
 their closed layout vocabulary. Database migration replays the complete earlier
 history and preserves a pre-migration backup.
 
-[Qualification](qualification/gap-branches-2026-09-26.md) records independent
-review, decoded PCM, compact geometry, actual old-binary migrations and current
-CLI history checks, with raw results and remaining verification limits.
-
 See [the splice design](STRUCTURAL_SPLICE_DESIGN.md),
 [gap timing ownership](GAP_AUDIO_BINDINGS.md), and
 [compact reanchors](AUDIO_REANCHORS.md). None of these primitives alone completes

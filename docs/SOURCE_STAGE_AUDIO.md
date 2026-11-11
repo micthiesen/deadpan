@@ -96,8 +96,7 @@ Protocol 1 returns the source-stage block under `audio`. Invalid/empty ranges
 produce `AudioRangeOutOfRange`; unsupported processing produces
 `AudioOperationUnsupported`; unknown layouts produce `AudioLayoutUnsupported`.
 Missing qualification or original bytes produce `SourceAudioUnavailable`.
-Failures emit no successful partial block. See [headless commands](HEADLESS.md)
-and the [qualification record](qualification/sequence-audio-2026-09-21.md).
+Failures emit no successful partial block. See [headless commands](HEADLESS.md).
 
 The remaining voice graph must consume the same immutable plan and retain its
 distinctions between absent audio, silent Holds and permitted tails. It must

@@ -302,4 +302,4 @@ Destination publication has a separate durable journal and explicit reconciliati
 protocol. It requires a new live verifier result; a stored Verified row alone
 never authorizes adoption of destination bytes. Full recovery acceptance,
 mastering/effects, HDR viewing and release qualification
-remain required; no DP requirement or delivery gate is completed here.
+remain required.

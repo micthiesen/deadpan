@@ -6,15 +6,12 @@ complete time/pitch and edges. [Original/edit audition](PLAYBACK.md) and
 headless `inspect-audio --limited` use that reader. This is an implemented
 limited audition path, with voice effects, sends, the full group mix, listening
 qualification and encoded output still required before it becomes a final master.
-The [limited-audition qualification](qualification/audio-limited-2026-09-24.md)
-records finite checks, exact read parity, preparation costs and remaining limits.
-The earlier [gain-search experiments](qualification/audio-limiter-gain-search-2026-09-24.md)
-remain unadopted research. No full-product requirement is complete.
+The earlier gain-search experiments
+remain unadopted research.
 
 ## Product behavior
 
-[Specification Sections 10.2–10.4](spec/DEADPAN_SPEC.md#102-fixed-default-effect-order)
-remain authoritative. Apply the limiter to the final policy-resolved stereo bus
+Apply the limiter to the final policy-resolved stereo bus
 after voice treatments, sends and group processing, before output conversion.
 Default to a measured −1 dBTP ceiling. Preserve source level and authored dynamics;
 do not normalize words, lift quiet reactions, insert a blanket fade, or replace
@@ -47,7 +44,7 @@ limiting, encoded-file behavior and audible quality are distinct measurements.
 
 Retain complete, zero-extended sinc reconstruction as a broader stress diagnostic.
 It includes the entire finite signal and may expose a failure missed by finite
-meters. It is not a normative requirement to prove an arbitrary continuous-time
+meters. It is not a requirement to prove an arbitrary continuous-time
 reconstruction for every input or converter. Known failures must stay named,
 measured and assessed against the declared output paths and dynamics tests.
 A failure of a required path or quality test blocks adoption; a stronger

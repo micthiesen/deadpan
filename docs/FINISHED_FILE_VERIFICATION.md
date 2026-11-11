@@ -145,8 +145,7 @@ the decoded MaxCLL bound: when fewer than 1 % of chroma sites carry most of
 a frame's light (a small highlight on black), the 99th percentile stays
 dark while the mean does not.
 
-Measured on 2026-10-05 ([record](qualification/hdr-verification-2026-10-05.md)),
-the 99th-percentile bound exceeded the true MaxCLL by up to 20.5 codes on
+Measured on 2026-10-05, the 99th-percentile bound exceeded the true MaxCLL by up to 20.5 codes on
 adversarial dense 1000 cd/m² saturated edges, and by at most 0.2 codes on the
 probe and mixed stress content. A decoded per-pixel maximum was measured
 as the alternative and rejected: with nearest chroma it exceeded the true

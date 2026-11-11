@@ -89,10 +89,7 @@ durable render jobs, the complete shared effects/audio graph, qualified
 VideoToolbox/OS fallback encoding, approved AAC timing metadata, independent
 emitted-file verification, atomic publication and the native workflow. Existing
 legacy Accepted/Still and HDR failures remain explicit until those paths are
-implemented and qualified. No requirement or release gate closes here.
+implemented and qualified.
 
-[Qualification](qualification/export-pictures-2026-09-29.md) records actual Metal
-Original/Hold/Background and Generated output, exact full/nonzero-range clocks,
-odd-canvas mapping, retained-result limits and independent complete-plane
-comparisons. The example reports an explicit Generated skip when its optional
+The example reports an explicit Generated skip when its optional
 accepted fixture is absent.

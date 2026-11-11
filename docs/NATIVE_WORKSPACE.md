@@ -10,8 +10,7 @@ retain their broader register/insert workflow. See [the profile contract](SINGLE
 It also navigates ordinary [Sequence groups](GROUP_NAVIGATION.md), splits their
 direct child beats at the cursor, inserts silent freezes through
 [Insert Time](INSERT_TIME.md), wraps or updates Repeats, deletes beats and changes
-an existing selected Hold's duration. [Pause qualification](qualification/insert-time-2026-09-24.md)
-records exact input, measured frame selection and native focus review.
+an existing selected Hold's duration.
 [Structural speed editing](RETIME_EDITING.md) adds exact `:retime` and
 `:wrap-retime` with an explicit preserve/tape pitch choice, a resolved-duration
 preview and one reversible command. Existing Retime parameters remain editable.
@@ -38,7 +37,6 @@ retry. Newly focused command/search fields initialize their Escape filter in a
 same-frame retry, preserving text even when Escape is the next native input.
 Keycaps and their labels reserve their complete measured width together,
 so narrow layouts wrap the pair instead of clipping the last shortcuts.
-See the [footer qualification](qualification/footer-layout-2026-09-27.md).
 
 Contextual footer keys fit two rows and always end with the Help reference.
 Each hint has a tier (`key_labels::Tier`): **Core** for the context's motions,
@@ -207,10 +205,7 @@ within the beat and length; choosing one lets `:sound-gain`, `:sound-edges`
 and `:sound-delete` apply to it, and Detach or `:sound-detach` removes it in
 one undoable edit ([attached sounds](SOUND_EVENTS.md#seeing-and-detaching-attached-sounds)).
 Nested owners, Repeat/Retime sound transforms, send/tail allowances, effects
-and export remain open. See the
-[native sound placement qualification record](qualification/native-sound-placement-2026-09-27.md)
-and [allowance qualification](qualification/sound-allowances-2026-09-27.md)
-for verification scope and limits.
+and export remain open.
 
 ## Picture and keyboard behavior
 
@@ -248,9 +243,7 @@ failure clears the old image and says it is unavailable. Picture errors are scop
 to presentation; a later successful decode clears an earlier render failure
 without erasing unrelated project/action errors. Render failure stops automatic
 retries until a fresh request or decode arrives. Backgrounds explicitly replace
-textures, and an empty sequence has no invented source frame. The
-[presentation qualification](qualification/preview-presentation-2026-09-21.md)
-records regression, native appearance and keyboard evidence.
+textures, and an empty sequence has no invented source frame.
 
 The cursor is a boundary in `[0, duration]`; the frame to its right is displayed,
 with the final preceding frame shown at the end. One Original and the separate
@@ -358,7 +351,7 @@ Command entry accepts `:repeat N`, `:wrap-repeat N`, `:delete`, and
 beat; wrap-repeat always wraps. Hold duration requires a selected existing Hold
 and an explicit positive integer frame unit. Arguments and unsupported options
 are rejected, not silently ignored. This command subset does not yet implement
-the specification's full typed-unit, selector and completion grammar.
+the full typed-unit, selector and completion grammar.
 
 `,h` inserts a 0.5-second frozen silent pause at the cursor. Counts multiply that
 duration: `3,h` inserts 1.5 seconds. `:hold 12f`, `:hold 250ms`, `:hold 1.5s` and
@@ -414,21 +407,12 @@ native capture path.
 Use the [UI feedback loop](UI_FEEDBACK.md) for current keyboard, mouse, layout and
 picture review. Replay production inputs through the real application, inspect
 the visual artifacts and run separate release timing when responsiveness can
-change. The [interaction review](INTERACTION_REVIEW.md) records personal shortcut
-compatibility and remaining improvements. Offscreen checks do not establish
+change. Offscreen checks do not establish
 native dialogs, IME, VoiceOver, global shortcut delivery or physical presentation.
-
-[Qualification](qualification/native-workspace-2026-09-21.md) records the actual
-service, decoder, keyboard/focus and native interaction checks and their limits.
-The [root editing qualification](qualification/native-editing-2026-09-23.md)
-records Repeat, Delete, Hold-duration, completion-selection and focus evidence.
-The [single-Original qualification](qualification/single-original-2026-09-23.md)
-records the revised creation flow, protected baseline, separate sound catalog,
-design comparison and current verification limits.
 
 ## Timeline scales
 
-The beats panel shows the current group at specification §9.2's three scales.
+The beats panel shows the current group at three scales.
 The story view (default) is one card per beat. `:timeline timing` draws the
 same beats at their exact length on a frame scale over the measured Edit mix
 waveform (stereo min/max peaks from the playback engine's idle Edit-window

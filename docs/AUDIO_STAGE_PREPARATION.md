@@ -149,8 +149,7 @@ admission and final cache writes. Nested processing and cold source opens restor
 their parent's activity on success or failure. A new playback request attaches
 a new monitor without discarding valid PCM. These observations contain no media,
 authored state or readiness authority, and do not affect DSP scheduling or cache
-admission. The playback controller samples them outside the device callback;
-see [preparation progress](qualification/audio-progress-2026-10-11.md).
+admission. The playback controller samples them outside the device callback.
 
 ## Evidence and remaining work
 
@@ -158,25 +157,23 @@ Tests cover actual PCM through seams, fractional input origins, nested history,
 mixed pitch-policy order, outer-crop and irregular-seek parity, stable repeats
 and overrides, output-only Hold policies, cache interpretation changes, eviction,
 shared work limits and cancellation. Plan tests separately cover exact grids,
-rounding and indexed billion-play queries. See
-[qualification](qualification/audio-stages-2026-09-21.md) for the repository gate
-and real process evidence.
+rounding and indexed billion-play queries.
 
-Input streaming is covered by the [streamed-input qualification](qualification/streamed-input-2026-10-11.md),
+Input streaming is covered by tests,
 including a two-minute decoded-WAV signal, cold seeks and complete output
-comparison under a PCM budget smaller than the input. [Disk-backed output](qualification/disk-pcm-2026-10-11.md)
+comparison under a PCM budget smaller than the input. Disk-backed output
 preserves exact random-access PCM with bounded RAM, disk and complete-stage
 work. Ordinary stages and request-local projections use the same storage.
 Cache I/O errors are explicit and partial preparations never publish. The
 existing PCM file I/O diagnostics include these reads/writes; the controller
 also reports retained memory frames and disk bytes.
 
-[Idle preparation](qualification/audio-warming-2026-10-11.md) now examines a
+Idle preparation now examines a
 bounded horizon ahead of the stopped native cursor, including future Preserve
 stages, on the existing PCM worker. It shares canonical caches, source admission
 and request-bound progress with Play. Idle work yields to explicit playback
 and does not guarantee that every examined tile remains cached.
-[Active playback preparation](qualification/audio-ahead-2026-10-11.md) uses
+Active playback preparation uses
 the same worker with a separately bounded canonical PCM FIFO, allowing future
 stages to prepare while the device queue is full. It does not guarantee that
 an arbitrarily expensive stage finishes before its audible deadline.
@@ -184,4 +181,4 @@ The [saved stretch cache](SAVED_AUDIO.md) reuses verified output after restart,
 with fresh source admission, exact keys, atomic publication and reader-safe cleanup.
 Fractional pitch, variable rates beyond one ramped Original beat, remaining voice/group effects,
 full mastering, listening and the complete device/preview/export corpus remain
-open; this qualification does not close DP-09 or DP-16.
+open.

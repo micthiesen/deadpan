@@ -1,8 +1,7 @@
 # Resolved compound transactions
 
 This is the shared execution boundary for a sequence of resolved edits and
-register operations. It supplies atomic history for the semantic macro engine
-required by specification §§6 and 7.4. The separate [semantic planner and native
+register operations. It supplies atomic history for the semantic macro engine. The separate [semantic planner and native
 recorder](SEMANTIC_MACROS.md) now supply frame motions, cuts and bounded calls.
 The first supported
 [semantic dot-repeat](SEMANTIC_REPEAT.md) repeats an ordinary frame cut through
@@ -117,5 +116,4 @@ to the forthcoming semantic program layer.
 
 Schema 53 development packages require recreation. This uses the user's
 authorization to break unused development formats; historical migration
-support remains separately qualified. The complete DP-06 workflow and Gates
-A through G remain open.
+support remains separately qualified.

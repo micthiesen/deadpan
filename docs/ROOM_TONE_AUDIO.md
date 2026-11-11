@@ -51,8 +51,7 @@ requirements remain unchanged.
 Database-37 migration uses a closed core-31 grammar that preserves allowances
 and rejects the new direct/occurrence setter. All snapshots and both patch
 directions are compared before promotion, including abandoned history and redo.
-See the [headless grammar](HEADLESS.md#hold-audio-policy) and
-[authoring qualification](qualification/hold-audio-2026-09-27.md).
+See the [headless grammar](HEADLESS.md#hold-audio-policy).
 
 ## Loop construction
 
@@ -147,11 +146,6 @@ fractional periods, tiny ranges, cancellation, input validation and replay.
 Real PCM tests cover a 44.1 kHz mono source, repeats/overrides/gaps, nested retimes,
 crop history and layout changes. The host test checks an explicit AAC range,
 separate silent time, untouched following source audio, and unchanged history.
-See [qualification](qualification/room-tone-audio-2026-09-21.md).
-
-The [native workflow qualification](qualification/native-room-tone-2026-09-27.md)
-records source-range PCM, transaction and stale-reply tests, keyboard/IME replay,
-the design comparison, and the limits of the offscreen evidence.
 
 The sheet shows the prepared range's measured stereo waveform (since
 2026-11-07): the playback engine measures the same one-Source view the source
@@ -165,8 +159,7 @@ replay frame "Room-tone range waveform".
 Listening across a representative ambience corpus remains required, as does
 room tone for a gap or fragment inside one chosen Repeat play (only ordinary
 Holds there). Export of room tone is
-verified by the `nothing-happens` fixture
-([preview-export-2026-10-04](qualification/preview-export-2026-10-04.md)), and
+verified by the `nothing-happens` fixture, and
 gain envelopes and tails exist ([AUDIO_GAIN.md](AUDIO_GAIN.md),
 [REVERSE_AND_TAILS.md](REVERSE_AND_TAILS.md)); the full voice graph remains
 open. No requirement or release gate is complete because a setter exists.
@@ -216,7 +209,7 @@ qualified Original. Other pause sounds keep their own instructions. The
 
 ## Custom pause sounds
 
-Specification §10.4's fourth policy, `custom`, is `HoldAudio::Custom {
+The fourth policy, `custom`, is `HoldAudio::Custom {
 source, looped, fade_in_ms, fade_out_ms }`: a sound the user chooses for the
 pause. The source is any qualified asset's exact audio span, a catalog sound
 (its complete measured audio) or an Original range, admitted by the store

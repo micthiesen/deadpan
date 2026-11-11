@@ -1,18 +1,17 @@
 # Signed updates
 
-Specification §15.2 requires downloader updates through "app-verified signed
-manifests, compatibility checks, and rollback", installed in "a controlled
-versioned Application Support location" while the bundled baseline stays; §14.3
-asks for signed model-pack manifests, and §14.3/§27.1 require a known-good pack
-to stay until its replacement passes a smoke test, with separate helper and
-model version identities and rollback rules. This page records the trust root,
+Downloader updates go through app-verified signed manifests, compatibility
+checks and rollback, installed in a controlled versioned Application Support
+location while the bundled baseline stays. Model packs use signed manifests, and
+a known-good pack stays until its replacement passes a smoke test, with separate
+helper and model version identities and rollback rules. This page records the trust root,
 the manifest formats, the on-disk layout and the release procedure.
 
 ## Application versions and rollback
 
 Application updates for this personal app use explicit replacement of a
 verified complete bundle, with the previous working build retained for
-rollback (§27.1). The helper and model managers below remain independent.
+rollback. The helper and model managers below remain independent.
 
 Identify an application build by the version and Git commit in
 `Contents/Resources/build-provenance.json`, together with its published
@@ -49,12 +48,11 @@ work.
 On 2026-10-06, the replacement and rollback qualification verified all 10,818
 files and the signature after each copy, opened the same project under both
 builds, restored the previous build, and confirmed unchanged SQLite bytes and
-document dumps. Both archived versions were retained. See the
-[release audit](RELEASE_AUDIT.md) for the bundle identities and evidence.
+document dumps. Both archived versions were retained.
 
 ## Trust root
 
-Deadpan is a personal app without a Developer ID (§27.1), so code signing cannot
+Deadpan is a personal app without a Developer ID, so code signing cannot
 anchor update provenance. Updates are signed with a project-owned Ed25519 key:
 
 - The public key is compiled into every build from
@@ -91,7 +89,7 @@ Verification uses `ring` 0.17.14 (Apache-2.0 AND ISC), already linked by the
 HTTPS transport, so no new cryptography crate was added. The SHA-256 pinning
 alternative (hashes of each future manifest compiled into the app) was rejected:
 it cannot deliver an update without rebuilding the app, which would make the
-§15.2 updater pointless.
+updater pointless.
 
 ## Envelope
 
@@ -310,6 +308,6 @@ reported the update ahead of the bundled baseline, `codesign --verify --deep
 --strict` still passed on the bundle, and `rollback` returned to the bundled
 baseline (probe `stable@2026.08.19`).
 
-To verify (owner): applying a signed downloader update to a packaged
+Not yet exercised: applying a signed downloader update to a packaged
 `Deadpan.app` on a second Mac under quarantine, and a published update URL
 (no hosting is configured; `--manifest` accepts an `https://` URL).

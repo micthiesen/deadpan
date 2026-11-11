@@ -109,7 +109,6 @@ qualification with retained ownership. It persists measured indexes and source
 interpretation, then registers and optionally inserts in one undoable command.
 [Automatic basis selection](PRESENTATION_BASIS.md) applies before timed edits. Import
 progress, retry UI, native dialogs and source-browser integration are implemented.
-The remaining format and acceptance matrix is tracked in [Requirements](REQUIREMENTS.md).
 
 See [headless commands](HEADLESS.md), [ownership tests](../crates/deadpan-store/tests/original_media.rs),
 [CLI tests](../crates/deadpan-cli/tests/original_commands.rs), and

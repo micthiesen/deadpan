@@ -9,9 +9,7 @@ an edit changes rather than the project size times the number of pauses.
 
 ## What grew
 
-Measured on the 10,000-Hold `large-10000` fixture before this change
-([performance record](qualification/performance-2026-10-04.md),
-[timing-storage record](qualification/timing-storage-2026-10-05.md)):
+Measured on the 10,000-Hold `large-10000` fixture before this change:
 
 - Every timing capture stored a `FrozenAudioLayout` of the whole structure
   (about 284 compact bytes per node). Each pause created a new one for its
@@ -112,8 +110,7 @@ formats](DEVELOPMENT_FORMATS.md).
 
 Serializing, storing and hashing a complete document is the most expensive
 part of a commit on a large project (16.3 MB of compact JSON and 37–55 ms on
-10,000 bound Holds in the [2026-10-15
-record](qualification/store-and-seek-2026-10-15.md)), and it used to land on
+10,000 bound Holds), and it used to land on
 whichever edit happened to be the 64th. Keyframe placement is a storage choice, not authored state, so it
 no longer happens inside the edit:
 
@@ -155,9 +152,6 @@ either through the receipt without replay. `tests/failpoints.rs` aborts a
 writer at both sides of that commit (`keyframe-before-commit`,
 `keyframe-after-commit`) and checks receipt-proved read-only reopening, the
 writable reopen's conversion, `validate_full` and a later commit.
-`tests/chaos_kills.rs` kills a writer at random while it commits and writes
-due keyframes after every third commit, checking every reported revision,
-the head, that a writable reopen leaves nothing due, and full replay.
 `tests/revision_storage.rs` checks that writing each due keyframe reproduces
 the previous placement exactly, that a host that never writes them stays
 within depth 127 with every revision rebuilt and receipt-proved, that a
@@ -322,7 +316,6 @@ bounded revision-header clone, with no new document/JSON buffer or persistent
 cache. Tests compare both Some/None paths against independently forced full
 counting, including provisional-value equality, visitor/prefix failures,
 short/equal/128-byte outer headers and the actual 64 MiB/512 MiB limits.
-See the [uninstrumented qualification](qualification/compound-wire-reuse-2026-10-24.md).
 
 `crates/deadpan-core/tests/command_work.rs` runs 48 seeded random sequences of
 40 edits over Hold-only, linked-Source and placed-sound documents (pauses at
@@ -450,8 +443,7 @@ receipts existed. Validation remains an integrity check, as before.
 
 Named registers are operational state outside the timeline history, so the
 history chain does not cover them. Register contents were already addressed by
-the SHA-256 of their canonical JSON. The 2026-10-05
-[adversarial run](qualification/adversarial-2026-10-05.md) showed that the slot
+the SHA-256 of their canonical JSON. An adversarial run showed that the slot
 table and bank version were not covered: a lost, renamed or retargeted slot row
 or a changed version still validated. `register_state.bank_digest` now stores a
 SHA-256 over a domain tag, the bank version and every `name:content-id` slot in
@@ -475,8 +467,7 @@ which disables slicing and step omission. It requires identical authored
 structure, identical resolved root clocks, a compact document no larger than
 the reference, and bit-identical authored-bus and limited-output PCM over the
 whole timeline. Granular patches must round-trip their wire and restore the
-previous revision. See the [qualification record](qualification/timing-storage-2026-10-05.md)
-for the release run and measurements.
+previous revision.
 
 Tests that assert step counts or complete layouts run inside the reference
 representation; the property test above proves the compact form equivalent.
@@ -485,8 +476,7 @@ size bounds, exact reconstruction of every revision through edits, undo, redo
 and reopen, randomized commits compared with complete validation and an
 independent rebuild from storage, receipt extension, invalidation and tamper
 detection, and bounded pause history entries. Core `validated_tests` compare
-reused binding proofs with complete validation, accepting and rejecting. See the
-[incremental commit record](qualification/incremental-commit-2026-10-05.md).
+reused binding proofs with complete validation, accepting and rejecting.
 
 ## Commit-path costs
 
@@ -495,16 +485,14 @@ document copies no retained table. Parsing a document no longer re-serializes
 its admitted binding state or layouts to recheck the input's byte bound, and a
 binding whose structural size bound fits skips exact size serialization. A
 commit parses no document and serializes only its patch (keyframes excepted),
-and validation does not rebuild admitted layouts' indexes. See the
-[incremental commit record](qualification/incremental-commit-2026-10-05.md).
+and validation does not rebuild admitted layouts' indexes.
 
 ### Shared collections and identities
 
 Every edit derives several documents from the validated head (the capture
 copy, the Split result, the insertion result), and the store cache, the
 workspace and the plan keep further copies. On 10,000 beats copying and
-freeing those maps cost about 7 ms of a pause in the
-[2026-10-15 edit-latency record](qualification/edit-latency-2026-10-15.md).
+freeing those maps cost about 7 ms of a pause.
 Two representation changes remove most of it without changing any value:
 
 - `nodes`, `audio_lineage` and the binding state's `bindings` and
@@ -538,8 +526,7 @@ Two representation changes remove most of it without changing any value:
   hashed and merge-joined lookups); see
   [command work reuse](#command-work-reuse). On a wide root a pause still
   resolves one resume clock per later sibling. After the changes above
-  these passes are most of a 10,000-beat pause
-  ([2026-10-15 record](qualification/edit-latency-2026-10-15.md)).
+  these passes are most of a 10,000-beat pause.
 - An edit still copies each large map it changes once (`nodes` for every
   structural edit, the binding maps for timing edits), and a commit's
   durable WAL sync (`F_FULLFSYNC`) takes 3 to 5 ms.

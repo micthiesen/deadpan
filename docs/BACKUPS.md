@@ -1,6 +1,6 @@
 # Backups, newer packages, release migrations and history size
 
-This covers four DP-01 items from [specification 20.2 and 20.4](spec/DEADPAN_SPEC.md#20-projects-history-and-recovery):
+This covers four items:
 rotating consistent backups, opening a package a newer Deadpan saved,
 the release migration policy and its implemented hook, and history size.
 It also records the process-kill evidence for these paths. Recovery from a
@@ -226,8 +226,7 @@ the pending recovery. A package that now opens must use ordinary restore,
 which first saves a safety backup. Closing a session releases its idle
 backup monitor as well as the writer. After replacement, the dialog names
 the retained quarantine even if opening the recovered project fails; it
-does not offer another restore as though nothing happened. See the
-[native recovery qualification](qualification/damaged-recovery-2026-10-08.md).
+does not offer another restore as though nothing happened.
 
 The app refuses a restore while
 an import, relink, render, AI pause or tracking job runs, then opens the
@@ -317,10 +316,7 @@ coordination is excluded. All 25 focused tests and strict app Clippy pass.
 The production keyboard/service/Metal replay passes 50 checks, including
 repeated read-only copy, target, Slip and cleanup actions with usable controls
 after refusal. Its fixture waits for the previous writable session's owned
-backup workers before comparing package bytes. See the
-[qualification record](qualification/readonly-controls-2026-10-08.md) for
-earlier failed assertions, the full app suite and verification limits.
-This refusal handling does not implement export from newer packages.
+backup workers before comparing package bytes. This refusal handling does not implement export from newer packages.
 
 A package an interrupted rollback-journal write left behind (a hot journal,
 only possible during a release migration's switch out of WAL mode) is rolled
@@ -386,7 +382,7 @@ under `project backups --verify`.
 
 ## History limits
 
-There are none, by decision: specification 20.2 requires history to remain
+There are none, by decision: history must remain
 intact, so every revision is kept and there is no undo-depth limit. The
 database keeps a keyframe document every 64 revisions plus one patch per
 revision. The storage report and the Storage panel show the history's size
@@ -395,28 +391,6 @@ revision. The storage report and the Storage panel show the history's size
 Rotating backups bound how much of it a damaged database could lose.
 
 ## Process kills
-
-[`chaos_kills.rs`](../crates/deadpan-store/tests/chaos_kills.rs) re-executes
-itself as a child that keeps a writer busy and is SIGKILLed after a seeded
-random delay, repeatedly on the same package:
-
-- **Commits, AI attempts, backups, checkpoints.** The child commits edits,
-  starts AI generation attempts and advances their stages (in a second
-  package, whose pauses carry the requests), publishes backups with rotation
-  and writes checkpoints. After each kill: opening validates; every commit the
-  child reported is in the history and the head is that commit or the one cut
-  off before its report; no reported attempt is still running after a
-  writable reopen; every published backup verifies; every checkpoint passes
-  `integrity_check`; the complete history replays at the end.
-- **Restores.** The child restores two backups back and forth; afterwards the
-  head is one of the two states and every backup, including the automatic
-  `before-restore` ones, verifies.
-- **Migrations.** The child runs the synthetic release migration on a fresh
-  copy each round; afterwards the package is either the old database (opens
-  for writing, same document, history replays) or the new one (viewed
-  read-only, same document). This found that a kill during the switch out of
-  WAL mode left a hot rollback journal that read-only probing could not
-  recover; writable opens now roll it back under the lock.
 
 **Deterministic windows.** [`failpoints.rs`](../crates/deadpan-store/tests/failpoints.rs)
 aborts a child at named crash windows (debug builds only; release builds
@@ -431,10 +405,6 @@ compile the failpoints away) and checks the child reached each one:
 | `migration-after-rename` (renamed, folder not synchronized) | The new database; viewed read-only with the same document |
 | `damaged-after-main-moved`, `damaged-after-quarantine` | No `project.sqlite`, opening refuses; a rerun completes, leaving no WAL beside the new file |
 
-The regression run is 8 kills per test with a fixed seed;
-`DEADPAN_CHAOS_SEED=<hex>` and `DEADPAN_CHAOS_ITERATIONS=<n>` widen it (a
-40-kill run passed on 2026-10-06).
-
 - **Proxy publication.** [`proxy::cache::tests`](../crates/deadpan-cli/src/proxy/cache_tests.rs)
   kills a child that keeps staging, writing and publishing multi-megabyte
   proxy movies over six keys. Every visible entry afterwards opens with its
@@ -444,8 +414,7 @@ The regression run is 8 kills per test with a fixed seed;
   covered by the worker supervision tests, and full disks by the
   [disk-full tests](RECOVERY.md#storage-failures).
 
-- **Render host during encoding and verification.** The
-  [2026-10-08 qualification](qualification/render-host-crash-2026-10-08.md)
+- **Render host during encoding and verification.** A test
   kills the production coordinator after matching real worker and public
   progress. Both helper groups exit through their ordinary control-pipe EOF,
   reopening reports Interrupted attempts and authored history is unchanged.
@@ -456,7 +425,7 @@ The regression run is 8 kills per test with a fixed seed;
 
 - A process kill is not a power loss: the kernel still writes back cached
   pages. Physical power loss during commits, backups, restores and
-  migrations is not qualified (owner: To verify).
+  migrations is not qualified.
 - Backup cadence and the maximum count and size are per-user settings, shared
   by the app and CLI; the age and reason retention buckets remain fixed. There
   is no per-project setting.

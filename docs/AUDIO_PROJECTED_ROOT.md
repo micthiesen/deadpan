@@ -86,5 +86,4 @@ group must remain an actual live ancestor of an inserted Hold; a physical audio
 placement cannot establish that picture/effect ownership.
 
 See [structural splice design](STRUCTURAL_SPLICE_DESIGN.md) for the complete
-remaining contract and [qualification](qualification/projected-root-2026-09-26.md)
-for tests, independent review and delivery evidence.
+remaining contract.

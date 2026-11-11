@@ -57,8 +57,7 @@ One optional ID3v2.3/2.4 tag is bounded to 1 MiB and 1,024 frames: untransformed
 text/comment fields up to 64 KiB and at most one bounded inline PNG/JPEG picture,
 discarded without image decoding. ID3v1 is also admitted. Free format, emphasis,
 VBRI, ID3 transformations/chapters/private payloads, APE tags, raw Layer I/II,
-and MP3 in other containers remain unqualified. See
-[MP3 evidence and sample semantics](qualification/mp3-sources-2026-10-09.md).
+and MP3 in other containers remain unqualified.
 
 The shared MP4 guard walks a closed, nonfragmented grammar. Video selection
 requires exactly one `avc1` H.264, `hvc1` HEVC, `vp09` VP9, `av01` AV1 or ProRes 422 track
@@ -112,7 +111,7 @@ Changing actual geometry, field order or color fails. Reserved frame-header
 values are closed except for the observed Apple `0x30` upper alpha-byte nibble,
 whose actual alpha nibble is zero. Corrupt/concealed decoded pictures fail too.
 4444/XQ, alpha, RAW, HDR/log, odd-height interlaced pictures, MXF and other
-metadata forms remain unqualified. See [ProRes evidence](qualification/prores-sources-2026-10-09.md).
+metadata forms remain unqualified.
 
 VP9 uses the [VP Codec MP4 binding](https://www.webmproject.org/vp9/mp4/):
 exactly one version-1 `vpcC`, profile 0/eight-bit or profile 2/ten-bit 4:2:0,
@@ -132,16 +131,13 @@ has at most eight frames, exactly one displayed picture last, and exact lengths.
 Hidden references do not add timeline pictures; `show_existing_frame` retains
 its own PTS. A different VP9 render size or raster, interlaced declaration,
 contradictory metadata, unsupported profile or malformed index fails explicitly.
-See [SDR VP9 qualification](qualification/vp9-sources-2026-10-09.md) and
-[HDR VP9 qualification](qualification/vp9-hdr-sources-2026-10-09.md).
 
 AV1 Main uses static dav1d 1.5.4 through pinned FFmpeg 8.0.3, with its native
 hardware-only AV1 decoder disabled. MP4 uses `av01`/`av1C`; Matroska/WebM uses
 `V_AV1` and a bounded av1C `CodecPrivate`. Eight/ten-bit 4:2:0 supports explicit
 SDR full/limited range and ten-bit limited BT.2020 NCL PQ/HLG. Left and top-left
 chroma declarations are retained. AV1's unspecified position and VP9 WebM with
-both siting coordinates absent/unspecified use the recorded left interpretation
-described in [YouTube acquisition qualification](qualification/youtube-quality-2026-10-09.md).
+both siting coordinates absent/unspecified use the recorded left interpretation.
 The receipt and displayed-picture notice distinguish this choice from declared
 siting; partial and conflicting declarations still fail. Container color must
 agree with the bitstream. Static HDR
@@ -165,9 +161,8 @@ AV1 Professional/High profiles, monochrome, twelve-bit, multilayer streams,
 unknown chroma siting, tile lists, redundant frame headers, dynamic HDR and
 unqualified metadata/sample groups fail explicitly. A non-power-of-two custom
 dimension limit can conservatively reject a sequence whose actual pictures fit.
-See [AV1 evidence and remaining checks](qualification/av1-sources-2026-10-09.md).
 
-The full §16.3 source/operation matrix remains implementation and qualification
+The full source/operation matrix remains implementation and qualification
 work; the admitted profiles above do not establish complete format support.
 
 Video Matroska admission requires one `V_FFV1`, qualified `V_VP9` or Main `V_AV1` track;
@@ -196,8 +191,7 @@ TOC, frame count, CBR/VBR lengths and padding are checked before FFmpeg parsing.
 Each frame is at most 1,275 bytes and each packet at most 120 ms; aggregate
 packet/sample limits apply. Manual decoding must account for every admitted
 packet and physical sample. The decoder explicitly selects pinned libopus;
-native FFmpeg Opus is disabled. See [Opus qualification](qualification/opus-sources-2026-10-09.md)
-and [sample-clock semantics](SOURCE_AUDIO.md#opus-container-and-sample-clocks).
+native FFmpeg Opus is disabled. See [sample-clock semantics](SOURCE_AUDIO.md#opus-container-and-sample-clocks).
 
 VP9 Matroska/WebM uses explicit SDR or qualified PQ/HLG range, matrix, transfer, primaries and
 left/top-left chroma siting, plus its first bounded keyframe header. Profiles
@@ -212,7 +206,6 @@ unrepresentable float or out-of-range integer is recorded as ignored; explicitly
 unknown zero light levels remain present. This avoids FFmpeg dropping partial
 declarations or narrowing wide content-light integers. SDR with any static HDR
 declaration fails. VP9 has no in-band static metadata to override this binding.
-See [WebM qualification](qualification/webm-vp9-sources-2026-10-09.md).
 
 RIFF/WAVE admits unsigned 8-bit, signed little-endian 16/24/32-bit and IEEE
 float32 PCM. One plain `fmt16`, `fmt18` with zero `cbSize`, or closed extensible
@@ -230,11 +223,8 @@ The downstream matrix independently checks whether it supports the declared
 layout. Plain WAV channels remain unspecified when the file supplies no layout.
 The field contract follows Microsoft's
 [WAVEFORMATEXTENSIBLE definition](https://learn.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible);
-Deadpan deliberately admits only the exact subset above. See
-[wide PCM qualification](qualification/pcm-sources-2026-10-09.md) and
-[source-voice qualification](qualification/source-voices-2026-09-27.md) for real
-declared-layout decoding and malformed-header tests. Other codecs and container
-grammars remain required product work; rejecting them here does not reduce the spec.
+Deadpan deliberately admits only the exact subset above. Other codecs and container
+grammars remain required product work.
 
 ## Codec expansion and controlled decoding
 
@@ -278,7 +268,6 @@ malformed/tiny planes and unknown terminal timing fail explicitly. Unannounced
 interlace still fails for formats without an admitted field clock. Explicit
 progressive-only decoding protects exports, generated masters and proxies;
 progressive HRD timing is allowed, while interlaced/repeated fields are refused.
-See [telecine qualification](qualification/telecine-sources-2026-10-09.md).
 
 Every demuxed packet, including unselected audio, is limited to the configured
 payload plus side-data byte allowance, at most 16 MiB. H.264 packets have at most
@@ -302,8 +291,7 @@ Static HDR metadata on SDR remains refused. Ten-bit SDR uses the same RGBA64
 picture path as HDR, retaining its low bits through the shared renderer;
 analysis can request RGBA8. This adds no HDR interpretation or tone mapping.
 
-The [SDR codec qualification](qualification/sdr-source-codecs-2026-10-09.md)
-covers full/limited BT.709, B-frame clocks, repeated threaded seeks and public
+SDR codec coverage includes full/limited BT.709, B-frame clocks, repeated threaded seeks and public
 Render. The broader codec/profile and source-color matrix remains open.
 
 Before reusing a HEVC decoder for a seek, drain its pending output through the
@@ -407,12 +395,7 @@ return the decoded ten-bit planes unchanged for even-dimension HDR pictures.
 
 ## Verification and remaining work
 
-The HDR grammar and decoder are recorded in
-[the HDR admission note](qualification/hdr-source-admission-2026-10-05.md).
-
-See [the qualification record](qualification/video-admission-2026-09-21.md) for
-actual fixture, hostile-header, native decoder and sanitizer results. Most
-verification runs through unit tests and real-media headless integration tests.
+Most verification runs through unit tests and real-media headless integration tests.
 This adds no user interface and does not qualify import, playback, export,
 full-size performance, unknown container variants or every malformed bitstream.
 The separately isolated generated-media conversion worker has its own admission

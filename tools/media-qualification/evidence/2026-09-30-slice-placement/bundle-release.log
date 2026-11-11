@@ -1,3 +1,0 @@
-usage: build-app.py [-h] --binary BINARY --output OUTPUT
-                    [--bundle-id BUNDLE_ID]
-build-app.py: error: --output already exists: /tmp/deadpan-slice-placement-20260930/Deadpan Slice QA.app

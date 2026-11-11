@@ -4,8 +4,7 @@
 beat uses while keeping its output position and duration. Positive deltas select
 later material. Core schema 39/database 48 introduced this command and the exact
 [editorial window](SOURCE_EDIT_WINDOWS.md) it requires. The core 40/database 49
-increment added the changed audio joins described below;
-[Trim qualification](qualification/source-trim-2026-10-01.md) covers that correction.
+increment added the changed audio joins described below.
 
 ## Scope
 
@@ -174,8 +173,7 @@ revision invalidates an unsaved proposal, including after a fresh Undo revision.
 Cancel restores entry state only while that captured workspace remains valid.
 
 Service, input/presentation tests, rendered replay and native keyboard/save/reopen
-verification pass. See the [qualification record](qualification/native-slip-2026-10-01.md)
-for exact source identities, results, inspected captures and physical-input limits.
+verification pass.
 
 ## Recording
 

@@ -52,6 +52,4 @@ and rebuild reason. Existing PCM file counters include persistent payload
 reads/writes; headers and filesystem metadata are not counted.
 Preparation status distinguishes input checking, restoration and saving.
 
-Qualification is recorded in [persistent audio](qualification/persistent-audio-2026-10-11.md).
-The remaining voice, group, mastering and device/export corpus keeps DP-09 and
-DP-16 partial.
+The remaining voice, group, mastering and device/export corpus remains open.

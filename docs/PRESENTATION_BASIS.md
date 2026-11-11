@@ -94,8 +94,6 @@ qualified source receipts and imports without accepting the new primary intent,
 basis-state, geometry commands or presentation patch fields. Existing source
 qualification rows and all branch references survive unchanged.
 
-[Qualification](qualification/presentation-basis-2026-09-21.md) records real-media
-insertion, unchanged audio/mark coordinates, CLI previews, rollback and migration
-evidence. This is authored/headless behavior. Native project UI, visible preview
+This is authored/headless behavior. Native project UI, visible preview
 of canvas changes, framing-effect reevaluation, the full source format/color
 matrix, playback, and rendered-file equivalence remain open.

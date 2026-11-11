@@ -33,25 +33,18 @@ The current application and shared command path include:
   volume, sound placement, gain/mute, time/pitch processing, room tone,
   [EQ and filters](docs/EQUALIZER.md), saturation, tails and
   [continuous wet returns](docs/FINITE_WET_EFFECTS.md). Retained sound-processing
-  scopes support qualified editing families; broader transforms and complete
-  audio qualification remain open.
+  scopes support the listed editing families; other combinations refuse with a
+  message naming the alternative.
 - **AI pictures:** native [AI Hold and extension workflows](docs/AI_HOLDS.md)
   insert a deterministic fallback, generate local candidates, compare variants,
   and require explicit undoable acceptance. Accepted pictures reopen and render
-  without their model. Model installation and offline packs are implemented;
-  resident-model and remaining performance work stay open.
+  without their model. Model installation and offline packs are implemented.
 - **Playback and export:** shared picture/DSP semantics, committed-revision
   [native and headless Render](docs/RENDER_JOBS.md), automatic SDR/HDR encoder
   admission, emitted-file verification, cancellation, retained attempts and
-  destination recovery. Rendering is implemented; the full format/effect,
-  mastering, HDR-display and workflow qualification remains incomplete.
+  destination recovery.
 
-Remaining work includes temporal and attached-sound scope combinations,
-selectors and operators, framing/target controls, analysis/model refinement,
-complete playback/export qualification, and measured latency/memory budgets.
-The tracker records exact limits and evidence. Physical keyboard, IME,
-VoiceOver speech, listening and other owner-only checks are recorded separately
-there with steps; they do not silently reduce the specification.
+Remaining work is the finish list in [the brief](docs/BRIEF.md).
 
 The native [interface boards](docs/design/README.md) and
 [identity assets](docs/design/brand/README.md) remain the visual targets.
@@ -69,7 +62,7 @@ described in [Development](docs/DEVELOPMENT.md).
     cargo run --locked -p deadpan-app
 
 The [fast feedback guide](docs/BUILD_FEEDBACK.md) separates routine incremental
-builds from qualification. Prefer its installed Blaze command for repeated
+builds from release builds. Prefer its installed Blaze command for repeated
 pure Core library body edits. Plan, integration tests and the native app/media
 stay on Cargo; the native Blaze JIT paths currently panic.
 
@@ -104,9 +97,7 @@ projects retain the compatibility workspace.
 [cargo xtask bundle](docs/PACKAGING.md) builds a self-contained, relocatable
 Deadpan.app with its pinned helpers and runtime resources; bundle-verify checks
 a scrubbed relocated copy. The personal app uses ad hoc or local signing and
-requires neither Developer ID signing nor notarization. Local packaging
-qualification does not establish support on another Mac or overall release
-readiness.
+requires neither Developer ID signing nor notarization.
 
 [Development](docs/DEVELOPMENT.md) documents the checks and the gate.
 

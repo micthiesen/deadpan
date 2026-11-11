@@ -1,9 +1,7 @@
 # Ripple Source edge trimming
 
 The shared command supports qualified Source In/Out ripple trimming.
-[Qualification](qualification/source-trim-2026-10-01.md) covers exact geometry,
-indexed pictures, decoded PCM and store/headless admission. Full
-[Trim mode](spec/DEADPAN_SPEC.md#77-trim-mode) and overwrite remain required.
+Full Trim mode and overwrite remain required.
 [Adjacent Roll](SOURCE_ROLL.md) has a separate shared command.
 
 `TrimSource` moves either the In or Out edge by signed whole project frames.

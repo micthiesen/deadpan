@@ -76,7 +76,6 @@ physical prefix behind a unity Partition so the selected output stays fixed.
 They compare exact sample phase, block partitions and inverse restoration.
 The storage regression preserves nonzero offsets and exact frozen layouts
 through create/reopen, serialized history and fresh-revision Undo/Redo.
-See [qualification](qualification/source-origins-2026-10-01.md).
 
 [Source effect clocks](SOURCE_EFFECT_CLOCKS.md) add the separate framing and
 audio-treatment preservation required for physical growth. A public Trim command

@@ -110,8 +110,7 @@ dependencies, aliases, rollback, read-only preview, history branches, scoped
 isolation, dormant Defaults, mapped request addresses and unsupported old
 development formats. Native integration
 tests exercise actual media qualification, acceptance and complete dependency
-readback after removing worker files and relocating the package. The
-[Extension integration](qualification/extension-saved-2026-10-08.md) also covers
+readback after removing worker files and relocating the package. Extension integration also covers
 both directions, one-frame output at definition edges, missing signatures or
 PNGs, exact sampled pixels and model-free undo/redo and reopening.
 
@@ -135,6 +134,3 @@ Ready variant, and real-model seam quality remains unmeasured. The native app's 
 interactive acceptance are described in [AI Holds](AI_HOLDS.md#native-app-workflow). The
 headless chain, its measured real run and the symmetric conditioning and
 presentation raster policy are in [AI Holds](AI_HOLDS.md).
-
-[The measured acceptance run](qualification/acceptance-2026-09-21.md) records the
-actual media/history probe, independent decode, repository gate and sanitizer scope.

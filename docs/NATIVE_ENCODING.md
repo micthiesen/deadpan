@@ -40,10 +40,9 @@ retain their ABI-1/2/3 evidence; current native admission requires ABI 4. ABI 3
 adds video rate-control fields. ABI 4 disables AAC perceptual noise substitution,
 and checks that the codec accepted that setting, without changing these AAC
 clocks, packet counts or the 384 kbit/s target. The measured quiet EQ-tail
-failure and regression are retained in the
-[AAC fidelity qualification](qualification/aac-noise-substitution-2026-10-12.md).
+failure motivated this.
 
-The engineering policy derives video bitrate from specification 22.4's pixel
+The engineering policy derives video bitrate from pixel
 classes and frame-rate band, interpolating by actual pixel count. It requests
 High profile, progressive square pixels, left-sited limited Rec.709 I420, a GOP
 near half the frame rate, and AAC-LC stereo at 384 kbit/s. Hardware and OS software
@@ -65,8 +64,7 @@ evidence failure rather than an encoder-absence fallback trigger. Pinned FFmpeg
 otherwise logs and ignores an unsupported QP setter. The measured OS software
 H.264 encoder lacks this property and cannot qualify for current automatic SDR;
 the hardware path supports it. A capability dictionary and codec fields are
-requests, not proof of emitted quality. The real-file and grain/edge regression
-measurements are in [encoder quality qualification](qualification/encoder-quality-2026-10-10.md).
+requests, not proof of emitted quality.
 
 The pinned VideoToolbox adapter omits packet durations. This boundary assigns
 only missing video durations from the already authored CFR contract, rejects
@@ -82,8 +80,7 @@ video `mdhd` duration field changes, with synchronization and readback; PTS/DTS,
 sample tables, edits and AAC remain intact. The optional
 `EncodeReport.video_media_duration_correction` records the measured old/new
 ticks and composition offsets. Inconsistent evidence fails. The independent
-finished-file verifier retains every strict clock check. See the
-[retained-file regression](qualification/mux-duration-2026-10-08.md).
+finished-file verifier retains every strict clock check.
 
 `EncodeError::kind()` classifies exact native error codes separately from their
 diagnostics. A missing named video encoder is distinct from missing AAC and
@@ -161,8 +158,7 @@ hardware H.264, HEVC B-frame attempts emitted reordered packets with no PTS
 before DTS; the rejection remains in place. OS software PQ declared `topleft`
 chroma location in its VUI despite left-sited input, while hardware PQ/HLG and
 software HLG declared `left`; software PQ therefore needs verifier rejection or a
-separate decision. See the
-[HEVC Main10 qualification](qualification/hevc-main10-encoding-2026-10-05.md).
+separate decision.
 
 ## File, work and cancellation limits
 

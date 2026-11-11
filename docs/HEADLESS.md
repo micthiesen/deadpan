@@ -62,7 +62,7 @@ cargo run --locked -p deadpan-cli -- command /tmp/example.deadpan --json /tmp/re
 ```
 
 A dry run returns the validated forward/inverse changes, affected node IDs, and
-duration delta with `committed: false`. It also reports spec §6.4 `warnings`
+duration delta with `committed: false`. It also reports `warnings`
 (each a `code`, message and IDs: `marks_removed`, `marks_unresolved`,
 `sounds_removed`, `exact_speed_change_clocks`, `ai_requests_may_go_stale`, or
 `ai_requests_unknown` when relevance cannot be read) and the `required_jobs` a
@@ -122,8 +122,7 @@ ranges; staged copies and cuts search afresh. The host carries an exact-key
 analysis snapshot guard through preview and transactional publication, including
 register-only copies and selection-only receipts. Missing, stale, incomplete
 or unsupported matches refuse without fallback. See
-[transcript-search sets](SEMANTIC_MACROS.md#transcript-search-sets) and their
-[verification status](qualification/transcript-search-selectors-2026-10-22.md).
+[transcript-search sets](SEMANTIC_MACROS.md#transcript-search-sets).
 Macro selectors are
 `SemanticSelector` in `crates/deadpan-core/src/semantic/program.rs`;
 `resolve-selection` also resolves mark and mark_range selectors read-only.
@@ -662,7 +661,6 @@ Sequence-pinned marks remain single events at fixed project coordinates.
 Unresolved marks remain unresolved and retain their last coordinates.
 Inheritance follows the owner: an externally owned Local mark referencing a
 copied host remains on its original authored host. It is not implicitly copied.
-See [nested occurrence verification](OCCURRENCE_VERIFICATION.md).
 
 ## Explode, duplicate and several plays
 
@@ -902,8 +900,6 @@ policy. Named-mark selectors are described below. Semantic named-mark ranges
 can drive the existing range operators in an ordinary Edit Sequence. Role-only
 consumers retain their one-direct-child constraint; named ranges do not grant
 new temporal attachment or occurrence-edit authority.
-[Boundary verification](ANCHOR_VERIFICATION.md) preserves the original query
-evidence; [mark verification](MARK_VERIFICATION.md) covers the schema-3 extension.
 
 ## Persistent marks
 

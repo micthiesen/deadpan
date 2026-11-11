@@ -107,14 +107,6 @@ Review caught the legacy asset-hash vocabulary gap. A regression that adds an
 otherwise valid BLAKE3 asset to every old snapshot reproduced erroneous promotion
 before the fix; old-schema asset parsers and projections now reject it.
 
-On 2026-09-21, the full repository gate passed on Apple Silicon macOS with pinned
-Rust 1.97.1: formatting, workspace Clippy with warnings denied, 268 Rust tests
-(none failed or ignored), workspace build, and `deadpan-cli doctor` reporting
-database schema 7 and core schema 5. The audio, model, and FFV1 report suites passed
-20, 47, and 5 Python tests. An obsolete migration test expectation of schema 6
-was corrected before the full passing run. Native startup, GUI, inference and
-actual media-rendering checks were not repeated for these pure semantics.
-
 Candidate-to-master conversion, provenance binding and selected-Ready/relevance
 checks now support explicit durable store acceptance. Audition, exact source/color
 context, application acceptance, model-independent rendering and portable copy
@@ -133,7 +125,7 @@ linear interpolation of the native sequence at `(j+1)*(M-1)/(N+1)`, so neither
 conditioning endpoint (native frames 0 and M-1) is ever presented.
 
 `deadpan_cli::generation::joins::measure_request_joins(package, generated, origin,
-hold, receipt, cancelled)` is the §12.5 endpoint-discontinuity heuristic. It decodes
+hold, receipt, cancelled)` is the endpoint-discontinuity heuristic. It decodes
 the committed pictures at f-1 and f+N of the request's origin revision through
 `ProjectPictureSession` (what the viewer shows there, before editorial framing),
 and the Ready receipt's sampled-master frames 0 and N-1 through a verified

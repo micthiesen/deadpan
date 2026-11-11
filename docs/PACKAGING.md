@@ -1,8 +1,7 @@
 # Packaging
 
 `cargo xtask bundle` builds a self-contained, relocatable `Deadpan.app` for
-Apple Silicon macOS 15 or later. DP-22 is locally complete; Gate F's remaining
-output/effect/HDR qualification stays open. The
+Apple Silicon macOS 15 or later. The
 bundle runs from any location without Cargo, the FFmpeg developer prefix,
 Homebrew or a separately installed downloader. Deadpan is a personal app with
 no Apple developer account (owner decision 2026-10-05): the bundle is ad hoc
@@ -105,7 +104,7 @@ Its source is the original macOS arm64 library in
 onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl (20,881,803 bytes,
 SHA-256 0ba02a44acb6203040354d9a1f160e3f37a43feac7bb05caa3e0ea545efed505).
 This wheel is build provenance, not a shipping Python dependency. The current
-qualification prefix is /Users/michael/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix;
+development prefix is /Users/michael/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix;
 a different absolute location is allowed only with the same qualified bytes.
 
 Only the exact load command @rpath/libonnxruntime.1.dylib resolves through
@@ -161,15 +160,9 @@ installs through Models; its unspecified separate checkpoint terms remain
 visible. The worker assembles its fixed graph in memory from verified original
 bytes and needs no Python, Torch or pickle evaluation.
 
-The [2026-10-25 word-refinement qualification](qualification/word-refinement-2026-10-25.md)
-records the rebuilt bundle, scrubbed copy, installed-pack worker smoke, actual
-inference/acceptance/Undo, native load audit and signature checks. This is local
-workflow evidence; the experiment's stricter quality failures remain recorded.
-
 ## Native helper launch admission
 
-The [2026-10-25 qualification](qualification/native-launch-trust-2026-10-25.md)
-adds compiled pins for `deadpan-transcribe`, `deadpan-track`,
+Compiled pins cover for `deadpan-transcribe`, `deadpan-track`,
 `deadpan-media-worker` and their complete six-library FFmpeg closure. Workers
 are privately relocated and clean-signed before both hosts are rebuilt with
 `DEADPAN_NATIVE_CONTENT_PINS`. Final assembly checks identical image content
@@ -193,21 +186,17 @@ or explicit-root downloader execution and private-AI runtime selection/launch.
 Both local-certificate and ad hoc bundles pass the final host probes. The
 relocated local bundle passes actual transcription/Vision workflows, 169
 recorded operations with 34 expected refusals, and general bundle
-verification. The failed setup attempts and original test failures remain in
-the evidence. Local certificates report `local` and need no timestamp server;
+verification. Local certificates report `local` and need no timestamp server;
 only an explicitly selected Developer ID identity requests a timestamp.
 
-The separate private AI runtime gap found at this checkpoint is now closed by
-the [private AI launch qualification](qualification/private-ai-launch-trust-2026-10-25.md)
-and the inventory admission described below. Together these locally complete
-DP-22; they do not close the broader delivery gates.
+The private AI runtime is admitted by the inventory check described below.
 
 ## FFmpeg relocation
 
 Pinned libopus 1.6.1 is statically linked into libavcodec. The bundle carries its
 BSD notice and source identity in the SBOM; no external Opus library is loaded.
 Build-time and runtime checks require libopus and disable FFmpeg's native Opus
-decoder, following the measured source-audio qualification.
+decoder, following a measured SILK/hybrid mismatch.
 
 Pinned BSD-2-Clause dav1d 1.5.4 is also static inside libavcodec, with its exact
 notice and source pin in the SBOM. Native builds and bundle construction require
@@ -262,7 +251,7 @@ from `tools/build-app.py` therefore keep development behavior.
   copy. Outside a packaged bundle the baseline is the managed root's compiled
   pins. An explicit `--root`/`--helpers` names a managed root (with its own
   active update). `downloader install` and `downloader update` write only the
-  managed root, never the bundle (§15.2).
+  managed root, never the bundle.
 - Models: whisper.cpp, the AI pause weights and other packs stay in
   `~/Library/Application Support/Deadpan/Models`, installed on explicit request
   by download or offline import ([model packs](MODEL_PACKS.md)). None ship in
@@ -279,8 +268,7 @@ from `tools/build-app.py` therefore keep development behavior.
 
 ## AI runtime
 
-The standard download carries the private model runtime (specification
-§14.1): `cargo xtask bundle` runs
+The standard download carries the private model runtime: `cargo xtask bundle` runs
 [`tools/ai-runtime/build.py`](../tools/ai-runtime/build.py), which assembles it
 from the pins in [`pins.json`](../tools/ai-runtime/pins.json) into the
 build-input cache and prints its location. The bundle freezes a private copy
@@ -304,8 +292,8 @@ precompiled bytecode), `ffmpeg`/`ffprobe` 43 MiB, LTX source 3.2 MiB. The
 2026-10-05 bundle is 710.1 MiB on disk and 288.5 MB as a `ditto` ZIP, against
 206.0 MiB and 115.3 MB without it. That is practical for one application
 download, while the 36.2 GB of weights are not: they stay a separately
-accepted, resumable [model pack](MODEL_PACKS.md). Bundling also follows §27.3
-("only application-signed runtime updates introduce executable code"): a
+accepted, resumable [model pack](MODEL_PACKS.md).
+Bundling also follows the rule that only application-signed runtime updates introduce executable code: a
 downloadable runtime pack would be new executable code outside the app's
 signature. The MLX wheels are the macOS 26 builds, measured 2.2 times faster
 than the macOS 15 builds on the reference Mac, so AI pauses require macOS 26
@@ -356,24 +344,12 @@ Python. `--without-ai-runtime` requires the pin, tree and inventory to be absent
 and reports AI unavailable without Python execution. `bundle-verify` likewise
 admits both hosts before its direct runtime checks and rechecks afterward.
 
-The [2026-10-25 qualification](qualification/private-ai-launch-trust-2026-10-25.md)
-records local-certificate, ad hoc `--no-build` and no-AI bundles. The first two
-share the 2,314,724-byte canonical inventory SHA-256
-`08ed482a9f5009c1941d4d7aa2651a0fc643529fa087c50f25aeedfc0e04e9c0`,
-covering 10,660 ordinary files, 62 Mach-O images, 1,536 directories and six
-aliases. General relocated verification passes for local and no-AI bundles;
-150 adversarial operations include 61 expected denials and zero timeouts.
-Real Check calls through both hosts and tampered Inference attempts refuse
-before execution or authored changes, including re-signed substitutions,
-Python/import hooks, Metal data, inventory, aliases and FIFO inputs.
-
-A real definition-edge Hold reaches Ready, explicit acceptance, offline export
-and exact fallback Undo with full history verification. Two new interior
-candidates retain motion/luma quality failures. These results qualify launch
-trust and one complete workflow on the primary M5 Max, macOS 26.5.2 and Rust
-1.97.1; they do not establish a quality corpus, latency calibration or clean-Mac
-result. Evidence is under
-`tools/model-qualification/evidence/2026-10-25-ai-launch-trust`.
+Local-certificate, ad hoc `--no-build` and no-AI bundles are admitted the same
+way. The first two share one canonical inventory SHA-256 covering every
+ordinary file, Mach-O image, directory and alias. Real Check calls through both
+hosts and tampered Inference attempts refuse before execution or authored
+changes, including re-signed substitutions, Python/import hooks, Metal data,
+inventory, aliases and FIFO inputs.
 
 **GPL programs.** `ffmpeg` and `ffprobe` in `ai-runtime/bin` are a separate
 GPL-2.0-or-later build (FFmpeg 8.0.3 with static x264 r3222) that the worker
@@ -460,9 +436,7 @@ When a feature needs a stable designated requirement (for example macOS privacy
 permissions that should survive rebuilds), sign with the dotfiles local signing
 identity, the same one Kestrel uses. Run `make maintain` in `~/.dotfiles` once so
 `~/Library/Keychains/dotfiles-signing.keychain-db` holds the identity, then pass
-its exact certificate fingerprint to `--identity`. The qualification above
-retains a stalled label-based attempt and the successful fingerprint-based
-build. The canonical dotfiles signer prepares the existing identity for
+its exact certificate fingerprint to `--identity`. A label-based selection can stall; the fingerprint-based build works. The canonical dotfiles signer prepares the existing identity for
 headless fixture signing; private key material is never part of Deadpan's
 bundle or runtime verification. Personal signatures report `local` and use
 `--timestamp=none`. The
@@ -686,212 +660,9 @@ the copy. Unit tests cover:
 - Deno notice sets: changed, missing and unlisted texts, dangling references,
   uncovered crates, a different Deno version or executable, missing or edited
   bundled notices, SBOM nesting and the vendored 2.9.7 set itself.
-### 2026-10-04 result
-
-Apple M5 Max, macOS 26.5.2, Xcode 26.6 and SDK 26.5, Rust 1.97.1, ad hoc
-signature, commit `0dda7a8f` plus uncommitted changes (recorded as
-`git_changes: true`).
-
-- `bundle`:
-  - The first build in the separate, remapped `target/bundle` took 2 min 40 s.
-  - The audit found 0 problems across 12 Mach-O files.
-  - The notices cover 247 crates, 40 of them without a license file, and every
-    one validates.
-  - The bundle is 206.0 MiB on disk, and its `ditto` ZIP is 115.3 MB (Deno
-    77 MiB, `deadpan-app` 41 MiB, yt-dlp 35 MiB, `deadpan-cli` 29 MiB, FFmpeg
-    16 MiB).
-  - Path remapping cut `/Users/michael` strings in `deadpan-cli` from 387 to 1,
-    the disabled `env!` AI worker default.
-- `bundle-verify`: every positive check passed.
-  - The probe reported yt-dlp `stable@2026.08.19`, EJS `0.8.0` and
-    `deno 2.9.7`, with `matches_pins: true`.
-  - The render produced a 37,565-byte MP4.
-  - `doctor` reported the AI runtime disabled.
-- Negative checks: all passed. A tampered yt-dlp and a deleted helpers directory
-  were each refused by `downloader status`, `--probe`
-  (`DownloaderHelperInvalid`) and, for the deleted directory, `doctor`. A
-  verified managed copy was present in the isolated `HOME` throughout.
-- yt-dlp ran without entitlements: from the same scrubbed copy, with the
-  isolated `HOME`, `project create-from-url 'https://youtu.be/Z4C82eyhwgU'`
-  (Blender, CC-BY) fetched metadata and created a valid 3,507-frame 1080p24
-  project in 11.5 s using the bundled hardened yt-dlp and Deno.
-- `open -n -W Deadpan.app --args --smoke-test` exited 0 through Launch
-  Services.
-- An earlier build, before the review fixes, was rejected by `spctl --assess`,
-  as expected for an ad hoc signature.
-
-### 2026-10-05 AI runtime result
-
-Same Mac with macOS 26.5.2, ad hoc, uncommitted tree. `bundle` audited 74
-Mach-O files with no problems and signed 59 runtime libraries and 3 runtime
-executables without entitlements; the bundle is 710.1 MiB (288.5 MB ZIP).
-`bundle-verify --ai-models-from ~/Library/Caches/Deadpan/ltx-qualification`
-passed every positive and negative check, including the doctor and runtime
-checks above, an offline import of the 36.2 GB bridge pack by the copy's own
-CLI with the bundled smoke test in 12.4 s, and the tampered-worker refusal. A
-separate scrubbed run of the copied app generated, accepted and rendered an AI
-pause (76.8–98.9 s of generation depending on load)
-([record](qualification/ai-runtime-2026-10-05.md)).
-
-Not verified in that run:
-
-- a quarantined download, a second Mac or a clean user account;
-- Developer ID signing, notarization and stapling;
-- yt-dlp library validation under a Developer ID;
-- offline launch, VoiceOver and a physical display;
-- bit-for-bit reproducibility.
-
-This is not the clean-machine release test in specification §26.6.
-
-## Offline distribution
-
-Specification §14.1 calls for a separate full offline distribution that
-carries approved model packs as data and needs no external installation
-command. `cargo xtask offline-dist` builds one from an existing `bundle`
-output; it never rebuilds the app, so the distributed app is exactly the one
-that `bundle` signed and `bundle-verify` exercised.
-
-```sh
-cargo xtask offline-dist --app /tmp/deadpan-bundle/Deadpan.app \
-  --output /tmp/Deadpan-offline \
-  --pack whisper-base-en [--pack ltx-2.3-q4-bridge=<models root>] \
-  [--models-root <models root>]
-cargo xtask offline-dist-verify /tmp/Deadpan-offline [--keep]
-```
-
-`--pack ID[=ROOT]` names an approved pack and, optionally, the models root
-holding its installed copy; otherwise `--models-root`, otherwise
-`~/Library/Application Support/Deadpan/Models`. Roots are only read.
-
-Layout:
-
-| Path | Contents |
-| --- | --- |
-| `Deadpan.app` | `ditto` copy of the bundle, signature intact. |
-| `Packs/<pack>-<version>.tar` | The pax archive written by the copied app's own `deadpan-cli models export <pack> <tar> --root <root>` (`PackStore::export`). |
-| `Licenses/<pack>-<version>.txt` | The app's `models license <pack>` output (summary, attribution, access, link and every compiled full text), plus the bundle's standard SPDX text for each SPDX license the app has no compiled text for. |
-| `Deadpan.app.SHA256SUMS`, `Deadpan.sbom.cdx.json`, `Deadpan.release.json` | Copied from beside the bundle when present. |
-| `distribution.json` | Schema 1, kind `deadpan-offline-distribution`: app version, commit, tracked-change flag, signature kind and AI runtime presence (from `build-provenance.json`); each pack's id, version, title, archive name, archive bytes and SHA-256, installed bytes, license file, license ids with SPDX, `acceptance_required` and `redistribution`, and whether its smoke test needs the AI runtime. |
-| `README.txt` | Plain install steps: open Models (`:models`), Install from archive…, choose the tar; or `deadpan-cli models import`. |
-| `SHA256SUMS` | `shasum -a 256 -c` format over `distribution.json`, `README.txt`, every archive and license file and the copied sidecars. |
-
-Build steps and refusals:
-
-- The app must carry the `DeadpanPackaging` marker and pass `codesign
-  --verify --deep --strict`, before and after the `ditto` copy.
-- Each pack's selected version must be a compiled one. A version from a
-  [signed update](UPDATES.md#model-pack-updates) is refused with the
-  rollback command to use, because installing it would also need its
-  envelope and `models update --from`, which Install from archive… does not
-  run. Apps with signed updates are asked for the selected version
-  (`selected`) and export and describe exactly that version (`--version`).
-- Each pack must be compiled into that app and reported installed (receipt
-  matches the approved manifest, every file of exact size) by the copied
-  app's `models list --root ROOT`. Otherwise the build refuses and names the
-  `models install`/`import` command.
-- A pack with any license whose `redistribution` is false is refused.
-- A pack whose smoke test needs the AI runtime (`bridge_hold`) is refused when
-  the app was built `--without-ai-runtime`, since it could not be installed.
-- Repeated pack ids and an existing `--output` are refused. Assembly runs in
-  the hidden sibling `.<name>.staging-<pid>`; the build runs the verifier's file
-  checks on it and publishes by rename. A failure removes the staging folder
-  and publishes nothing.
-- The copied app's CLI runs with only `HOME`, `PATH=/usr/bin:/bin` and `TMPDIR`
-  set to fresh directories.
-
-`offline-dist-verify` checks, in order:
-
-1. `distribution.json` parses as schema 1 with contained relative paths;
-   `SHA256SUMS` matches every listed file and covers the manifest, README,
-   every archive and license file; each archive's size and SHA-256 match the
-   manifest; `Deadpan.app.SHA256SUMS`, when carried, matches every app file
-   (internal links must resolve inside the folder).
-2. `codesign --verify --deep --strict` on the app, its packaging marker, and
-   its provenance version and commit against the manifest and AI runtime
-   presence.
-3. For each pack, the distribution's own
-   `Deadpan.app/Contents/MacOS/deadpan-cli models import <pack> <tar> --root
-   <fresh root> --accept-license`, with `env_clear()` and only a fresh `HOME`,
-   `PATH=/usr/bin:/bin` and a fresh `TMPDIR`. Import never downloads; its
-   smoke test runs locally (whisper in-process, the bridge pack through the
-   bundled runtime). `models list` must then report the version installed
-   inside the fresh root. A pack that needs an absent AI runtime is reported
-   as skipped (the build already refuses that combination).
-
-`--accept-license` in the verifier stands for the owner's prior acceptance
-of the pack licenses; it installs only into a throwaway root that is deleted
-afterwards (`--keep` retains it). Real users accept in the Models panel or
-with `models import` after `models license`. The verifier prints a JSON
-report with each pack's installed directory and import time.
-
-Unit tests (`cargo test -p xtask offline`) cover the manifest round trip and
-rejection of other schemas, escaping paths, mismatched archive names and
-uppercase hashes; checksum parsing; and refusal of a tampered archive, a
-missing license file, checksums that omit an archive, an edited manifest, a
-link escaping the folder, an existing output and repeated pack ids.
-
-### 2026-10-05 offline distribution result
-
-Apple M5 Max, macOS 26.5.2. The app was the existing ad hoc 2026-10-05 bundle
-with the AI runtime (commit `131bd088` plus uncommitted changes, 710 MiB).
-The xtask ran from `c3479acc` plus uncommitted changes. whisper-base-en
-version 2 was imported into a scratch models root first; the owner's models
-folder holds only version 1 and was not used.
-
-- `offline-dist ... --pack whisper-base-en=<scratch root>` took 9.1 s: the
-  export took 0.8 s for a 148,853,760-byte archive (SHA-256
-  `28f15a7a…3636db`) of the 148,849,309-byte pack. The folder is 854 MiB.
-- A second run with the same `--output` was refused without changes.
-- `offline-dist-verify` passed in 11.6 s. The checksums (including all
-  app files in `Deadpan.app.SHA256SUMS`) and codesign passed, and the scrubbed import with the whisper smoke test took
-  6.1 s into a fresh temporary root.
-- A distribution copy with one archive byte changed was refused (`SHA256SUMS:
-  Packs/whisper-base-en-2.tar does not match its SHA-256`). A bridge pack not
-  installed in the named root was refused before anything was published.
-
-Bridge pack (2026-10-06, same stale AI-runtime bundle): the 36.15 GB
-`ltx-2.3-q4-bridge` pack was imported by clone from the qualification cache
-into a scratch root (14.7 s including the bundled runtime's smoke test; the
-cache was only read). `offline-dist --pack ltx-2.3-q4-bridge=<root>` wrote a
-36,152,920,576-byte archive (SHA-256 `2f672a6f…5d721`) in 787 s, dominated by
-the debug xtask's hashing. `offline-dist-verify` passed in 412 s: checksums
-and codesign, then the scrubbed import with the bundled AI runtime's smoke
-test in 22.4 s. The 72 GB of scratch output was deleted afterwards.
-
-Not verified:
-
-- a second Mac, a clean account or a quarantined copy of the folder;
-- installing through the Models panel's Install from archive… from the
-  distribution (the panel uses the same `install_pack`).
-
-The pack license files reproduce the standard MIT text with its
-`<year> <copyright holders>` placeholders and name the holders in the
-attribution line. The exact upstream copyright notices of OpenAI Whisper and
-Silero VAD are not compiled into Deadpan yet. Add them before redistributing
-the folder to anyone else.
-
-### 2026-10-06 native follow-up
-
-The [native installation record](qualification/native-install-2026-10-06.md)
-adds a full distribution containing the rebuilt 721.9 MiB app and both packs.
-`offline-dist-verify` passed checksums, nested signatures and fresh imports
-with both runtime smoke tests. The native Models panel then installed both
-archives; the app generated and explicitly accepted a Hold, restarted and
-rendered its retained footage with IP networking denied. The record retains
-the nested-sandbox limitation during AI installation and generation.
-
-To verify (owner):
-
-1. Second Mac: copy the folder offline (for example on an external drive, or
-   download it so it is quarantined) and run `shasum -a 256 -c SHA256SUMS`
-   in it. Then open `Deadpan.app` with the network off, run `:models` →
-   Install from archive… → `Packs/whisper-base-en-2.tar`, and transcribe a
-   project. Record the macOS version, quarantine state and timings.
 
 ## Remaining work
 
-- Clean-machine online and offline acceptance under quarantine (§26.6),
-  recorded as To verify (owner) under §29.1.
 - Licensing and signing decisions for any future public distribution. Personal
   use requires neither Developer ID/notarization nor a public redistribution
   decision for the AI runtime's `ffmpeg`/`ffprobe`.
@@ -902,26 +673,13 @@ To verify (owner):
 - Aggregated Deno/V8 notices are generated from upstream sources by Deadpan,
   not published by Deno. The linked third-party set was determined from
   rusty_v8's GN configuration, V8's build files and the executable's embedded
-  paths, not from Deno's own build graph; an owner or legal review of that
-  completeness belongs to any future public distribution. The retained
-  source-level comment inventory includes Deno's Node-derived JavaScript
-  polyfills. Complete regeneration reproduced all 553 texts and the manifest
-  byte for byte on 2026-10-06; the rebuilt bundle also passed its native load
-  audit ([evidence](RELEASE_AUDIT.md)). Personal use does not require public
-  distribution.
-- Bit-for-bit reproducibility is optional future build work. Checksums and
-  build provenance identify the shipped artifacts; the specification does
-  not require two builds to have identical bytes.
+  paths, not from Deno's own build graph; a legal review of that completeness
+  belongs to any future public distribution.
 - `tools/build-app.py` remains the quick wrapper for an existing debug
   executable. It is not relocatable.
-
 
 Alignment signing removes the previous signature from private worker/ORT copies
 before creating the new one, both while freezing pins and during final assembly.
 Forced re-signing alone left stale nonzero reserved signature bytes in the
 measured images. The strict content parser remains unchanged. Cargo executables
-and the qualified original input library are never modified by this cleanup.
-See [qualification](qualification/word-refinement-2026-10-25.md),
-[native worker admission](qualification/native-launch-trust-2026-10-25.md) and
-[private AI admission](qualification/private-ai-launch-trust-2026-10-25.md) for
-the locally qualified DP-22 launch boundaries.
+and the original input library are never modified by this cleanup.

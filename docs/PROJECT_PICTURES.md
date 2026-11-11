@@ -71,8 +71,7 @@ compares it entry by entry, with the stream metadata, to the receipt.
 
 Pictures served before completion are the receipt's exact pictures; the
 background measurement still establishes that a fresh decode of these bytes
-reproduces the whole receipt. The 2026-10-05
-[seek qualification](qualification/seek-2026-10-05.md) has the measurements.
+reproduces the whole receipt.
 
 Index measurement, at registration, complete admission and in the
 background, always uses one codec thread, so a measured index never depends
@@ -160,7 +159,7 @@ destination rather than publish a partial output.
 The implementation supplies no final-render process isolation, audio mastering,
 muxing, encoded-file verification, atomic publication or native Render control.
 The approved AAC timing metadata policy still requires complete emitted-file
-verification. These remaining steps are required by the full specification.
+verification. These remaining steps are still required.
 
 ## Verification entry point
 
@@ -189,9 +188,7 @@ This 4×2 fixture is evidence of routing and exact pixels, not representative
 video throughput, AI inference, an acceptance UI or single-Original creation.
 Ordinary replay without the explicit fixture reports this scenario as skipped.
 
-The [Generated picture qualification](qualification/generated-pictures-2026-09-29.md)
-records exact decoded-frame checks, the full workspace gate, release Metal
-replay, inspector image review and separate cold/warm measurements. The Hold
+The Hold
 inspector keeps Duration, Picture and Sound together, with the duration action
 above secondary treatments. Schema-3 Generated providers display "Accepted AI";
 legacy Accepted providers retain their distinct label and unsupported error.
@@ -214,7 +211,3 @@ publication. Use the exact Cargo-reported example executable, retain its hash,
 command, source identity, output and terminal exit, and never select a binary
 with a stale glob. These fixtures establish neither throughput nor complete
 preview/export equivalence.
-
-The [measured qualification](qualification/project-pictures-2026-09-29.md)
-records all 31 Metal checks, 18 complete frames, workspace and optional app
-coverage, independent review, and the failed fixtures with scoped corrections.

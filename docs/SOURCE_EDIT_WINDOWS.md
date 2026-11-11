@@ -96,5 +96,3 @@ Fresh initialization always records the exact window.
 
 Unused development databases 39 through 47 are refused without writes or
 migration. Existing frozen adapters for databases 1 through 38 remain supported.
-See [qualification](qualification/source-slip-2026-10-01.md) for actual checks;
-no requirement or gate is completed by this model addition.

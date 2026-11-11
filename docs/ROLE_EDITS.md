@@ -1,6 +1,6 @@
 # Role edits: J- and L-cuts and role-only deletes
 
-Linked edits are the default (specification §6.3, §6.5 and §8.3). These
+Linked edits are the default. These
 commands change one media role without moving the edit's time. Each is one
 semantic instruction, so the native app, macros, `.` and the headless macro
 path author the same transaction, and each is one Undo.

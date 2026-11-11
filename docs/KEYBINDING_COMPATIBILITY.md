@@ -18,13 +18,13 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
-The [existing-path abrupt return qualification](qualification/abrupt-return-2026-10-25.md)
+The existing-path abrupt return replay
 uses existing Split, Enter, Camera Reset/Apply, Backspace and Undo/Redo keys.
 Final release visual/quiet zoom runs each pass 489 behavior checks plus the
 21,885,504-case production-router audit against all 62 live Kestrel reservations.
 The supplied source digest matches the pinned fixture. No shortcut changes.
 
-The [existing Follow parameter qualification](qualification/follow-retune-2026-10-25.md)
+The existing Follow parameter replay
 adds Camera Arrival/Curve controls through existing native text, Tab, Enter,
 Space and arrow routes. Curve retains focus after a pointer click and consumed
 vertical arrows. Final 60/120 Hz visual zoom replays pass 415 behavior checks
@@ -37,10 +37,10 @@ pages; ordinary Camera fields retain their native editing routes. The final
 2026-10-24 faces, targets and zoom release replays each pass 21,885,504 routing
 cases against all 62 live Kestrel reservations, without conflict or source
 drift. Saved/proposed target digits, paging and text/IME guards are covered by
-the [Camera face picker qualification](qualification/camera-face-picker-2026-10-24.md).
+the Camera face picker replays.
 New-target editing also uses the existing plain `n` route to switch rectangle /
 point, and Tab stays on Center for points. Corrections lock their saved kind.
-The final [point-target replays](qualification/point-targets-2026-10-24.md) pass
+The final point-target replays pass
 the same live-source audit in points, targets, faces and zoom without a new
 modified global chord.
 
@@ -55,25 +55,22 @@ chord. The 2026-10-12 EQ, Gain and audio-treatment release replays pass
 21,884,016 routing cases each against all 62 pinned Kestrel reservations.
 The live Kestrel source was unavailable. EQ fields retain native text editing;
 Tab reveals each control, Enter in fields cannot Apply, and Escape cancels.
-The routing snapshot adds only four EQ parser witnesses. See
-[native EQ qualification](qualification/native-eq-2026-10-12.md).
+The routing snapshot adds only four EQ parser witnesses.
 
 `:balance` adds signed-percent stereo balance with no new key chord. The
 2026-10-11 audio-treatment and Gain release replays each pass 21,884,016
 production routing cases against the 62 pinned Kestrel reservations. The live
 source was unavailable. The routing snapshot adds only three parser witnesses;
-existing key routes stay pinned. See [balance qualification](qualification/stereo-balance-2026-10-11.md).
+existing key routes stay pinned.
 
 `:sound-relink` adds an explicit catalog-file repair command without a new key
 chord. The 2026-10-11 sound recovery replay passes 21,884,016 production-router
 cases against all 62 pinned Kestrel reservations. The live source was unavailable.
-See [sound recovery](qualification/sound-recovery-2026-10-11.md).
 
 `:new-linked` and `:original-linked` add explicit linked-Original creation
 and setup retry without adding a modified key chord. The 2026-10-09 release
 linked-creation and YouTube replays each pass 21,884,016 production-router
 cases against the 62 pinned Kestrel bindings. The live source was unavailable.
-See [linked Original qualification](qualification/linked-original-2026-10-09.md).
 
 AI motion and guidance extend `:generate` and `:generate-ai` with optional
 `motion=still|subtle|moderate` and final `text=…` arguments. `:generate N`
@@ -81,8 +78,7 @@ keeps its route; counted AI insertion is described below. The command reference 
 record the new usage and refusal text; global key reservations are unchanged.
 The AI generation, variants and comparison replays exercise the production
 router against the pinned Kestrel fixture. A separate hash comparison confirms
-that the current local Kestrel source matches that fixture. See
-[control qualification](qualification/hold-controls-2026-10-07.md).
+that the current local Kestrel source matches that fixture.
 
 Named Group uses `,g` (`group.create`) to open captured command entry.
 `structure.explode` and `structure.duplicate` are configurable with no default
@@ -93,8 +89,7 @@ teaches `g`, and the terminal key's native text companion is consumed before
 subsequent name text or IME reaches the field. Both actions retain native
 modifier reservations. The final Group and five adjacent replays each pass
 3,319,728 production-router cases against 62 live Kestrel bindings, with no
-conflict or fixture drift. See [named groups](GROUP_EDITING.md) and the
-[qualification record](qualification/group-editing-2026-10-03.md).
+conflict or fixture drift. See [named groups](GROUP_EDITING.md).
 
 Edit Repeat uses `repeat.operator` (`r` plus a configured motion), `repeat`
 (`rr`, explicit whole beat) and `repeat.range` (Visual `r`). A leading count is
@@ -105,7 +100,7 @@ and invalid dual-count states. No modified global shortcut is added.
 Distinct operator families cannot use overlapping ancestor prefixes. Aliases
 within one family remain supported; counts stay attached to the completed alias
 and cannot cross another alias on the way to a terminal key.
-The [Repeat qualification](qualification/repeat-operator-2026-10-03.md) passes
+The Repeat replay passes
 3,319,728 production routing cases against 62 reserved bindings, with no live
 Kestrel source drift or conflicts. Rendered remap and native key checks are
 recorded separately from unqualified physical layouts and OS IME delivery.
@@ -158,8 +153,7 @@ The 2026-10-07 counted insertion and provider-command follow-up passes
 zero conflicts. The live `Shortcuts.swift` SHA-256 matches the fixture:
 `368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
 The exact-command native replay passes all 57 checks, including command-entry
-capture and rejection after a delayed history reply. See
-[AI insertion qualification](qualification/ai-insertion-2026-10-07.md).
+capture and rejection after a delayed history reply.
 
 `,x` (`ai.compare`) and `,n` (`ai.next`) join the comma family on 2026-10-06
 for AI variant comparison: `,x` switches the selected pause between its
@@ -321,8 +315,8 @@ Repeat's leading count still means total plays. A count after Repeat requires
 a frame/beat motion and cannot count objects. The production audit includes
 Object Visual state and all compiled pending object paths. The group-object
 build checks 7,652,784 routing cases against 62 live Kestrel reservations with
-no conflicts. See [group object semantics](STRUCTURAL_SELECTIONS.md#group-object-workflow)
-and [qualification](qualification/group-objects-2026-10-03.md). Historical counts
+no conflicts. See [group object semantics](STRUCTURAL_SELECTIONS.md#group-object-workflow).
+Historical counts
 below cover their recorded builds.
 
 Normal Edit `y` and `d` are persistent prefixes. Frame, beat and group-boundary
@@ -360,8 +354,7 @@ Kestrel globals, including both recording states. The live source and retained
 fixture digest match at
 `368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
 Native Shift+2 delivery produced the visible logical `@` prefix and executed a
-saved Macro on the current macOS layout. See
-[evidence and limits](qualification/semantic-macros-2026-10-02.md).
+saved Macro on the current macOS layout.
 
 ## Frame cuts
 
@@ -380,8 +373,7 @@ entry context and reports the exact resolved range before submission. The
 existing atomic cut path preserves register and history behavior. The footer
 teaches `x cut frame` in an eligible pane without an Edit Visual selection, and
 contextual help explains counts and group boundaries. See
-[frame-cut semantics](EDITED_SLICES.md#frame-cuts-at-the-cursor) and the
-[18,352-case audit and rendered regressions](qualification/native-frame-cuts-2026-10-01.md).
+[frame-cut semantics](EDITED_SLICES.md#frame-cuts-at-the-cursor).
 
 ## Declarative editor paths
 
@@ -395,9 +387,9 @@ The footer shows the effective target or required selection. See
 [semantic repeat](SEMANTIC_REPEAT.md) for saved-revision and register behavior.
 The production audit enumerates Period alongside the other logical identities,
 and `dot-repeat` is the corresponding rendered replay. Its
-[initial frame-cut qualification](qualification/semantic-repeat-2026-10-02.md) passed 159 rendered
+initial frame-cut replay passed 159 rendered
 checks and the 172,360-case audit with matching live Kestrel source.
-The [selector extension](qualification/selector-repeat-2026-10-03.md) records
+The selector extension covers
 current Visual overrides, typed cuts and the expanded production audit.
 
 The shipped Normal/Visual paths now use a [validated binding trie](KEYMAP.md).
@@ -411,9 +403,8 @@ User overrides now load through the compiled map. Every fixed mode key
 corrections, Marks, Jobs, Storage and the Keys sheet) is declared once in the
 [action registry](KEYMAP.md#action-registry); tests prove each router acts on
 exactly the declared chords, and the Marks, Jobs and Storage panels and the Keys
-sheet read their keys from those declarations. They stay fixed, as the
-specification gives Camera and Trim.
-See [qualification and exact source identities](qualification/declarative-bindings-2026-10-01.md).
+sheet read their keys from those declarations. They stay fixed, as
+Camera and Trim are.
 
 ## Source Slip preview
 
@@ -443,8 +434,7 @@ Trim mode described below.
 The production `slip` replay passes the exact picture gate, clamps,
 comparison, batched input, text/IME focus, late replies, cancel, one commit and
 Undo/Redo. All 17,360 reservation cases over the same 62 globals pass, with no
-conflicts or live Kestrel registry drift. Rendered and native evidence is retained
-in [native Slip qualification](qualification/native-slip-2026-10-01.md).
+conflicts or live Kestrel registry drift.
 See [Source Slip](SOURCE_SLIP.md#native-stopped-picture-preview) for the full
 capture, picture and saved-receipt contract.
 
@@ -493,8 +483,7 @@ drafts and Render. See [the native contract](COMBINED_TRIM.md#native-trim).
 The production reservation audit includes Trim's text, background, composition
 and held-key combinations. With compiled editor prefixes and four count states,
 its expected coverage is 428 routing cases for each of 62 reservations, or
-26,536 total. This describes coverage; dated qualification records establish
-which source was actually run. The local Kestrel source matches the checked fixture:
+26,536 total. This describes coverage. The local Kestrel source matches the checked fixture:
 SHA-256 `368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
 
 ## Place slice
@@ -512,7 +501,7 @@ site's bounded context. Site inspection does not change the prepared command.
 `r` leaves Move and always uses Copy for replacement. The insertion destination
 is retained independently through operation switches. Plain `m/s` follow the
 same native focus, repeat and IME ownership rules as the other draft keys.
-The [native Move qualification](qualification/native-move-2026-09-30.md) retains
+The native Move audit covers
 the passing 11,904-case routing audit, replayed held-key/focus/composition cases
 and separate native keyboard check. Local Kestrel source SHA-256 is
 `368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
@@ -585,9 +574,8 @@ The local Kestrel `Shortcuts.swift` was inspected for this change: its SHA-256
 is `368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`, matching
 the checked fixture. It reserves Option+E for Ungroup and has no Command+E
 reservation. This source comparison is not a new routing-test or physical
-keyboard qualification result. The `render` production replay covers the
-shortcut, command entry, preview decisions, stale captures and export flow;
-its current run results are recorded separately.
+keyboard result. The `render` production replay covers the
+shortcut, command entry, preview decisions, stale captures and export flow.
 
 **`:renders`** and the **Renders** header control open saved render history.
 Native Tab / Shift Tab moves between controls, Enter activates, and Escape
@@ -628,14 +616,12 @@ it passes. The corrections router's ⌘ chords now use the shared
 `navigation::native_command` test, so ⌘⇧Z redoes on macOS.
 The prior Slip integration passed 280 routing cases per reservation, or 17,360 total,
 including pending prefixes, counts and overflow, text/IME and repeat/focus
-combinations. Its execution and matching live-source digest are retained in the
-[native Slip record](qualification/native-slip-2026-10-01.md).
+combinations.
 The added Trim cases bring the expected count to 18,352; see the separate
-[Trim qualification status](#combined-trim) above.
+[Trim](#combined-trim) section above.
 The earlier corrected workspace, room-tone, gain and retime runs each passed all 5,456
 cases with no conflicts or live-source drift; all 298 app/harness tests also
-pass. The [native-gain qualification](qualification/native-gain-2026-09-28.md) retains
-source identities, native CUA evidence and remaining physical-input limits.
+pass.
 A reservation fails if it dispatches an action or leaves an editor prefix pending.
 This catches shortcuts that seem harmless because they only start a count.
 
@@ -723,8 +709,7 @@ end-user application requirement.
 The 2026-09-27 refresh reviewed Kestrel commit
 `dc9245c09db3c101a2419c364174449b6e4415ae`. It changed only the Ghostty New-window
 help description. Re-evaluating the live registry produced identical reservation
-rows; only the source digest changed. The failed pre-refresh audit remains in the
-[moment-paste qualification](qualification/moment-paste-2026-09-27.md).
+rows; only the source digest changed.
 
 ## Interaction direction
 
@@ -734,10 +719,10 @@ native Command shortcuts for lifecycle and history where Kestrel leaves them
 available. Preserve a clear focused-pane cue separately from selected content.
 
 Original Visual selection and range reuse now have the `original-moment` replay;
-its current native/visual evidence limits remain explicit in qualification.
+its native/visual evidence limits remain open.
 General Visual replacement and targets still need their own replay scenarios,
 visible selection scope, reversible previews, and measured feedback. Trim's
 implemented keys and controls are described above; their presence does not
-establish replay or native qualification. Specification bindings alone do not
+establish replay or native qualification. Bindings alone do not
 establish implemented capabilities. Any new modifier binding must pass this
 audit and its real interaction scenario before being added to help or keycaps.

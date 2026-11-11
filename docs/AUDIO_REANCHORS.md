@@ -93,8 +93,7 @@ allocates timing ordinal zero before both dry-run and commit; explicit
 `delete_ripple` accepts the full typed identity. Historical core `Delete` keeps
 its original reduction so saved patches replay exactly. Current core 34 and
 database 43 need no new fields or migration. Frozen command adapters reject
-the new tag. [Qualification](qualification/ripple-delete-2026-09-30.md) records
-the decoded-PCM regression, durable history and integration checks.
+the new tag.
 
 ### Selected ranges
 
@@ -187,6 +186,3 @@ growth, nested births, same-ID distinct-clock windows, duration/policy changes,
 direct definitions and signed physical domains, Preserve zero-point silence,
 hidden gap re-exposure, durable history and bounded billion-play resolution.
 This subsection preserves the original design requirements.
-
-[Qualification](qualification/audio-reanchors-2026-09-26.md) records this
-increment's tests, migration evidence, reviews and limitations.

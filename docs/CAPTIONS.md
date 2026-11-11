@@ -1,7 +1,7 @@
 # Captions
 
-A caption is a line of text drawn over part of a beat (specification §8.2
-"Delayed caption", §3 attachments). It is optional, editable and changes no
+A caption is a line of text drawn over part of a beat.
+It is optional, editable and changes no
 timing, picture provider or sound.
 
 ## Model

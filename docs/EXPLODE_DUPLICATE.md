@@ -1,9 +1,9 @@
 # Explode, duplicate and multi-play occurrence edits
 
-Specification §5.2 requires `explode` to convert a Repeat into an ordinary
+`explode` converts a Repeat into an ordinary
 Sequence while preserving every current picture, sound, timing and override,
-and requires copies to have new authored IDs, share immutable media and carry
-no hidden live link. §5.4 requires a duplicate to carry its owned attachments.
+and copies must have new authored IDs, share immutable media and carry
+no hidden live link. A duplicate must carry its owned attachments.
 This document records the core contract, its evidence and its limits.
 
 ## Explode

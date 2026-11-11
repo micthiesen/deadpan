@@ -6,8 +6,7 @@ random jump decodes one small picture instead of a long-GOP preroll. When the
 cursor rests, the exact Original picture replaces it. During playback it
 serves the pictures whose exact decode would be late, such as the jump at a
 cut or Repeat restart, while the Original decoder repositions ahead
-([playback pictures](#playback-pictures)). Specification §16.4
-calls for this tier, and DP-16 tracks it. Proxies are never authoritative:
+([playback pictures](#playback-pictures)). Proxies are never authoritative:
 export, render, verification, AI conditioning, tracking, shot analysis and
 thumbnails never read them.
 
@@ -20,14 +19,14 @@ This does not change authored media, source clocks or the cache recipe.
 
 ## Eligibility and recipe
 
-§16.4 asks for proxies only where they materially improve seeking.
+Proxies exist only where they materially improve seeking.
 `deadpan_media::proxy::proxy_plan` therefore chooses by raster alone:
 
 - An Original with more than 1920×1080 pixels gets a proxy (`Raster`).
   Measured 4K long-GOP warm seek is 211 ms p95 without one.
 - At or below 1080p, no Original gets one, whatever its keyframe spacing.
   Threaded 1080p seeks with keyframes 250 pictures apart already measure
-  48 ms p95 ([seek record](qualification/seek-2026-10-05.md)).
+  48 ms p95.
 - An Original whose per-picture durations differ from its presentation
   intervals is ineligible (`IrregularDurations`). MP4 stores sample durations
   as decode-timestamp distances, so without reordering a proxy could not
@@ -117,13 +116,12 @@ would need a new admission path.
    Under concurrent sessions, VideoToolbox's encoder service sometimes never
    answers a synchronous `VTCompressionSessionCompleteFrames`. Its other
    failures are refusing new sessions and emitting out-of-contract packets
-   ([evidence](qualification/proxy-2026-10-05.md#failures-and-robustness)).
+  .
    The worker therefore reports a failure, or exits after a complete
    output, without tearing the session down. The builder holds a per-user
    encoder slot (`Proxies/.encoder.lock`), so Deadpan runs at most one proxy
    session at a time.
-   The [packet-order investigation](qualification/proxy-order-2026-10-11.md)
-   reproduces an adjacent PTS swap and retains three diagnostic timeouts.
+   An adjacent PTS swap has been reproduced.
    Production rejection and the single retry remain unchanged. The
    forced-stall lifecycle test replays independently verified encoder output
    on its second attempt, so an unrelated service fault cannot obscure its
@@ -183,8 +181,7 @@ The sidecar records the result, together with the most colorful sample and
 its Original's block luma and chroma spread, showing how much color the
 samples covered. These checks catch wrong matrices, swapped channels, range
 errors, wrong pictures and gross scaling errors; they do not qualify
-compression quality. Measured values are in the
-[qualification record](qualification/proxy-2026-10-05.md). A tiny,
+compression quality. A tiny,
 hard-edged full-range RGB picture cannot survive 4:2:0 subsampling and is
 refused rather than served with wrong color.
 
@@ -195,8 +192,8 @@ doomed build. Remembering it also removes the partial build state.
 
 ### Resuming
 
-Specification §16.4 asks that proxy generation can be cancelled and resumed
-by completed ranges, and that partial files are never ready assets.
+Proxy generation can be cancelled and resumed
+by completed ranges, and partial files are never ready assets.
 
 - **Journal.** The partial state's `ranges.json` (schema 1) names the
   recipe, worker protocol, encoder, the Original's BLAKE3, SHA-256, length
@@ -267,7 +264,7 @@ stops the worker. The build respects the user and the machine:
 
 ## Storage
 
-Proxies live in the per-user cache that specification §20.1 reserves for
+Proxies live in the per-user cache for
 global rebuildable data: `~/Library/Caches/Deadpan/Proxies`
 (`deadpan_cli::proxy::cache`). Packages and package copies that share an
 Original share its proxy. No project, SQLite row, revision or history entry
@@ -495,7 +492,7 @@ Timing, audio, the heard clock and the requested frames never depend on it.
 
 ## Evidence
 
-The [SDR HEVC/High10 qualification](qualification/sdr-source-codecs-2026-10-09.md)
+SDR HEVC/High10 coverage
 adds six full/limited-range cases with exact clocks and depth-aware comparisons.
 Their maximum mean/block differences are 0.776/6.667 eight-bit codes and maximum
 absolute channel bias is 0.489, below the unchanged 3.0/16.0/1.5 limits.
@@ -509,10 +506,10 @@ absolute channel bias is 0.489, below the unchanged 3.0/16.0/1.5 limits.
 | `crates/deadpan-app/src/worker/proxy_tests.rs` | The first seek is exact and opens the proxy while idle. Later, a seek shows the proxy and then the bit-exact Original picture for the same ticket. Forward and backward steps from a refined picture are exact at once, with nothing to refine. A newer seek cancels refinement, and a seek that follows another within 150 ms waits the full rest before refining. Playback pictures whose exact decode fits the budget and thumbnails stay exact. A damaged entry falls back silently and a rebuilt one is used. **Playback:** with seeks measured slower than a picture period (a test-only cost scale), the next picture is exact, a jump is served from the proxy with the Original's PTS and is never refined, the decoder repositions to the next keyframe meanwhile, the picture there is exact and bit-identical to an independent decode, and the presentation reports the displayed proxy view a stopping transport replaces. |
 | `crates/deadpan-media/tests/source_session.rs` (`forward_continuation_and_repositioning_return_sequential_pictures`) | With one and eight codec threads on CFR, B-pyramid, offset-start and VFR fixtures: forward continuation past skipped pictures, a reposition advanced one picture per call, finishing an unfinished reposition through a later request and a seek before an unfinished target all return pictures identical to a sequential single-threaded decode; advancing without a reposition is refused. |
 | `deadpan_media::playback_pictures` unit tests (10) | Exact versus proxy choices against the budget, unmeasured defaults, an Original that cannot keep up sequentially, reposition targets (in-group lead, sooner keyframe, slow seeks, lead limit, unmeasured forward or preroll), short seeks not setting the preroll cost, and keeping a decoder close ahead but repositioning one a Repeat restart left behind. |
-| `perf playback --pictures adaptive`, `worker::project_tests::stress_tests` | Real-device playback with the policy on plain, cut and 10,000-beat projects, beside a proxy build and an export, and a seek storm and jumpy playback through the real preview worker; see [the qualification record](qualification/playback-proxy-2026-10-06.md). |
+| `perf playback --pictures adaptive`, `worker::project_tests::stress_tests` | Real-device playback with the policy on plain, cut and 10,000-beat projects, beside a proxy build and an export, and a seek storm and jumpy playback through the real preview worker |
 | `crates/deadpan-app/src/presentation/tests.rs` | The proxy tier is a distinct identity, and a failed refinement keeps the proxy displayed with its error. |
 | `proxy-seek` replay | The job decides "not needed" for the small fixture; `:proxies off` and `on` change the setting without an edit; the Proxy chip is painted and accessible while proxy pixels show; Camera's gate refuses them; the exact picture replaces them with the chip gone. |
-| `perf seek`, `perf proxy-build` | Build, opening, cold, warm and refined seeks, and playback and edit latency during a build; see [the qualification record](qualification/proxy-2026-10-05.md). |
+| `perf seek`, `perf proxy-build` | Build, opening, cold, warm and refined seeks, and playback and edit latency during a build |
 
 ## Limits
 
@@ -541,8 +538,6 @@ absolute channel bias is 0.489, below the unchanged 3.0/16.0/1.5 limits.
   disables proxies with an "unavailable" state.
 - HDR Originals remain ineligible for this SDR recipe. Admitted ten-bit SDR
   Originals use the existing eight-bit proxy representation, with depth-aware
-  fidelity checks against the exact Original. See the
-  [SDR codec qualification](qualification/sdr-source-codecs-2026-10-09.md).
-  [VP9 MP4](qualification/vp9-sources-2026-10-09.md) also passes real proxy
+  fidelity checks against the exact Original. VP9 MP4 also passes real proxy
   generation for eight/ten-bit full/limited range, with all 48 fixture pictures'
   PTS and durations retained and the same fidelity thresholds.

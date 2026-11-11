@@ -2,11 +2,11 @@
 
 Original decision: qualify the private explicit-grid Signal-policy child kernel before the separate Tape factory, retaining ordinary readers and native routing through those prerequisites. Point's grid-specific entry is not a PreserveTape factory. The child, Tape Plan layer and selected routed native source-policy handoff are now qualified independently.
 
-The [provider child checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md) qualifies the private child for checked public operands, including reachable repeated and definition metadata. The separate [Tape factory checkpoint](../qualification/tape-policy-factory-2026-10-31.md) now qualifies stored-grid traversal, child normalization, combined inventory and the independent exact final Signal Vec, with sealed Tape provenance through the existing custody protocol. Scope is source authority. The original decision and pins below remain historical; the Tape contract records its Plan boundary and the now-qualified selected native lifetime contract. The preceding [destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md) funds the native destination copy. The [native source checkpoint](../qualification/native-tape-source-admission-2026-11-01.md) now qualifies actual query/inventory lifetime and exact final Signal Vec transfer for routed PreserveTape. Other preparation policies, graph/PCM/dependency construction, whole preparation and product Gates remain outside that unit.
+The provider child checkpoint qualifies the private child for checked public operands, including reachable repeated and definition metadata. The separate Tape factory checkpoint now qualifies stored-grid traversal, child normalization, combined inventory and the independent exact final Signal Vec, with sealed Tape provenance through the existing custody protocol. Scope is source authority. The original decision and pins below remain historical; the Tape contract records its Plan boundary and the now-qualified selected native lifetime contract. The preceding destination checkpoint funds the native destination copy. The native source checkpoint now qualifies actual query/inventory lifetime and exact final Signal Vec transfer for routed PreserveTape. Other preparation policies, graph/PCM/dependency construction, whole preparation remain outside that unit.
 
 ## Post-DSP build_stage block policy
 
-The [stage-block checkpoint](../qualification/stage-block-policy-admission-2026-11-01.md)
+The stage-block checkpoint
 selects build_stage's existing post-DSP policy before writer push. The mutable
 admission borrow ends before contents/control/PCM use; the same admitted owner
 and borrowed slices survive those uses. The owner then drops and restores
@@ -47,12 +47,11 @@ Scope source. Runtime qualification does not certify archive or publication.
 Historical guard/residency failures and interrupted memory probes stay
 retained. Journals preserve full raw cases; the diagnostic Cache test's
 sampled RSS is not a production bound. Placed Root, Mix policy, graph/PCM/
-dependencies and whole preparation remain separate obligations. No DP or
-Gate credit follows.
+dependencies and whole preparation remain separate obligations.
 
 ## Ordinary read_signal policy producer
 
-The [read_signal checkpoint](../qualification/read-signal-policy-admission-2026-11-01.md)
+The read_signal checkpoint
 admits the ordinary Signal/Tape policy after the unchanged graph query/debit.
 Its returned owner retains native reservations through content/graph preflight,
 recursive child PCM, suppression and exact final Vec custody transfer. The
@@ -81,11 +80,11 @@ receipt, failure and audit authority; local .orig engine salts do not ship.
 
 This closes only the ordinary read_signal producer. Remaining free suppression,
 placed Root/Mix policy, graph/PCM/dependency construction and whole preparation
-remain separate obligations. No DP/Gate acceptance follows.
+remain separate obligations.
 
 ## Initial build_stage output validation
 
-The [stage-validation checkpoint](../qualification/stage-validation-policy-admission-2026-11-01.md)
+The stage-validation checkpoint
 selects admitted factories only for the initial complete-output validation loop.
 Signal and PreserveTape outputs are actually reached; Tape remains an unexercised
 dispatch arm. The already-live stream reservation and real Cache nested scan
@@ -114,11 +113,11 @@ This closes that validation producer only. Ordinary read_signal policies,
 remaining free suppress_signal callers, placed Root/Mix policy, graph/PCM/
 dependency construction and whole preparation remain separate obligations.
 Private admitted capacities, failed local work splits, individual allocation
-origin and whole physical memory remain unexposed. No DP or Gate credit follows.
+origin and whole physical memory remain unexposed.
 
 ## Native intrinsic-preflight admission
 
-The [native preflight checkpoint](../qualification/intrinsic-preflight-policy-admission-2026-11-01.md)
+The native preflight checkpoint
 freezes actual ordinary40 behavior before selecting the admitted Signal/Tape/
 PreserveTape factories. A private closed query owner ends the controller's
 mutable admission borrow before content/graph recursion and retains its actual
@@ -132,11 +131,11 @@ qualified separately from logical equality. Private active slice capacities,
 failed local work splits, allocation origin and whole physical memory remain
 unexposed. Existing Mix policy and ordinary graph construction/debit remain
 separate. Other preparation/output policy paths, PCM/dependency storage and
-whole preparation remain owed; no product Gate follows from this unit.
+whole preparation remain owed.
 
 ## Standalone Signal prerequisite for intrinsic preflight
 
-The [Signal factory checkpoint](../qualification/signal-policy-factory-2026-11-01.md)
+The Signal factory checkpoint
 qualifies public PointCeil policy and after-Preserve modes, whole-public empty
 work, provider error ordering, once-forwarded work, final Vec custody and literal
 resource/capacity differences. Point/Tape retain their sealed origins.
@@ -214,9 +213,7 @@ For the later Tape+native unit add exact final pointer/len/cap custody proof, Bo
 
 ## Explicit gaps
 
-The Tape checkpoint closes the outer Plan factory prerequisite; J and L separately qualify routed source custody and intrinsic input/output policy preflight. M qualifies only initial build_stage output validation; its archive must pass actual packaging/reference verification before publication. Remaining ordinary read_signal policy, other free suppress_signal callers, placed Root/Mix policy, Tape/projection graph construction and remaps, PCM/dependency allocations and provider-owned storage remain outside these claims. Existing phase/provider observation priority remains literal. No ordinary multi-output or Gate scope is added.
-
-The original source-pinned design, navigation, exact pins and independent review remain in the destination checkpoint's evidence archive. That original design phase performed no implementation, builds, native runs or fixture regeneration. Subsequent child and Tape executions are recorded in their separate qualification reports above.
+The Tape checkpoint closes the outer Plan factory prerequisite; J and L separately qualify routed source custody and intrinsic input/output policy preflight. M qualifies only initial build_stage output validation; Remaining ordinary read_signal policy, other free suppress_signal callers, placed Root/Mix policy, Tape/projection graph construction and remaps, PCM/dependency allocations and provider-owned storage remain outside these claims. Existing phase/provider observation priority remains literal. No ordinary multi-output scope is added.
 
 ## Source pins
 

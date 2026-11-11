@@ -110,5 +110,4 @@ input/output counts. This still does not establish fractional phase or mixed
 pitch semantics; [whole-stage preparation](AUDIO_STAGE_PREPARATION.md) must bind
 the sampler and DSP while preserving continuous history.
 Edge fades, gain/effects, room tone/tails, master limiting, long-clip stretch,
-device scheduling and preview/export comparison remain open. See the
-[qualification record](qualification/audio-preparation-2026-09-21.md).
+device scheduling and preview/export comparison remain open.

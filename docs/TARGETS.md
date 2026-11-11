@@ -1,6 +1,6 @@
 # Attention targets
 
-Specification §4 (Attention · Target), §5.4 and §11.3. A target is a point or region of
+A target is a point or region of
 the Original followed over source time. It is evaluated in source time, so it
 follows its subject through any retiming, repetition or freeze of the pictures
 that show it. Targets name no person.
@@ -106,7 +106,7 @@ saved id or label. Direct scoped `face:N`/`region:N` commands still refuse. Only
 implicit Keep creep is admitted on an existing fixed Follow. Finish selection before `q`;
 named and dot replay need a fresh range and explicit play choices. The scoped
 inspector shows saved Follows, Scale before, Creep, Window and Framing clock
-separately. See the [scoped range qualification record](qualification/scoped-framing-ranges-2026-10-25.md).
+separately.
 Before that, a target with a `display_aspect` has
 its center placed on the presentation canvas exactly where the renderer fits
 the whole picture (`deadpan_core::fit_source_point`, the `Fit` letterbox or
@@ -209,8 +209,7 @@ target with its state at the current picture and whole-span summary.
 ## Limits
 
 Target regions are in upright source picture coordinates. Follows of targets
-that record their `display_aspect` are placed on canvases of another aspect
-([qualification](qualification/letterbox-follow-2026-10-15.md)). A target
+that record their `display_aspect` are placed on canvases of another aspect. A target
 saved without it (before 2026-10-15) keeps source coordinates on such a canvas
 and centers the wrong point; re-saving it (draw, track or `track --save
 --replace`) records the aspect. Targets are
@@ -228,4 +227,4 @@ copy and history paths. The viewer draws points with a cross and center
 marker. Region-based AI conditioning reports `point_target` unavailable for
 points, retaining their identity without inventing a subject rectangle.
 
-Quality evidence on real people remains on the owner verification list.
+Quality on real people remains unexercised.

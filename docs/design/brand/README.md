@@ -114,14 +114,12 @@ bare executable launches. The bundle records its external library dependencies
 in `Contents/Resources/developer-build.json`.
 
 This is a local developer wrapper. Pinned FFmpeg libraries remain external;
-signing, notarization, relocation, clean-machine installation, and release
-qualification remain open.
+signing, notarization and relocation are handled by `cargo xtask bundle`.
 
 ## Verification on 2026-09-30
 
 The [format audit](validation.json) records the exact checked inventory and
-expected failure results. [Integration evidence](../../../tools/media-qualification/evidence/2026-09-30-brand/README.md)
-retains native checks, PDF render review and the final code gate.
+expected failure results.
 
 - macOS 26.5.2, Xcode 26.6 (17F113), Icon Composer 1.6 (99.1).
 - A fresh `actool` compilation produced `Assets.car`; `assetutil` confirmed the

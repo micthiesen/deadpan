@@ -11,7 +11,7 @@ any change in the exact pixels or samples that the shared plan produces.
 
 Each fixture is a real one-Original package built only through the public
 `deadpan-cli` executable (`project create-original`, then revision-bound
-`command --json` requests), reusing the Section 8 recipe builders in
+`command --json` requests), reusing the recipe builders in
 `tests/preview_export/recipes.rs`:
 
 | Fixture | Structure |

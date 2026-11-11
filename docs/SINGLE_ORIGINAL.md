@@ -1,6 +1,6 @@
 # One Original, one evolving edit
 
-[Specification 1.1](spec/DEADPAN_SPEC.md) defines the V1 workflow. Choose one local
+The V1 workflow: choose one local
 video or one YouTube video ([native and headless import](YOUTUBE_IMPORT.md)). The full
 qualified source becomes the initial timeline. The user changes that existing
 video through cuts, repeats, Holds, reframing and sound rather than assembling
@@ -103,8 +103,7 @@ input, including after a pointer event changes focus. Inspector parameter entry
 uses the same command field and typed transactions as keyboard commands.
 
 Whole-original reuse, Original moment copying, linked range paste/replacement,
-and nested navigation use typed reversible commands. Their current boundaries
-and verification remain in [Requirements](REQUIREMENTS.md); concept boards do
+and nested navigation use typed reversible commands. Concept boards do
 not establish implementation. Generic/legacy projects have an explicit compatibility
 view that preserves their broader source catalog and existing insertion path.
 
@@ -117,8 +116,7 @@ The generic backend's audio-only sequential Source beat remains available to
 developer and compatibility workflows; it is not an overlay implementation.
 
 Qualified sound paths include integer and float WAV, MP3, AAC/MP4 and
-mono/stereo Opus in WebM, Matroska and MP4. Their exact admitted profiles and
-retained evidence are in [Requirements](REQUIREMENTS.md). A file-picker filter
+mono/stereo Opus in WebM, Matroska and MP4. A file-picker filter
 does not qualify an additional codec or container grammar. Exact source clocks,
 priming evidence, verified bytes and bounded decoding remain required.
 
@@ -132,6 +130,5 @@ non-audio stream fails without changing the edit. The headless registration
 request exposes the same explicit selection.
 
 Sound-event placement, analysis, local AI candidates with explicit acceptance,
-playback and export now have implemented paths and qualification records.
-[Requirements](REQUIREMENTS.md) retains their exact coverage and remaining
-acceptance work. This workflow summary does not establish full V1 completion.
+playback and export now have implemented paths. This workflow summary does not
+establish full V1 completion.

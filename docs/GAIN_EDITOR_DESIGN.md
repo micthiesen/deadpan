@@ -2,10 +2,7 @@
 
 The native app implements the captured commands, exact recipe editor and
 temporary audition described here. The focused Metal replay and app/harness
-tests pass; [native-gain qualification](qualification/native-gain-2026-09-28.md)
-records corrected visual runs, native CUA checks, retained failures and separate
-performance and listening limits. The normative behavior is in specification
-sections 6, 9.4, 9.5 and 10. Use the
+tests pass; performance and listening limits are separate. Use the
 [gain board](design/boards/clip-gain-board-v2.png) and
 [authored gain contract](AUDIO_GAIN.md) together.
 
@@ -170,8 +167,7 @@ envelope insertion, focus-driven scrolling to the key value, a 1.5 dB key update
 and literal `dd + y` text. Escape restored the baseline; complete project dumps
 before and after were byte-identical. CUA keyboard injection does not certify
 physical keyboard layouts, OS IME delivery, VoiceOver or listening. Release
-performance verification is separate; see the qualification record for its
-status, final source identities and retained evidence.
+performance verification is separate.
 
 Use unit tests for routing precedence, absent/stale capture, count overflow,
 recipe preservation, true mute, draft state transitions and delivered-position

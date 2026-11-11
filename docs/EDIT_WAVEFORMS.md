@@ -3,8 +3,6 @@
 Edit-window analysis measures exact absolute root sample ranges from an immutable
 committed snapshot or a service-admitted proposed snapshot. It is a playback
 preparation helper used by the native [Trim draft](COMBINED_TRIM.md#native-trim).
-Native execution evidence and its limits belong to the
-[Trim qualification record](qualification/native-trim-2026-10-01.md).
 
 ## Native Trim consumer
 

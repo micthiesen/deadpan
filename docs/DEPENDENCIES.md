@@ -1,6 +1,6 @@
 # Dependency decisions
 
-The specification selects native Rust, egui/eframe/wgpu on Metal, and a pure
+The project uses native Rust, egui/eframe/wgpu on Metal, and a pure
 editing core. These override the generic Bun/TypeScript setup defaults. The
 workspace follows the maintained Rust conventions in sibling `beastie`:
 edition 2024, resolver 3, Rust 1.97.1, shared dependencies, rustfmt, and Clippy.
@@ -63,9 +63,9 @@ color management, accessibility, or the shared renderer.
 The `links` feature routes an explicitly activated license hyperlink through
 egui-winit and locked `webbrowser` 1.2.4 to the default browser. Its URL parser
 and Unicode tables are included in the lockfile and generated notices.
-The privacy audit permits this path only through the native UI dependency.
+This path is permitted only through the native UI dependency.
 
-The development-only `deadpan-chaos` crate (the [adversarial suite](ADVERSARIAL.md)
+The development-only `deadpan-chaos` crate (the adversarial suite
 engine) adds no third-party dependency: it uses the existing `serde_json`, and
 provides a stable in-repository mutation runner beside the separate nightly
 libFuzzer workspace. It is a dev-dependency only and never ships.
@@ -78,9 +78,7 @@ model runtime. Media now also links the persistent source adapter. Generation
 integration tests continue to exercise the isolated native helper and SQLite
 store; no model download is required by the repository gate.
 
-The app's initial deployment target is macOS 15; the test host and actual
-verification are recorded in [SETUP_VERIFICATION.md](SETUP_VERIFICATION.md).
-The target setting does not prove compatibility with every supported OS.
+The app's initial deployment target is macOS 15. The target setting does not prove compatibility with every supported OS.
 
 Version and feature references: [eframe 0.36.2](https://docs.rs/eframe/0.36.2/eframe/),
 [egui source](https://github.com/emilk/egui),
@@ -119,8 +117,7 @@ runtime download. The release notice/SBOM assembly remains open.
 The [official BLAKE3 implementation](https://docs.rs/blake3/1.8.7/blake3/)
 adds `constant_time_eq` 0.4.2 (`CC0-1.0 OR MIT-0 OR Apache-2.0`); its other
 dependencies were already locked. The default `std` feature is enabled;
-optional mmap and parallel hashing are disabled. BLAKE3 supports the specification's
-internal content addressing and does not replace SHA-256 worker declarations.
+optional mmap and parallel hashing are disabled. BLAKE3 supports internal content addressing and does not replace SHA-256 worker declarations.
 The [generated-object store](GENERATED_MEDIA.md) uses the existing safe rustix
 filesystem bindings for descriptor-relative paths, exclusive rename, and macOS
 `F_FULLFSYNC`. No external runtime is added for this storage boundary.
@@ -149,7 +146,7 @@ anchored to the pinned release and not to the bundle manifest
 `deadpan-cli downloader install` downloads and verifies the same files into
 `~/Library/Application Support/Deadpan/helpers`. That managed root serves
 development builds and is the future update location. Signed update manifests
-and rollback (§15.2) remain open.
+and rollback remain open.
 
 | Helper | Pinned release file | Size and SHA-256 | License | Notes |
 | --- | --- | --- | --- | --- |
@@ -185,7 +182,7 @@ distribution.
 ## Private AI runtime
 
 `cargo xtask bundle` ships the AI pause runtime inside the application
-(specification §14.1–§14.2) from pins in
+from pins in
 [`tools/ai-runtime/pins.json`](../tools/ai-runtime/pins.json), assembled by
 [`tools/ai-runtime/build.py`](../tools/ai-runtime/build.py) on the build Mac.
 Python is a build-time tool; nothing is installed or compiled on a user's Mac,
@@ -260,16 +257,14 @@ upstream CRF-33 conditioning round trip, which the adapter must not silently
 bypass, nor for the lossless RGB H.264 intermediate the host converter admits.
 The runtime therefore carries a separate GPL build of the `ffmpeg` and
 `ffprobe` programs. They run as separate processes and are distinct from the
-LGPL libraries the application links. Specification §27.2 requires the owner
-to decide this before distribution: `--identity` builds refuse to include the
+LGPL libraries the application links. The owner must decide this before distribution: `--identity` builds refuse to include the
 runtime without `--allow-gpl-ai-codec`, and `build-provenance.json` records the
 decision. Replacing them would need a re-qualified conditioning route (for
 example VideoToolbox H.264) and an FFV1 intermediate admitted by the converter.
 
 ## Measured media candidates
 
-[The 2026-09-20 native report](qualification/media-2026-09-20.md) records exact
-libraries, source commits, licenses, hashes, and failed samples. The developer
+The developer
 Homebrew FFmpeg 9.0.1 build is GPL version 3 or later and is not bundled or
 selected for distribution. Hardware VideoToolbox with B-frames failed direct
 muxing; explicit hardware with B-frames disabled and explicit OS software
@@ -280,8 +275,7 @@ Pinned rsmpeg `b21fcfde8bb1ffdc179504e370e330385baa9819` does not compile agains
 that FFmpeg 9 build. Pinned Cutlass
 `22437e2837340c7c57d62e438117f9a0fb4096d2` passes its scoped upstream tests but
 fails Deadpan's nonzero-start timestamp fixture. Neither combination is adopted
-unchanged. The [compatible qualification](qualification/media-compatible-2026-09-20.md)
-now establishes the same rsmpeg pin with signed FFmpeg 8.0.3, built separately
+unchanged. Qualification established the same rsmpeg pin with signed FFmpeg 8.0.3, built separately
 under LGPL 2.1-or-later flags with no GPL/nonfree codecs. Normal and sanitizer
 harness runs pass 252 positive assertions each, including original picture
 identity and retained-frame ownership. Hardware/VFR B-frame mux failures and VFR
@@ -291,7 +285,7 @@ format/color coverage, relocation/signing, and a shipping bundle remain open.
 
 ## Measured audio candidate
 
-[Signalsmith qualification](qualification/audio-2026-09-20.md) pins Stretch
+Signalsmith pins Stretch
 1.3.2 at `57b93f4e9206a089a45387eaa39bdc9f310d3308` and Linear 0.3.1 at
 `5668673560146a9cfe38c25315071e3fd68c8317`, both MIT. The isolated C++17
 harness uses the portable FFT, 48 kHz stereo, five speeds, and three pitch
@@ -301,7 +295,7 @@ pass. Block partition and local-seek equivalence, short clips, and realtime
 deadlines are not qualified. All 130 PCM hashes match across the two builds.
 The reports retain failures and complete notices.
 
-The [canonical worker prototype](qualification/audio-canonical-2026-09-20.md)
+The canonical worker prototype
 uses a fixed 256-sample schedule, exact rational input boundaries, padded/cropped
 context, replay, and prepared PCM. A 120 ms window with 15 ms analysis steps
 passes 3,447 checks in each normal/sanitized run, with 558 matching PCM hashes.
@@ -322,7 +316,7 @@ audio renderer. No new registry dependency or build-time download is introduced.
 
 ## First real local model probe
 
-The [LTX MLX smoke](qualification/model-smoke-2026-09-20.md) pins runtime commit
+The LTX MLX smoke pins runtime commit
 `3392d75934120b7e69eefbe55893f7ef82be92a4`, the LTX-2.3 q4 pack, and the Gemma
 4-bit text encoder. Verified selected files total 36,152,862,913 bytes. On the
 reference M5 Max, one cold-process generation produced 25 silent 768×320 frames
@@ -332,12 +326,12 @@ shipping backend. Missing color tags and developer GPL FFmpeg use remain
 unqualified. Runtime, LTX, and Gemma license layers are recorded separately;
 neither runtime nor weights are approved for redistribution by this probe.
 
-The [supervised development adapter](qualification/model-worker-2026-09-21.md)
+The supervised development adapter
 connects this same candidate to the Rust process boundary and exact bridge plan.
 Its tagged, lossless RGB serialization still uses developer GPL FFmpeg. This
 qualifies a development boundary, not an app codec/runtime redistribution choice.
 
-The [FFV1 master probe](qualification/ffv1-2026-09-21.md) converts the actual
+The FFV1 master probe converts the actual
 native sequence and sampled candidate through the isolated LGPL FFmpeg 8.0.3
 libraries. Normal and instrumented adapters preserve every RGB8 pixel, frame
 ordinal, and color tag in FFV1 v3/Matroska, with slice CRC enabled. The container
@@ -363,7 +357,7 @@ Rubato's current asynchronous API also keeps its running phase private. Neither
 was added as an unused dependency or treated as an exact-phase solution.
 
 [Source preparation](AUDIO_PREPARATION.md) defines the kernel and speaker matrix.
-Its [measurements](qualification/audio-preparation-2026-09-21.md) retain actual
+Its measurements retained actual
 signal errors and block costs. This is a worker sampler, not a replacement for
 the qualified stretch adapter or an audio-device selection. A full listening
 corpus, format/layout choices, voice integration and callback scheduling remain
@@ -372,19 +366,18 @@ required.
 ## Qualification still required
 
 The [prepared output boundary](AUDIO_OUTPUT.md) pins CPAL 0.18.2 and rtrb 0.4.0
-for a narrow macOS device probe. [Source audit](qualification/audio-output-dependency-audit-2026-09-21.md)
-and [hardware results](qualification/audio-output-2026-09-21.md) keep normal
-callback evidence separate from exceptional OS-clock allocation, device changes,
+for a narrow macOS device probe. Normal
+callback evidence is kept separate from exceptional OS-clock allocation, device changes,
 physical-format side effects, acoustics and full transport qualification.
 [Notices](../native/deadpan-output/THIRD_PARTY.md) retain exact dependency/license
 provenance; these do not establish a signed application distribution.
 
-Gate A remains open. Before adding each executable or native dependency, record
+Before adding each executable or native dependency, record
 its exact revision, source and transitive licenses, build configuration,
 supported OS/hardware, measured output, packaging requirements, and evidence.
-Keep this log current; a selection in the spec is not a tested integration.
+Keep this log current; a selection is not a tested integration.
 
-| Boundary | Spec candidate | Required qualification |
+| Boundary | Candidate | Required qualification |
 | --- | --- | --- |
 | Media | rsmpeg + pinned FFmpeg; compare isolated Cutlass components | Decode/seek/encode, VFR and AAC sync, native ownership, color, codec/license flags. |
 | GPU preview | wgpu/Metal, narrow objc2 interop | Actual decoded textures, lifetime/synchronization, color, preview/export parity. |

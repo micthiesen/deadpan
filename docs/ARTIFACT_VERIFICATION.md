@@ -3,7 +3,7 @@
 This slice extends the [worker boundary](WORKER_VERIFICATION.md) with host-side
 path containment, byte limits, SHA-256 verification, and an ephemeral stable
 copy. It does not validate media, make a candidate ready, persist an accepted
-artifact, or qualify an inference backend. DP-18 remains partial.
+artifact, or qualify an inference backend.
 
 ## Ownership and validation
 

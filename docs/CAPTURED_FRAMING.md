@@ -2,9 +2,7 @@
 
 This work implements the bounded capture path. It does not complete arbitrary
 insertion, generated-media preview, saved targets or the complete picture-operation surface.
-The [full specification](spec/DEADPAN_SPEC.md) remains authoritative.
-The [qualification record](qualification/captured-framing-2026-09-26.md) distinguishes
-deterministic verification from the still-blocked Metal and native visual review.
+Metal and native visual review remain blocked.
 
 A pause captures the existing picture's exact source frame and the spatial
 composition entering the insertion parent. The source remains a `HoldVideo::Freeze`

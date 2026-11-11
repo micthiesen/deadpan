@@ -93,10 +93,3 @@ An actual preserved core-21/database-27 CLI supplies migration history from an
 explicitly seeded initial reanchor document. Its later commands, undo, redo and
 pending redo are produced by that binary; provenance distinguishes initial
 fixture intent from command-generated history.
-
-[Qualification](qualification/gap-bindings-2026-09-26.md) records passing focused
-plan/PCM/CLI checks, migration tests and three independent reviews
-with no remaining findings. The full workspace run retains its sandbox socket
-failure and playback timeouts; all 11 playback cases passed on an unchanged
-exact-binary retry. Concurrent app changes are tracked separately. No DP
-requirement or release gate is complete.

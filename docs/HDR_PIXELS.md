@@ -3,8 +3,7 @@
 `deadpan-render` carries PQ and HLG sources through the shared picture pass,
 selects an SDR or HDR output branch, tone-maps where that branch requires it,
 and converts the composed working picture into Rec.2100 10-bit encoder planes.
-This is a library boundary. The automatic HDR/SDR decision (specification
-Section 22.5), source admission, encoding, metadata muxing and app labelling
+This is a library boundary. The automatic HDR/SDR decision, source admission, encoding, metadata muxing and app labelling
 belong to their owners. The [SDR boundary](SDR_ENCODER_PIXELS.md) is unchanged.
 
 ## Scale and transfers
@@ -194,8 +193,6 @@ On actual Metal:
   including the tone map.
 - In the qualification fixtures, every PQ P10 code matches the independent
   reference exactly. HLG differs by at most one code, at a near-tie of 615.55.
-
-See the [qualification record](qualification/hdr-pixels-2026-10-05.md).
 
 ## Limits
 

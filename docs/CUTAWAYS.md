@@ -1,8 +1,7 @@
 # Cutaways
 
 A cutaway shows another moment of the Original over part of a beat while the
-beat's own sound continues (specification §8.2 "Reaction cutaway", §17.3 and
-the §31 worked edit, step 7). It is a picture attachment, not new time.
+beat's own sound continues (a reaction cutaway). It is a picture attachment, not new time.
 
 ## Model
 
@@ -62,7 +61,7 @@ replayed, so a macro records it and `.` repeats it at a new selection;
 ([role edits](ROLE_EDITS.md#j-and-l-cuts)) place a picture-keeping cutaway over
 the stretch their Roll moves.
 
-A micro-loop inside a pause (specification §8 "Micro-loop") is a short,
+A micro-loop inside a pause (a "micro-loop") is a short,
 low-motion Original moment shown over a Hold with `fit=loop` or, for a seam
 that never jumps, `fit=bounce`; the Hold keeps its own sound (silence, room
 tone or a tail). A micro-loop of linked content is a Repeat of a Visual range

@@ -100,16 +100,5 @@ symlinks, hard links, and package-path replacement. The developer example
 `qualify_generated_storage` exercises publication and readback in separate
 processes. Its reference JSON is a qualification artifact, not a second mutable
 project document.
-
-[The measured storage run](qualification/generated-storage-2026-09-21.md)
-publishes the actual 30-frame sampled FFV1 master and its 25-frame native master,
-removes private input copies, relocates the package, and verifies readback in
-separate processes. The independent decoder then compares every RGB pixel and
-the frame/color metadata against the retained fixtures.
-
-The repository gate passes 256 Rust tests, including 12 storage unit tests and
-8 storage integration tests, plus 72 Python harness tests. Formatting, Clippy
-with warnings denied, the workspace build, and headless diagnostics pass.
-No native app lifecycle or UI code changed, so native smoke and GUI checks were
-not repeated. Linux behavior, physical power-loss recovery, and filesystem
-disk-full injection remain unqualified by this run.
+Linux behavior, physical power-loss recovery, and filesystem
+disk-full injection remain unqualified.

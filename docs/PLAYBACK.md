@@ -19,7 +19,7 @@ finishing its cache, and preparing output. Stretch counters describe the
 current stage's 48 kHz sample extent; nested stages have separate counters.
 Elapsed time is measured from the playback request and updated at 100 ms
 intervals. There is no estimated completion time or overall percentage.
-Space still cancels. [Preparation observations](qualification/audio-progress-2026-10-11.md)
+Space still cancels. Preparation observations
 are bound to the same request, session, revision, proposed-content identity
 and output generation as playback; they never advance the heard clock.
 
@@ -45,10 +45,9 @@ reads are bounded
 but cooperative; Play may wait for the in-flight check or canonical read.
 The horizon has a 60-second processing deadline after plan admission, with
 existing source-open limits. Deferred work waits for a new cursor/context;
-there is no automatic retry loop. [Active preparation](qualification/audio-ahead-2026-10-11.md)
+there is no automatic retry loop. Active preparation
 continues into a bounded FIFO; the [saved stretch cache](SAVED_AUDIO.md) supports
 cross-restart reuse and reader-safe cleanup. The remaining audio pipeline stays open.
-See [idle audio preparation](qualification/audio-warming-2026-10-11.md).
 
 Explicit pause of ordinary edit playback selects and reveals the beat under the
 last admitted audio position. Original playback leaves the edit cursor, scope
@@ -83,8 +82,7 @@ edges. Persisted
 [sound events](SOUND_EVENTS.md) enter this same bus with independent treatments,
 edges and sends before their group processing and the shared
 [finite oversampled limiter](AUDIO_MASTERING.md). Bounded treatment-prefix reuse
-fixes a measured work-budget failure with EQ and both returns; see the
-[loop and Tail regression](qualification/event-prefix-cache-2026-10-12.md).
+fixes a measured work-budget failure with EQ and both returns.
 Remaining sound-owner edit routes, persistent filtered caching and
 mastering/performance qualification keep the full contract open.
 Monitor volume is independent of
@@ -198,8 +196,7 @@ One producer batch, one controller batch, the native queue and canonical caches
 have separate bounds. A reserved terminal failure follows any valid prefix in
 order. Stop, supersession and automatic teardown discard queued PCM; an edited
 proposal's store revocation is checked through atomics on every controller tick.
-This FIFO has no clock authority and does not change authored state. See
-[active preparation](qualification/audio-ahead-2026-10-11.md).
+This FIFO has no clock authority and does not change authored state.
 
 A shared
 limited reader retains at most four verified 8192-frame tiles and twelve exact
@@ -346,34 +343,22 @@ the Original and its return companion stay retained. Preparation
 observes cancellation and cannot replace a different media key or
 project session. The foreground reader still validates it before use. If
 entry catches unfinished preparation, it waits for that same admission rather
-than opening another decoder. See the [Generated handoff](qualification/generated-playback-cache-2026-10-11.md)
-and [entry preparation](qualification/generated-prefetch-2026-10-11.md) records.
-Accepted Generated preview uses up to four FFV1 slice threads through the
+than opening another decoder. Accepted Generated preview uses up to four FFV1 slice threads through the
 same strict admission. Index measurement and offline rendering keep one
 thread; the native adapter forbids FFV1 frame threading so its configuration
-allocation bound and presentation order stay intact. See the
-[slice qualification](qualification/generated-slices-2026-10-11.md).
-Starting on Generated footage after stopped preview can leave no retained
+allocation bound and presentation order stay intact. Starting on Generated footage after stopped preview can leave no retained
 Original. The cache then prepares the next Original picture on a separate
 cancellable job, using the ordinary receipt-verified Original reader. The job
 occupies the missing Original slot; it cannot coexist with a retained Original
 and does not raise the four-decoder playback bound. Each provider scan examines
 at most 1,024 new frames per request and stays inside the captured horizon/window.
-The [closely spaced provider qualification](qualification/generated-transitions-2026-10-11.md)
-covers two real accepted Holds separated by one Original picture, with all
-180 pictures presented at 1080p60 in both final runs.
-The [actual app playback measurement](qualification/generated-app-playback-2026-10-11.md) uses real accepted LTX
-pictures, 1080p60/4K30 Originals, device audio and offscreen Metal: all
-1,830/615 frames are presented, without skips, proxy pictures or audio faults.
 `:diagnostics`
-counts look-ahead jobs started, reached, swapped and failed. See the
-[selection-loop qualification](qualification/loop-lookahead-2026-10-11.md).
+counts look-ahead jobs started, reached, swapped and failed.
 
 The current device adapter requires the default route's existing 48 kHz stereo
 float configuration. Automatic device-rate conversion, full route recovery,
 acoustic synchronization/listening qualification, long-source preparation
-and full mastered preview/export equivalence remain open. Measured playback
-picture rates are in the [playback-proxy record](qualification/playback-proxy-2026-10-06.md).
+and full mastered preview/export equivalence remain open.
 Unit and integration tests cover clocks, cancellation, real canonical PCM,
 provider identity, queue failures and keyboard/presentation state without a
 native window. Physical playback and native interaction evidence is recorded

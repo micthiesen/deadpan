@@ -43,7 +43,6 @@ The planner resolves each instruction against the preceding staged edit in
 its checked ordinary Sequence context, including the scope returned by `ig/ag`.
 General temporal occurrence scopes, beat text objects, additional edits and broader
 semantic dot-repeat remain required.
-This is partial DP-06 implementation, not full macro acceptance.
 See [Repeat selections](REPEAT_SELECTION.md) for total-play versus motion counts,
 captured targets and structural range wrapping. `:repeat N` records a count setter
 for an existing Repeat and a selected-beat wrap for another kind. Setters require
@@ -77,12 +76,6 @@ copy bank and pending register choice, and use one atomic history entry per run.
 selection; `Duplicate { selector }` copies the selected beat or Visual range
 after itself and selects the copy. Both leave the register bank unchanged
 ([explode and duplicate](EXPLODE_DUPLICATE.md)).
-See [operator qualification](qualification/operator-motions-2026-10-02.md) for
-typed selectors, pending input, exact capture provenance and receipt ownership.
-See [Visual qualification](qualification/visual-macros-2026-10-02.md) for the
-selection, replacement, persistence and native receipt checks.
-See [copy/paste qualification](qualification/macro-reuse-2026-10-02.md) for
-checks, rendered captures, retained failures and remaining limits.
 
 ## Recording and input ownership
 
@@ -127,8 +120,6 @@ Selecting alone writes neither authored history nor the register bank. Copy
 changes only its register; authored runs keep their existing atomic Undo and
 bank behavior. `:wrap-repeat` wraps the range; `:repeat` remains the existing
 selected-beat/count command and refuses an active Visual range.
-See the [named-mark qualification](qualification/named-mark-selectors-2026-10-22.md)
-for the current verification state and retained failures.
 
 ### Explicit authored nodes
 
@@ -268,9 +259,7 @@ Publication validates it inside the same Store transaction for authored edits
 and register-only copies. Selection-only success validates the snapshot with
 the head and bank in a read transaction. Native command entry and completion
 also retain the displayed analysis identity, including absence. Guards do not
-enter history or copied content. See the
-[qualification record](qualification/transcript-search-selectors-2026-10-22.md)
-for verification status and limits. This proves logical Original speech carried
+enter history or copied content. This proves logical Original speech carried
 by Source leaves, not audible PCM after independent audio treatments.
 
 ### Ranged zoom and creep
@@ -325,7 +314,6 @@ While recording, another action waits for that request; Escape or
 `:record-cancel` cancels it and the recording. Cancellation before submission
 cannot later commit or append the pending framing. Already queued authored
 work retains the ordinary durable receipt rules.
-See [ranged framing macro qualification](qualification/ranged-framing-macros-2026-10-18.md).
 
 ### One-play zoom and creep
 
@@ -392,10 +380,6 @@ Headless Run and Apply accept optional `scoped` invocation context with `root`,
 commit validate the same address. Output context and each trace row retain the
 mapped authority. Request bytes have a depth/identity-derived allowance while
 saved programs retain their independent 128 KiB limit.
-See [one-play qualification](qualification/one-play-framing-macros-2026-10-18.md)
-for real-media, durable-history, native replay, review and timing evidence.
-The [scoped range qualification record](qualification/scoped-framing-ranges-2026-10-25.md)
-tracks the additional range admission and mapping boundary.
 
 ### One-play pause intent
 
@@ -446,7 +430,6 @@ selectors, unchanged plays and gaps, cropped or retimed occurrences and
 sound-bearing documents refuse the whole run atomically. Direct Apply supplies
 dot intent, so `.` repeats the edit in the play chosen at the dot.
 
-
 With This play explicit at every Repeat level, `:hold-duration Nf` records
 `SetHoldDuration { length }` and supplies dot intent when the target path uses
 only Repeat and Sequence ancestry. Enter on the selected Hold or its Change
@@ -464,7 +447,6 @@ refusals. Retime ancestry remains refused except for the explicit-body
 fixed-Retime duration path below. Generated-picture shortening retains
 qualified accepted media; extension beyond its coverage commits fallback and
 durable preparation rather than stretching the accepted provider silently.
-See the [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md).
 
 ### This-play Hold length inside fixed Retime
 
@@ -486,8 +468,6 @@ Explicit Repeat ancestry follows the existing
 document depth bound. Already-owned branches can be edited without another
 isolation copy; partly owned paths copy only the remaining shared branches.
 Recording, named duration calls and dot use the same invocation authority.
-See the [nested This play fixed-Retime qualification](qualification/nested-fixed-retime-hold-duration-2026-10-22.md)
-for retained scope and verification evidence.
 
 ### All plays Hold length
 
@@ -511,7 +491,7 @@ input windows and output lengths. Exact visibility composes each crop and scale
 with current stable Repeat offsets, then selects project-picture centers. A
 live Hold needs at least one sampled visible picture after every staged setter;
 a later disappearance rolls back the complete run. A crop cannot establish
-dormancy. See [fixed-Retime shared duration qualification](qualification/shared-fixed-retime-hold-duration-2026-10-22.md).
+dormancy.
 
 No-op lengths, forged or stale captures, mixed or several-play authority,
 Partition or derived-clock ancestry and unsupported later instructions refuse atomically. Direct
@@ -558,10 +538,7 @@ Hold disappearing from the sampled output refuses the entire staged run.
 Several targets use the selected-duration authority below. Retime-owned gaps,
 additional Retimes, Retimes above or between Repeats, Partition, derived clocks,
 root or attached sounds and unrelated instructions remain unavailable. Other duration families
-keep their existing paths and guards. See the
-[mixed duration qualification](qualification/mixed-hold-duration-semantics-2026-10-21.md)
-and [fixed mixed duration qualification](qualification/mixed-fixed-retime-hold-duration-2026-10-22.md)
-for implementation and verification status.
+keep their existing paths and guards.
 
 ### Selected plays Hold length
 
@@ -585,7 +562,6 @@ The fixed-window body path validates sampled visibility for every member before
 allocation, including no-op counterparts. It preserves crop, pitch and output
 extent, and resolves final primary continuation from the cropped visible
 interval. An intrinsic start outside the crop is not a continuation frame.
-See the [selected fixed-window qualification](qualification/selected-fixed-retime-hold-duration-2026-10-22.md).
 
 The final Compound retains aggregate limits and commits once. The primary
 cursor is resolved after all leaves, including when a later earlier-in-time
@@ -623,8 +599,7 @@ Input and output half-frame ties follow the half-open picture-center rule.
 No visible sampled picture, exact derived pause clocks, Repeat ancestry, Visual
 selection, no-op lengths and stale captures refuse atomically. The fixed outer
 window and independently supported output sounds retain their clocks. This does
-not grant general semantic authority to Retime contents. See the
-[native fixed-window qualification](qualification/native-fixed-retime-hold-2026-10-21.md).
+not grant general semantic authority to Retime contents.
 
 ### One-play Hold sound
 
@@ -649,7 +624,6 @@ returning to Silence does not grant it again. No-op policies allocate no
 isolation. Unsupported authority, stale targets and late failures refuse the
 whole run without history or register writes. A delayed saved result cannot
 reclaim newer navigation or append to an abandoned recording.
-See the [one-play Hold sound qualification](qualification/scoped-hold-audio-2026-10-20.md).
 
 ### One-play gain steps
 
@@ -668,7 +642,6 @@ captures or a later failing instruction leave document, history and registers
 unchanged. All/mixed/several-play nonrecording gain retains its direct workflow.
 Visual ranges cannot supply one-play gain macro authority. Explicit mute and
 literal audio setters have the same authority requirements, described below.
-See the [one-play gain qualification](qualification/scoped-gain-macros-2026-10-20.md).
 
 ### One-play mute state
 
@@ -685,7 +658,7 @@ state refuses before allocating another isolation; a late refusal rolls back the
 whole run. Native same-state preflight adds no instruction or history. Stale or
 mixed authority, Visual selection and mismatched captures cannot fall back to a
 shared edit. Ordinary nonrecording All/several-play controls retain their direct
-workflow. See the [one-play mute qualification](qualification/scoped-mute-macros-2026-10-21.md).
+workflow.
 
 ### One-play literal audio setters
 
@@ -706,8 +679,7 @@ nonrecording controls keep their direct workflow.
 Visual-range steps, interactive Gain/EQ drafts and wet/tail sends do not gain
 scoped semantic admission here. Stale or mismatched captures, incomplete Play
 authority and delayed receipts cannot fall back to a shared edit or reclaim
-newer navigation. See the
-[literal-setter qualification](qualification/scoped-audio-setters-2026-10-21.md).
+newer navigation.
 
 ### Place slice Apply
 
@@ -733,7 +705,6 @@ resolves the current selected child or selection instead of retaining the old
 preview destination. The committed placement has fresh identities, with the
 same picture and canonical PCM semantics as the preview. The footer explains
 the current recording restriction or the one-action Apply behavior.
-See [Place slice macro qualification](qualification/place-slice-macros-2026-10-18.md).
 
 ### Original frame navigation and marks
 
@@ -762,7 +733,6 @@ jump metadata and the accepted picture survive consecutive native or headless
 saves, including coalesced updates. These proofs never authorize a remote
 cursor continuation. A delayed native receipt cannot reclaim navigation after
 the captured Original cursor, source, qualification or selection changed.
-See [Original mark qualification](qualification/original-mark-macros-2026-10-18.md).
 
 ### Whole-Original reuse
 
@@ -777,7 +747,6 @@ The full source uses its measured audio lead/tail and picture endpoint holds,
 not the picture-ordinal bounds of an Original moment register.
 Like other semantic transactions, reuse requires the project's register-bank
 version to be loaded so it can prove that the unchanged bank is still current.
-See [whole-Original qualification](qualification/whole-original-macros-2026-10-16.md).
 
 Recording performs normal edits. A motion enters the body when dispatched;
 a copy, cut, paste or call enters only after its matching successful receipt. A pending

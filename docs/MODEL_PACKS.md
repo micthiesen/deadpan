@@ -1,8 +1,7 @@
 # Model packs
 
 Deadpan installs model weights as verified packs in one global directory,
-`~/Library/Application Support/Deadpan/Models`, shared by every project. Section
-14 of the [specification](spec/DEADPAN_SPEC.md) is normative; this records the
+`~/Library/Application Support/Deadpan/Models`, shared by every project. This records the
 implemented manager in [`deadpan_models::packs`](../crates/deadpan-models/src/packs.rs).
 
 ## Approved manifests
@@ -52,7 +51,7 @@ limits. Older manifests omit this optional record and retain their canonical
 hashes. The compiled `ltx-2.3-q4-extension` pack has its own operation and
 runtime compatibility identity; installing Bridge does not select it.
 
-Each license layer (specification §14.4) has an `id`, `title`, SPDX identifier
+Each license layer has an `id`, `title`, SPDX identifier
 or `LicenseRef-…`, attribution, HTTPS link, a plain `terms` summary shown before
 installation, redistribution and access statements, `acceptance_required`, and
 optionally `text`, the name of a full license text compiled into the build from
@@ -75,7 +74,7 @@ loads and runs in whisper.cpp 1.8.3. A pack's operations name what it supports
 file and the detector the file named `ggml-silero-*`.
 
 Both compiled generation baselines' files, hashes, sizes and URLs match the
-[qualified receipt](../tools/model-qualification/evidence/2026-09-20-smoke/download-manifest.json).
+qualified receipt.
 The pinned worker also verifies every selected manifest file on inference and
 checks its exact supported component/configuration contract before loading.
 Its install directory is the worker's model cache:
@@ -243,7 +242,7 @@ and rejection of the test CA by the system trust store and of plain HTTP. An
 ignored network test resumes the last 1,000 bytes of the Silero file from
 Hugging Face through the system trust store (passed 2026-10-05). The real
 36 GB bridge download over Hugging Face with a physical interruption remains
-To verify (owner).
+unexercised.
 
 ### Offline installation
 
@@ -269,7 +268,7 @@ A source missing any file fails with `ImportIncomplete` (CLI
 verification. Neither activates anything. `PackStore::export` writes an
 installed pack as `<pack>/<version>/<name>` pax entries, published by rename,
 which `import` and the system `tar` both read. The full offline distribution
-(specification §14.1) carries packs in exactly this form: `cargo xtask
+carries packs in exactly this form: `cargo xtask
 offline-dist` exports them with the bundled app's own CLI, and
 `offline-dist-verify` imports them back in a scrubbed environment
 ([Offline distribution](PACKAGING.md#offline-distribution)).
@@ -367,6 +366,6 @@ the installed bridge pack (see [AI pauses](AI_HOLDS.md#runtime)).
 
 A gated-weight flow if a future pack needs one, per-hardware pack
 qualification beyond the reference M5 Max, a
-"Fast" label (no pack meets the §13.4 target), and, To verify (owner), the
+"Fast" label (no pack meets the target), and, still unexercised, the
 real 36 GB download with a physical interruption and the clean-machine
-interrupted-install test of §26.6 on a second Mac.
+interrupted-install test on a second Mac.

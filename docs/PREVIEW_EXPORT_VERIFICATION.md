@@ -1,7 +1,7 @@
 # Preview-versus-export verification
 
 `deadpan_cli::export_verification` compares an emitted movie with the committed
-revision it was rendered from. It answers the Gate D question that
+revision it was rendered from. It answers the question that
 [finished-file verification](FINISHED_FILE_VERIFICATION.md) deliberately leaves
 open: does the exported content match what the shared preview path shows and
 plays? It is a diagnostic. It edits nothing, grants no publication authority and
@@ -297,17 +297,15 @@ them with public `render` and verify them with `verify-export`:
   `cargo test --release --locked -p deadpan-cli --test preview_export vfr_recipe_exports`;
   `DEADPAN_PREVIEW_EXPORT_KEEP=1` retains packages, movies, per-fixture reports
   and `results.json`. The plan matrix also runs in the default gate. All eleven
-  exports, 867 pictures and 28 audio windows pass in the
-  [2026-10-09 qualification](qualification/vfr-recipes-2026-10-09.md).
+  exports, 867 pictures and 28 audio windows pass.
 - `every_recipe_export_matches_its_committed_preview` exports every recipe
   fixture (66, including four accepted Generated Holds and two
-  larger generated Originals, below; the Section 8 fixtures added on
-  2026-10-15 live in `preview_export/section8.rs`).
+  larger generated Originals, below; further fixtures live in
+  `preview_export/section8.rs`).
   Debug renders cost about four seconds per output second, so it is ignored in
   debug builds. The release-mode gate is
   `cargo test --release --locked -p deadpan-cli --features synthetic-worker --test preview_export`
-  (418 s for all 33 tests on an M5 Max on 2026-10-15, recorded in
-  [the Section 8 qualification](qualification/preview-export-2026-10-15.md)). It needs a development `ffmpeg` with
+  (418 s for all 33 tests on an M5 Max on 2026-10-15). It needs a development `ffmpeg` with
   `libx264` (`DEADPAN_BRIDGE_FFMPEG`, else `/opt/homebrew/bin/ffmpeg`) and a
   current `deadpan-media-worker` and `deadpan-track` executables beside the
   tested `deadpan-cli` (`cargo build --release --locked -p deadpan-media-worker
@@ -335,7 +333,7 @@ them with public `render` and verify them with `verify-export`:
   every play. The `generated-pause` movie is also verified against the
   pre-acceptance Background revision and must fail on exactly the 12 Hold
   frames.
-- [Real Generated Holds](qualification/real-generated-export-2026-10-11.md)
+- Real Generated Holds
   additionally qualify accepted LTX output at 1080p60 and 4K30: all 225 pictures,
   six audio windows at zero offset, exact silent-Hold/shifted-chirp probes and
   rejection of the pre-acceptance Freeze on all 15 4K Hold pictures. The initial
@@ -355,10 +353,7 @@ them with public `render` and verify them with `verify-export`:
   fixtures for a focused rerun, prints how many it skipped, refuses unknown
   names and refuses to run when `CI` is set; record results from a full run.
 
-Measured results are in the
-[qualification record](qualification/preview-export-2026-10-04.md), the
-[Generated Hold and large-media record](qualification/preview-export-2026-10-06.md) and, for HDR,
-the [HDR record](qualification/hdr-preview-export-2026-10-05.md). The harness
+The harness
 does not cover HDR display or EDR presentation (the comparison is in encoded
 code values), native key paths (fixtures use the headless command API that
 the keys resolve to), real model output (Generated Hold fixtures use the

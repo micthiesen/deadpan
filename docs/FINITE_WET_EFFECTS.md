@@ -1,8 +1,8 @@
 # Finite reverb and delay preparation
 
 `deadpan_audio::FiniteWetEffect` prepares wet-only stereo tiles with complete,
-finite input history. This is the numerical basis for specification §10.2's
-continuous returns and §17.4's random access. Authored `wet_sends` on a beat or
+finite input history. This is the numerical basis for continuous returns
+and random access. Authored `wet_sends` on a beat or
 group now use it through the shared contribution mixer. Native
 `:wet-send reverb|delay -6dB|off` changes the captured beat or isolated Repeat
 play; whole-beat changes support Undo, dot and macros. The inspector shows both
@@ -131,8 +131,4 @@ owner's format-breaking authorization. Event copy/recopy through nested Preserve
 stages is checked; broader retained/loop and incoming-tail qualification,
 partial attached sound-owner processing scope,
 persistent filtered caching and the rest of the
-voice/mastering graph remain agent work. DP-09 and DP-16 remain partial.
-
-The [qualification](qualification/finite-wet-2026-10-12.md) records the numerical
-tests, native allocation and sanitizer witness, measured cost, exact source
-identity and current integration limits.
+voice/mastering graph remain open.

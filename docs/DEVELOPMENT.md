@@ -1,6 +1,6 @@
 # Development
 
-Deadpan uses a Rust workspace, pinned to Rust 1.97.1. Its native application targets Apple Silicon macOS; the specification proposes macOS 15 as the initial deployment baseline, pending qualification. Cargo installs/builds the locked Rust dependencies. Native development requires the macOS build tools.
+Deadpan uses a Rust workspace, pinned to Rust 1.97.1. Its native application targets Apple Silicon macOS; the initial deployment baseline is macOS 15. Cargo installs/builds the locked Rust dependencies. Native development requires the macOS build tools.
 
 The CLI and source preview need no credentials or model weights. The complete
 workspace builds its media helpers against pinned LGPL FFmpeg 8.0.3 with BSD
@@ -95,10 +95,7 @@ cargo xtask gate
 ```
 
 The adversarial tests (`adversarial_*`) run in deterministic regression mode
-within these workspace tests. For a time-bounded fuzzing campaign, a sanitized
-decoder campaign or the full long-project stress, run `cargo xtask chaos`,
-`cargo xtask chaos --sanitize` or `cargo xtask chaos --stress`; see
-[the adversarial suite](ADVERSARIAL.md).
+within these workspace tests.
 
 The gate runs build-directory hygiene, then `cargo fmt --all -- --check`, workspace
 Clippy with `-D warnings`, `deadpan-app` Clippy with `ui-harness`, and the
@@ -133,7 +130,7 @@ Unprefixed `cargo test` remains unoptimized for quick iteration. For repeated
 pure Core library body edits, use the preferred
 [Blaze loop](BUILD_FEEDBACK.md#routine-loop); its isolated target, environment
 cleanup, status check and Cargo fallback are part of that command. Keep Plan
-and integration tests on Cargo. If inheriting a qualification environment,
+and integration tests on Cargo. If inheriting an optimization override from an earlier shell,
 clear both optimization overrides and restore incremental compilation before
 a general pure-logic Cargo check, for example:
 
@@ -143,7 +140,7 @@ env -u CARGO_PROFILE_DEV_OPT_LEVEL -u CARGO_PROFILE_TEST_OPT_LEVEL \
 ```
 
 Use the optimized command above for deadline-sensitive media tests; a quick
-build does not establish performance or encoded-output qualification. Cargo compiles
+build does not establish performance or encoded-output behavior. Cargo compiles
 the two levels separately within `target/debug`, so switching between them
 rebuilds neither level's crates; only the top-level executables are refreshed.
 `--no-fail-fast` keeps one failing target from hiding the results of every
@@ -185,13 +182,12 @@ Run `cargo xtask hygiene` before a long local development session and after
 substantial build growth, with no compiler using that target. Hygiene resolves
 Cargo's selected target through metadata, honoring `CARGO_TARGET_DIR`,
 `CARGO_BUILD_TARGET_DIR` and `.cargo/config.toml`; the measured directory and
-cargo-sweep's target are the same. It preserves evidence outside Cargo profile
+cargo-sweep's target are the same. It preserves files outside Cargo profile
 directories. CI keeps its optimized Cargo configuration and disabled
 incremental state because each CI build starts fresh.
 
 Large artifact directories can also delay macOS main-bundle discovery during
-Foundation bookmark creation. The [Node selector qualification](qualification/explicit-node-selectors-2026-10-22.md)
-records identical normal/UI test binaries timing out during import at their
+Foundation bookmark creation. Identical normal/UI test binaries timing out during import at their
 Cargo deps location and passing from compact copies, with sampled import
 threads in CFBundle directory enumeration. Preserve the failure and diagnose
 the thread before changing a timeout. A standard Nextest archive provides a
@@ -242,10 +238,9 @@ binary hash, and run the regression which distinguishes the restored variant.
 A successful no-run build with unchanged source hashes alone does not prove
 that Cargo rebuilt it.
 
-Owned runtime launches use the shared process adapter. On macOS, qualify changes
+Owned runtime launches use the shared process adapter. On macOS, check changes
 to that boundary with `python3 tools/process-qualification/check_pipe_inheritance.py
---output /tmp/deadpan-pipe-proof-NEW`. The [process-launch record](qualification/process-launch-2026-09-27.md)
-explains the deterministic raw/fixed pipe-inheritance witness and its cooperative
+--output /tmp/deadpan-pipe-proof-NEW`. The script is a deterministic raw/fixed pipe-inheritance witness and its cooperative
 scope. A passing rerun alone does not diagnose a worker pipe-EOF failure.
 
 Use `cargo fmt --all` to apply formatting. Keep `Cargo.lock` committed; dependency updates are explicit reviewed changes. Tests should establish meaningful behavior and failure modes rather than mirror implementation.
@@ -259,7 +254,7 @@ performance mode when the change can affect responsiveness. Native interaction
 covers the OS behavior that replay cannot observe: file panels, physical key
 delivery, native focus/IME, VoiceOver and physical display presentation.
 
-The gate verifies only the implemented foundation. It does not establish media accuracy, AI quality, accessibility conformance, signed distribution, or performance budgets. Those require the evidence in the [requirement tracker](REQUIREMENTS.md) and specification.
+The gate verifies the implemented code. It does not establish media accuracy, AI quality, signed distribution, or performance budgets; measure those separately (see [Performance](PERFORMANCE.md)).
 
 Source audio preparation has a deterministic headless signal/performance probe:
 
@@ -323,10 +318,10 @@ baseline, notices, an SBOM and provenance. It builds in its own path-remapped
 `target/bundle` directory, so it never disturbs `target/release`.
 `bundle-verify` exercises a copy in a scrubbed environment with an isolated
 `HOME`, including tampered and missing helper cases. Personal bundles use ad hoc
-signing and require neither Developer ID nor notarization (§27.1). The optional
+signing and require neither Developer ID nor notarization. The optional
 Developer ID/notarization path needs a signing identity and credentials. See
 [Packaging](PACKAGING.md) for the layout, runtime lookup, entitlements,
-notarization steps and current evidence.
+notarization steps.
 
 ```sh
 export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3/prefix"
@@ -385,8 +380,7 @@ Use `--project /absolute/project.deadpan` to reopen directly, or
 The source decoder retains the [admitted MP4/Matroska grammar](SOURCE_ADMISSION.md).
 Space plays/pauses [limited Original/edit audition](PLAYBACK.md); Shift+Space loops the selected moment or beat. Run
 `cargo test -p deadpan-playback -p deadpan-output --locked` for canonical PCM,
-delivery-clock, cancellation and queue tests without a native device. Full
-mastering, range editing, generated-provider preview and export remain open.
+delivery-clock, cancellation and queue tests without a native device. 
 
 Playback unit tests reserve one real-media workload per test binary before
 fixture preparation. Pass that permit to the test engine helper: its shared
@@ -397,8 +391,7 @@ the same reservation. Admission waits at most ten minutes, including queueing
 behind complete scenarios, so a leaked worker fails instead of stranding the
 suite. Pure arithmetic tests remain parallel. This isolates
 debug DSP cost without changing playback prefill, watchdogs or test deadlines.
-It does not establish production throughput or device latency. See the
-[playback test scheduling record](qualification/playback-waits-2026-09-27.md).
+It does not establish production throughput or device latency.
 
 `h/l` or Left/Right move the boundary cursor, accepting counts such as `12l`.
 `j/k` choose sources or sequence beats according to pane focus. `gg/G` and
@@ -414,17 +407,16 @@ validated numeric fields and Enter/Escape draft handling; see [framing](FRAMING.
 The viewer caption identifies the submitted picture;
 the bottom boundary can advance while the next picture is preparing. Tests cover
 GPU-delay state, stale replies, picture-error recovery and actual decoded freezes
-at distinct sequence positions. See the
-[presentation evidence](qualification/preview-presentation-2026-09-21.md).
+at distinct sequence positions.
 
 Native sound authoring uses `cargo test -p deadpan-app --locked project::tests::sound`
 for qualified service placement, history, receipt rejection and exact mapping
 nudges. The optional `sound-placement` UI replay covers real input, text entry,
 event focus, delayed command targets and painted controls. Run it through the
 [UI feedback loop](UI_FEEDBACK.md), with the production Kestrel source when
-available. It does not replace decoded-PCM, device or listening qualification.
+available. It does not replace decoded-PCM, device or listening checks.
 
-Headless source evidence uses `cargo run -p deadpan-media --example inspect_source -- /absolute/video.mp4 /tmp/new-source-report.json`.
+The headless source report uses `cargo run -p deadpan-media --example inspect_source -- /absolute/video.mp4 /tmp/new-source-report.json`.
 The report preserves original clocks, observed terminal duration, content identity,
 retained-pixel hashes and seek timings. The input must be a regular file at most
 256 MiB. Source indexing has independent memory, frame and cooperative time bounds.
@@ -434,8 +426,7 @@ Run `cargo run -p deadpan-render --example qualify_picture -- /tmp/new-picture-r
 for actual offscreen Metal comparisons against the CPU reference. Run
 `python3 tools/media-qualification/host/build_sanitized.py --work /tmp/new-empty-source-sanitizers --package deadpan-source --package deadpan-media`
 for C-adapter ASan/UBSan with source-session integration tests. These harnesses
-complement [native visual and keyboard evidence](qualification/source-preview-2026-09-21.md);
-they do not establish playback, physical display calibration or preview/export equivalence.
+do not establish playback, physical display calibration or preview/export equivalence.
 
 The committed encoder-picture host has an actual Metal probe:
 
@@ -450,7 +441,7 @@ I420 result. Add a third argument pointing to the retained `accepted.deadpan`
 fixture to check all 30 Generated frames against independent complete-plane
 references; omitting it records a skip. The package needs its adjacent
 `generated-picture-fixture.json`, produced by the bundle integration test's
-`DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT` option. Give native qualification an
+`DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT` option. Give the native probe an
 external timeout as well as its cooperative deadline. These are encoder-input
 checks, not an encoded file or complete product Render. See
 [the output contract](EXPORT_PICTURES.md).
@@ -471,7 +462,7 @@ For the [encoded project worker](ENCODED_RENDER.md), build the current
 `deadpan-cli` binary and `qualify_project_picture` example with Cargo's JSON
 artifact output. The picture example accepts two additional arguments after the
 worker executable: `--encoded MARKER_SOURCE`. Use the retained 120-frame 60 fps
-`hardware-none-60.mp4` impulse fixture from native-encoding qualification as the
+`hardware-none-60.mp4` impulse fixture from the native-encoding probe as the
 marker Original. Keep the accepted Generated package and its adjacent manifest
 available. The example retains actual MP4 candidates and direct I420/PCM inputs.
 Its cooperative deadline is 600 seconds; use a longer bounded outer timeout.
@@ -492,9 +483,9 @@ Then run `tools/media-qualification/compatible/qualify_native_encode.py` with
 `--encoder`, an empty `--work` directory and the qualified FFmpeg `--build-report`.
 The runner independently decodes FFmpeg and AVFoundation audio, reads actual MP4
 boxes and compares fresh-decoder GOP suffixes. Keep rejected hardware B-frame
-attempts and all partial files in the evidence. `--sanitizers` instruments the
+attempts and all partial files. `--sanitizers` instruments the
 reader probes; the supplied Rust example must separately have its native C
-adapter built with ASan/UBSan. Synthetic encoder evidence does not establish
+adapter built with ASan/UBSan. Synthetic encoder output does not establish
 project export. Run `cargo test -p deadpan-cli --test offline_audio --locked`
 for immutable canonical PCM, exact nonzero-origin intervals and shared deadlines.
 
@@ -508,13 +499,12 @@ Use `cargo test --locked -p deadpan-store --test original_media` and
 ownership, relocation, stale/wrong relinking and failure boundaries. Shared
 object-storage unit tests force the positional-copy fallback; the native
 fileclone tests exercise actual macOS clone independence. These checks do not
-require opening the app. Native dialogs and the initial register/insert workflow are connected;
-relink UI, bookmarks, complete formats and full-size latency remain open.
+require opening the app.
 
 For measured registration, run `cargo test --locked -p deadpan-media --test source_qualification`,
 `cargo test --locked -p deadpan-store --test source_registration` and
 `cargo test --locked -p deadpan-cli --test source_registration`. These open real
-video/audio fixtures and cover persisted evidence, transactional insertion,
+video/audio fixtures and cover persisted receipts, transactional insertion,
 historical lookup, rollback and explicit stream selection. Run the migration
 suite for schema changes. See [source registration](SOURCE_REGISTRATION.md).
 
@@ -686,7 +676,6 @@ For export timing, use separate nonperiodic probes:
 `python3 tools/media-qualification/generate_pcm_export_signals.py --output /tmp/deadpan-pcm-probes-NEW`.
 Repeat with `--check` to verify their bytes. Periodic conversion-stress signals
 may leave encoded timing unobservable; never call that zero-offset evidence.
-See [PCM qualification](qualification/pcm-sources-2026-10-09.md).
 
 ## Audio preparation checks
 
@@ -706,22 +695,19 @@ current admitted macOS output and records callback/seek/starvation evidence.
 See [audio output](AUDIO_OUTPUT.md) for its optional quiet tone, limits and
 dependency audit. Device probes are intentionally excluded from ordinary CI.
 
-1. Read [the specification](spec/DEADPAN_SPEC.md), [handoff](spec/AGENT_HANDOFF.md), and [AGENTS.md](../AGENTS.md). Sections 1–8 define semantics, 12–14 define AI/runtime contracts, 17–24 define architecture, and 26–31 define verification and command details.
-2. Consult [Architecture](ARCHITECTURE.md) for current responsibilities and planned boundaries. Keep the pure core independent; add a crate when working code benefits from isolation.
-3. Work on Gate A qualification alongside the pure Gate B domain foundation. Record decisions with exact dependency revisions, licenses, failures, fixture inputs, and reproducible measurements.
-4. Add meaningful tests at the relevant boundary, use focused verification while implementing, review the complete scoped diff, then run one milestone gate. Exercise affected native behavior where it adds evidence and preserve concurrent changes.
-5. Update the requirement tracker with implementation links, tests, measured acceptance evidence, and outstanding work. Commit and push authorized scoped work to `main`.
+1. Read [the brief](BRIEF.md) and [AGENTS.md](../AGENTS.md), then the document for the area you are changing.
+2. Consult [Architecture](ARCHITECTURE.md) for current responsibilities. Keep the pure core independent; add a crate when working code benefits from isolation.
+3. Add meaningful tests at the relevant boundary, use focused verification while implementing, review the complete scoped diff, then run one milestone gate. Exercise affected native behavior where it adds evidence and preserve concurrent changes.
+4. Commit and push authorized scoped work to `main`.
 
-## Evidence discipline
+## Test discipline
 
 For deterministic core behavior, cover fractional rates, origin-based frame/sample mapping, invalid inputs, overflow, half-open ranges, and repeat gaps. As structures arrive, add generated nested documents, inverse transaction properties, identity/anchor invariants, and serialization/render-plan equivalence.
 
 For media work, generate frame-number/impulse/color fixtures and verify the actual encoded file, including VFR, negative/non-zero PTS, delay, rotation, color, and channel layouts. Preview and export must agree within documented stage-specific tolerances. Listen to audio boundary cases as well as measuring PCM.
 
-For AI work, keep lifecycle test doubles separate from actual generation acceptance. Qualify a rights-cleared real-video corpus, exact seams/duration, stale-result handling, usable-output latency, memory pressure, failures, and accepted-project offline playback. A downloaded model or returned file does not satisfy DP-12.
-
-For release, run the full keyboard-only workflow and clean-machine online/offline installer checks without developer tools or preexisting model caches. Publish reproducible performance results, fixture reports, dependency notices/SBOM, and migration policy. No gate passes through unrun or ignored checks.
+For AI work, keep lifecycle test doubles separate from actual generation acceptance. Qualify a rights-cleared real-video corpus, exact seams/duration, stale-result handling, usable-output latency, memory pressure, failures, and accepted-project offline playback. A downloaded model or returned file is not an accepted generation.
 
 ## Documentation ownership
 
-`docs/spec/` preserves the supplied complete design package. The Markdown specification is normative and the PDF is its reading edition. Evolving implementation decisions, qualification reports, and deviations belong in project documentation with links back to the relevant requirement and section. Keep [AGENTS.md](../AGENTS.md) concise and update durable conventions as they emerge.
+[The brief](BRIEF.md) says what Deadpan must do. Per-area documents under `docs/` describe current contracts. Keep [AGENTS.md](../AGENTS.md) concise and update durable conventions as they emerge.

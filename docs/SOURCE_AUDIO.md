@@ -27,7 +27,6 @@ with either a plain format header or the closed extensible format described in
 speaker mask; equal valid/container widths and the PCM/IEEE float subtype are
 checked before demuxing. Optional `fact` must match the complete data-frame count.
 WAV packet limits use the encoded width and block alignment for every format.
-See [wide PCM qualification](qualification/pcm-sources-2026-10-09.md).
 Fragmented/encrypted/compressed container structures and unqualified
 metadata grammars are rejected before FFmpeg parsing. Other codecs, custom/ambisonic layouts, unsupported
 sample formats, corrupt frames and changed stream contracts fail explicitly.
@@ -86,7 +85,6 @@ counts, and reconciled with FFmpeg's 529-sample synthesis delay. Leading and
 trailing trims may each span multiple frames. Untagged audio retains every
 physical decoded sample; no guessed priming removal or event alignment runs.
 The measured samples, never declared duration, define the endpoint.
-See [MP3 qualification](qualification/mp3-sources-2026-10-09.md).
 
 ## Opus container and sample clocks
 
@@ -114,7 +112,7 @@ one nanosecond and removes only that declared count. Extra leading skips,
 interior trailing skips, discard flags, mismatched counts or drift outside the
 tick envelope fail. Deserialization reconstructs and rechecks every coordinate.
 The final endpoint uses physical samples and explicit trims, never the rounded
-container duration. See the [qualification](qualification/opus-sources-2026-10-09.md).
+container duration.
 
 ## MP4 Opus sample clocks
 
@@ -136,8 +134,7 @@ mono/stereo, header gain, cross-packet priming and a 6,000-sample offset. Their
 compressed audio packets match the retained WebM corpus; independent reference
 PCM checks every available sample. H.264, AV1 and HDR VP9 picture copies retain
 their exact decoded pictures and timestamps. Receipt loading rechecks every
-coordinate and rejects altered counts, offsets, skips and durations. See
-[qualification](qualification/opus-mp4-2026-10-09.md).
+coordinate and rejects altered counts, offsets, skips and durations.
 
 ## Shared indexing and cache limits
 
@@ -169,4 +166,3 @@ equivalence remain open.
 Run `cargo test -p deadpan-source -p deadpan-media --locked` with the qualified
 FFmpeg prefix. Verify generated PCM fixtures with
 `python3 native/deadpan-source/tests/generate_audio_fixtures.py --verify`.
-See [audio source qualification](qualification/source-audio-2026-09-21.md).

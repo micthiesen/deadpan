@@ -83,15 +83,13 @@ audition before acceptance.
 Host provenance retains the measurements, thresholds and coverage.
 Previously accepted schema-3 footage remains readable and is labelled as
 lacking these checks. Rejection records `OutputValidationFailed`, preserves
-earlier Ready selection, and leaves the committed pause unchanged. See
-[measurement and verification](qualification/bridge-quality-2026-10-07.md).
+earlier Ready selection, and leaves the committed pause unchanged.
 The host also compares the retained conditioning PNGs with the sampled master's
 first and last pictures inside the captured presentation crop. A separate gross
 endpoint guard rejects broad RGB discontinuity before Ready. Host schema 8
 retains these reports and binds measurements to the crop and immutable
 objects. Older schema 3/4/5/6/7 artifacts remain readable with their original evidence.
-The existing Smooth/Noticeable/Jump readings remain advisory. See
-[endpoint checks](qualification/bridge-endpoints-2026-10-07.md).
+The existing Smooth/Noticeable/Jump readings remain advisory.
 
 The separate `deadpan-track inspect-landmarks` helper runs Apple Vision face
 landmarks request revision 3 over every canonical native picture and both
@@ -101,7 +99,6 @@ within continuous native-frame segments, including faces that enter later.
 A later occlusion cannot erase an earlier measured rejection. Missing, weak,
 ambiguous or out-of-crop observations remain explicitly unavailable; they do
 not establish identity or silence. The inspector exposes this coverage.
-See [face and mouth checks](qualification/bridge-landmarks-2026-10-07.md).
 An optional saved target also enables a continuous non-face region check.
 `target=ID` captures that target in the exact decoded Original pictures on
 both sides. Vision object tracking revision 2 follows the left PNG, every
@@ -110,9 +107,7 @@ or size/aspect drift over two consecutive native frames rejects the candidate.
 The report retains raw boxes, confidence, exact PTS, capture identity and
 recomputed coverage. Missing, lost, interpolated, weak, off-source or too-small
 authored regions remain unavailable. Crop rectangles never supply a subject.
-See [selected-region checks](qualification/bridge-region-2026-10-07.md).
-The versioned engineering thresholds need calibration on the owner corpus
-under §29.1.
+The versioned engineering thresholds need calibration on the owner corpus.
 
 ### Source and colour context
 
@@ -289,12 +284,7 @@ canonical authored address, including its Default or owned Play scope. An
 intent born on a removed isolation clone closes as Deleted instead of acquiring
 the shared definition's identity. Historical preparation and request addresses
 still follow their proofs. Writer admission and chronological replay enforce
-the same rule; Redo creates fresh authorization. The [selected fixed-window
-qualification](qualification/selected-fixed-retime-hold-duration-2026-10-22.md)
-retains the failing Undo witness and multi-target regression.
-
-The [boundary qualification record](qualification/ai-boundaries-2026-10-07.md)
-records the original schema-72 implementation and measured limits.
+the same rule; Redo creates fresh authorization.
 
 ### Saved extension operations
 
@@ -314,25 +304,25 @@ Schema 74 adds saved Extension candidates and operation-tagged accepted sampling
 Extension conditioning schema 2 now retains that descriptor and a bounded
 signature sidecar. The host recomputes input continuity from private snapshots;
 the Python reader verifies the same descriptor and byte declarations before
-inference. See [retained extension evidence](qualification/extension-evidence-2026-10-08.md).
+inference.
 
-[Extension pixel checks](qualification/extension-pixels-2026-10-08.md) inspect
+Extension pixel checks inspect
 every generated-native pair on the extension clock and both actual sampled
 joins against those retained inputs. Present opposite seams stay explicitly
-unconditioned. [Directional geometry checks](qualification/extension-geometry-2026-10-08.md)
+unconditioned. Directional geometry checks
 now inspect faces and the selected region outward from the one retained anchor,
 and mouth motion over generated pictures chronologically. Lost tracking cannot
-erase measured rejection. [Complete host qualification](qualification/extension-bundles-2026-10-08.md)
+erase measured rejection. Complete host qualification
 now binds those reports to the exact request, independently selected provider,
 retained inputs, converted media and strict worker provenance, and verifies the
-saved envelope without rerunning the model. [Saved acceptance](qualification/extension-saved-2026-10-08.md)
+saved envelope without rerunning the model. Saved acceptance
 now publishes the complete bundle, records Ready without changing the edit,
 explicitly accepts it and reopens its sampled pictures without a model.
 Missing signatures or conditioning images refuse both admission and cold use.
 Offered variants show operation-specific timing, available quality coverage,
 conditioned joins and explicitly unconditioned or absent opposite seams.
 
-The [one-second measurement](qualification/extension-one-second-2026-10-08.md)
+The one-second measurement
 uses the actual project capture with an independently selected K9/E24 capability,
 then runs the real model, complete host admission and an exact pixel oracle in
 both directions. Normal native and headless jobs now dispatch both operations.
@@ -355,11 +345,10 @@ preparations retain their birth operation. A mode change cannot reuse a request
 from the other operation or silently change its inputs.
 
 The native service and `ai-extension` replay exercise the normal lifecycle with
-synthetic generated media. The [production qualification](qualification/extension-native-2026-10-08.md)
+synthetic generated media. The production qualification
 passes real 0.5/1/2/3-second generation in both directions, exact sampled pixels,
 explicit acceptance, Undo/Redo and verified portable export with model/runtime
-and network access denied. Earlier saved-input evidence remains in
-[durable extension inputs](qualification/extension-inputs-2026-10-07.md).
+and network access denied..
 
 ## Headless commands
 
@@ -641,8 +630,8 @@ model or file read on the UI thread.
   then P and R) removes them, once no retained revision or live receipt names
   them and the grace period has passed; stale variants of a superseded request
   are removable the same way.
-- **Retention.** Offered variants follow a visible retention policy (§19.2,
-  [storage](STORAGE.md#retention-of-unaccepted-ai-variants)). A variant that is
+- **Retention.** Offered variants follow a visible retention policy
+  ([storage](STORAGE.md#retention-of-unaccepted-ai-variants)). A variant that is
   neither kept (`:keep-ai`, Keep variant, `GenerationOperation::Keep`,
   `deadpan-cli keep-hold`), picked by the person (Choose, Preview, `select-hold`
   or `accept-hold --attempt`; protection moves only with another pick or a discard), its
@@ -677,7 +666,7 @@ model or file read on the UI thread.
   variant at a time and at most once per session
   (cancelled when the session ends; a panic or failure records an error
   instead of retrying) (classes below
-  6 and 20 out of 255; the thresholds are uncalibrated). It is a §12.5
+  6 and 20 out of 255; the thresholds are uncalibrated). It is a
   heuristic only: it never accepts, rejects or orders a variant.
   `generate-hold` reports the same reading per Ready attempt as `ready.joins`.
   The joins themselves are hard cuts at exact frames; see
@@ -840,8 +829,7 @@ git checkout 3392d75934120b7e69eefbe55893f7ef82be92a4
 UV_PYTHON_DOWNLOADS=never uv sync --frozen --python 3.12.13
 ```
 
-That environment matched the recorded
-[runtime inventory](../tools/model-qualification/evidence/2026-09-20-smoke/runtime-inventory.json)
+That environment matched the recorded runtime inventory
 exactly (38 packages, same versions; `uv.lock` and `pyproject.toml` hashes equal).
 
 ## Measured run (2026-10-04)
@@ -917,26 +905,25 @@ and accepted when its selected operation's local context exists; viewer preview
 requires a visible concrete occurrence.
 
 Generation and acceptance handle Default or one stable Play per request.
-Batching AI work across several selected plays is unavailable; §5.2 and §12.6
-require the Default/This play distinction and explicit acceptance, rather than
-a batch AI command. This limitation is not an additional DP-12 closure gate.
+Batching AI work across several selected plays is unavailable; the Default/This play distinction and explicit acceptance
+apply per request, rather than through a batch AI command.
 
 The worker currently loads the model for each attempt. A resident model within
 a measured memory budget and a bounded cache of fixed text embeddings remain
-unimplemented (§13.5). The distilled 2B macOS/MPS comparison, MLX precision
+unimplemented. The distilled 2B macOS/MPS comparison, MLX precision
 comparison, cold/warm latency distributions and the interactive workload
-measurements in §13.4 also remain open. The 60-second target is provisional;
+measurements also remain open. The 60-second target is provisional;
 record slower results honestly and do not label this pack Fast.
 
 Listening, physical input, VoiceOver speech, real-person quality review and
-the §13.4 corpus, and a clean second Mac are To verify (owner) under §29.1.
+a clean second Mac remain unexercised.
 Native installation, generation, acceptance, restart and Render have passed
-on this Mac; see [installation](qualification/native-install-2026-10-06.md).
+on this Mac.
 Developer ID signing and notarization are outside the personal-app scope.
 
 Possible refinements include split-screen comparison, reversible Discard and
-a configurable retention period. The specification requires keyboard variant
+a configurable retention period. Keyboard variant
 comparison and a visible retention policy, which the same-frame comparison
 and displayed seven-day policy already provide. Conditioning deliberately
-precedes editorial zoom as §12.4 requires; composing that zoom into generated
+precedes editorial zoom; composing that zoom into generated
 pixels would prevent the accepted artifact from supporting later reframing.

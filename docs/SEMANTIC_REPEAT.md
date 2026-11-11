@@ -45,7 +45,7 @@ and installs dot intent:
   recipe);
 - whole-beat `,z`/`,c` zoom and creep framing (`SetFraming`), and ordinary
   ranged Keep/OriginalCenter framing (`Zoom` intent, resolved against the new
-  invocation's owner and selection; see [qualification](qualification/ranged-framing-macros-2026-10-18.md)),
+  invocation's owner and selection),
   and whole-owner Keep/OriginalCenter Zoom intent in an explicit single play
   at every enclosing Repeat ([one-play authority](SEMANTIC_MACROS.md#one-play-zoom-and-creep));
 - cutaways (`SetCutaway`) and captions (`SetCaption`) over the selected beat or
@@ -72,7 +72,7 @@ nothing reports "No edit was made" as a message, without a revision. The [creati
 exercises speed, pitch, pauses, pause length, ranged gain, ranged captions,
 gag parameters, play-seam edges, mute and audio lag.
 
-This covers picture cuts, Repeat wraps/count setters and Group/Ungroup for DP-06.
+This covers picture cuts, Repeat wraps/count setters and Group/Ungroup.
 [Semantic macros](SEMANTIC_MACROS.md) record the effective instruction, so a
 recorded dot does not depend on a
 later repeat candidate. Other edit kinds and semantic text/role/occurrence
@@ -186,7 +186,3 @@ exercise the production paths; physical layout and OS IME qualification remain s
 
 No project schema changes are needed. SQLite remains at 55 and core documents
 at 43; history uses resolved cut, RepeatSelection and Compound commands.
-See the [frame-cut qualification](qualification/semantic-repeat-2026-10-02.md)
-for the original increment and the
-[selector-repeat qualification](qualification/selector-repeat-2026-10-03.md)
-for service tests, keyboard replay, native feedback and remaining limits.

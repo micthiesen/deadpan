@@ -237,7 +237,6 @@ The CLI emits the existing admitted, progress, finished and recovery JSON events
 Signals and output failures request cancellation of the captured target. Losing
 the client does not stop the native service's worker ownership or cleanup duty.
 
-[Qualification](qualification/live-project-2026-09-30.md) records actual native
-ownership, concurrent editing, cancellation and historical recovery. CLI-started
+CLI-started
 work does not automatically open a native status window; native persisted-job
 recovery and easier access to these jobs remain open.

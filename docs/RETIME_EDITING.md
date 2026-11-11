@@ -75,16 +75,13 @@ sound events. See [scoped editing](SCOPED_EDITING.md) and
 
 The ordinary `SetHoldDuration` path also retains old downstream Source, Repeat
 gap and owned-play sample clocks when the root duration changes, including
-initially unbound owners. Undo restores the complete binding state. See the
-[clock qualification](qualification/hold-duration-clocks-2026-10-20.md).
+initially unbound owners. Undo restores the complete binding state.
 For fixed affine windows, movement capture stays inside the window; the Retime
 recipe, outer siblings and outer Repeat placements stay fixed.
 Unused Repeat defaults preserve the entire binding state without captures.
-See the [fixed-window qualification](qualification/fixed-retime-hold-clocks-2026-10-20.md).
 Ordinary Hold resizing also retains moved physical owners beneath Preserve/Shift
 on the correct processing-input PointCeil clock. Its current operand rebuilds
 DSP while existing output bindings and fractional resumes remain unchanged.
-See the [processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md).
 An independent sound on the fixed Retime output keeps its exact source phase,
 sample offset and journal when an interior Hold changes. Its proof checks the
 unchanged output owner and placement ancestry; the current physical operand
@@ -92,10 +89,7 @@ still rebuilds. Child-owned sounds whose processing subtree changes retain
 their explicit refusal. The native inspector now exposes ordinary Hold resizing
 inside fixed unclocked Edit Retimes with no Repeat ancestry. Its duration-only
 capture supports Enter, command entry, recording, calls and dot, continuing at
-the first sampled visible picture after every crop. See the
-[native qualification](qualification/native-fixed-retime-hold-2026-10-21.md) and
-the
-[output-sound qualification](qualification/fixed-retime-output-sound-2026-10-21.md).
+the first sampled visible picture after every crop.
 This remains separate from the dedicated clocked-Retime duration path.
 
 ## Speed changes after an exact pause
@@ -120,8 +114,7 @@ transfer bound.
 For SelectedPlacement audio, an empty historical domain is tested after
 intersecting the selected crop with current meaningful Source support. Direct
 silent Holds return suppressed zeros without resampling a hidden carrier;
-nonempty Source and RoomTone domains keep the transfer bound. See the
-[crop-carrier qualification](qualification/source-crop-carriers-2026-10-20.md).
+nonempty Source and RoomTone domains keep the transfer bound.
 
 One inner Repeat level is also supported, including owned plays and independent
 gaps. Every physical carrier retains its own clock and filtering stage. Admission
@@ -129,15 +122,13 @@ checks all historical rate classes, including born PointCeil plays beside older
 root-clock plays, with bounded work over authored runs and sparse overrides.
 Missing carriers capture their pre-edit entries once. A representative play
 cannot prove its whole class empty, so repeated classes receive no empty-carrier
-exception. Default gaps, including silent gaps, retain transfer checks. See the
-[inner-Repeat qualification](qualification/inner-repeat-speed-2026-10-20.md).
+exception. Default gaps, including silent gaps, retain transfer checks.
 
 This path requires an integral stage output extent and tape pitch on the
 updated stage. Nested inner Repeats, processing stages, and non-Sequence
 ancestors still refuse changed parameters. Explicit wrapping keeps its existing behavior.
 Identical raw `SetRetime` parameters preserve no-op admission; semantic and
-native unchanged commands create no revision. See the
-[qualification](qualification/clocked-speed-update-2026-10-20.md).
+native unchanged commands create no revision.
 
 ## Pitch shift
 
@@ -188,7 +179,7 @@ Retime, arbitrary range/occurrence selection, reversing composite structure,
 variable speed and mastered output remain open. Independent pitch shifting
 (`:pitch`, `PitchPolicy::Shift`, see [Pitch shift](#pitch-shift)) and encoded
 export (the `retime-half` and `pitch-shift` fixtures in
-[preview-export-2026-10-04](qualification/preview-export-2026-10-04.md)) are
+the preview/export verification suite) are
 implemented. Reversing an Original passage exists as a Hold provider
 ([reverse](REVERSE_AND_TAILS.md)).
 
@@ -198,17 +189,14 @@ The shared preparation budget counts 134,217,728 input plus output frames
 across newly prepared stages, and prepared files are bounded to 1 GiB;
 nested stages can exhaust either budget even when each individual edit fits.
 The 30-minute per-stage ceiling is admission, not an interactive performance
-claim. Background preparation remains open. See
-[disk PCM qualification](qualification/disk-pcm-2026-10-11.md).
+claim. Background preparation remains open.
 Tape speed uses the existing bounded resampler. A requested speed that quantizes
 to unity needs no Preserve stage.
 
 The `retime` UI replay exercises pointer entry/cancel, command preview, initial
 wrapping, adjustment without compounding, explicit nesting, three undos and
 non-destructive Original context. Replay requires actual Metal; its existence
-does not establish that those steps ran. See the
-[qualification record](qualification/retime-editing-2026-09-27.md) for executed
-tests, review findings and unavailable native evidence.
+does not establish that those steps ran.
 
 ## Speed ramps
 

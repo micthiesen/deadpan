@@ -1,6 +1,6 @@
 # YouTube import
 
-DP-14 creates a new [single-Original](SINGLE_ORIGINAL.md) project from one
+YouTube import creates a new [single-Original](SINGLE_ORIGINAL.md) project from one
 YouTube video. This page covers URL rules, the pinned downloader helpers,
 acquisition, assembly, provenance and failures, headless and in the native app.
 Packaged apps include the verified helper baseline; see [Packaging](PACKAGING.md).
@@ -190,15 +190,11 @@ caller, rather than accumulating abandoned resolver threads.
 
 `YouTubeNetworkRestricted` reports a refused destination and recommends
 updating Deadpan. `DownloaderNetworkUnavailable` means the local boundary
-could not start. Stream, metadata and cookie diagnostics still use the
-[privacy redaction rules](PRIVACY.md#secrets-cookies-and-reports).
-See the [network qualification](qualification/youtube-network-2026-10-11.md)
-for the pinned helper's pre-fix private-network witness, real socket tests,
-adversarial parser coverage and actual imports.
+could not start. Stream, metadata and cookie diagnostics redact secrets and cookies.
 
 ## Helper bundle
 
-Specification §15.2 requires yt-dlp, its EJS JavaScript components and a
+The import requires yt-dlp, its EJS JavaScript components and a
 supported runtime, initially Deno. [`youtube/helpers.rs`](../crates/deadpan-cli/src/youtube/helpers.rs)
 compiles exact pins into the build; see
 [dependency decisions](DEPENDENCIES.md#downloader-helpers) for files, sizes,
@@ -501,7 +497,6 @@ line in the message.
 
 - Linux and Intel helper builds. A hosted update channel (no URL is
   published; updates come from a file or an explicit `https://` URL), and
-  applying a signed update to a packaged app on a second Mac (To verify,
-  owner).
+  applying a signed update to a packaged app on a second Mac (owner to verify).
 - Broader codec profiles and above-1080p performance qualification.
 - Resumable transfers, clean-machine acceptance and a broader failure corpus.

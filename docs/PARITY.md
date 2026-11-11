@@ -1,4 +1,4 @@
-# Headless and GUI parity (DP-21)
+# Headless and GUI parity
 
 This table lists every user-invocable action of the native app and its
 headless equivalent in `deadpan-cli` (identical to `deadpan-app --headless`).
@@ -300,6 +300,4 @@ registry action.
   the recipe or setting explicitly.
 
 Live audition, the interactive previews and these reports are the only
-remaining differences. Complete recovery/failure acceptance and the broader
-command/selector surface of DP-21 are tracked in
-[REQUIREMENTS](REQUIREMENTS.md).
+remaining differences.

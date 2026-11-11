@@ -3,9 +3,8 @@
 Deadpan tracks a user-selected region through the Original's pictures with
 Apple Vision's object tracker and can save the result as an
 [attention target](TARGETS.md). Tracking itself never edits the project; saving
-is an ordinary reversible `SetTarget` edit. Section 11.3 of the
-[specification](spec/DEADPAN_SPEC.md) is normative; this records the implemented
-boundary. Requirement DP-11 remains Partial (see [requirements](REQUIREMENTS.md)). The
+is an ordinary reversible `SetTarget` edit. This records the implemented
+boundary. The
 native app drives the same host code ([in the app](#in-the-app)).
 
 ## Pieces
@@ -31,8 +30,7 @@ AI Hold `inspect-landmarks` is separate from selected-target tracking and
 single-picture face proposals. It copies bounded eyes, nose and lip observations
 from all canonical native pictures and retained inputs. Its conservative
 geometry and mouth checks do not identify people, infer speech or save attention
-targets. Missing or ambiguous measurements remain unavailable. See
-[qualification and limits](qualification/bridge-landmarks-2026-10-07.md).
+targets. Missing or ambiguous measurements remain unavailable..
 
 Regions are `x, y, width, height` normalized to the *displayed* picture with a
 top-left origin, every edge in `[0, 1]`. The worker converts the region to coded
@@ -46,8 +44,7 @@ face detector the clean picture resampled to square pixels
 (`deadpan_media::analysis_picture::square_pixel_picture`: bilinear, the narrower
 axis enlarged, or the wider reduced where that would exceed the analysis
 bounds). Normalized coordinates are unchanged. On the coded, squeezed raster
-the tracker repeated stale boxes
-([evidence](qualification/tracking-evidence-2026-10-15.md)).
+the tracker repeated stale boxes.
 Deserialized regions are checked, not adjusted, so stored paths round-trip.
 
 For fractional clean apertures, the worker checks the receipt's exact rectangle
@@ -56,8 +53,8 @@ Vision. Coordinates remain normalized to that clean image; the policy's distance
 aspect uses the exact clean extents followed by SAR and rotation. The bilinear
 analysis conversion samples encoded RGB and is separate from the renderer's
 color-aware filtering. Integral apertures are already compacted by the decoder.
-[Synthetic real-worker evidence](qualification/fractional-aperture-2026-10-09.md)
-covers tracking, shot boundaries and excluding an outside face. Detection remains
+Synthetic real-worker tests
+cover tracking, shot boundaries and excluding an outside face. Detection remains
 a proposal and may return no face for a valid picture.
 
 Every sample carries the source picture's exact PTS in the qualified stream's
@@ -227,8 +224,8 @@ one documented block per framework call; the rest of the worker denies it.
 
 ## Face detection mode
 
-Face and salient-region proposals (specification §6.4 face/region framing and
-§7.6 numbered detected regions) reuse this worker's isolation, not its tracking
+Face and salient-region proposals (face/region framing and
+numbered detected regions) reuse this worker's isolation, not its tracking
 policy. The shared host launches `deadpan-track picture-proposals` and speaks
 [`deadpan_jobs::picture_proposals`](../crates/deadpan-jobs/src/picture_proposals.rs)
 protocol2 over the existing256KiB length-framed transport. This replaces the
@@ -295,14 +292,6 @@ the deliberately updated ephemeral protocol field2. Target storage, tracking
 provenance and Core/SQLite schemas are unchanged. One bounded App proposal job
 runs beside tracking; close/open/shutdown cancel and drain it through the
 existing service. Saved/fixed targets remain usable after detector failure.
-
-Current release/native/media verification, scoped copied-worker relocation,
-published immutable collections, passing raw/publication audits and retained
-historical failures/limits are in
-[Camera regions](qualification/camera-regions-2026-10-25.md#published-evidence-and-post-publication-audit).
-Publication retains two explicit nonauthored SQLite sidecar omissions; full raw
-replay reports remain pinned/indexed rather than all copied. The earlier
-face qualification below is retained as historical evidence.
 
 Evidence: [`native/deadpan-track/tests/faces.rs`](../native/deadpan-track/tests/faces.rs)
 runs the real worker on
@@ -410,7 +399,7 @@ threads ([service](../crates/deadpan-app/src/project/service/targets.rs)).
 
 ## Incremental ranges
 
-Specification §11.4 asks for analysis by source ranges, nearest the visible
+Analysis runs by source ranges, nearest the visible
 cursor first, with private versioned results. Tracking implements it as
 follows ([`RangePlan`](../crates/deadpan-analysis/src/tracking/schedule.rs),
 [`track_ranges`](../crates/deadpan-cli/src/tracking/incremental.rs)).
@@ -591,7 +580,7 @@ revision 2:
   project's authenticated live endpoint: one remote commit with its receipt,
   a host refresh failure that keeps the commit, a stale second save refused
   with `RevisionConflict`, a remote `--replace`, refusal without an endpoint,
-  and undo ([record](qualification/tracking-evidence-2026-10-15.md)).
+  and undo.
 * Cancellation before launch and an expired deadline return typed errors
   without a path; ranges before the first picture and a missing shot analysis
   are refused.
@@ -616,8 +605,7 @@ mostly the unoptimized BGRA copy. The upscale is a measurement input only
 
 ## Remaining
 
-* Real-person footage. Specification Section 25 requires it for face/person
-  tracking quality; the synthetic square proves the pipeline, coordinate
+* Real-person footage. Face/person tracking quality needs it; the synthetic square proves the pipeline, coordinate
   mapping, shot stop, loss marking, persistence and correction, not tracking
   quality on people, faces, motion blur, lighting changes or partial occlusion.
 * Rotated and anamorphic coverage is synthetic; real rotated phone footage and

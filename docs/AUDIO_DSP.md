@@ -112,9 +112,7 @@ exact fractional source grids and ordered nested retimes to this canonical
 schedule. [Room-tone preparation](ROOM_TONE_AUDIO.md) supplies explicit looped
 signals through that same stage path. The exact-rate native API itself does not
 provide fractional input phase; callers prepare that grid with the qualified
-resampler, without deriving speed from rounded beat durations. See
-[exact-rate qualification](qualification/audio-exact-rate-2026-09-21.md) for
-the native-boundary evidence. Fractional pitch, reverse, variable rate, tails,
+resampler, without deriving speed from rounded beat durations. Fractional pitch, reverse, variable rate, tails,
 fades/gain/limiting, devices and native playback/export remain required. The admitted parameter
 range exceeds the original measured listening and quality corpus; full
 speech/music review and device qualification remain open.

@@ -1,6 +1,0 @@
-{
-  "status": "failed",
-  "stage": "preflight",
-  "exception": "AssertionError",
-  "message": ""
-}

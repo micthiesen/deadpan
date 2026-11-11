@@ -1,9 +1,9 @@
 # Reversed pauses, tails, bleeps and lifts
 
-Specification §8.1 "Ping-pong hold" and "Reverse hiccup", §8.3 "Hanging
-tail" and "Bleep", §8.4 "Are We Done?", §6.3 "Lift", §10.4 tails and §10.5
-reverse. All are Hold providers: inserted time with independent picture and sound policies
-(§3). Selected effect sends feed these allocated pauses through the shared mixer.
+Ping-pong hold, Reverse hiccup, Hanging
+tail, Bleep, Are We Done?, Lift, tails and
+reverse are all Hold providers: inserted time with independent picture and sound policies.
+Selected effect sends feed these allocated pauses through the shared mixer.
 
 ## Model
 
@@ -39,9 +39,7 @@ Input Hold permissions, exact sound clocks and source admission remain active.
 Other tail returns are silent while preparing any tail, preventing feedback.
 Sends and input choices survive ordinary recipe copies, saved contexts and Undo.
 Core schema 50, store schema 78 and frozen audio context schema 11 carry them;
-obsolete development packages are refused without writes. The
-[qualification](qualification/tail-sends-2026-10-12.md) retains decoded PCM,
-native replay and real emitted-file evidence.
+obsolete development packages are refused without writes.
 
 ## Provider constraints
 
@@ -111,9 +109,8 @@ span inside its audio (and a reversed span within the one-block limit); a
 Tail's maximum is positive and at most the Hold. Explicit picture origins retain
 fractional source ticks independently of the containing decoded-picture span;
 validation checks the full Hold's source-clock arithmetic for overflow. Core
-format 48 and database schema 76 store these origins. The
-[VFR qualification](qualification/vfr-recipes-2026-10-09.md) covers reverse,
-ping-pong and bleep timing through actual exports.
+format 48 and database schema 76 store these origins. Reverse,
+ping-pong and bleep timing are covered through actual exports.
 `SetHoldDuration` shortens a Tail's maximum with a shorter Hold. Pause
 insertion admits Reverse pictures like freezes; splitting a reversed Hold keeps
 its full recipe behind Partitions. Generated media cannot be accepted onto a
@@ -175,7 +172,7 @@ by definition, occurrence path, preceding play and content
   giving a pause inside a Retime a tail is refused at authoring time with
   that reason and the fix ("put the pause just after the Retime instead,
   where it rings the sped-up sound at normal speed"). Transparent Partitions
-  and unity Retimes are allowed. Decided 2026-11-10 (specification §10.4):
+  and unity Retimes are allowed. Decided 2026-11-10:
   the ring is defined at the edit's rate, but inside a speed change every
   sample is read on the stage's input grid, which has no edit position, and
   is then resampled (tape) or stretched (Preserve) by the one shared DSP

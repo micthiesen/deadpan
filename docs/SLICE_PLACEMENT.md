@@ -213,8 +213,7 @@ later completion cannot supply a new target. Before audition covers the removed
 range; Proposed covers the inserted range. Comparison translates the retained
 suffix using exact absolute frame-to-sample boundaries.
 
-## Remaining specification work
+## Remaining work
 
-This is partial [§9.7](spec/DEADPAN_SPEC.md#97-visual-slice-placement).
 Picture-only and audio-only policies, named registers, Move into or out of one
-Repeat play, and destinations inside speed changes remain required. These controls do not establish completion of DP-05 or DP-20.
+Repeat play, and destinations inside speed changes remain required.

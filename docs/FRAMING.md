@@ -2,9 +2,7 @@
 
 Static, enveloped and followed framing are implemented, with a native temporary
 Camera preview that also picks, draws, follows, corrects and tracks
-[attention targets](TARGETS.md). This does not complete DP-08,
-the creative-operation gate, or preview/export acceptance. The full
-[specification](spec/DEADPAN_SPEC.md) remains normative. The
+[attention targets](TARGETS.md). The
 [Camera board](design/boards/camera-framing-board-v1.png) is a visual target;
 its `Save as` name field and target-picker dropdown are not implemented
 (Camera names new targets `Target N`).
@@ -49,8 +47,6 @@ half-even ties, and products beyond the ordinary ratio representation.
 This is numerical support for the [derived-clock splice design](STRUCTURAL_SPLICE_DESIGN.md#derived-owner-clocks).
 Current documents and render plans still expose integer owner durations. No
 fractional structural extent, new command or schema is admitted by this API.
-The [qualification record](qualification/framing-clocks-2026-09-26.md) records
-the reference cases, independent numerical review and repository checks.
 
 Split retains complete effect owners behind transparent partitions. Re-splitting
 a framed partition must retain that meaningful wrapper instead of discarding its
@@ -203,8 +199,7 @@ starting elsewhere on the visible picture. Pointer coordinates pass through
 the actual retained raster and every captured crop and framing layer into the
 upright Original. Bars and clipped source areas cannot supply coordinates.
 Release keeps the draft unsaved; Enter is still the save action. Keyboard
-input, focus loss or a changed picture/raster revokes a held drag. See
-[pointer qualification](qualification/pointer-targets-2026-10-25.md).
+input, focus loss or a changed picture/raster revokes a held drag.
 
 A new target is one undoable `SetTarget` with a fresh `target-N` id and
 `Target N` label. Its span starts at the displayed picture's indexed PTS (the
@@ -368,8 +363,7 @@ Escape keeps the path. Backspace returns to the fragment. One Undo restores
 the framing; the next restores the unsplit owner. The earlier side keeps its
 exact animation and clock. Ancestor framing stays live, so this returns to the
 view entering that owner. Clearing the unframed outer Partition itself cannot
-remove a child's path. The [native and emitted-file qualification](qualification/abrupt-return-2026-10-25.md)
-covers retained Envelope and animated Follow paths, complete audio and history.
+remove a child's path.
 
 A range outside the selected owner refuses. Inside a Repeat, choose This play
 at every enclosing Repeat, then finish `v` / frame motion / `v` before entering
@@ -427,11 +421,7 @@ provider geometry to project the Original center without decoding or proxy
 access. Existing outside-range path refusals and non-creep Follow refusals
 remain. Pending picture
 work keeps the full macro capture; Escape or `:record-cancel` cancels it before
-it can submit delayed framing. See [semantic macros](SEMANTIC_MACROS.md#ranged-zoom-and-creep)
-and [ranged framing qualification](qualification/ranged-framing-macros-2026-10-18.md)
-for implementation and verification scope. The
-[scoped range qualification record](qualification/scoped-framing-ranges-2026-10-25.md)
-tracks the added occurrence-range boundary.
+it can submit delayed framing. See [semantic macros](SEMANTIC_MACROS.md#ranged-zoom-and-creep).
 
 The save message describes the committed framing (`Framing saved: 1.350×
 following Target 1`), and the inspector shows `Path · 1.00–1.35×` for camera
@@ -462,7 +452,7 @@ keeps the previous draft and permits another selection. Detection alone saves
 nothing. These target and framing history steps differ from the combined
 command below.
 
-`target=face:N` (specification §6.4 `:zoom 1.35 target=face:2 curve=step`)
+`target=face:N` (`:zoom 1.35 target=face:2 curve=step`)
 names the `N`th face Apple Vision's face rectangle detector proposes in the
 stopped picture, counted from 1 left to right (then top to bottom). Detection
 proposes; it never edits. The command is captured and its picture displayed
@@ -522,8 +512,7 @@ these are safety limits. A successful empty collection differs from an absent
 unrequested collection. Any selected detector failure rejects the whole batch.
 Vision rectangles may extend beyond the image: finite positive rectangles are
 clipped to the image before upright rotation, and wholly outside boxes disappear.
-Invalid numeric geometry fails. See the [qualification record](qualification/camera-regions-2026-10-25.md)
-for actual checks and remaining verification.
+Invalid numeric geometry fails.
 
 ## Framing presets
 
@@ -553,23 +542,20 @@ General region proposals and pointer target drawing are also implemented.
 Whole Source, Hold, Sequence, Repeat and Retime following creep animates
 scale while retaining the live target in ordinary selection and explicit Play
 scopes, as described above. Follow centers are placed on a letterboxed or
-pillarboxed canvas for targets that record their display aspect
-([qualification](qualification/letterbox-follow-2026-10-15.md)). Centered per-play scale
+pillarboxed canvas for targets that record their display aspect. Centered per-play scale
 escalation is in [Repeat escalation](REPEAT_ESCALATION.md). Ungroup moves a group's camera path onto its unframed
 children, each windowed to its own interval of the same path (`FramingClock::RetainedOutput`), so every picture keeps
 its pose (`ungrouping_a_framed_group_moves_its_camera_path_onto_its_children_unchanged`); a child with its own framing
 keeps it inside a new single-child Sequence carrying the group's windowed path
 (`ungrouping_a_framed_group_wraps_children_that_have_their_own_framing`). Target-centered escalation, nested native selection, arbitrary temporal envelopes, captions, cutaways, and the remaining
-Section 8 picture operations remain required. [Captured framing](CAPTURED_FRAMING.md)
+picture operations remain required. [Captured framing](CAPTURED_FRAMING.md)
 retains the cropped composition for native Source/Freeze pause insertion, separately
 from the exact source PTS and new Hold framing. Root framing remains inherited
 once; lower curves become their sampled poses. Camera reset keeps the captured
 crop. Arbitrary nested insertion and capture from still or accepted footage
 remain required.
 
-The [qualification record](qualification/framing-2026-09-24.md) separates the
-repository gate, actual Metal/CPU comparisons, old-binary migration fixture,
-independent code review and bounded native aesthetics/keyboard review. Headless
+Headless
 tests cover exact scope/time mapping, structural preservation, stale/cancel/failure
 transitions, controlled numeric fields and durable history. Native checks do not
 qualify VoiceOver, physical non-US layouts, CJK composition, performance or export.

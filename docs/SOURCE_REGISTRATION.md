@@ -118,16 +118,12 @@ in old schemas are rejected before promotion and the backup is retained.
 [Headless commands](HEADLESS.md#measured-source-registration) documents the
 versioned, explicit stream-selection request. The host rejects unsupported
 protocols before opening the project or media. Tests use real retained CFR, VFR, offset A/V
-and audio-only media, plus historical migration fixtures. [Qualification and
-review evidence](qualification/source-registration-2026-09-21.md) records results.
+and audio-only media, plus historical migration fixtures.
 
 Native Original creation, retry, relink and bookmark resolution, sound admission,
-editing, playback and Render now use these retained qualifications. Managed and
-linked Originals have [end-to-end evidence](qualification/linked-original-2026-10-09.md).
-[Integral](qualification/clean-aperture-2026-10-09.md) and
-[fractional MP4 clean apertures](qualification/fractional-aperture-2026-10-09.md)
+editing, playback and Render now use these retained qualifications. Integral and
+fractional MP4 clean apertures
 preserve exact source clocks. Receipts retain fractional bounds separately from
 the decoded backing dimensions, validate their containment and bind them on
 retained-source reopening. The complete source-format/creative-operation matrix
-remains open. V1 excludes additional still-image/video imports. Current
-product completion is tracked in [Requirements](REQUIREMENTS.md).
+remains open. V1 excludes additional still-image/video imports.

@@ -1,10 +1,8 @@
 # Shot detection
 
 Deadpan measures the visual change between consecutive Original pictures and
-proposes shot boundaries from it. Section 11 of the
-[specification](spec/DEADPAN_SPEC.md) is normative: "Shot detection proposes
-source-frame boundaries from visual change metrics. Neither analysis changes
-the project frame rate or inserts cuts by itself." This records the implemented
+proposes shot boundaries from it. Neither analysis changes
+the project frame rate or inserts cuts by itself. This records the implemented
 boundary. Like [speech activity](SPEECH_ACTIVITY.md) and
 [transcripts](TRANSCRIPTION.md), shots are an annotation: detecting, saving or
 loading them never edits the project.
@@ -285,7 +283,7 @@ takes about 21 minutes in the background.
 
 ## Real edited footage, 2026-10-05
 
-[Qualification record](qualification/shots-2026-10-05.md). "Caminandes 2: Gran
+"Caminandes 2: Gran
 Dillama" (Blender Institute, 2013, CC-BY 3.0), the official Blender upload
 `Z4C82eyhwgU`, created with `project create-from-url` (1920 × 1080 H.264, 24
 fps, 3,504 pictures, 146 s). Ground truth was marked by hand from contact

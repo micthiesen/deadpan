@@ -96,10 +96,8 @@ While callbacks run, `DeviceOutput` holds a `PlaybackActivity`: an
 `NSProcessInfo` user-interactive activity begun by `start_device` and ended by
 `pause_device` or drop. It keeps App Nap from coalescing the playback
 controller's 2 ms delivery checks and queue refills while the app plays behind
-other windows, and defers idle system sleep during playback. Measured
-throttling in an agent shell is in
-[performance-2026-11-09](qualification/performance-2026-11-09.md#1080p60-playback-drops);
-the effect on an app under App Nap is an owner check.
+other windows, and defers idle system sleep during playback.
+The effect on an app under App Nap is an owner check.
 
 ## Verification and limits
 
@@ -125,10 +123,8 @@ cargo run --release --locked -p deadpan-output --example qualify_output -- --ton
 
 The optional tone is 200 ms at -42 dBFS with 10 ms ramps. The harness also checks
 seek, deliberately induced starvation, late refill, pause and a freshly
-prepared restart. Source audit and retained results are separate evidence in
-[dependency audit](qualification/audio-output-dependency-audit-2026-09-21.md)
-and [hardware qualification](qualification/audio-output-2026-09-21.md).
+prepared restart.
 Stock CPAL has an exceptional OS-clock failure path that may allocate before
 our closure; that path and the full release realtime contract remain open.
 There is no loopback/listening corpus, editing/inference stress suite or product
-latency claim here. Gate A and DP-09/16/24 remain partial/open.
+latency claim here.

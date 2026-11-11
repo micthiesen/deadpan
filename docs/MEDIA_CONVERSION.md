@@ -7,10 +7,6 @@ private process. This is the first implemented media adapter, with a deliberatel
 narrow input contract. General source import, playback and export remain open.
 [Bundle qualification](GENERATION_BUNDLES.md) and [store acceptance](GENERATION_ACCEPTANCE.md)
 compose this boundary without granting the codec authored-edit authority.
-The [2026-09-21 qualification](qualification/media-host-conversion-2026-09-21.md)
-records actual captured-model conversions, sanitizer runs, failures, and limits.
-The [bridge sampling qualification](qualification/media-bridge-2026-09-21.md)
-checks host-derived frames against an independently captured model result.
 
 ## Ownership and execution
 

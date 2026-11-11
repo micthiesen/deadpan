@@ -1,1 +1,0 @@
-{"stage":"nextest list extraction setup","exit":96,"reason":"destination directory absent; no tests executed","archive_build_preserved":true,"repair":"create extract directory, reuse unchanged source archive"}

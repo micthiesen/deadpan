@@ -2,8 +2,6 @@
 
 The gain editor's **Beat audio · before effects** overview measures the captured
 committed beat independently of its unsaved gain recipe. The
-[qualification](qualification/gain-waveform-2026-09-28.md) records scoped PCM,
-resource, keyboard and painted-layout checks. The
 [interface board](design/boards/gain-waveform-board-v3.png) is a target, not test
 evidence.
 

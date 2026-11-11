@@ -325,9 +325,8 @@ Finish `v` / motion / `v` before starting `q`. Record only the resulting Zoom
 intent or a named framing call. Scoped navigation and selection gestures remain
 unrecordable; each named or dot invocation needs a fresh selected range and
 explicit play choices, and derives its own window from that invocation.
-See [framing](FRAMING.md#zoom-and-creep-commands),
-[macro authority](SEMANTIC_MACROS.md#one-play-zoom-and-creep) and the
-[scoped range qualification record](qualification/scoped-framing-ranges-2026-10-25.md).
+See [framing](FRAMING.md#zoom-and-creep-commands) and
+[macro authority](SEMANTIC_MACROS.md#one-play-zoom-and-creep).
 
 ## Scope-aware parameters
 
@@ -387,8 +386,7 @@ without history, isolation or cursor movement. Root or attached sound events
 remain unavailable for this timing edit. Accepted generated-picture
 shortening retains its provider; extension beyond accepted coverage saves the
 deterministic fallback and durable preparation for a new explicit candidate
-acceptance. The [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md)
-retains the nested-play, real-PCM, history and native verification.
+acceptance.
 
 Explicit This play choices at every enclosing Repeat also support this duration
 edit through exactly one fixed, unclocked Edit Retime below the innermost Repeat.
@@ -400,7 +398,7 @@ visible Hold picture, which can differ from the Hold's intrinsic start.
 Hidden or unsampled Holds, derived pause clocks, root or attached sound events,
 and selected-multiple-play contexts refuse. Mixed choices use the separate path
 below. Repeat depth follows the
-existing document bound. See the [nested This play fixed-Retime qualification](qualification/nested-fixed-retime-hold-duration-2026-10-22.md).
+existing document bound.
 
 All plays at every enclosing Repeat has a separate duration-only path. It
 changes the literal shared Hold once and preserves every independent play
@@ -434,9 +432,7 @@ at the first sampled visible Hold picture. A cropped intrinsic start is not a
 continuation frame. Hidden or unsampled Holds refuse before publication.
 Owned-gap Retime paths, additional Retimes, Retimes above or between Repeats,
 Partition, derived clocks and placed sounds remain unavailable on this mixed
-path; several targets use the selected path below. See [mixed duration semantics](SEMANTIC_MACROS.md#mixed-all-plays-and-this-play-hold-length)
-and the [ordinary mixed qualification](qualification/mixed-hold-duration-semantics-2026-10-21.md)
-and [fixed-Retime qualification](qualification/mixed-fixed-retime-hold-duration-2026-10-22.md).
+path; several targets use the selected path below. See [mixed duration semantics](SEMANTIC_MACROS.md#mixed-all-plays-and-this-play-hold-length).
 
 Several selected Holds in bodies or explicit owned gaps use a separate
 duration-only context. The selection
@@ -461,7 +457,7 @@ Repeat, retaining either selected axis and the other level's literal All plays
 or This play choice. Every member, including a no-op, must have sampled visible
 geometry or a proven dormant Default definition before any allocation. Crops,
 pitch and fixed output remain unchanged; the final primary cursor uses the
-cropped visible interval. See the [selected fixed-window qualification](qualification/selected-fixed-retime-hold-duration-2026-10-22.md).
+cropped visible interval.
 
 An ordinary Hold inside fixed Edit Retime windows, without any Repeat ancestry,
 has a separate duration-only path through the same control, Enter and command.
@@ -471,21 +467,11 @@ sampled visible picture, which may differ from the Hold's intrinsic start.
 The fixed output duration and independent output sound clocks stay unchanged.
 Visual ranges, derived pause clocks and Holds with no sampled visible picture
 refuse. Recording admits length setters and named duration calls; other edits
-must wait until recording is saved or cancelled. See the
-[native fixed-window qualification](qualification/native-fixed-retime-hold-2026-10-21.md).
+must wait until recording is saved or cancelled.
 
 The This play, mixed and selected fixed-Retime paths above require literal body
 choices and one fixed unclocked Edit Retime below all enclosing Repeats. Other
-Retime duration paths retain their guards. See the
-[nested This play fixed-Retime qualification](qualification/nested-fixed-retime-hold-duration-2026-10-22.md).
-
-The [This play pause qualification](qualification/scoped-pauses-2026-10-12.md)
-records exact-boundary, PCM, durable-history and offscreen keyboard verification,
-including the compact inspector correction and retained failed runs.
-
-The [mixed and selected-play qualification](qualification/mixed-repeat-pauses-2026-10-20.md)
-adds complete per-level scope, exact mapped target sets, decoded PCM, real
-release exports and compact keyboard/pointer replay evidence.
+Retime duration paths retain their guards.
 
 ## Authoring and presentation
 
@@ -522,8 +508,7 @@ see earlier isolation and unchanged values need no new identities. Its private
 temporary names avoid existing nodes, marks, retained audio aliases and every
 pending target name. A missing target cannot become valid by naming a temporary
 clone; no legal authored name is reserved for the query. Only the caller's real identity
-pools enter the committed edit. The [preflight regression record](qualification/scoped-preflight-2026-10-12.md)
-covers name collisions, nested remapping and native durable Undo/Redo.
+pools enter the committed edit.
 
 Selective isolation preserves sparse overrides, retained clocks, concrete and
 definition marks, and per-play sound permissions. Default ancestors are
@@ -556,9 +541,6 @@ The unchanged initial Gain proposal gets a private preview revision without
 isolation or a durable write. Camera compares the exact captured picture layer;
 its preview cannot silently frame a different occurrence.
 
-See [qualification and retained failures](qualification/scoped-plays-2026-10-03.md)
-for test, rendered and native evidence, source provenance and remaining limits.
-
 ## Remaining work
 
 Shared gap rows exist only with This play at every level; a shared gap
@@ -567,5 +549,4 @@ pictures before isolation, remain unavailable. Multi-play selection is chosen on
 by command; the inspector shows it but has no pointer control for it. This boundary does not implement occurrence-local cuts, replacement, Repeat
 count changes, All-plays Retime changes, general semantic
 recording of scoped navigation or arbitrary occurrence edits, or complete
-definition previews. Those remain part of the
-normative specification. No full-product requirement or gate is complete.
+definition previews. Those remain open.

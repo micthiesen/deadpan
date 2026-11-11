@@ -1,7 +1,7 @@
 # Gag recipes
 
-A gag is a named recipe that expands to ordinary, editable beats
-(specification §8.4 and the §31 worked edit, step 8). It is not a special clip:
+A gag is a named recipe that expands to ordinary, editable beats.
+It is not a special clip:
 after applying it, every part can be changed directly, and ungrouping detaches
 it from its recipe.
 

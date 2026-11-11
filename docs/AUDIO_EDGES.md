@@ -31,9 +31,7 @@ marked owner retains that context and does not add fades at the split itself.
 Ungroup transfers a Sequence's intent to its outer children, wrapping a fragment
 that cannot carry a Hard side unmarked ([effect distribution](GROUP_EDITING.md#effect-distribution)).
 Clearing that intent is not yet exposed.
-The [Source Trim contract](SOURCE_TRIM.md) and
-[qualification](qualification/source-trim-2026-10-01.md) record the implementation
-and indexed-picture, decoded-PCM and persistence checks.
+The [Source Trim contract](SOURCE_TRIM.md) records the implementation.
 
 Direct policy changes preserve temporal coordinates, marks and presentation
 basis. Occurrence edits preserve timing while copying or relocating owned marks
@@ -198,8 +196,7 @@ This implements the edge stage for existing sequential source/room-tone voices.
 The native `:edge` command authors node, play-seam and gap policies. Gain, EQ,
 saturation, sends, tails, playback and encoded export now exist in later work
 ([AUDIO_GAIN.md](AUDIO_GAIN.md), [EQUALIZER.md](EQUALIZER.md),
-[FINITE_WET_EFFECTS.md](FINITE_WET_EFFECTS.md),
-[preview-export-2026-10-04](qualification/preview-export-2026-10-04.md)). Still
+[FINITE_WET_EFFECTS.md](FINITE_WET_EFFECTS.md)). Still
 open: per-side edges on placed sounds (`:sound-edges` sets both endpoints),
 edges on beat-attached sounds, edge controls on overridden plays, a bleep
 overlay mode, keyboard bindings and listening qualification. The earlier failed limiter experiments remain unadopted. This stage is

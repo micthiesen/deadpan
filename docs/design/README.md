@@ -2,8 +2,8 @@
 
 These imagegen boards are the visual targets requested by the product owner.
 Use them before implementing a screen, then compare the native result against
-them. The [full specification](../spec/DEADPAN_SPEC.md) remains the authority for
-behavior, timing, keyboard bindings and completion. A concept image does not
+them. [The brief](../BRIEF.md) and the per-area documents are the authority for
+behavior, timing and keyboard bindings. A concept image does not
 establish an implemented feature.
 
 ## Boards
@@ -26,8 +26,7 @@ the Camera companion on 2026-09-24, the moment-reuse companion on 2026-09-26
 and the sound-audition, sound-placement, room-tone and gain companions on 2026-09-27.
 The measured gain-waveform board and its two corrections were generated on
 2026-09-28.
-The current boards implement the owner's single-original direction in specification
-1.1: begin with the complete video and gradually reshape it, reuse its moments,
+The current boards implement the owner's single-original direction: begin with the complete video and gradually reshape it, reuse its moments,
 add audio effects and accept AI extensions. New projects belong in Documents/Deadpan.
 The enlarged workspace controls proportions; companion screens cover intended
 interactions. The product-board correction replaces a spatial crop with a temporal
@@ -95,8 +94,7 @@ Opening or closing command entry must not leave a stale mode or a blank footer
 band for an extra frame. Wrap a keycap and its action label together; do not clip
 the final shortcuts to preserve a single line. Keep transient picture-loading
 feedback on the status row so it does not push ordinary navigation hints into
-another row. The [footer qualification](../qualification/footer-layout-2026-09-27.md)
-records first-frame checks and the remaining small-window picture limitation.
+another row.
 
 Single-Original workspaces place Sounds beside the BEATS heading whenever the
 edit has no placed sounds, at every window height; an empty list never takes a
@@ -126,21 +124,18 @@ actual wrapped rows. Transport measurement and paint share text geometry;
 long configured keys and live status cannot rely on a fixed two-row estimate.
 The selected/copied Original fixture measures 141 points at 960×640 with shipped
 keys and 109 points with the tested six-key paths. These are scoped observations,
-not general height guarantees for arbitrary content or fonts. See the
-[Original layout qualification](../qualification/original-layout-2026-10-02.md)
-and the earlier [compact-workspace qualification](../qualification/compact-workspace-2026-09-28.md).
+not general height guarantees for arbitrary content or fonts.
 
 A retained GPU texture keeps its own rendered proportions while the viewer
 resizes or playback waits for a new frame. Fit the actual target raster inside
 the viewer; the desired canvas controls only the next render submission.
 Visibility checks must inspect the painted mesh, not just that desired canvas.
 
-The [edited-slice qualification](../qualification/native-edited-slice-2026-09-30.md)
-adds compact viewer margins of 8 points vertically below a 700-point viewport
+Compact viewers use margins of 8 points vertically below a 700-point viewport
 height. This returns 8 points to the picture while retaining 12-point horizontal
 margins, control reserves and hit sizes. Default-size viewers keep the existing
 12-point margins. The wider replay exposed small picture-height misses in Sound,
-Room tone and Gain; their original failures remain in the qualification record.
+Room tone and Gain.
 
 Changing pane placement during input must be detected before submitting a
 picture target. The implementation captures one placement per layout pass and
@@ -277,11 +272,7 @@ details are intentionally not implementation instructions:
   Place and Sound added states are separate moments; Saved follows the actual
   transaction. Routed gain and edge changes retain cuts; moving a routed event
   remains unavailable. Send/tail allowances, nested owners, Repeat/Retime sound
-  transforms, effects and export remain open. Production-router/Kestrel checks,
-  text ownership and replay results belong in the
-  [native placement qualification record](../qualification/native-sound-placement-2026-09-27.md),
-  with the subsequent [allowance qualification](../qualification/sound-allowances-2026-09-27.md).
-  No qualification is inferred from the image. See [sound events](../SOUND_EVENTS.md).
+  transforms refuse. See [sound events](../SOUND_EVENTS.md).
 - The sound-audition board separates catalog selection, pane focus and the
   selected beat. Its violet Original outline must not imply that Original is
   also the active audition target. Sound elapsed/total values use their own
@@ -306,8 +297,8 @@ details are intentionally not implementation instructions:
   a measurement: the coded range bar must map exact source time and distinguish
   endpoint labels from approximate pixels. Its thumbnails remain conditional on
   a real bounded service, and its sound entries do not prove placed sound events.
-- The Camera board is a target; [native qualification](../qualification/framing-2026-09-24.md)
-  records the implemented subset. Saved targets and regions remain required.
+- The Camera board is a target; the native Camera implements a subset
+  (see [framing](../FRAMING.md) and [targets](../TARGETS.md)).
   Its large crop boundary illustrates source context; the coded main viewer must
   show the actual draft output, with source context confined to an explicit
   overview. Never overlay a purported source crop rectangle on already cropped
@@ -315,7 +306,7 @@ details are intentionally not implementation instructions:
   counts during ordinary Camera adjustment. Its source thumbnail and illustrated
   sound entries require real supporting data. The board's Mug example depicts
   manual targeting, not detection or tracking.
-- Use the implemented binding table and normative grammar. `?` and `:help` open
+- Use the implemented binding table and key grammar. `?` and `:help` open
   actual help. The product board's Original-view footer still includes `rr`/`dd`;
   the coded Original view must instead teach browsing, return to Your edit and
   explicit reuse. Structural edits never target the immutable Original.
@@ -364,8 +355,7 @@ old multi-video creation flow.
 
 ## Implementation and review
 
-The [Generated picture qualification](../qualification/generated-pictures-2026-09-29.md)
-places Hold Picture/Sound policy beside Duration and keeps its duration action
+The Generated picture view places Hold Picture/Sound policy beside Duration and keeps its duration action
 above secondary treatments. Image review exposed a footer row covered by later
 panes despite valid text clips. Inactive panels now reserve no decoration;
 the compact read-only clock row preserves a 141-point copied-Original picture.
@@ -386,10 +376,7 @@ readable controls and picture hierarchy. The minimum copied Hold viewer is
 143 points; other tested phases measure 169 or 175 points. The passing checks
 cover stable native-scale identities, room-tone background continuity, exact
 pause/resume, nested navigation, placement/undo and release-frame submissions.
-The release build and all 2,323 full performance replay checks pass. These results
-do not establish physical-input or listening qualification, and full-editor
-requirements remain open. See the
-[compact-workspace qualification](../qualification/compact-workspace-2026-09-28.md).
+These checks do not cover physical input or listening.
 
 The native gain checkpoint's focused Metal replay passes 266 gain checks plus the
 Kestrel audit; all 298 app/harness tests pass. The reviewed default and minimum
@@ -402,12 +389,8 @@ board. Corrected room-tone captures 090 and 098 retain its primary Hold controls
 at both sizes; gain controls below them reveal through accessibility focus.
 Normal Tab still cycles panes. Native CUA verified exact trim/key edits,
 keyboard focus reveal and cancellation with an unchanged saved project.
-The [native-gain qualification](../qualification/native-gain-2026-09-28.md)
-records the earlier full suite's two retained failures, passing corrected
-follow-ups and separate performance, physical-input and listening limits.
 
-The [2026-09-27 layout review](../qualification/workspace-layout-2026-09-27.md)
-compares actual Metal captures with these targets. Compact status and beat rows
+Compact status and beat rows
 give the default viewer about 36% more height. Frame navigation shares the
 Original / Your edit header; Camera and pause actions precede inspector details.
 Sound transport stays below the scrolling catalog, with measured text and
@@ -415,13 +398,9 @@ buttons that fit on the first resize frame. Errors likewise reserve their actual
 wrapped height immediately. These changes improve hierarchy and discoverability;
 the boards' thumbnails and unfinished editorial workflows remain required.
 
-The initial native root-editing baseline is recorded in
-[its qualification](../qualification/native-editing-2026-09-23.md). The current
-design pass applies the single-Original workspace target to existing capabilities.
-Its [qualification](../qualification/single-original-2026-09-23.md) records native
-comparison, keyboard checks and discovered layout defects. Companion
-screens remain future targets until their requirements have implementation and
-evidence in [the tracker](../REQUIREMENTS.md).
+The current design pass applies the single-Original workspace target to existing
+capabilities. Companion screens remain targets until the capability is
+implemented.
 
 Use the [UI feedback loop](../UI_FEEDBACK.md) while changing the interface. Add or
 update a replay scenario through the real application and inspect its contact
@@ -435,7 +414,7 @@ Use native review for OS focus/IME, physical input, accessibility and physical
 display behavior. Record build identity, window size, fixture, observed deviations
 and checks; a screenshot alone does not establish interaction correctness.
 
-[The Split review](../qualification/structural-split-2026-09-23.md) extends this
+The Split view extends this
 workspace with visible `s` hints, an inspector action and truthful Fragment cards.
 The key reference supports `j/k`, arrows, page keys and Home/End, with a persistent
 scrolling hint. Preserve these discoverable actions as the larger editing grammar

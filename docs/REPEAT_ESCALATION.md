@@ -1,8 +1,8 @@
 # Repeat escalation
 
 An escalating Repeat makes each play louder and closer than the one before,
-as one editable structure (specification §8.1 "Escalation", §8.2 "Escalating
-crop" and the §31 worked edit, step 3). The plays are not copied: the Repeat
+as one editable structure (escalation and escalating
+crop). The plays are not copied: the Repeat
 stores two steps and every consumer derives each play's values from them.
 
 ## Model
@@ -101,7 +101,7 @@ are one Undo, macros record it and dot-repeat reapplies it.
   change, and the inspector row (`unnamed_parameters_keep_their_current_values`).
 - Audio: real decoded PCM gains per play and gap at arbitrary query
   boundaries (`repeat_escalation_adds_its_step…`).
-- Replay: the `editing` scenario types the §31 command, checks the stored
+- Replay: the `editing` scenario types the escalation command, checks the stored
   steps, the third play's 1.16 scale, unchanged duration, the inspector rows,
   the refused mismatched count and Undo.
 

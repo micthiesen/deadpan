@@ -62,11 +62,7 @@ Current database 21 stores core 15. Its frozen core-14 adapter checks database-2
 Split history and retains only relationships established by actual replayed
 copies; initial legacy snapshots gain no inferred lineage.
 
-## Evidence and remaining work
-
-[Qualification](qualification/structural-split-2026-09-23.md) records core, native,
-headless, migration, picture and actual PCM checks, independent review and native
-interaction evidence. All requirements remain partial or open.
+## Remaining work
 
 This command targets one explicit node or concrete occurrence. Automatic minimal
 boundary-node selection for nested range operators, arbitrary cursor Hold

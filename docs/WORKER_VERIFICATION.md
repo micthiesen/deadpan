@@ -1,9 +1,9 @@
 # Worker protocol and process boundary
 
-This slice implements a concrete worker boundary for Section 18. It does not
+This slice implements a concrete worker boundary for background workers. It does not
 implement inference, a model pack, or an application job service. Follow-up
 [attempt storage](GENERATION_ATTEMPTS.md) adds persistence and restart recovery.
-DP-18 remains partial; Gates A and E remain open. The native application
+The native application
 is still a welcome shell.
 
 ## Typed protocol and state
@@ -89,8 +89,7 @@ It may then reap that confirmed leader once. This fallback cannot turn a group
 cleanup error into a successful worker result or prove descendant termination.
 Lost ownership, including ECHILD, prevents signalling or reaping. A failed
 fallback leaves cleanup incomplete. Processes that leave the group remain
-outside the supervisor's authority. [Cleanup verification](qualification/worker-cleanup-2026-09-21.md)
-records the regression tests, original CI failure and later shell-fixture fix.
+outside the supervisor's authority.
 
 The host must wait for process cleanup, validate artifact paths/symlinks, hashes,
 media dimensions/duration/color, and provenance, then promote atomically. None of
@@ -117,24 +116,6 @@ an exited leader with another member, accept the sole unreaped exited leader,
 and reject a reaped identity. Pure checks cover truncated or malformed process
 lists. The only unsafe call is isolated in this adapter, with an explicit ABI,
 buffer, errno, and lifetime argument; jobs and core retain `unsafe_code = forbid`.
-
-On 2026-09-20, the complete repository gate passed on Apple M5 Max, arm64,
-128 GiB RAM, macOS 26.5.2 (25F84), Rust 1.97.1:
-
-- `cargo fmt --all -- --check`
-- `cargo clippy --workspace --all-targets --locked -- -D warnings`
-- `cargo test --workspace --locked`: 187 passed, none failed or ignored.
-  This includes 7 protocol, 10 lifecycle, 11 actual subprocess, and 2 native
-  adapter tests added here.
-- `cargo build --workspace --locked`
-- `cargo run -p deadpan-cli -- doctor`: schema 4, SQLite 3.53.2, exact timing
-  probe, and truthful development-foundation capability report.
-- The 20 Python audio-measurement regression tests also passed.
-
-Native startup smoke, computer use, and GUI interaction were skipped because no
-app startup, view, focus, keyboard, or application lifecycle code changed. The
-actual subprocess tests provide the relevant native evidence. Linux and macOS
-15 were not locally exercised; a cfg target is not platform qualification.
 
 Independent protocol/lifecycle, supervisor, and native-adapter reviews covered
 the new boundary. Review led to two safeguards: proving group membership before

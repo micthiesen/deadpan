@@ -104,6 +104,3 @@ The [splice design](STRUCTURAL_SPLICE_DESIGN.md) tracks those remaining authored
 requirements. Contract tests and existing real-media parity cover this plumbing;
 they do not qualify shifted Hold renders, listening, application playback or
 export. This change has no GUI behavior to review.
-
-[Qualification](qualification/audio-sampling-2026-09-23.md) records the full gate,
-985 passing tests and independent review of this increment.

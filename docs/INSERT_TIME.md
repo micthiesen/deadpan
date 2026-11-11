@@ -64,19 +64,16 @@ so its recipe may change without adding output or capturing a root clock.
 The complete ancestry is still checked. A dormant primary keeps the ordinary
 cursor even when live counterparts ripple. See
 [selected duration semantics](SEMANTIC_MACROS.md#selected-plays-hold-length).
-See the
-[ordinary Hold-duration clock qualification](qualification/hold-duration-clocks-2026-10-20.md).
-The [fixed-window qualification](qualification/fixed-retime-hold-clocks-2026-10-20.md)
-records exact nested slopes, cropped support and retained allocation endpoints.
-The [processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md)
-extends that coverage to Preserve/Shift, historical input and output bindings,
+Fixed-window tests
+cover exact nested slopes, cropped support and retained allocation endpoints.
+Processing-input tests
+extend that coverage to Preserve/Shift, historical input and output bindings,
 default and owned plays, and RoomTone gaps.
 The native inspector exposes existing Hold resizing for ordinary fixed Edit
 Retime ancestry through Enter, Change duration and `:hold-duration`, including
 recording, named calls and dot. Exact crop visibility determines the first
 sampled continuation frame. Repeat ancestry and derived pause clocks retain
-their separate restrictions. See the
-[native fixed-window qualification](qualification/native-fixed-retime-hold-2026-10-21.md).
+their separate restrictions.
 An eligible tape-speed stage can subsequently change speed while preserving
 its exact selected input and descendant pause clocks. The stage's output scales
 those pauses; its inspector and macros use the exact input rather than the
@@ -191,7 +188,7 @@ recording, Retime ancestors and Visual selection remain unsupported on this
 path. See [one-play pause intent](SEMANTIC_MACROS.md#one-play-pause-intent).
 
 With `all_plays: true` the same command inserts into the Repeat's shared
-definition instead (specification §5.2: default edits affect every iteration),
+definition instead (default edits affect every iteration),
 so every default play grows and overridden plays keep their own branches. It
 admits default plays at every Repeat level with ordinary Sequences around and
 between the Repeats (a nested definition grows in every play of every enclosing
@@ -224,7 +221,7 @@ frame at project start. It records that frame's original PTS and time base, not
 a project-frame number or inferred cadence. Background/audio-only content uses
 Background. Session and revision guards apply before preparation and commit.
 
-`:hold 12f video=black` (black-frame punctuation, specification §8.2) uses the
+`:hold 12f video=black` (black-frame punctuation) uses the
 same boundary, Split identities, sample reanchors and history as a freeze, but
 authors `HoldVideo::Background` with no sampled picture or captured framing.
 `audio=silence` is accepted and is the only choice at insertion; room tone is
@@ -280,7 +277,7 @@ as old history are rejected before promotion; their original and backup survive.
 
 `InsertTime` at a strict interior of a FollowSpeed Edit Retime, reached through
 ordinary Sequences from the root, keeps that Retime as the live owner of the
-pause ([qualification](qualification/retimed-pauses-2026-10-15.md)). Its slope
+pause. Its slope
 `s` (child frames per output frame) is unchanged: a cut at output frame `k`
 lands at child coordinate `start + k*s`, and a pause of `h` project frames
 occupies `h*s` child frames. Neither value is rounded. A physical leaf is cut
@@ -314,7 +311,6 @@ keeps its authored `h` frames through one adapter at the insertion site. Later
 siblings at every enclosing Sequence keep their individual pre-edit sample
 entries; one rounded sample offset for the whole suffix would be incorrect.
 Further pauses may enter the resulting windows or the first pause's adapter.
-See [nested-speed qualification](qualification/nested-speed-pauses-2026-10-18.md).
 
 A Preserve or Shift stage inside the tape-speed child is split like a Source
 leaf (see [nested processing stages](#nested-processing-stages)). Repeat
@@ -328,8 +324,7 @@ A Preserve or Shift speed change processes its whole input as one DSP history,
 so the pause cannot enter its child. Instead the ordinary path splits the stage
 at the pause's output frame: `Split` keeps the left half on the original stage
 and windows a complete copy for the right half, each with its full processing
-context, and the Hold goes between them
-([qualification](qualification/preserve-pauses-2026-10-15.md)). Every value is
+context, and the Hold goes between them. Every value is
 an integral output frame, so no derived clocks appear, and marks, sounds and
 ordinary commands keep their usual transforms. The right copy's retained clock
 resumes its processed output at the old cut, exactly as a split Source does.
@@ -385,8 +380,7 @@ Preserve, 36 pictures) match their previews with audio offset verified zero.
 ## Editing documents with exact clocks
 
 A fractional Retime keeps an integral recipe at the ceiling of its exact clock,
-so outside every clocked speed change integral recipes equal exact extents
-([qualification](qualification/clocked-editing-2026-10-15.md)). Ordinary
+so outside every clocked speed change integral recipes equal exact extents. Ordinary
 commands therefore run on such documents inside a sealed command scope
 (`derived_clock::with_sealed`), where integral duration queries return those
 recipes after checking that equality. After each command leaf,
@@ -436,15 +430,3 @@ requesting/auditioning AI candidates, audio-policy controls, transport, listenin
 qualification and export remain separate required work. Generic structural
 Insert remains available for its existing child-index semantics; it does not
 implement this splice contract.
-
-[Composite insertion qualification](qualification/composite-insertion-2026-09-26.md)
-records command, PCM, picture and migration tests, native service checks, and the
-blocked Metal replay separately.
-
-[Interior insertion qualification](qualification/interior-insertion-2026-09-26.md)
-records the separate pre/post-Split clock checks, native VFR service, authentic
-database-30 migration, public headless history and the blocked keyboard replay.
-
-[Nested Sequence qualification](qualification/nested-sequence-2026-09-26.md)
-records actual parent ownership, ancestor suffix clocks, native capture and
-completion, database-31 replay, CLI history and the new keyboard scenario.

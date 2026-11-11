@@ -1,12 +1,8 @@
 # Combined Source Trim
 
 `ApplySourceTrim` combines accepted In, Out, Slip and Roll values into one
-reversible backend edit. [Qualification](qualification/combined-trim-2026-10-01.md)
-records passing backend workspace, focused media, durable history and strict lint
-checks. The native [Trim mode](spec/DEADPAN_SPEC.md#77-trim-mode) now connects the
-complete draft to boundary pictures, waveform and audition. The
-[native qualification record](qualification/native-trim-2026-10-01.md) retains
-its compilation, replay, keyboard and native interaction evidence separately.
+reversible backend edit. The native Trim mode connects the
+complete draft to boundary pictures, waveform and audition.
 
 ## Captured intent
 
@@ -173,5 +169,4 @@ dispatch. A serialized resolution supplies no authority to skip validation.
 
 Core schema 43/database 52 identify the new command vocabulary. The approved
 unused-project policy refuses development database schemas 39 through 51
-without migration. This backend increment does not complete DP-02, DP-05 or a
-product gate.
+without migration.

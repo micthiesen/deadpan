@@ -23,8 +23,7 @@ extension inputs, and schema 74 retains accepted Extension evidence under core
 schema 47. Schema 75 adds the [named take catalog and immutable restore
 proofs](TAKES.md), with `RestoreSnapshot` in the closed command vocabulary.
 Schema 76 uses core 48's exact source-clock origins for forward and reversed
-Holds, preserving VFR passage phase independently of decoded-picture intervals
-([qualification](qualification/vfr-recipes-2026-10-09.md)).
+Holds, preserving VFR passage phase independently of decoded-picture intervals.
 Schema 77 uses core 49's authored [source interpretations](SOURCE_ADMISSION.md#correcting-picture-interpretation)
 and keys shot analyses and checkpoints by the same range/chroma choice.
 Schemas 78 through 83 extend effect sends, audio treatment and exact timing
@@ -186,6 +185,5 @@ Generic and multi-video projects in the supported format remain available in
 their explicit compatibility workspace. Refusing an obsolete database format
 does not remove generic editing capability or delete any package or media.
 
-Historical qualification reports describe the behavior of their recorded
-revision. They do not grant current support to old formats. Eventual release
-migration and recovery acceptance remain required by the specification.
+Eventual release
+migration and recovery acceptance remain required.

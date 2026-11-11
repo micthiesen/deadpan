@@ -2,8 +2,7 @@
 
 Deadpan transcribes the Original locally with whisper.cpp. A transcript is an
 analysis annotation: it proposes where words were heard and never edits the
-project. Section 11 of the [specification](spec/DEADPAN_SPEC.md) is normative;
-this records the implemented boundary. The same worker and analysis PCM also
+project. This records the implemented boundary. The same worker and analysis PCM also
 detect [speech activity and pauses](SPEECH_ACTIVITY.md).
 
 ## Pieces
@@ -70,8 +69,7 @@ covered intervals; they support cursor jumps, while search, corrections and
 editorial objects continue to use complete Workspace analysis. VAD and
 Whisper share admission for each uncached range and release it between
 ranges. The initial AudioSession opening still decodes the full stream. The
-CLI transcribe command keeps its existing whole-input path. See the
-[local qualification and remaining scope](qualification/incremental-ranges-2026-10-26.md).
+CLI transcribe command keeps its existing whole-input path.
 
 ## Worker protocol
 
@@ -111,8 +109,7 @@ MIT licensed like whisper.cpp, and the Silero detector for
 
 `cargo run -p deadpan-cli --example qualify_transcription -- MODEL SHA SPEECH.wav
 REPORT.json [phrase]` runs the real worker on a PCM16 mono 16 kHz WAV.
-`DEADPAN_QUALIFY_CANCEL_MS` cancels instead. See the
-[qualification record](qualification/transcription-2026-10-04.md).
+`DEADPAN_QUALIFY_CANCEL_MS` cancels instead.
 
 ### Accuracy on speech
 
@@ -125,8 +122,7 @@ interview were transcribed without errors. Word timing is much coarser than
 word identity: sentence-initial words start a median 315 ms from the energy
 onset, and sentence-final words end a median 650 ms after the speech stops.
 The approximate flag marks about a third of wrong words. Conversational, noisy
-and non-English speech remain unmeasured. See the
-[accuracy record](qualification/transcription-accuracy-2026-10-05.md). The
+and non-English speech remain unmeasured. The
 same chapters through the app's own analysis-PCM path (AAC Originals,
 `prepare_original_audio`) gave 5.40% with a simple normalization and the same
 two failures, which the [recognizer failure check](#recognizer-failures) now
@@ -161,8 +157,7 @@ CLI: in the 84 good chapters the longest repetition was 10 words (3 copies at
 most) and the longest stretch of speech without words 2.07 s; the failures
 were a 61-copy loop of a 10-word phrase, 19.5 s of speech after the last word
 and 9.7 s left uncovered by a sentence whose 47 words were timed into its
-first 7 s. All three were flagged and no good chapter was. See the
-[qualification record](qualification/recognizer-failures-2026-10-15.md).
+first 7 s. All three were flagged and no good chapter was.
 
 ### Recognizing a passage again
 
@@ -340,10 +335,8 @@ available when Recognize again is interrupted. Late results and queued saves
 retain the run's lifecycle epoch: transcript and accompanying speech-activity
 transactions reject an invalidated epoch before writing and before commit.
 A save admitted at the final guard remains valid if sleep follows it.
-See [qualification](qualification/transcription-sleep-2026-10-17.md) for the real
-Whisper cancellation test and publication regressions. Standalone speech
-activity now applies the same sleep policy through its own run capture;
-see [standalone detection qualification](qualification/activity-sleep-2026-10-17.md).
+Standalone speech
+activity applies the same sleep policy through its own run capture.
 
 Known limits: the host and worker each hold analysis PCM twice while
 transferring it (about 1.4 GB at the three-hour cap); the worker hashes the

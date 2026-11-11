@@ -1,29 +1,28 @@
 # Recovery, autosave and storage failures
 
-This records what DP-01 and the recovery parts of Gate F require
-([specification 18.3, 20 and 28](spec/DEADPAN_SPEC.md#20-projects-history-and-recovery)),
+This records what project recovery requires,
 what exists and how it is tested, and what remains. It covers the store and
 the native app; headless commands keep their documented contracts.
 
 ## Inventory
 
-| Requirement (spec) | Status | Implementation and evidence |
+| Requirement | Status | Implementation and evidence |
 |---|---|---|
-| Documents library and one-Original baseline (20.1, 20.2) | Implemented earlier | [Single Original](SINGLE_ORIGINAL.md); `library.rs` tests. |
-| Every edit durable before "saved" (20.2) | Implemented, verified | One SQLite transaction per revision, WAL with `synchronous=FULL`. A killed writer keeps every committed revision (`deadpan-store/tests/recovery.rs`). |
-| Interactive drafts transient until committed (20.2) | Implemented, now explicit | Camera, Gain, Room tone, Trim, Slip, Place slice and typed command text are never persisted. Closing the window with one open asks first; a crash loses them and the launch offer says so. |
-| Detect unclean shutdown on startup (20.4) | **New** | Writer session marker in the package and the app launch journal (below). |
-| Validate integrity on open (20.4) | Implemented earlier | Open hashes every stored row against the [verified history receipt](TIMING_STORAGE.md#verified-history-receipts); `project validate` replays everything. |
-| Reconcile worker attempts on open (18.3, 20.4) | Implemented earlier, **now reported** | Writable open interrupts render, generation and publication attempts; `ProjectStore::open_recovery` lists them and the app shows them. |
-| Offer the latest consistent state (20.4) | **New** | Launch offer reopens the project at its head revision; nothing is rolled back. |
+| Documents library and one-Original baseline | Implemented earlier | [Single Original](SINGLE_ORIGINAL.md); `library.rs` tests. |
+| Every edit durable before "saved" | Implemented, verified | One SQLite transaction per revision, WAL with `synchronous=FULL`. A killed writer keeps every committed revision (`deadpan-store/tests/recovery.rs`). |
+| Interactive drafts transient until committed | Implemented, now explicit | Camera, Gain, Room tone, Trim, Slip, Place slice and typed command text are never persisted. Closing the window with one open asks first; a crash loses them and the launch offer says so. |
+| Detect unclean shutdown on startup | **New** | Writer session marker in the package and the app launch journal (below). |
+| Validate integrity on open | Implemented earlier | Open hashes every stored row against the [verified history receipt](TIMING_STORAGE.md#verified-history-receipts); `project validate` replays everything. |
+| Reconcile worker attempts on open | Implemented earlier, **now reported** | Writable open interrupts render, generation and publication attempts; `ProjectStore::open_recovery` lists them and the app shows them. |
+| Offer the latest consistent state | **New** | Launch offer reopens the project at its head revision; nothing is rolled back. |
 | Native persisted render-job recovery (RENDER_JOBS) | **New entry point** on existing actions | The recovery report opens Renders on the interrupted job, whose existing actions verify a retained encoding or render the saved edit again. No retry starts automatically. |
-| Disk-full and permission errors stop commits and show unsaved status (20.4, 26.3) | **New** messaging; failure behavior verified | Real ENOSPC, EROFS and EACCES tests; persistent "Not saved" alert; never "saved" after a failed transaction. |
-| Missing media placeholder and relink (20.3, 26.3) | **New** native flow | Degraded open with a report, `:relink`, managed restore and linked relink verified against content identity. |
-| Open newer unsupported schema read-only with an explanation (20.4) | **Implemented** | Writers refuse a newer schema as `SchemaNewer`; read-only opens view it without writing (header **Read-only**, edits refused with the reason); `project view`. Older development schemas still refuse. See [newer packages](BACKUPS.md#packages-a-newer-deadpan-saved). |
-| Two windows inspect one project with one writable owner (20.5) | Implemented | A second native Open captures a fixed read-only view; explicit reopen refreshes it or acquires the writer after the owner closes. The owner retains its authenticated CLI endpoint. See [inspection](#inspecting-an-open-project). |
-| Rotating consistent backups, including before migration (20.4) | **Implemented** | Verified backups every 15 minutes while editing, on close, on request, before every restore and before a release migration, rotated hourly/daily/weekly within a budget; restore from the Storage panel (`:backups`) and `project restore`. See [backups](BACKUPS.md). |
-| Native restore when the database cannot open (20.4) | Implemented | Failed Open offers listed backups; inspection and separate confirmed replacement retain damaged files and open a new session. An unreadable manifest requires a typed project identity. Changed files or sessions refuse. See [damaged recovery](BACKUPS.md#a-database-that-no-longer-opens) and its [qualification](qualification/damaged-recovery-2026-10-08.md). |
-| Release migration policy (Gate F/G) | Policy and hook | [Release migration policy](BACKUPS.md#release-migration-policy): back up, migrate a copy, validate, promote atomically; exercised by a synthetic step and process kills. The production chain upgrades schema 66 to 67; [development formats](DEVELOPMENT_FORMATS.md) still refuse schemas 1-65. |
+| Disk-full and permission errors stop commits and show unsaved status | **New** messaging; failure behavior verified | Real ENOSPC, EROFS and EACCES tests; persistent "Not saved" alert; never "saved" after a failed transaction. |
+| Missing media placeholder and relink | **New** native flow | Degraded open with a report, `:relink`, managed restore and linked relink verified against content identity. |
+| Open newer unsupported schema read-only with an explanation | **Implemented** | Writers refuse a newer schema as `SchemaNewer`; read-only opens view it without writing (header **Read-only**, edits refused with the reason); `project view`. Older development schemas still refuse. See [newer packages](BACKUPS.md#packages-a-newer-deadpan-saved). |
+| Two windows inspect one project with one writable owner | Implemented | A second native Open captures a fixed read-only view; explicit reopen refreshes it or acquires the writer after the owner closes. The owner retains its authenticated CLI endpoint. See [inspection](#inspecting-an-open-project). |
+| Rotating consistent backups, including before migration | **Implemented** | Verified backups every 15 minutes while editing, on close, on request, before every restore and before a release migration, rotated hourly/daily/weekly within a budget; restore from the Storage panel (`:backups`) and `project restore`. See [backups](BACKUPS.md). |
+| Native restore when the database cannot open | Implemented | Failed Open offers listed backups; inspection and separate confirmed replacement retain damaged files and open a new session. An unreadable manifest requires a typed project identity. Changed files or sessions refuse. See [damaged recovery](BACKUPS.md#a-database-that-no-longer-opens) |
+| Release migration policy  | Policy and hook | [Release migration policy](BACKUPS.md#release-migration-policy): back up, migrate a copy, validate, promote atomically; exercised by a synthetic step and process kills. The production chain upgrades schema 66 to 67; [development formats](DEVELOPMENT_FORMATS.md) still refuse schemas 1-65. |
 
 ## Inspecting an open project
 
@@ -47,7 +46,7 @@ acknowledgment, backup or authored row belongs to the inspection view.
 
 A newer-schema native view uses the same private-copy boundary and its
 existing readable-document validation. Ordinary headless read-only APIs retain
-their existing behavior. See [qualification](qualification/project-inspection-2026-10-09.md).
+their existing behavior.
 
 ## Detecting an unclean exit
 
@@ -155,8 +154,7 @@ and writer boundary as the Original. No authored revision is created.
 When only sounds are missing, the recovery report says **Sound missing** and
 focuses **Locate sound…** (`:relink`). It names the unavailable sound without
 claiming that the Original's pictures are missing. Restoring the Original
-refreshes its picture even if a separate sound still needs locating. See
-[sound recovery qualification](qualification/sound-recovery-2026-10-11.md).
+refreshes its picture even if a separate sound still needs locating.
 
 Linked originals and sounds record a system bookmark when they are retained
 (the import worker, `project retain-original --linked`, relinks), through the
@@ -225,10 +223,6 @@ another package leaves the current workspace's save state intact, including
 when damaged-database replacement succeeds but reopening fails. Retained
 operation replies from older sessions cannot raise a new session's storage
 alert. Generation journal and acceptance failures keep the same explanation.
-See [storage-error qualification](qualification/storage-errors-2026-10-08.md).
-The [recovery matrix](qualification/recovery-matrix-2026-11-10.md) maps every
-failure and conflict class to its tests on the native app, headless CLI and
-live endpoint.
 
 ## Closing with unsaved previews
 
@@ -263,8 +257,7 @@ existing shutdown callback cancels and drains workers. It waits up to three
 additional seconds for the project service to release the writer; only
 then does the journal record a clean exit. Otherwise the next launch offers
 the project again and the writer marker reports an unclean close. A window
-close retains its asynchronous service-drain path. See the
-[native Quit qualification](qualification/native-quit-2026-10-09.md).
+close retains its asynchronous service-drain path.
 
 ## Replays
 
@@ -325,23 +318,20 @@ Logs are retained in `/tmp/deadpan-extension-native-20261008/offline-import-*`.
 
 ## Remaining work
 
-Local project/recovery acceptance is complete under specification 29.1. The
-[DP-01 audit](qualification/project-acceptance-2026-10-09.md) maps all §20
-obligations to implementation and evidence. These owner checks remain:
+These owner checks remain:
 
 - Actual File Provider eviction remains an owner check
   ([File Provider domains](ORIGINAL_MEDIA.md#file-provider-domains)).
-  [Offline cross-volume relinking](qualification/relink-volumes-2026-10-08.md)
+  Offline cross-volume relinking
   is verified on detached private APFS volumes, including wrong-byte refusal
   and identical decoded pictures after relinking.
 - Dock-menu operation and physical logout remain owner checks. The native
   AppKit Quit handler, release cancellation/discard and shutdown during real
-  encoding pass ([record](qualification/native-quit-2026-10-09.md)); exact
-  owner steps are in [To verify](REQUIREMENTS.md#to-verify-owner).
-- Physical power-loss behavior (owner: To verify). Process kills during
+  encoding pass.
+- Physical power-loss behavior (owner check). Process kills during
   commits, AI attempt states, backups, checkpoints, restores and migrations
   and proxy publication are covered ([process kills](BACKUPS.md#process-kills)).
-  [Render-host kill tests](qualification/render-host-crash-2026-10-08.md)
+  Render-host kill tests
   additionally cover real encoding and verification, worker exit, interrupted
   attempt recovery and checkpoint-only retry.
 - Physical-input, VoiceOver and IME acceptance of these dialogs.

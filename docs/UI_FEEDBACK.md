@@ -5,82 +5,11 @@ Deadpan's actual interface. The goal is a clear picture, predictable controls an
 fast response to keyboard and mouse input. There is no combined UX score: a
 correct action, a readable screen and a fast response are separate observations.
 
-The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) and
-[native workspace contract](NATIVE_WORKSPACE.md) remain authoritative. The
-[interaction review](INTERACTION_REVIEW.md) records concrete improvement ideas.
+The [design targets](design/README.md) and the
+[native workspace contract](NATIVE_WORKSPACE.md) are the authority for layout
+and interaction.
 
-## Current status
-
-The `scoped-plays` replay now records Zoom/Creep intent in one play and replays
-it or dot on another, with complete Undo and late-result ownership checks.
-Final release visual/performance runs each pass 150 checks plus the Kestrel
-audit. All eight 960×640 captures were inspected; review corrected whole-play
-refusal wording, unsupported recording hints and the Camera button's entry gate.
-The separate quiet run reports median input-to-state 0.514 ms and
-input-to-picture 2.127 ms, with no failed or timed-out samples. The maximum
-picture response is 87.968 ms. See
-[one-play qualification](qualification/one-play-framing-macros-2026-10-18.md).
-
-The `zoom` replay now covers invocation-relative ranged Zoom/Creep recording,
-backward selections, dot on another beat, sampled-target refusal and real
-delayed-picture cancellation. Final release visual/performance runs each pass
-136 checks plus the Kestrel audit. All seven 960×640 captures were inspected;
-that review corrected an obsolete preparation message after cancellation.
-The quiet run reports median input-to-state 0.542 ms and input-to-picture
-2.026 ms, with no failed or timed-out samples. See
-[ranged framing qualification](qualification/ranged-framing-macros-2026-10-18.md).
-
-The `place-slice` replay now covers semantic macro recording of eligible named
-register placements, explicit Interior/refinement/Move refusals, exact typed
-programs, replay at new selected children and backward ranges, and one-step
-Undo. Final release visual/performance runs each pass 904 checks plus the
-Kestrel audit. Inspected 960×640 captures show the complete recording
-explanations and exact proposed frame before Apply. Real-media service tests
-compare preview pictures/framing and bit-identical canonical PCM with semantic
-Apply. See [Place slice macro qualification](qualification/place-slice-macros-2026-10-18.md).
-
-The `marks` replay now covers recording and replaying Original marks at measured
-PTS, native Back/Forward, retained independent Edit ranges, delayed and cancelled
-calls, and coalesced headless saves. Final release visual/performance runs each
-pass 203 checks; the broader macro regression passes 401, all with the Kestrel
-audit. Inspected 960×640 captures corrected Edit-only recording hints and the
-Escape label. The service also prevents a later bank save from resurrecting an
-Original mark as an Edit-cursor continuation. See
-[Original mark qualification](qualification/original-mark-macros-2026-10-18.md).
-
-The `retime` replay now covers silent freeze and black pauses inside two live
-tape-speed stages, exact source PTS, retained Original cursor and complete
-Undo/Redo snapshots. Final release visual/performance runs each pass 36 checks
-plus the Kestrel audit. Inspected captures corrected a rounded speed in the
-inspector; stages with exact pause clocks show their actual ratio and explain
-the remaining speed-update restriction. See
-[nested speed pause qualification](qualification/nested-speed-pauses-2026-10-18.md).
-
-The `palette` replay now verifies separate Undo/Redo and Previous/Next frame
-choices, exact durable structure restoration, configured keys, pointer selection
-and keyboard execution. Final release visual/performance runs each pass 34 checks
-plus the Kestrel audit. Inspected captures show distinct names and keycaps with
-visible focus and unavailable-action explanations. See
-[palette forms qualification](qualification/palette-forms-2026-10-17.md).
-
-The `transcript` replay now covers recognition and standalone pause-detection
-sleep interruption, no automatic restart, fully revealed keyboard retry, and
-unchanged words, corrections and edit revision before continuing its existing
-transcript workflow. Final release visual/performance runs each pass 60 checks
-plus the shortcut audit. Visual inspection found and corrected
-a clipped retry button; the assertion checks complete hit bounds and painted
-text after scroll settles. See [transcription sleep qualification](qualification/transcription-sleep-2026-10-17.md)
-and [standalone detection qualification](qualification/activity-sleep-2026-10-17.md).
-
-The `equalizer` replay covers buffered native EQ fields, invalid passbands,
-keyboard Apply/Cancel, complete typed recipes and removal, dot, macros, stale
-captures and one-play isolation. The final release passes 81 checks and actual
-paint/focus assertions at 960×640; the existing Gain and audio-treatment replays
-pass 296 and 123 checks. A separate performance run passes the same EQ checks.
-Inspected captures corrected Gain-labelled footer/owner rows while EQ was open;
-opening EQ no longer requests an unused Gain waveform. See
-[native EQ qualification](qualification/native-eq-2026-10-12.md) for exact
-timings, binary identities and retained offscreen/listening limits.
+## Fixture-driven scenarios
 
 The explicit `generated-playback` scenario exercises the real playback engine,
 app preview worker and complete offscreen Metal UI on a verified private copy
@@ -108,466 +37,19 @@ and production power, thermal and memory admission. Supply `--mode performance
 of at least 40 seconds. The replay edits a private portable copy, compares real
 device playback before and during app-owned inference, and cancels without
 accepting generated pictures. Add `--retain-projects` to preserve that private
-copy and its model-attempt evidence after shutdown. Its scheduling timestamps are sampled UI
+copy and its model-attempt records after shutdown. Its scheduling timestamps are sampled UI
 observations, not GPU preemption measurements. Ordinary batches skip it;
 remaining scenarios simulate audio delivery.
-
-`cargo xtask replays` now replays every scenario from one harness build (see
-[All scenarios](#all-scenarios)). On 2026-10-04 with three jobs it ran 43
-scenarios (two fixture-only skips) in about 14 minutes wall, 5,838 checks; the
-`render` scenario failed once only because a concurrent rebuild replaced the
-running binary, which the runner now prevents by running a private copy. That run fixed two
-failures from `6754271a`: footer hints now keep their tier (`x` cut frame stays
-at 960×640 beside new shot hints, see [workspace](NATIVE_WORKSPACE.md)), and
-inspector/gain scrollers reveal focused controls immediately, because an
-animated reveal was cancelled by a still-decaying wheel scroll. Sound replays
-choose the explicit speaker interpretation that plain WAVs now require, and
-`sound-playback` checks the refusal without one.
-
-The `recipes` replay drives the Section 8 additions through the production
-router and project service: `:gag one-more-time` and `:gag nothing-happens`,
-`:repeat 3 gap=6f gap-step=-2f gain-step=3dB` with its inspector gap row, `,m`
-on a beat and on a Visual range, the `,r` picker's prefilled `:cutaway` entry
-and register list, `:audio-lag` with its inspector offset, a Camera off-center
-stare saved with `:framing-save` and applied with `:macro`, and `:sound-cut` on
-a placed catalog sound, each with one Undo; `:repeat gap=5f` and `gap=0` reset
-the whole ladder and restating it makes no edit. Through `cargo xtask replays
---scenario recipes,editing,gags,macros` it passes 75 checks (with the Kestrel
-audit, 10,890,672 cases) alongside 59, 15 and 375; its named captures were
-inspected. The `editing`
-replay now checks that `:repeat 4 gap=6f gain-step=3dB` changes count, gap and
-step together instead of refusing.
-
-The `hold-effects` replay drives `:reverse 8f` and `:ping-pong 12f` (span and
-length of each pause), `,t` on no pause (prefilled `tail 1s effect=reverb`,
-then a tail pause) and on a `,h` pause switched to `delay`, `:lift` and `,b`
-over a Visual range with total time unchanged, the inspector rows and Undo (50
-checks with the Kestrel audit covering `,t` and `,b`). The `captions` replay
-places `:caption Are we done? at=top delay=4f` on a split fragment, reads the
-actual viewer target back to find white text with a dark outline only after the
-delay (compared with the same frame after `:caption clear`), checks the
-inspector row and Undo, and replays a recorded caption on another beat (34
-checks). Captures of the reverse, ping-pong, tail command, tail pause, bleep and
-delayed caption were inspected; the inspector's narrow value column truncates
-the longest Sound descriptions.
-
-Three replays cover the 2026-10-05 Section 8 additions through the production
-router, semantic project service and store. `audio-treatments` (67 checks):
-`:saturate 12dB` with its inspector drive, `:gain +6dB`, `+=3dB`, `-=1.5dB`
-and four single Undos, `.` repeating the saturation on another beat, a recorded
-macro of `+` and `:saturate 6dB` replayed with `@a` as one Undo, and `:pitch
-+5st`, `-3st` and `0` on a unity-speed stage with its inspector row.
-`split-edits` (87 checks): `:jcut 6f` and `:lcut 200ms` at a cut between two
-Original moments with every plan picture unchanged, `.` at a second cut, the
-refusal away from a cut, `:roll +2f` opening Trim with Roll active,
-`:select role=audio|video` with the status-line role and Visual `d` (mute range,
-background pictures), `:delete role=video` once, the refusal across a cut, and
-`:repeat 3 role=audio` (two Placed sounds over a muted range), Visual `r` under
-the video role (looped pictures) and the `overflow=trim` refusal and trim.
-`recipe-library` (25 checks): `:gag-inspect` listing seeded gaps in Help without
-an edit, the applied gag storing exactly those gaps with the seed in its label,
-`:recipe-save a`, `:recipe-inspect a` and `:recipe a` with one Undo. Their
-captures of the saturation inspector, J-cut, `:roll`, role deletes and Placed
-sounds were inspected. The earlier `gain`, `recipes`, `gags`, `dot-repeat`,
-`macros`, `retime`, `cutaway`, `hold-effects`, `editing`, `keymap`, `trim`,
-`captions`, `zoom`, `targets` and `repeat-operator` replays still pass with
-these changes.
-
-The [workspace design pass](qualification/ui-design-pass-2026-10-04.md) moves the
-interface to installed SF Pro/SF Mono, removes an unpainted header band,
-restructures the inspector, header, rail and tabs, fits footer keys to two
-priority-ordered rows and collapses an empty Sounds panel at every height. The
-full visual replay passes 5,388 checks after a focused rerun, including the
-previously failing Help End and room-tone minimum-picture checks.
-
-Named groups have a new `groups` replay for captured text entry, partial
-Source/Repeat/Retime ranges, exact Undo/Redo, navigation, macros, dot and
-register preservation. It also compares displayed source identities and actual
-GPU composition at fixed Edit positions. The final run passes 329 checks;
-adjacent dot, macro, Repeat, keymap and scoped-editing replays bring the total
-to 1,416. Native input verified register preservation, Group/Ungroup, dot and
-Macro playback with one Undo. Image review found and corrected missing CJK
-glyphs and clipped inspector headings. See the
-[Group record](qualification/group-editing-2026-10-03.md) for evidence and limits.
-
-Repeat count changes now use semantic recording and dot. The `repeat-setters`
-replay covers recorded wrapping/count changes, one-step Macro Undo, a fresh
-selected Repeat, register preservation and explicit Visual refusal. See the
-[qualification record](qualification/repeat-count-2026-10-03.md) for results
-and remaining acceptance work.
-
-The [scoped Repeat inspector](SCOPED_EDITING.md) adds explicit All plays/This
-play navigation and gain, Camera and pause-audio edits. The `scoped-plays`
-replay exercises isolation, unchanged drafts, late replies, Undo, mark-only
-revision rebasing, focused sound navigation and minimum-window paint. Compact controls retain the breadcrumb
-and selected child above the footer; Gain uses a compact owner row. See the
-[qualification](qualification/scoped-plays-2026-10-03.md) for corrected clipping,
-native observations, exact binaries and remaining temporal-editing limits.
-The `structure-copies` replay types `:explode`, `:duplicate` and
-`:scope plays 2-3` through the real router, records them in a macro and
-repeats them with dot ([explode and duplicate](EXPLODE_DUPLICATE.md)).
-
-The [configurable keymap](KEYMAP.md) adds startup Normal/Visual overrides,
-logical/physical matching, dynamic key labels and persistent error fallback.
-The `keymap` replay uses a private file and real production input to exercise
-shared prefixes, held custom motions, Trim entry capture, native field suffixes,
-synthetic IME and minimum-window paint. `keymap-error` checks atomic fallback and
-the diagnostic after editing. Personal settings are never read by replay.
-The [qualification](qualification/configurable-bindings-2026-10-01.md) records
-actual results, review corrections and remaining physical-input limits. No native
-window is left running after testing.
-
-The `full-session` replay (124 checks) is one keyboard-only editorial session
-through the production router: no pointer event is sent, and only the ⌘N,
-⌘I, ⌘E and ⌘O pickers and the AI model worker (the synthetic Ready worker)
-are scripted. From the start screen it creates the project with ⌘N, moves both
-clocks, copies Original [10,24) with `v14ly` and pastes it with `p`, trims its
-In by one frame with `,v` `l` Enter, cuts five frames with `d5l`, inserts a
-pause with `,h`, wraps the moment with `:repeat 3 gap=6f gap-step=-2f`, walks
-the Repeat with Enter, `]r`, `]r`, `j` (play 2's owned gap), `3[r` and
-Backspace, saves a Camera target and follows it with `,z`, captions a beat,
-imports a sound (`:sound-channels stereo`, ⌘I, Tab, `j`, `,s`), raises gain
-and mutes with `+` and `,m`, undoes and redoes, records `qa 2l x q`, runs
-`@a`, cuts with `x` and repeats it with `.`, generates, previews and accepts AI
-pictures, renders with ⌘E, independently passes `verify-export` on the
-published movie, then closes with `:close` and reopens with ⌘O to the exact
-revision, document and Macro register. Before each step a check requires the
-step's key to be fully painted where the action lives. That found eight
-teaching gaps, now fixed: no `d`/`y` operator hint, `,z`/`,c` only inside a
-collapsed inspector section, Mute without `,m`, Macro hints pushed out of the
-footer budget, no keyboard path for a WAV's speaker interpretation, a `,s`
-refusal that did not say how to choose a sound, no visible `:caption` or
-`:close` (the command line now lists matching commands while a verb is typed),
-and Repeat play buttons without keys. The same run passed `layouts`, `keymap`,
-`workspace`, `editing`, `zoom`, `scoped-plays`, `room-tone`, `sound-placement`,
-`gain`, `recipes`, `macros`, `dot-repeat`, `groups`, `nested-pause`,
-`captions`, `ai-variants`, `sound-playback` and `menus` (19 scenarios, 2,779
-scenario checks). Inspected captures show the completion line under `:cap`,
-play 2/3 with its gap selected and the `]r`/`[r` buttons.
-
-The `layouts` replay (130 checks) sends German QWERTZ and French AZERTY presses
-as egui-winit 0.36 delivers them on macOS, with physical fallbacks and companion
-text, through the production router. It checks exact cursors for `gg`, counts,
-`h`/`l`, `G`, `w`/`b`, `]p`, `k`/`j`, Visual `v` plus counted motion and logical
-`y` (physical Z on QWERTZ), AZERTY marks, `:split`, `:hold 12f` and Undo. Unnamed
-fallback characters (`&é(üöäß`) are inert, `"` selects a register and Kestrel's
-Option+5 and Option+L keep QWERTZ `[` and `@`. Japanese composition fills Command
-(`:caption`), the transcript word field and the YouTube URL field; Enter and Escape
-during composition neither submit nor cancel, and the committed `日本語` lands
-exactly. Picture captions still draw CJK as .notdef boxes with the bundled Inter
-font. See [keymaps](KEYMAP.md#logical-and-physical-keys).
-
-The [Original layout increment](qualification/original-layout-2026-10-02.md)
-restores a 141-point stopped picture in the selected/copied 960×640 fixture.
-Compact Original shows the actual placed-sound count beside Beats; focusing it
-opens the list in Your edit while retaining both cursors. Transport reserves
-use the text geometry actually painted, including long configured paths and
-live status. Pointer, focused Enter and accessibility Click finish before a
-resized picture is submitted. Retained textures keep their rendered aspect
-while a replacement prepares. The new ordinary/long-path replays check first
-paint, focus, state retention, complete control hits and 1×/2× scale transitions.
-This is scoped layout evidence; full workspace acceptance remains open.
-
-The [native Trim increment](COMBINED_TRIM.md#native-trim) adds ordered
-In/Out/Slip/Roll controls, Ripple/Overwrite policy, atomic Before/Proposed boundary
-pairs, an admitted Edit waveform and optional audition. Its `trim` replay uses
-production entry and input routes, real picture preparation/Metal and real
-waveform PCM. It covers captured target absence, ordered clamps/policy changes,
-native text/focus, delayed pair delivery, resize-time Apply refusal, cancellation,
-one commit and Undo. Playback delivery and IME events in replay are injected.
-The [native qualification record](qualification/native-trim-2026-10-01.md)
-records execution results and remaining native limits; scenario code alone
-establishes no pass count, latency, physical-input or listening result. Broader
-target admission and complete editor/accessibility acceptance remain open.
-
-The [native mark increment](qualification/native-marks-2026-10-01.md) adds visible
-pending letter prefixes, a keyboard-accessible Marks list and exact back/forward
-jumps. The focused rendered run passes 156 checks plus a 16,368-case Kestrel audit.
-Inspected minimum/default captures show both clocks, saved/error states and native
-focus. All 52 rows are reachable by Tab; the final row scrolls into view and focus
-wraps in both directions. Stable modal frames use one layout pass. Native keys
-and seven SQLite backups verify saving, jumping, cancellation, removal, Undo and
-reopening. The QA app was closed and its writer lock released. The full release
-replay passes 3,589 checks with no findings or failed timing samples; warm
-navigation/Repeat/Hold p95 is 1.523/5.886/5.914 ms. Transient Edit history expires
-after unrelated revisions; saved marks still follow content. Complete editor,
-IME, physical layout and accessibility acceptance remain open.
-
-The [whole-child copy and cut increment](qualification/structural-capture-2026-10-01.md)
-adds exact structural capture, cut-to-register and empty-group placement. Final
-rendered runs pass 150 cut and 820 placement checks, each plus the 11,904-case
-Kestrel audit. Inspected minimum/default captures show the saved join, historical
-paste, empty source structure and exact neighboring slots; empty-group placement
-retains a 281/461-point viewer. Native keys and SQLite backups verify cut,
-cancel, paste, Undo and whole-child copy. The QA app was closed afterward.
-Full release replay passes 3,434 checks with no findings or failed timing
-samples; warm navigation, cached Repeat and Hold picture completion p95 is
-1.517/5.844/5.785 ms. Source manifests, corrected replay assumptions and
-injected-delivery limits remain in the qualification record. Full editor,
-physical listening, native IME and complete accessibility acceptance remain open.
-
-The [native Move increment](qualification/native-move-2026-09-30.md) adds explicit
-Copy/Move selection, local removal/insertion views and exact final range selection
-to `place-slice`. Its final visual run passes 752 checks plus the 11,904-case
-Kestrel audit. Inspected minimum/default captures preserve endpoints, a 177-point
-minimum Move picture and both 44-point timelines. A real five-point Copy timeline
-overflow and a missing arrow glyph were corrected during image review.
-Final full release replay passes 3,314 checks; warm navigation, cached Repeat
-and Hold picture completion p95 is 1.504/5.525/5.604 ms. Separate native keys and
-SQLite backups verify cancellation, both comparisons, one Move commit, Undo and
-historical Move rejection. Qualification retains two unexplained decoder stderr
-messages, all failures and the distinction between injected delivery and real PCM.
-
-The [native/public Render increment](qualification/public-render-2026-09-30.md)
-adds the visible Render action and exact preview decisions. Its dedicated replay
-uses real encoding, verification and publication; only the destination picker is
-scripted. Native CUA separately exercises the macOS sheet and preview decision.
-The final visual run passes 71 Render checks and its eight named captures were
-inspected. The full release replay passes 2,418 checks with no findings or failed
-timing samples; warm navigation/Repeat/Hold picture completion p95 is
-1.502/5.698/5.607 ms. The separate accepted-generated-picture scenario remains
-explicitly skipped without its fixture. See that qualification record for source
-identities and remaining coverage.
-
-The [render workflow increment](qualification/render-workflow-2026-09-30.md)
-changes native service ownership and shutdown notification. Its normal workspace
-and optional app checks pass, including 309 app/harness tests; native Metal
-startup and shutdown pass. Release replay passes all 2,348 checks with no findings
-or failed timing samples. Warm navigation, Repeat and Hold picture completion
-p95 values are 1.489, 5.712 and 5.816 ms. That earlier increment adds no visual
-baseline or concurrent-render UI performance claim.
-
-The [Generated picture qualification](qualification/generated-pictures-2026-09-29.md)
-adds a separate replay of a real accepted, relocated canonical bundle. It also
-catches footer text covered by later panes despite valid paint clips. Inactive
-zero-height panels retain their widget IDs without frame margins or separators;
-the visibility helper now checks later opaque rectangle interiors. This is a
-bounded occlusion check, so image inspection remains required.
-
-The [measured gain waveform](qualification/gain-waveform-2026-09-28.md) adds
-real qualified PCM extrema to the gain replay. The signed stereo reference
-retains the committed owner across gain edits and Before/Draft audition.
-The replay checks native Retry focus, fresh measurement, stale-error rejection,
-complete axes and fixed actions at 960×640 and 1280×820. Image review against
-the new board caught exact fields scrolling away from their curve; the wide
-layout now places them in one row beneath the waveform. A direct painted
-assertion covers that correction.
-
-On final source `71d2f31f`, normal/optional app tests pass 267/302 cases and
-strict workspace/all-target lint passes in both configurations. Final Gain
-passes 291 checks and room tone 221, each with the 5,456-case live Kestrel audit.
-The earlier complete 2,062-test workspace gate remains valid for unchanged
-backend sources; final app checks cover the later layout correction. The
-release build and all 2,348 checks across 18 performance scenarios pass, with
-no findings or failed timing samples. Both original failed
-focus replays remain retained: the harness now waits for normal painted layout
-after nonanimated native focus scrolling, with strict clipping checks intact.
-Waveform values are real PCM; comparison delivery and the labelled failure
-state are injected. No physical-input, device or listening claim follows.
-
-The [compact empty-Sounds increment](qualification/compact-workspace-2026-09-28.md)
-passes scoped correctness and visual checks. At window heights below 700 logical
-points, the single-Original Your edit workspace places its empty Sounds focus
-entry beside the beat heading and retains the zero-height
-panel's identity. The complete entry is measured before allocating scrolling
-breadcrumbs. Copied-range, paste, audition and monitor controls keep their
-existing rows. Room tone remains an overlay over the same compact background;
-populated sounds, default-size, Source, Camera and Gain layouts are unchanged.
-The copied Hold viewer measures **143 points** at 960×640, exceeding the
-140-point assertion; other tested phases measure 169 or 175 points. Final
-default, minimum, 2x, nested and populated captures were inspected.
-
-Placement changes are checked before picture submission, including pointer
-actions in earlier panes and the viewer's Original/Your edit tabs. A pending
-native command close marks its pass for discard before rendering while keeping
-native text and command execution order. Extended `sound-placement`,
-`room-tone` and `nested-pause` replays check release-frame target dimensions,
-retained identity, full control text/hit clipping, real placement/undo, exact
-paused-sample resume, nested scope/focus, and 1x → 2x → 1x/default resize with
-stable AccessKit IDs. On source `78395620`, the final focused runs pass 217
-sound-placement, 221 room-tone and 73 nested-pause checks, each plus its Kestrel
-audit. Workspace's 81 checks and Gain's 266 checks, each plus the audit, passed
-on `54722ed2`; only shared-harness corrections followed that source.
-
-All 300 app/harness tests passed on `4a867916` before helper-only corrections.
-The final base-app run passes 265 tests, and strict workspace/all-target lint
-passes in both feature configurations. The release build and all 2,323 full
-performance replay checks pass; warm navigation-to-picture p95 is 6.699 ms.
-These scoped results do not guarantee a
-140-point picture for all populated sound lists or larger font settings, and
-do not establish physical-input, PCM, device or listening qualification.
-Full-editor requirements remain open.
-
-The committed native gain checkpoint `f9b1a14` adds the `gain` replay and an exact envelope/mute
-editor with revision-bound Before/Draft proposals. The scenario uses the real
-project service, qualified source evidence and durable gain commands, with
-typed delivery updates injected for comparison playback. It covers counted and
-absolute trim, true mute, draft buffering and coalescing, captured-target
-rejection, Apply/undo, field/IME routing, Tab containment, stale delivery,
-pending-text Pause and retained picture on unchanged Cancel. Final focused run
-`corrected-visual-gain` passes 266 gain checks plus one Kestrel check covering 5,456
-routing cases, with 2,746 semantic frames and 123 captures. Four complete
-populated Tab/Shift+Tab circuits verify 136 focused controls' paint and hit clips
-at 960×640 and 1280×820 without wheel assistance. The graph captures were
-compared with the gain board. At that checkpoint, all 298 app/harness tests and
-263 base-app tests pass in their respective configurations, along with strict
-workspace/all-target lint in both configurations.
-
-The screenshot-budget warning only limits intermediate images; semantic checks
-and named captures continue. The earlier full visual suite retains its 1,123
-checks and two failures. Corrected follow-ups pass 81 workspace, 103 room-tone,
-266 gain and 16 retime checks, each with an independent passing Kestrel check.
-The room-tone follow-up checks inspector gain controls through AccessKit Focus;
-Normal Tab still cycles panes. Picture containment allows only 0.01 physical
-pixels of numerical residue; text/control clipping remains strict.
-
-This scenario does not prepare PCM, open an output device or establish listening
-quality. A separate native CUA pass exercised exact trim/key editing, keyboard
-focus reveal and cancellation, with byte-identical before/after project dumps.
-It does not certify physical keyboard layouts, OS IME, VoiceOver or listening.
-The separate release replay passes all 2,156 checks. Warm navigation, Repeat
-and silent Hold picture p95 values are 6.356, 9.438 and 10.769 ms; 10,000-beat
-navigation CPU p95 is 1.792 ms. These are small-fixture offscreen measurements,
-with all original failed visual invocations retained separately. See the
-[gain integration contract](GAIN_EDITOR_DESIGN.md) and
-[native-gain qualification](qualification/native-gain-2026-09-28.md) for final
-gates, source identities and native/performance limits.
-
-The [sound allowance increment](qualification/sound-allowances-2026-09-27.md)
-extends `sound-placement` with one sound's permission in a concrete pause,
-including scoped pointer/command edits, durable undo, gap rejection, delayed
-targets and native text composition. Replay found Enter blurring the command
-field during IME; the field now leaves Enter to the app router. Visual review
-replaced database IDs with readable pause/play context. The final complete
-Metal replay passed 819 checks, including 190 sound-placement checks, with
-permission and revoke controls verified at both supported window sizes.
-The separate release replay passed 1,789 checks. Warm navigation, Repeat and
-silent-freeze picture p95 values were 1.505, 1.660 and 2.360 ms on the small
-fixture; 10,000-beat structural navigation CPU p95 was 0.332 ms.
-The qualification retains the failed replay and separates simulated IME from
-physical native input acceptance.
-
-The [native sound-placement increment](qualification/native-sound-placement-2026-09-27.md)
-adds `sound-placement`, with real audio-only qualification, persistent root-event
-commands, separate catalog/event/beat selection, exact frame movement and native
-sample entry. It covers late-completion target guards, pane focus, both window
-sizes and routed timing restrictions. The record separates painted interaction
-evidence from PCM, device, physical keyboard and listening acceptance.
-The final complete visual run passed 775 checks; the separate release run
-passed 1,745. Warm navigation, Repeat and Hold picture p95 values were 1.462,
-1.612 and 2.067 ms on the retained small fixture. The minimum stopped sound
-workspace retains a 125-point picture, with separate active-playback paint checks.
-
-The [2026-09-27 layout qualification](qualification/workspace-layout-2026-09-27.md)
-records restored Metal access, the expanded fourteen-scenario coverage and
-focused follow-ups. It retains failed development runs as well as passing
-results. The new moment, Original audition, sound audition and Retime scenarios
-have now executed with actual paint. Camera visibility, command-hint clipping,
-first-frame errors and sound-control clipping are fixed. The subsequent
-[Repeat increment](qualification/repeat-input-2026-09-27.md) adds a bounded queue
-for explicit wraps, matching completion guards, separate undo and visible
-cancellation/overflow counts. Its release run passes navigation p95 4.91 ms, Repeat 6.76 ms and Hold 8.98 ms. Other busy edits remain interaction work.
-The [footer increment](qualification/footer-layout-2026-09-27.md) adds same-frame
-command closure and bottom anchoring, complete shortcut-pair wrapping, and
-combined resize/text/cancellation checks. It retains one external update read
-per frame across layout retries.
-The layout release measurements pass warm
-navigation (4.67 ms p95), Repeat (6.85 ms) and Hold (9.11 ms) against unchanged
-targets. The earlier records below retain their original run boundaries; they
-are not the current access or performance status.
-
-The optional `ui-harness` feature provides `--ui-check`. It drives production
-`DeadpanApp::ui` through egui events, real project/media services and Metal, using
-private disposable projects. The initial selected file path is scripted; it does
-not open a native picker or use the user's Documents directory. The complete
-2026-09-26 visual run passed all nine scenarios and the shortcut audit. Its release
-run passed navigation and large-project budgets but failed the edit-to-picture
-budgets: Repeat p95 was 75.26 ms against 50 ms; Hold p95 was 138.65 ms against
-100 ms. The [qualification record](qualification/ui-feedback-2026-09-26.md)
-retains the workload, results and playback-test timeout/retry history. The loop
-also found and fixed a selected-card resize defect; regression coverage now checks
-that selection stays visible. The seven rejected wraps remain evidence of that
-earlier behavior; the current [interaction finding](INTERACTION_REVIEW.md#observed-development-findings)
-records the scoped Repeat fix.
-Existing qualification records keep their original scope.
-
-The [Original moment increment](qualification/moment-paste-2026-09-27.md) adds
-`original-moment`, exercising selection, copy, paste before/after, one-step undo
-and pointer controls through production input. Its 212 app/harness tests passed.
-The visual and release attempts stopped at Metal adapter creation before any
-scenario steps, assertions, captures or timing samples. The first audit detected
-Kestrel source drift; a reviewed help-description-only change required refreshing
-the digest, with every reservation row unchanged. Both final refreshed audits
-passed all 3,472 routing cases against 62 reservations. That increment left its
-painted workflow and design comparison unverified; the layout qualification
-above supplies the later visual evidence. Moment-specific latency remains open.
-
-The editing replay now also inserts and undoes a pause before a Repeat. Its
-2026-09-26 core-24 rerun stopped at Metal adapter creation in the current sandbox;
-none of that scenario's new visual assertions ran. The shortcut audit passed.
-
-The [Original audition increment](qualification/original-audition-2026-09-27.md)
-adds `original-playback`, covering Space, selection loops, exact resume and
-failure feedback while preserving Sequence editing context. Its verification
-record separates production UI replay from headless actual-PCM tests and native
-listening/visual acceptance.
-The earlier nine-scenario host result above does not cover these added steps.
-
-The [sound audition increment](qualification/sound-audition-2026-09-27.md) adds
-`sound-playback`: real audio-only registration, separate catalog selection and
-sample clock, keyboard/pointer controls, stale/fault handling and retained
-picture/editor context. Its injected delivery is UI state evidence only. The
-new [ImageGen board](design/boards/sound-audition-board-v1.png) is the visual
-target; the qualification record distinguishes actual rendering from adapter
-failures and headless PCM tests. All 236 app/harness tests passed. Both visual
-and separately built release replay passed the live 3,472-case shortcut audit,
-then stopped at missing Metal before any sound scenario steps, captures or
-timings. The layout qualification above now records the painted interaction and
-design comparison; native listening acceptance remains separate.
-
-The [structural speed increment](qualification/retime-editing-2026-09-27.md)
-adds `retime`, covering inspector entry/cancellation, exact duration feedback,
-preserve/tape adjustment, explicit nesting and undo to the Original baseline.
-Its qualification record separates headless command and decoded-PCM evidence
-from the actual Metal replay attempt. Earlier screenshots do not establish the
-new inspector's appearance or keyboard flow.
-
-The core-25 [interior pause increment](qualification/interior-insertion-2026-09-26.md)
-also replays a pause inside an Original fragment before a Repeat and checks one
-undo. Its current visual attempt again stopped at Metal adapter creation before
-any editing checks or captures. The shortcut audit passed 3,472 routing cases
-against 62 reservations with no conflicts. All 196 app/harness unit and integration
-tests passed, including the separate native VFR service case, but the new painted
-keyboard path and its aesthetics remain unverified.
-
-The core-26 [nested Sequence pause increment](qualification/nested-sequence-2026-09-26.md)
-adds `nested-pause`, a production keyboard replay through two framed groups,
-with captured cursor, visible parent selection, and atomic undo/redo checks.
-All 198 app/harness tests and strict feature lint passed. Its visual attempt
-stopped before app construction with `No adapter found`, so zero scenario steps,
-assertions or captures ran. The separate shortcut audit passed 3,472 routing
-cases against 62 reservations. Nested Hold inspector navigation remains
-unavailable; the new painted interaction remains unverified.
-
-The [repaint-wait correction](qualification/repaint-wake-2026-09-26.md) replaces
-timer polling and adds worker-phase timestamps. Its final checks passed 193 unit
-and 2 integration tests plus strict feature lint. Visual and release replay
-attempts again stopped at missing Metal before any scenario steps or timing
-samples; they do not establish improved latency or a new aesthetic review.
-
-The [retained evidence summary](../tools/ui-feedback/evidence/2026-09-26/summary.json)
-includes final run identities and measurements. The focused painted-playback and
-full-report baseline comparison also passed; first-frame error clipping remains
-an explicit finding. Feature tests finished with 180 unit and 2 integration tests
-passing. The full workspace invocation had a playback timeout, followed by a
-passing focused retry; its cause remains unestablished.
 
 The media fixture is `cfr-bframes.mp4`, a small 120-frame source. The large-project
 scenario adds 10,000 silent Background Holds. Playback service updates are
 explicitly injected and do not exercise an audio device. Gain and Trim waveform
 scenarios separately prepare real PCM for their measurements. These
-fixtures do not qualify full-size decode/playback, physical presentation, native
-accessibility or the complete editor.
+fixtures do not exercise full-size decode/playback, physical presentation or native
+accessibility.
+
+`cargo xtask replays` replays every scenario from one harness build (see
+[All scenarios](#all-scenarios)).
 
 ## Run the loop
 
@@ -583,10 +65,9 @@ The first command is visual mode. Performance mode requires `--release` and
 submits the full UI and picture composition without screenshot readback. Both
 modes require Metal. The output directory must not already exist.
 
-The current unrestricted host exposes Metal; earlier sandboxed failures remain
-in qualification records. If a run reports no adapter, retain that result and
-resolve Metal access before retrying. A software or mock renderer cannot satisfy
-this loop's GPU evidence requirement.
+If a run reports no adapter, resolve Metal access (sandboxed shells hide it)
+before retrying. A software or mock renderer cannot satisfy this loop's GPU
+requirement.
 
 | Option | Meaning |
 | --- | --- |
@@ -610,9 +91,7 @@ video or a frame-rate measurement. Baseline comparison adds copies and differenc
 images under `comparison/`. Review warnings even when the process succeeds.
 
 A scenario filter narrows iteration; it does not replace the applicable suite
-before handoff. Scratch outputs stay outside the repository. Keep evidence worth
-retaining in a dated qualification record with representative images and the exact
-report identity.
+before handoff. Scratch outputs stay outside the repository.
 
 For every meaningful UI change:
 
@@ -710,17 +189,17 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 
 | Name | Current replay and assertions |
 | --- | --- |
-| `kestrel-shortcuts` | Always runs. Checks evaluated global reservations against compiled Normal/Visual branches with absent, positive, zero and overflowing counts, plus Camera, text/IME, inspector and remaining modal routers. It also pairs each physical reservation with differing logical identities. The [configuration qualification](qualification/configurable-bindings-2026-10-01.md) records the 130,696-case shipped-map audit and live-source digest. Ghostty-only Cmd-N is excluded. Event-level checks do not qualify physical system interception. |
+| `kestrel-shortcuts` | Always runs. Checks evaluated global reservations against compiled Normal/Visual branches with absent, positive, zero and overflowing counts, plus Camera, text/IME, inspector and remaining modal routers. It also pairs each physical reservation with differing logical identities. The configuration qualification records the 130,696-case shipped-map audit and live-source digest. Ghostty-only Cmd-N is excluded. Event-level checks do not qualify physical system interception. |
 | `keymap` | Injects a private startup map with shared `e` branches, `ah` forward motion, `eb` Hold, `ec`/colon/F2 Command, `es`/slash Search, Semicolon Help and `z` cut. Checks counts, held-action identity, release/focus cancellation, exact Hold/Undo, captured Trim absence, native controls, same-batch field input, literal punctuation/Unicode and synthetic IME. Shift changes cannot leak a held opener before or after field closure; text after Enter/Escape resumes in order. Minimum-window assertions inspect custom labels and keep the header compact through repeated field transitions. |
 | `keymap-error` | Loads a valid early override followed by an unknown action, requires complete shipped fallback, performs an edit/Undo and reopens the persistent error from the header. Checks the actual diagnostic paint after the help window's initial measurement frame. |
 | `workspace` | Pointer frame navigation, repeated `,i` Original reuse, selected-card visibility, resize transitions at 960×640/1×, 1492×929/2× and 1280×820/1×, and a real monitor-slider drag that must not create a revision. Checks actual picture mesh bounds against the fitted canvas and unclipped navigation text, including Original at the minimum size. |
 | `original-layout` / `original-layout-long` | Uses distinct Original/Edit cursors, a selected/copied Original range and real empty/populated sound states. Checks minimum/default sizes, first resize frames, 1×/2× scale, actual fitted picture height, complete text/hit clips, pointer and reverse-Tab Sounds entry, and retained state/revision. Play by pointer, focused Enter and accessibility Click during scale changes may submit only final geometry. Injected Preparing/Playing and catalog focus preserve the picture and editor state; no device or physical input result is claimed. The long variant admits private six-key transport paths before startup. |
 | `editing` | Held H across a comma prefix preserves the document and visible guidance; a fresh H inserts one silent half-second Hold and one Undo restores the baseline. Also covers counted Repeat, pointer opening of its setter, same-batch text submission, undo, exact pause insertion before a Repeat and before the Original, and Hold-duration editing. Checks duration and selection. Split, delete and redo have separate replays. |
-| `dot-repeat` | Replays the last committed frame-cut intent at a new cursor, retaining the requested length after a clamped first cut. Exercises named/default register destinations, one-step Undo, unsupported-edit invalidation, keyboard input ownership and minimum-size footer teaching. See [semantic repeat](SEMANTIC_REPEAT.md) for the contract and [qualification](qualification/semantic-repeat-2026-10-02.md) for the 159 passing checks and inspected captures. |
+| `dot-repeat` | Replays the last committed frame-cut intent at a new cursor, retaining the requested length after a clamped first cut. Exercises named/default register destinations, one-step Undo, unsupported-edit invalidation, keyboard input ownership and minimum-size footer teaching. See [semantic repeat](SEMANTIC_REPEAT.md) for the contract and qualification for the 159 passing checks and inspected captures. |
 | `creative-dot` | On three split beats: `:retime 2` and `.` on the next beat (each from its own 40-frame input), `:pitch +3st` and `.`, `:hold 6f` and `.`, `+` twice over Edit [50, 60) (one +6 dB envelope of that beat only) and `.` over a range of another beat, a ranged `:caption` and `.`, `:hold-duration 9f` and `.`, two One More Time gags with the inspector's Gag row and Change parameters…, `:gag-set plays=4` and `.` on the other gag, `:gag-save`/`:gag-presets` with a private preset file, `:recipe a` and `:gag-set` on the copy, `:gag stutter-4`, `:edge hard plays` and `.` on two Repeats of fragments, `:edge hard end` marking a fragment with the inspector's Hard sound edges row, `,m` and `.`, `:audio-lag +80ms` as the dot edit, a macro recording `:retime 1/2 pitch=tape` and a ranged `-` replayed with `@a` as one Undo, and `:sting` importing the synthesized sting placed with `,s`. Every edit is undone back to the baseline. See [semantic repeat](SEMANTIC_REPEAT.md). |
-| `repeat-setters` | Records wrapping and total-play setters, including an explicit same-count action; verifies saved instruction kinds, one-step Macro Undo, dot on a newly selected direct Repeat, exact Undo/Redo, unchanged register intent and bank, and empty/nonempty Visual refusal. Inspects the dot key and count hint's full paint at 960×640. See [qualification](qualification/repeat-count-2026-10-03.md). |
-| `groups` | Groups partial Source, Repeat and Retime ranges and explicitly selected empty children; checks Group/Ungroup, navigation, one-step Undo/Redo, recorded and counted macros, dot, unchanged registers, malformed names and captured stale/absent targets. Same-batch logical text and synthetic IME exercise command entry. Minimum/default paint checks cover names, breadcrumbs and help. Visual mode compares exact displayed source identities and fixed-raster GPU hashes; performance mode omits readback. See [qualification](qualification/group-editing-2026-10-03.md) for execution status and limits. |
-| `delete-range` | Cuts active and finished Visual selections in either direction, rejects empty selections, preserves whole-beat dd without a selection and captures independent :delete targets including absence. Checks exact decoded join pictures, one commit/Undo, stale revision/session/group refusal, native-control focus, synthetic IME, held/count/same-batch input and minimum-window text paint clips. Nested ordinary groups retain their owner; partial composite endpoints fail and whole composites can be removed. The frame-cut extension checks `x`/counts/`:delete-frames`, exact captured and clamped intervals, successful delayed-yank supersession, same-batch modal ownership, and focused-button mark names. See [current qualification](qualification/native-frame-cuts-2026-10-01.md) for counts and source identities. No device, acoustics or physical IME claim. |
+| `repeat-setters` | Records wrapping and total-play setters, including an explicit same-count action; verifies saved instruction kinds, one-step Macro Undo, dot on a newly selected direct Repeat, exact Undo/Redo, unchanged register intent and bank, and empty/nonempty Visual refusal. Inspects the dot key and count hint's full paint at 960×640. See qualification. |
+| `groups` | Groups partial Source, Repeat and Retime ranges and explicitly selected empty children; checks Group/Ungroup, navigation, one-step Undo/Redo, recorded and counted macros, dot, unchanged registers, malformed names and captured stale/absent targets. Same-batch logical text and synthetic IME exercise command entry. Minimum/default paint checks cover names, breadcrumbs and help. Visual mode compares exact displayed source identities and fixed-raster GPU hashes; performance mode omits readback. See qualification for execution status and limits. |
+| `delete-range` | Cuts active and finished Visual selections in either direction, rejects empty selections, preserves whole-beat dd without a selection and captures independent :delete targets including absence. Checks exact decoded join pictures, one commit/Undo, stale revision/session/group refusal, native-control focus, synthetic IME, held/count/same-batch input and minimum-window text paint clips. Nested ordinary groups retain their owner; partial composite endpoints fail and whole composites can be removed. The frame-cut extension checks `x`/counts/`:delete-frames`, exact captured and clamped intervals, successful delayed-yank supersession, same-batch modal ownership, and focused-button mark names. See current qualification for counts and source identities. No device, acoustics or physical IME claim. |
 | `camera` | Pointer opening and numeric preview, Cancel, keyboard reopening/zoom and pointer Apply. Reach clipped inspector controls with real wheel input before clicking. Checks unchanged revision during preview, restoration of the submitted entry framing/source frame after Cancel, and authored framing after Apply. |
 | `targets` | Waits for the automatic shot analysis, then in Camera draws a target with `n`, Tab, counts, `h/j/k/l`, Shift and arrows, saves it with Enter, picks it with `f 1`, follows it with `t`, scales the follow, refuses a nudge, applies, reopens Camera on the follow (scale preview, Escape), tracks with Shift+`T` through the scripted worker seam, moves five pictures and corrects with `c`, then checks `:track` refusal, `:track-cancel` and Undo. Checks rectangle values, one revision per save with Camera continuing on it, picker order, painted state labels, inspector labels, that the committed follow equals the Camera preview exactly, progress, the entry-head save and a one-range correction. Only Vision observations are scripted. |
 | `faces` | Waits for shot analysis, moves to frame 10 of Your edit and enters `:zoom 1.35 target=face:2 curve=step`: the real installed `deadpan-track detect-faces` worker finds no face in the fixture and the command refuses without an edit. With only the worker's reported faces scripted (`Backend::ScriptedFaces`), a delayed detection shows its footer message while the editor keeps running, then `face:2` saves `Face 2` (`face-1`) and a 1.35× Follow of it as one revision, named in the inspector; one `u` removes both. A cursor move during a detection refuses the stale completion, `face:3` of two faces refuses with the count, and `face:0` is refused at entry. Picture resolution, the verified Original copy, face admission and the Compound save are real. |
@@ -732,7 +211,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `large-project` | Opens a real SQLite fixture with 10,000 root Background/Silence Holds. Tests end navigation, pointer wheel/selection, minimum-size selection visibility and bounded rendered cards. Alternates near-end `j/k` 64 times visually or 160 times in performance mode. No media or large asset inventory is stressed. |
 | `edit-latency` | Dispatches cached `rr`, waits for its committed picture, then undoes; repeats with `:hold 11f` and undo. Checks one matching commit and picture completion per edit, the exact Repeat or Freeze/Silence structure, and restoration of the authored Original baseline with a fresh revision. Visual mode runs two cycles per type. Performance mode warms four cycles per type and measures 40 more per type. |
 | `shots` | Waits for the automatic background shot scan of the fixture Original (every picture decoded from its verified snapshot), then checks that the analysis covers the Original's qualified picture count, the shot count is painted fully visible in the Original card's detail line, and the revision and Undo are unchanged. It then saves a synthetic two-cut analysis and drives `]s`, `[s` and `diS` in Your edit, checking exact shot starts, the cut range and the following shot's projection. Detection accuracy is qualified on synthesized multi-shot clips through the CLI ([shot detection](SHOT_DETECTION.md)). |
-| `source-interpretation` | Inspects automatic values, applies range/chroma correction through the real command service, enters through the Original pane control, changes one parameter, preserves Visual selection and cursor context, refuses stale entry, resets and rejects a late project opening as a command target. Visual mode compares submitted GPU fingerprints before, during and after correction; reset restores the original fingerprint. Uses real decoded media and durable history. See [qualification](qualification/source-interpretation-2026-10-11.md); no live native-window or physical display claim. |
+| `source-interpretation` | Inspects automatic values, applies range/chroma correction through the real command service, enters through the Original pane control, changes one parameter, preserves Visual selection and cursor context, refuses stale entry, resets and rejects a late project opening as a command target. Visual mode compares submitted GPU fingerprints before, during and after correction; reset restores the original fingerprint. Uses real decoded media and durable history. See qualification; no live native-window or physical display claim. |
 | `proxy-seek` | Uses a private proxy cache and setting under the replay root. Waits for the background proxy job to decide that the 320×180 fixture needs no proxy (at or below 1080p), checks that `:proxies off` and `:proxies on` change the setting with a message and no edit, then verifies the committed proxy of that Original (`crates/deadpan-app/tests/fixtures/proxy`) and publishes it through the cache. Holding preview replies, it jumps to the end of Your edit until the worker, which opens proxies only while idle, serves the proxy picture first. It then checks that the picture is displayed with a fully visible "Proxy" chip and a "· proxy preview" accessible label and is refused as a Camera target, and that the exact Original picture for the same request replaces it after the rest period with the chip gone. Proxy encoding is covered by `proxy_real_media` and `perf seek` ([proxies](PROXIES.md)). |
 | `original-moment` | Checks active-empty Visual guidance, selects Original [10,24) through v and counted h/l, copies with y, cancels selection with Escape, returns to Your edit, pastes after with p, undoes once, then pastes before with P. Also selects/copies and pastes through actual buttons. Checks exact range, unchanged copy revision, pane cues, destination, selected Source and exact restored structure. |
 | `original-operator` | Without a selected moment, checks that `y` is pending with painted Original next keys, then copies through production keys `y3l` [10,13), `3yh` [7,10), `"ay2l` into register a, `yG` and `ygg`; refuses `2y3l` and an empty `yh` at the start without changing the copy; after synthetic shot cuts at 40 and 80, copies `y]s` [10,40) and `yiS` [40,80). Each copy keeps the Original cursor, leaves no selection, empty pending input and an unchanged revision. Finally `v2ly` still copies the selected moment at once. |
@@ -742,7 +221,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `sound-placement` | Imports measured catalog audio, places by pointer and `,s`, preserves picture duration and editor targets, checks exact sample entry and frame-nudge count equivalence, gain/edges, event selection, deletion and undo. Tests Original-to-Sounds keyboard/pointer focus, absent/stale command targets across held real writer completions, overflow, both window sizes and route-preserving gain with rejected movement. Compact-layout checks cover empty/placed/undo transitions and final-sized release-frame submissions for pane/tab entry and command-plus-resize. The final compact run passes 217 checks plus the audit on `78395620`. Does not start PCM preparation or a device. |
 | `room-tone` | Copies an Original range with v/motions/y, opens the captured Hold's source-range sheet, edits exact native samples, prepares and auditions without history, then explicitly applies or cancels. Checks silence/undo, missing and stale targets, superseded range preparation, native text/IME and minimum-size paint clips. AccessKit Focus reveals saved Hold gain controls; :gain/Tab/Escape preserve room tone and history. Compact assertions cover ≥140-point picture, complete control hits, stable overlay background, native scale/ID transitions and exact paused-sample resume. The final compact run passes 221 checks plus the audit on `78395620`. Source delivery is explicitly injected; no device or listening claim. |
 | `gain` | Counted/absolute beat gain and true mute, captured exact trim/envelope/key/mute fields, coalesced proposals, Before/Draft at retained samples, stale/faulted updates, Apply/undo, Cancel picture continuity and native text/IME. Real canonical PCM supplies the signed stereo overview; edits keep that measurement, explicit Retry re-admits sources, and stale errors cannot replace it. Full Tab/Shift+Tab circuits check paint/hit clips at both sizes; wide exact fields stay beside their curve. The final waveform run passes 291 checks and its captures were reviewed. Comparison delivery and a labelled failure are injected; no device or listening claim. |
-| `trim` | Enters through `,v` and captured `:trim`; checks target/scope/right absence, ordered In/Out/Slip/Roll values and clamps, policy toggles, native amount text/focus, mode exclusion, zero/no-op, Cancel, one Apply and Undo. Holds an actual pair reply to test complete Before/Proposed presentation, pending Apply refusal and stale cancellation; resize plus Enter must not save or trigger a later automatic Apply. Real PCM supplies the bounded waveform; injected delivery checks fixed pictures/cursors, exact pause/loop state and empty-context audition failure without blocking Apply. See [native qualification](qualification/native-trim-2026-10-01.md) for actual results; injected IME/delivery do not qualify physical input or listening. |
+| `trim` | Enters through `,v` and captured `:trim`; checks target/scope/right absence, ordered In/Out/Slip/Roll values and clamps, policy toggles, native amount text/focus, mode exclusion, zero/no-op, Cancel, one Apply and Undo. Holds an actual pair reply to test complete Before/Proposed presentation, pending Apply refusal and stale cancellation; resize plus Enter must not save or trigger a later automatic Apply. Real PCM supplies the bounded waveform; injected delivery checks fixed pictures/cursors, exact pause/loop state and empty-context audition failure without blocking Apply. See native qualification for actual results; injected IME/delivery do not qualify physical input or listening. |
 | `retime` | Opens/cancels speed entry by pointer, checks the resolved-duration preview, creates a Preserve Retime by command, adjusts the same stage to tape pitch through ordinary text editing, explicitly nests another stage, undoes all three edits and confirms Original context stays unchanged. Then inserts a three-frame silent freeze and a later one-frame black pause inside two tape-speed stages, verifies exact source PTS and inspector facts, full-snapshot Undo/Redo and the retained Original cursor. Uses real project history and picture preparation; it does not measure acoustic quality. |
 | `generated-picture` | Requires an explicit `--project /absolute/accepted.deadpan` exported by the real bundle integration test. Opens through the production project service and checks all 30 sampled frames, exact RGBA/PTS, retained framing, keyboard navigation, both viewport sizes, visible provider/duration and unobscured mode/focus. Release performance separately measures cold admission and 120 warm navigation inputs. The synthetic 4×2 compatibility fixture does not qualify full-size performance, app inference/acceptance, audio or export. Ordinary replay reports this scenario as skipped without the explicit fixture. |
 | `ai-pause` | Selects a pause made with `,h`, refuses `,a` on a picture beat, then drives `,a`, `:generate`, inspector Escape and `,a` again through a scripted worker seam (unavailable runtime, eight progress steps until cancellation, worker failure). Checks inspector/footer teaching, exact runtime reason, stage/step/elapsed progress, recorded cancellation and failure, and that the revision never changes. Conditioning, request allocation and durable transitions are real; the seam cannot produce Ready pictures. |
@@ -814,18 +293,13 @@ motion quality or response latency. Each report should name its evidence boundar
 
 ## Performance interpretation
 
-[Specification Section 25](spec/DEADPAN_SPEC.md#25-performance-requirements-and-instrumentation)
-defines targets, including p95 below 8 ms from key event to command-state update,
+The performance targets are p95 below 8 ms from key event to command-state update,
 below 50 ms for a cached ordinary edit to visible preview, and below 80 ms for a
-warm indexed seek on the primary reference machine. These remain targets until
-the corresponding real workload is measured.
+warm indexed seek on the primary reference machine. A target with no measured workload is open, not passed.
 
 `cargo xtask perf --ui` runs `rapid-input`, `edit-latency` and `large-project`
 in this mode, hashes the harness binaries and gates each target on success,
 sample count and machine load; see [performance measurement](PERFORMANCE.md).
-In the [2026-10-04 run 3](qualification/performance-2026-10-04.md) all three
-pass. An earlier export of HEAD failed `rapid-input` and `large-project` in
-release because an automatic analysis save occupied the user-command slot.
 
 Name every measured interval. Event dispatch to a state change, service commit,
 GPU submission and GPU completion are different endpoints. Offscreen completion
@@ -871,10 +345,7 @@ matched commit interval. Every edit must produce exactly one matched commit and
 picture sample; undo restores the exact authored baseline but is excluded from
 the edit's latency subset. Visual mode performs two cycles per type for inspection.
 
-The [2026-09-26 release run](qualification/ui-feedback-2026-09-26.md#performance-results)
-measured warm navigation CPU/picture p95 at 1.32/21.16 ms and 10,000-beat navigation
-CPU p95 at 1.23 ms. Repeat/Hold picture p95 missed their targets at 75.26/138.65 ms.
-These are small-fixture checks of specific Section 25 targets; they do not qualify
+These are small-fixture checks of specific targets; they do not cover
 full-size editing, all effects or physical display latency. Keep measured misses
 visible and inspect raw samples, warnings and workload boundaries.
 
@@ -898,23 +369,10 @@ These check the harness, telemetry, report and shortcut contracts. They do not
 execute the full Metal scenario suite or inspect its images. Run the applicable
 visual and release performance modes separately and record the actual result.
 
-The [native room-tone qualification](qualification/native-room-tone-2026-09-27.md)
-records 909 full visual checks and 1,879 release performance checks on the same
-frozen source, including 90 new room-tone checks and the 4,464-case Kestrel audit.
-Full-size draft and saved-state captures were reviewed at both window sizes.
-The HTML contact-sheet check remains outstanding because the required browser
-role was unavailable; physical input and acoustic acceptance remain separate.
-
 ## Repaint waits and worker timing
 
-The [paired trace and timer diagnostic](qualification/composite-insertion-2026-09-26.md#retained-preview-latency-diagnostic)
-found that requested 1 ms sleeps can last about 64 ms at p95 in this environment.
-The earlier `Driver::wait_for` polling delay could therefore dominate UI
-observation time. Preserve the earlier measured misses, but do not attribute
-their entire request-to-receipt interval to decoder work. Those reports did not
-timestamp worker completion.
-
-The harness now waits on a bounded repaint scheduler using a mutex and condition
+Requested 1 ms sleeps can last about 64 ms at p95 on this Mac, so a polling
+delay would dominate UI observation time. The harness therefore waits on a bounded repaint scheduler using a mutex and condition
 variable. Its callback is installed on the fresh kittest context before app
 construction. Never replace native eframe's callback in `DeadpanApp::new`:
 `set_request_repaint_callback` replaces the single callback that native eframe
@@ -945,12 +403,10 @@ samples. Worker events arrive with the receipt, so consumers must use their
 
 Reports identify this behavior with `wait_strategy: egui_repaint_callback_v1` and
 `picture_worker_timing: request_start_finish_publication_receipt_v1`. Compare
-versions explicitly. The [2026-09-27 host measurement](qualification/workspace-layout-2026-09-27.md#release-responsiveness)
-now passes navigation and edit budgets. Preserve the earlier failed reports;
-these runs are not a controlled attribution of the gain to one change, and
-small-fixture offscreen timings do not establish full-size or native latency.
+versions explicitly. Small-fixture offscreen timings do not establish full-size
+or native latency.
 
-## Native evidence
+## Native checks
 
 Use native computer interaction for window lifecycle, macOS panels, global
 shortcut interception, physical key layouts, IME, VoiceOver, OS scaling settings,
@@ -961,4 +417,4 @@ scenarios when their cause can be reproduced within the application boundary.
 
 See [Development](DEVELOPMENT.md#native-application-smoke-test) for the lifecycle
 smoke test. Record native findings separately from offscreen checks and preserve
-any skipped evidence in the handoff.
+any skipped check in the handoff.

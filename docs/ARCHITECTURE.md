@@ -1,6 +1,6 @@
 # Architecture
 
-[Specification Sections 21, 23, and 24](spec/DEADPAN_SPEC.md#21-command-api-cli-and-extensibility) define the domain, dependency choices, and workspace contracts. This document maps them to the repository; it does not replace those contracts.
+This document maps the domain, dependency choices, and workspace contracts to the repository.
 
 ## Present implementation
 
@@ -47,9 +47,7 @@ draft's heard position; both editor cursors and the boundary pair stay fixed.
 Waveform or audition failure does not block an otherwise valid picture proposal.
 Preview/playback workers and widgets cannot mutate authored state. Original,
 Sounds, composite targets and Edit Visual ranges refuse Trim entry. Broader target
-admission and full product qualification remain open. Native evidence is recorded
-separately from backend qualification in the
-[Trim qualification record](qualification/native-trim-2026-10-01.md).
+admission and full product qualification remain open.
 
 | Crate | Present responsibility | Boundary |
 | --- | --- | --- |
@@ -76,8 +74,7 @@ Finished-file verification checks actual container/packet clocks and normal-rate
 edit lists, every decoded picture, complete GOPs from fresh IDR decoder contexts,
 and manual/ordinary AAC coverage and PCM agreement at fixed sample coordinates.
 The host admits the bound report only after clean process teardown. No verifier
-owns the encoder, project writer or destination. [Current production evidence](qualification/finished-file-verification-2026-09-29.md)
-covers seven fresh MP4s; content/event-sync and hardware/runtime qualification
+owns the encoder, project writer or destination. Content/event-sync and hardware/runtime qualification
 remain separate. Source limits cap input at 64 GiB, aggregate packets at one
 million, headers at 16 MiB and individual packets at 16 MiB, with separate bounded
 tables. These limits can reject candidates within encoder capacity. The separate
@@ -200,13 +197,13 @@ and the complete authoring lifecycle remain open.
 
 ## Full component map
 
-Section 24 defines boundaries, not an obligation to create empty crates. Introduce each component when its implementation needs isolation; related modules may remain combined initially.
+Crates define boundaries, not an obligation to create empty crates. Introduce each component when its implementation needs isolation; related modules may remain combined initially.
 
 | Component | Required responsibility | Status |
 | --- | --- | --- |
 | `deadpan-core` | Document/time types, nodes, anchors, occurrences, selectors, commands, reduction, validation, and serialization contracts. | Documents, timing, node/occurrence-targeted commands, inverse patches, persistent marks/edit transforms, sparse play overrides, and exact boundary queries implemented; temporal attachments and remaining domains open. |
 | `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite schema 55/core document schema 43, typed copy/Macro registers, atomic cut copies and resolved compound transactions with retained intermediate captures, schema-52 additive migration and explicit refusal of obsolete schemas 1 through 51 and 53 through 54, optional validated single-Original profile and protected full-source baseline, writer lock, durable transactions, request relevance, attempts/receipts/selection, interrupted recovery, checkpoints, verified object publication/readback, explicit bundle acceptance, managed/linked originals, relinking and qualified source registration implemented. Full asset lifecycle and application integration remain open. |
-| `deadpan-plan` | Compile immutable revisions into indexed render plans and incremental fragments. | Picture mapping and bounded structural audio queries implemented. Node fragments are reused across revisions with ancestor-only recompilation ([incremental plans](qualification/incremental-plan-2026-11-10.md)); whole-plan passes, attachments/effects and full preview/export integration open. |
+| `deadpan-plan` | Compile immutable revisions into indexed render plans and incremental fragments. | Picture mapping and bounded structural audio queries implemented. Node fragments are reused across revisions with ancestor-only recompilation; whole-plan passes, attachments/effects and full preview/export integration open. |
 | `deadpan-media` | Qualified FFmpeg/native probing, PTS indexing, bounded decoding, surfaces, encoding/mux interfaces. | Generated RGB-to-FFV1 conversion, persistent H.264/FFV1 source indexes/seeks and measured selected-stream qualification implemented. The store retains qualified indexes. The native workspace connects this bounded import path and the shared automatic SDR Render workflow. Full format coverage and complete playback/export qualification remain open. |
 | `deadpan-render` | Shared GPU composition, framing, color, visual effects, and output transformations. | SDR RGBA and ordered framing/clipping implemented with actual Metal/CPU comparison. The [encoder pixel boundary](SDR_ENCODER_PIXELS.md) adds owned Rec.709 I420 from that composed working target. Automatic native/public SDR Render uses this picture boundary. HDR, physical display integration, remaining effects and complete export qualification remain open. |
 | `deadpan-audio` | Audio master clock, sample-exact mixing/DSP, tails, and native device output. | Source preparation, room-tone loops, bounded continuous Preserve stages, authored edges, exact owner-clock node gain/mute, root sound-event mixing/gain and per-contribution Hold allowances, informational meters and finite limiting implemented. The playback/output crates own device integration. Complete voice graph, send/tail allowances, final mastering and effects remain open. |
@@ -266,12 +263,11 @@ boundary and remaining integration.
 
 ## Decisions and qualification
 
-The specification has selected Rust, egui/eframe/wgpu, a narrow FFmpeg/native media adapter, local worker boundaries, SQLite, and one automatic render policy. Preserve those product decisions unless evidence establishes a conflict. [Dependency decisions](DEPENDENCIES.md) records the foundation's pins and outstanding qualification work.
+The product uses Rust, egui/eframe/wgpu, a narrow FFmpeg/native media adapter, local worker boundaries, SQLite, and one automatic render policy. Preserve those product decisions unless evidence establishes a conflict. [Dependency decisions](DEPENDENCIES.md) records the foundation's pins and outstanding qualification work.
 
-Gate A must qualify actual media decode/seek/encode, Metal preview, audio DSP/output, model candidates, and private-runtime packaging. It also compares isolated Cutlass extraction with a direct media adapter. Record exact versions/commits, build configurations, licenses, codec capability, hardware/OS, measurements, and failures in decision records. Library choice or compilation alone is not qualification.
+Qualification covers actual media decode/seek/encode, Metal preview, audio DSP/output, model candidates, and private-runtime packaging. It also compares isolated Cutlass extraction with a direct media adapter. Record exact versions/commits, build configurations, licenses, codec capability, hardware/OS, measurements, and failures in decision records. Library choice or compilation alone is not qualification.
 
-Model selection remains empirical: usable holds per minute under editing load decides the default, not MLX loyalty, Rust purity, weight size, or upstream throughput claims. The specification's performance figures remain targets until Deadpan's own measured reports establish results.
-
+Model selection remains empirical: usable holds per minute under editing load decides the default, not MLX loyalty, Rust purity, weight size, or upstream throughput claims. Performance targets remain targets until Deadpan's own measured reports establish results.
 
 ## Local word timing boundary
 
@@ -284,4 +280,4 @@ AudioRange audition; the sole project writer saves one correction Undo.
 No inference, hashing, dictionary parsing or full analysis snapshot clone runs
 on the UI/audio thread. The alignment path authenticates its compiled worker/
 ORT identities before launch. Equivalent trust admission for the three older
-native workers remains DP-22 implementation work.
+native workers remains open.

@@ -2,9 +2,8 @@
 
 Recognized words and detected pauses are rebuildable proposals
 ([transcription](TRANSCRIPTION.md), [speech activity](SPEECH_ACTIVITY.md)).
-Section 19.2 of the [specification](spec/DEADPAN_SPEC.md) requires manual
-corrections to be kept separately from them, and Section 11.2 that manually
-corrected timing stays pinned and that silence intervals can be edited by
+Manual corrections are kept separately from them, manually
+corrected timing stays pinned and silence intervals can be edited by
 hand. This records the implemented boundary.
 
 ## Pieces
@@ -106,7 +105,7 @@ Every change carries the transcript and activity the person saw, by identity;
 the service refuses a change computed against an analysis that has since been
 replaced, and reports a failed read-back instead of clearing the transcript.
 
-Why not authored history: Section 11.1 says analysis services never change an
+Why not authored history: analysis services never change an
 edit, and corrections describe the Original's audio, not the arrangement.
 Keeping them out of the document means a correction never invalidates render
 fragments, AI requests or edit Undo positions. Words reach the Edit clock by

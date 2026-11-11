@@ -149,5 +149,3 @@ signal, a live binding or proof of equal PCM.
 
 The [sampling contract](AUDIO_SAMPLING.md) and
 [splice design](STRUCTURAL_SPLICE_DESIGN.md) describe the remaining composition.
-[Qualification](qualification/audio-reference-2026-09-23.md) records tests and
-review for this foundation. No product requirement or delivery gate is complete.

@@ -1,7 +1,6 @@
 # Background jobs
 
-`crates/deadpan-app/src/jobs.rs` is the app's job coordinator (DP-18,
-specification §18.3 to §18.5). Every background job registers with it. It
+`crates/deadpan-app/src/jobs.rs` is the app's job coordinator. Every background job registers with it. It
 lists them, decides when each may proceed, and releases them on shutdown. The
 Jobs panel (`:jobs`, Deadpan › Jobs…) shows what it holds.
 
@@ -35,15 +34,14 @@ runs to its own safe boundaries; conditions never stop it.
 When a resource frees, the highest-priority waiter is admitted first. Equal
 priorities are admitted in registration order.
 
-The specification lists generation with "remaining background analysis".
-Here, a generation the person asked for precedes automatic transcription
+Generation ranks with the remaining background analysis. A generation the person asked for precedes automatic transcription
 for the model slot. Neither ever precedes rendering, editing or preview.
 
 ## Resource budgets
 
 | Resource | Capacity | Kinds | Why |
 | --- | --- | --- | --- |
-| `Inference` | 1 | AI pause generation (LTX/MLX), transcription (whisper.cpp with Metal) | §18.4: one large model at a time. Two resident models compete for unified memory and the GPU. |
+| `Inference` | 1 | AI pause generation (LTX/MLX), transcription (whisper.cpp with Metal) | One large model at a time. Two resident models compete for unified memory and the GPU. |
 | `Scan` | 1 | Shot detection, pause detection | Automatic whole-Original decodes of the same file. |
 
 Jobs without a resource are admitted at once. These are renders, tracking,
@@ -84,7 +82,7 @@ Where each job waits for admission:
 ## Admission conditions
 
 Heavy work also waits at its admission boundary while the machine asks for
-restraint (§18.4). Conditions are fixed per job kind (`Gates` in
+restraint. Conditions are fixed per job kind (`Gates` in
 `JobKind::rules`); memory estimates come from the selected model pack:
 
 | Resource | Waits while | Why |
@@ -251,8 +249,7 @@ stored transcripts, corrections and accepted media remain intact. Standalone
 pause detection owns a separate capture, so a completed recognition run cannot
 cancel a later detector. Its results and queued saves use the same publication
 guards, and its retry waits for wake and worker drain. Other job kinds retain
-their existing lifecycle contracts. See [transcription sleep qualification](qualification/transcription-sleep-2026-10-17.md)
-and [standalone detection qualification](qualification/activity-sleep-2026-10-17.md).
+their existing lifecycle contracts.
 
 ### Policy per kind
 
@@ -283,12 +280,11 @@ anyway. The policy follows the kind of work:
 Model and requested analysis workers wait for an explicit retry because a
 fresh run may be unwanted after wake and none of them can resume
 mid-inference. Shot detection and proxies resume because their completed
-ranges are valid checkpoints of cheap, rebuildable work (§18.5): restarting
+ranges are valid checkpoints of cheap, rebuildable work: restarting
 costs only the unfinished ranges. Their results publish nothing to project
 history. Shot saves are not epoch-guarded inside SQLite: the analysis is a
 deterministic, content-keyed function of the immutable Original, and the
 policy above only keeps a run that crossed sleep from publishing.
-See [worker sleep qualification](qualification/worker-sleep-2026-11-09.md).
 
 ## Jobs panel
 
@@ -519,7 +515,7 @@ The list survives acknowledging the recovery report.
     transcription queues and a shot scan yields. The attempt ends durably
     `Failed`, the waiting generation runs, and every edit commits within a
     five-second budget.
-- **Sleep per kind** ([worker sleep qualification](qualification/worker-sleep-2026-11-09.md)):
+- **Sleep per kind**:
   - `jobs::tests::sleep_stops_shots_and_requested_analysis_but_leaves_proxies_to_their_monitor`:
     running and queued scans, tracking and target proposals stop at their
     boundaries, Run anyway is refused, the interrupted scan keeps its slot

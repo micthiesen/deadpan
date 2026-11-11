@@ -1,10 +1,7 @@
 # Atomic adjacent Source Roll
 
 Roll moves the shared boundary between two selected Source slices while keeping
-their combined output duration and the project duration fixed. The shared
-command, exact limits and persistence path are covered by
-[backend qualification](qualification/source-roll-2026-10-01.md).
-Native Trim mode remains required.
+their combined output duration and the project duration fixed. Native Trim mode remains required.
 
 ## Command and scope
 

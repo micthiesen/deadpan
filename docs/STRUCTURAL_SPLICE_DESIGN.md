@@ -6,12 +6,11 @@ layer](AUDIO_PARTITIONS.md) was introduced in core 12/database 18. The
 [Pure Split](STRUCTURAL_SPLIT.md) was introduced in core 14/database 20.
 [Insert Time](INSERT_TIME.md) adds atomic root Source/Hold insertion in core
 17/database 23. Arbitrary nested insertion and automatic range planning below
-remain open. Sections 4.2, 6.3, 6.5 and 12.2 of the
-[specification](spec/DEADPAN_SPEC.md) remain authoritative. Native root-beat
+remain open. Native root-beat
 Split/Repeat/delete/Hold-duration commands do not implement arbitrary-boundary Hold
 insertion.
 
-Under specification 1.1, these operations reshape the already populated full
+These operations reshape the already populated full
 Original baseline. Range reuse resolves moments from the project's pinned
 Original; it does not add another video source. Splits, cuts and inserted Holds
 must retain that profile and its protected undo floor. External sound effects
@@ -158,7 +157,7 @@ endpoint. The existing integer evaluator delegates to it. No document fields,
 clock adapters, duration maps or command admission change in this increment;
 the structural and audio work above remains open.
 
-The [exact Repeat index](qualification/exact-repeat-2026-10-12.md) supplies
+The exact Repeat index supplies
 compact rational prefixes, play/gap boundary lookup and stable-identity lookup
 for those effective clocks. It shares the existing Repeat compiler and lookup
 algorithm, with separate closed integer
@@ -170,7 +169,7 @@ play's output arithmetic. This completes the numerical Repeat-index prerequisite
 persisted effective extents, Sequence/Retime clock consumers, marks and Preserve
 routes still need integration before fractional insertion can be admitted.
 
-[Production plan prefixes](qualification/plan-prefixes-2026-10-12.md) now use
+Production plan prefixes now use
 that exact interface in picture, audio, owner and retained-context walkers.
 Sequence entries and compiled definition offsets also carry exact ratios.
 Integer Repeat storage embeds directly behind the interface; implicit gap
@@ -179,7 +178,7 @@ preserves exact offsets, while the integer wrapper refuses fractional endpoints.
 That prefix increment left node extents and stored Retime mappings integral.
 Changing prefixes alone does not admit a fractional project or a Preserve splice.
 
-[Effective plan extents](qualification/plan-extents-2026-10-12.md) now separate
+Effective plan extents now separate
 exact output allocation from integral recipe counts throughout the compiled
 picture/audio walkers. Normalized framing and Camera's temporary preview use
 the sampled effective extent. Definition point grids, owner windows and natural
@@ -187,7 +186,7 @@ voice admission use exact output bounds. At that milestone, compilers embedded
 integral document durations. Ordinary Preserve refuses differing allocation and intrinsic counts
 until a route can express that relationship without resizing its input.
 
-[Persisted effective clocks](qualification/derived-clocks-2026-10-12.md) now
+Persisted effective clocks now
 connect that representation to strict document admission, reversible patches,
 SQLite snapshots/history and production picture/audio compilation. Sequence
 and compact Repeat totals use exact child extents; the root must be integral.
@@ -359,7 +358,7 @@ need compact affine mappings, not a record per rendered play. Existing genuine
 cuts can retain separate domain start anchors; transparent partitions share a
 domain and must not introduce a reanchoring point.
 
-The specification's absolute allocation rule does not permit a stronger promise
+The absolute allocation rule does not permit a stronger promise
 that every previous PCM sample survives movement unchanged. Let `T` be the old
 end; inserted silence owns `B(f+N)-B(f)` samples, the old suffix owns
 `B(T)-B(f)`, and the new suffix owns `B(T+N)-B(f+N)`:

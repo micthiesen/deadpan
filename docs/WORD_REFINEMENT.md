@@ -2,11 +2,10 @@
 
 Current status: the English workflow is implemented and locally verified through
 native review, real device audition, explicit acceptance/Undo, offline installation
-and a relocated signed bundle. [Qualification](qualification/word-refinement-2026-10-25.md)
-closes DP-10.3's local scope. Broader DP-10 work and the older native-helper trust
-gap in DP-22 remain open. Experimental precision/coverage failures stay failed.
+and a relocated signed bundle. The older native-helper trust
+gap remains open. Experimental precision/coverage failures stay failed.
 
-The normative contract is specification §9.3/§11.2: approximate annotations,
+The contract is approximate annotations,
 waveform adjustment, explicit acceptance and preserved manual timing. A model
 posterior measures support on a forced path. It is not a probability that an
 edge is correct. Existing cuts and authored history never move when analysis
@@ -80,12 +79,6 @@ See [packaging](PACKAGING.md) for the explicit qualified ORT prefix and relocati
 
 ## Verification and limits
 
-Permanent [evidence](../tools/model-qualification/evidence/2026-10-25-word-refinement/)
-and its SHA-256 inventory retain the final workflows. Scratch evidence:
-`/tmp/deadpan-word-refinement-2026-10-25`. It retains the frozen
-model experiments, source snapshots, exact invocations, failures, streams and
-binary identities. The permanent inventory excludes model weights and raw learned normalization statistics.
-
 The Rust port preserves every label path, pronunciation, interval, offer/refusal
 and context-guard structure in all 24 observed development cases. Maximum feature
 absolute error is 0.000355005; maximum emission error is 0.000228882. These are
@@ -99,8 +92,7 @@ The [earlier experiment](../tools/model-qualification/word-refinement/plan.md)
 failed its stricter coverage and foreign-energy targets. Those failures remain
 failed. These 24 observed cases are development/parity data, never an untouched
 final split. Human phonetic acceptability and listening judgment remain owner
-verification under §29.1, with concrete steps in the
-[owner list](REQUIREMENTS.md#to-verify-owner). No automatic precision, conversational accuracy or release
+verification. No automatic precision, conversational accuracy or release
 readiness is claimed by the port checks.
 
 ## Use

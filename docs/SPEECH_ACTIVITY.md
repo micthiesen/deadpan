@@ -2,8 +2,7 @@
 
 Deadpan detects where the Original's speaker pauses with the Silero voice
 activity detector run by whisper.cpp, refined by energy measured from the same
-audio. Section 11 of the [specification](spec/DEADPAN_SPEC.md) requires
-silence intervals derived from VAD plus measured energy; this records the
+audio. Silence intervals derive from VAD plus measured energy; this records the
 implemented boundary. Pauses are proposals: they never edit the project.
 [Shot detection](SHOT_DETECTION.md) is the picture-side analysis, stored and
 published the same way.
@@ -69,8 +68,7 @@ silence, and partial activity is not published as a complete annotation.
 Transcription, detection-only activity and shot ranges use the private
 `AnalysisRanges` cache directory, with distinct exact keys addressed by BLAKE3
 and record payloads checked with SHA-256. The initial audio session still
-decodes the full stream. See
-[incremental range qualification](qualification/incremental-ranges-2026-10-26.md).
+decodes the full stream.
 The validated complete activity is submitted to the project service, which
 saves it outside history and publishes it as `Workspace::speech_activity`; it
 is loaded when a project opens and carried across edits. An Original that
@@ -181,8 +179,7 @@ awake. Stored words and corrections stay available. Late results and buffered
 output from an invalidated run are discarded, and queued saves carry the epoch
 through the guarded transaction. A successful final guard admits publication;
 later sleep does not retract that commit. Typed receipts preserve genuine
-storage errors separately from interruption. See
-[qualification](qualification/activity-sleep-2026-10-17.md).
+storage errors separately from interruption.
 
 ## Remaining
 

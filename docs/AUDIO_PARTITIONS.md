@@ -75,5 +75,4 @@ fractional frame rates. Real new cuts also need intentional edge semantics.
 
 The [splice design](STRUCTURAL_SPLICE_DESIGN.md) records these obligations,
 including compact Repeat handling and mark ownership across retained copies.
-The normative specification remains authoritative; this layer does not close
-DP-04, DP-05, DP-06, DP-12 or the complete editorial workflow.
+This layer does not close the complete editorial workflow.

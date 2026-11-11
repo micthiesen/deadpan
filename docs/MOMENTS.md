@@ -1,6 +1,6 @@
 # Named Original moments
 
-Specification §9.3: the Original keeps named moments on its one source clock,
+The Original keeps named moments on its one source clock,
 filterable by editorial tags. Browsing a moment never alters the Original or
 inserts it.
 

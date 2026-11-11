@@ -86,7 +86,7 @@ previous revision's node fragments (exact local mappings, prefix entries,
 Repeat layouts and recipes) only when their inputs are equal, and re-derives
 a Sequence's prefix entries from its children's new extents from zero. Every
 query still rounds absolute project-frame endpoints once, so no allocation is
-shifted from an older plan. See [incremental plans](qualification/incremental-plan-2026-11-10.md).
+shifted from an older plan.
 
 ## Headless inspection
 

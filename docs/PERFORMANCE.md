@@ -1,133 +1,14 @@
 # Performance measurement
 
-The [compound wire-count qualification](qualification/compound-wire-reuse-2026-10-24.md)
-records the current uninstrumented change. All 729 Core unit tests, 35
-integration tests, 12 release Store tests, strict/format checks and the
-actual history/PCM media case pass; both exports verify 45 pictures and
-72,072 samples at zero offset. Five alternating fresh timing pairs pass
-70 pause/10 Kestrel checks with 20 retained layout warnings. Every pair
-improves: paired median reductions are 5.737334 ms to commit and 5.692792 ms
-to offscreen composition, with ranges 3.295332–6.570333 and
-3.111458–6.439916 ms. Candidate medians are 180.792875/183.389625 ms.
-No memory lane runs for this bounded count/header change; no memory claim,
-p95 or 100 ms/50 ms target pass is inferred. The private 18-trial prototype
-remains a separate diagnostic batch, including its slower third pair.
+This page maps each engineering target to the measurement that evaluates it,
+describes the reproducible suite (`cargo xtask perf`) and lists the diagnostics
+the code exposes. Cite a result with its summary's binary hashes, machine load
+and cache state. A target without a measured workload is open, never passed.
 
-The [single-leaf net reuse qualification](qualification/single-leaf-net-reuse-2026-10-24.md)
-records the preceding uninstrumented change after source, Core/Store, real-media,
-history and PCM checks. Five fresh 10,000-Hold timing pairs pass 70 pause and
-10 Kestrel checks. Paired median reductions are 5.355917 ms to commit and
-5.468292 ms to offscreen composition; candidate medians are 188.425/191.147 ms.
-The 100 ms/50 ms targets remain open, and these five pairs establish no p95.
-Six separate owned-app memory runs have median sampled maxima of
-667.423/665.939 MiB physical footprint and 653.922/672.938 MiB resident size.
-They establish no exact peak, retained-edit cost, memory saving or ceiling.
-The private instrumented prototype is a separate batch and is not pooled.
-
-[Real inference interference](qualification/inference-interference-2026-10-17.md)
-qualifies paired 30-second ordinary-source loops at 1080p60 and 4K30 with
-app-owned Extension inference, actual device audio and offscreen Metal:
-complete picture coverage and no underruns, faults or padding. Its seek/edit
-samples are smoke checks; broader effects, rendering and latency distributions
-remain unqualified by that workload.
-
-The [fine first-pause diagnostic](qualification/current-pause-detail-profile-2026-10-23.md)
-refines the [coarse route study](qualification/current-pause-route-profile-2026-10-23.md)
-with 26 exclusive rows in a separate private source/target. Pure leaf application
-is 43.467459 ms, remaining semantic planning 33.948583 ms and history codec/readback
-22.490084 ms. The eleven named size sites take a same-trial median 38.098416 ms;
-capability snapshot construction is 0.004750 ms. Nine rotated trials pass with
-exact conservation, worker median 188.133125 ms and overlapping control/off/on
-commit observations. These neither resolve overhead nor close the 100 ms/50 ms
-targets. Inspect remaining application/planning work before choosing a bounded
-change. Temporary hooks are not production code; residuals after adding child
-categories cannot be compared directly with the earlier unpartitioned rows.
-
-The [semantic preflight leaf profile](qualification/semantic-preflight-leaf-profile-2026-10-23.md)
-adds nine exclusive child phases in a separate private overlay. Across three
-rotated control/off/on triplets, the enabled semantic region median is
-92.230291 ms; the pure leaf region is 43.943916 ms and the legacy insertion
-region, including input-duration calculation, is 32.736583 ms. Head validation
-and input-duration calculation are measured separately at 1.471250 and
-1.284166 ms; neither supports a validation bypass. The 35-row traces conserve
-exactly. Control/off/on commit medians are 195.141583 /195.833459 /195.879042 ms.
-The measurements include uncalibrated instrumentation overhead and establish no
-percentile or target pass. The private retained-entry-duration borrow
-experiment is recorded in the
-[insert-split proof prototype](qualification/insert-split-proof-prototype-2026-10-23.md).
-Six matched pairs report a 4.502272 ms median commit difference and a
-4.452875 ms median offscreen-composition difference. These are prototype
-diagnostics, not production qualification or a latency-target pass. The 100 ms
-and 50 ms targets remain open.
-
-The separate [production qualification](qualification/insert-split-proof-reuse-2026-10-23.md)
-uses an uninstrumented release App and five fresh alternating pairs. Control
-and candidate medians are 194.497917/192.496542 ms to commit and
-197.044959/194.965208 ms to offscreen Background composition. Median paired
-reductions are 2.380874 and 2.504043 ms; every pair favors the candidate.
-These five samples are diagnostic, not a percentile or target pass. The 100 ms
-fallback and 50 ms ordinary-edit targets remain open. The private prototype
-measurements above are a separate batch and are not pooled with production.
-
-[Specification Section 25](spec/DEADPAN_SPEC.md#25-performance-requirements-and-instrumentation)
-sets engineering targets. This page maps each target to the measurement that
-evaluates it, describes the reproducible suite, and lists the diagnostics the
-code exposes. Results live in dated qualification records. The latest full
-run is [performance-2026-11-09](qualification/performance-2026-11-09.md): every
-edit, Hold, UI input, navigation and 1080p60 warm-seek target passes with a
-p95 on the generated fixtures; 4K warm seek of the Original still fails
-(proxy passes), and its 1080p60 playback FAIL measures a throttled agent-shell
-launch context (2 ms waits took 13 to 18 ms), not decoding. The earlier record
-is [performance-2026-10-04](qualification/performance-2026-10-04.md), with seek
-superseded by [seek-2026-10-05](qualification/seek-2026-10-05.md) and preview
-proxy seeks in [proxy-2026-10-05](qualification/proxy-2026-10-05.md), and edit
-latency, storage and open time superseded by
-[timing-storage-2026-10-05](qualification/timing-storage-2026-10-05.md) and then
-[incremental-commit-2026-10-05](qualification/incremental-commit-2026-10-05.md) and then
-[command-work-2026-10-05](qualification/command-work-2026-10-05.md), which also
-records idle CPU. [pause-and-cold-seek-2026-10-06](qualification/pause-and-cold-seek-2026-10-06.md)
-supersedes edit latency on 10,000 beats and the cold, warm 4K and
-refinement seek rows;
-[store-and-seek-2026-10-15](qualification/store-and-seek-2026-10-15.md)
-moves the 64th-revision keyframe out of the edit (10,000-beat pause p95
-104.9 to 75.5 ms at load 3.25 and 2.9) and adds page-cache-cold seeks
-from a freshly attached disk image;
-[edit-latency-2026-10-15](qualification/edit-latency-2026-10-15.md)
-supersedes 10,000-beat edit latency (pause p95 71.4 / 74.3 to 40.3 /
-44.7 ms, split, wrap and Undo p95 about 45 to about 20 ms, gated at load
-2.8 to 3.0) by no longer rehashing the history on each writer edit and by
-sharing document maps and identities; and [playback-proxy-2026-10-06](qualification/playback-proxy-2026-10-06.md)
-the playback rows (with and without proxy pictures, cut edits) and adds the
-stress runs. [Selection-loop decode-ahead](qualification/loop-lookahead-2026-10-11.md)
-adds 30-second real-device comparisons at 1080p60 and 4K30: zero dropped
-pictures with loop preparation, versus 17 and 12 without it. Run a bounded
-loop with `perf playback PACKAGE --start-frame FIRST --loop-end EXCLUDED
---seconds 30 --pictures original --lookahead on` and repeat with `off`.
-The report counts monotonic progress across wraps and records each seam.
-[Generated playback caching](qualification/generated-playback-cache-2026-10-11.md)
-retains Original decode-ahead across Generated Holds and reuses the Generated
-decoder on repeated entry. Its bounded fixture checks verify handoff and pixels;
-[Cold Generated preparation](qualification/generated-prefetch-2026-10-11.md)
-now admits and decodes the upcoming Hold before entry; its small-fixture
-prepared entry takes 0.17–0.22 ms. The [real app playback qualification](qualification/generated-app-playback-2026-10-11.md)
-then exercises real accepted LTX pictures and full-resolution 1080p60/4K30
-Originals through the app worker, real device audio and complete offscreen Metal
-UI. Every picture is presented, with zero skips, proxies, underruns or faults.
-The record separates worker time from complete UI composition and documents
-the timing bookkeeping correction. The [closely spaced provider qualification](qualification/generated-transitions-2026-10-11.md)
-adds a second real accepted Hold separated by one Original picture: both
-1080p60 runs show all 180 pictures, and second entry falls from 190 ms to
-0.15–0.16 ms. The four-decoder bound includes one upcoming Generated admission;
-whole-replay footprint is about 768 MiB, not a worst-case decoder measurement.
-[Generated selection loops](qualification/generated-loops-2026-10-11.md)
-add 30 laps at 1080p60 and 4K30 with every picture shown. Preparing the missing
-Original before first entry reduces the 4K request from 64 ms to 8.7 ms.
-A separate nonloop control drops one early Generated picture.
-[FFV1 slice threading](qualification/generated-slices-2026-10-11.md) reduces
-standalone decode p95 from 6.2–6.5 ms to about 2 ms. Five ordinary 1080p60 runs,
-one 4K30 run and both loops present every picture. A longer run misses its final
-Original picture at the End-to-stopped handoff; terminal presentation stays open.
-A target without a measured workload is open, never passed.
+Run a bounded selection loop with `perf playback PACKAGE --start-frame FIRST
+--loop-end EXCLUDED --seconds 30 --pictures original --lookahead on` and repeat
+with `off`. The report counts monotonic progress across wraps and records each
+seam.
 
 ## Run the suite
 
@@ -181,14 +62,13 @@ cargo xtask perf --output /tmp/deadpan-perf-NEW \
   image (`hdiutil create`), which is then attached afresh (and detached
   afterwards) around each of 10 samples (3 with `--quick`). A new mount has
   no cached pages of its files, and the disk-image driver reads its backing
-  file without caching it (checked with `mincore` in the
-  [2026-10-15 record](qualification/store-and-seek-2026-10-15.md)), so each
+  file without caching it (checked with `mincore`), so each
   run's first session reads the database and Original from storage. `perf
   cold-seek PACKAGE --basis-from OTHER_COPY --repeat 1` sizes the Metal
   target from another copy, so nothing reads the package before the
   measured session opens, and repeats the seek once page-cache-warm in the
   same process. Reads pass through the disk-image driver (about 4.4 GB/s
-  sequential on the 2026-10-15 machine); a direct read from the internal
+  sequential on this Mac); a direct read from the internal
   SSD's own volume is not measured, because purging its cache needs root.
 - `perf edit` writes the keyframe a commit left due
   (`ProjectStore::write_due_keyframe`, see [deferred
@@ -196,8 +76,8 @@ cargo xtask perf --output /tmp/deadpan-perf-NEW \
   as an idle host does, and reports it as `deferred_keyframe_ms`, outside the
   edit's `total_ms`.
 - `perf edit` refreshes with `RenderPlan::compile_from` the previous head's
-  plan, as the native workspace does ([incremental
-  plans](qualification/incremental-plan-2026-11-10.md)). After each edit's
+  plan, as the native workspace does (incremental
+  plans). After each edit's
   `total_ms` it also compiles the new head both from scratch and from the
   previous plan, in the head's validation scope and in alternating order, and
   reports `plan_full_compile_ms`, `plan_incremental_compile_ms` and
@@ -254,7 +134,7 @@ image. A `cold-seek` row needs 10 samples and its slowest must be below
 Close other heavy work first, and record what else was running. Compare only
 like workloads and the same summary schema.
 
-The [VideoToolbox comparison](qualification/hardware-decode-2026-10-11.md)
+A VideoToolbox comparison
 uses `cargo run --locked --release -p deadpan-media --example compare_decode --
 ABSOLUTE_MOVIE ABSOLUTE_NEW_REPORT_JSON` to compare complete software and
 hardware pixels plus 100 random seeks per path. This isolates decoder work;
@@ -263,169 +143,7 @@ Hardware decoding stays opt-in because the measured long-GOP seeks were slower.
 
 ## Target inventory
 
-The [first-pause profile](qualification/first-pause-profile-2026-10-23.md) and
-[compact frozen timing qualification](qualification/compact-frozen-edges-2026-10-23.md)
-separate the fresh 10,000-Hold binding cost from later edits. Qualified compact
-timing measures first store-and-refresh medians 130.636 → 114.691 ms across five
-quiet pairs, before picture display. A later
-[binding/capture prototype](qualification/first-pause-binding-prototypes-2026-10-23.md)
-measures 111.576 → 91.629 ms in a separate five-pair batch, with incomplete
-standalone decoding. The [qualified Core 58 implementation](qualification/compact-audio-bindings-2026-10-23.md)
-adds that reader correction and measures first medians 114.587 → 93.633 ms in
-five quiet current-format pairs, with second medians 32.896 → 28.906 ms. These
-short batches exclude picture display and establish neither a percentile nor
-the complete visible-Hold target.
-
-The [large first-pause replay](qualification/large-first-pause-harness-2026-10-23.md)
-adds `large-first-pause` with an explicit fresh `perf make-large --beats 10000`
-package. It opens a private portable copy, settles the initial Background,
-routes `hold 12f` at frame 17,933, and requires one committed insertion plus
-matching new-revision requested/decoded/submitted/composed picture identity.
-Its final release diagnostic measures 393.681375 ms to commit and 396.208834 ms
-through offscreen Background composition. Each invocation has one sample;
-forty independent fresh invocations are required before a UI percentile claim.
-These measurements include native semantic-command/service work absent from
-the direct 93.633 ms store-and-refresh median. They do not attribute the delay
-to the store, establish either edit target, or measure a physical display,
-source decoding or PCM. The subsequent
-[isolated app-service profile](qualification/ui-first-pause-profile-2026-10-23.md)
-uses three rotated fresh-process triplets. Uninstrumented input-to-composition
-median is 388.289833 ms; the instrumented service has median semantic planning
-108.376500 ms, preview/runtime-bank preparation 119.775334 ms, Compound commit
-130.474125 ms and refresh 4.128667 ms. Inclusive totals and disjoint children
-are kept separate. All nine replays and provenance guards pass. This is a
-diagnostic, with uncalibrated timer overhead and no queue-wait measurement,
-percentile or target PASS. It motivates sharing Compound preparation inside
-one transaction, while retaining fallible runtime preparation before writes.
-
-The [qualified shared preparation](qualification/compound-runtime-preparation-2026-10-23.md)
-implements that transaction-owned callback. Five quiet fresh-package pairs
-measure input-to-commit medians 390.680250 → 273.119542 ms and input through
-offscreen Background composition 393.261916 → 275.697709 ms. Every run passes
-its seven replay checks and source/binary/authored-input guards, with an empty
-WAL. Both executables use Core 58 /SQLite 87 and the same fixture and measured
-command. This reduces the latter median by 117.564207 ms, about 29.9%, while
-the 100 ms fallback and 50 ms ordinary-edit targets remain open. Five samples
-per executable are diagnostic; they do not establish a formal percentile,
-physical display latency, source decoding or PCM performance.
-
-The subsequent [prepared-Compound profile](qualification/prepared-compound-profile-2026-10-23.md)
-passes three rotated control/off/on triplets. Diagnostic medians locate
-108.336666 ms in semantic planning and 117.677375 ms in Store preparation;
-history writing is 7.352000 ms, durable commit 6.503167 ms and refresh
-4.204375 ms. Nested totals are not added to their children. Queue wait and
-instrumentation overhead remain unqualified; the fixture's empty bank does
-not establish a runtime-copy preparation bound. These results motivate
-examining planning/validation rather than weakening durability, with no
-additional production gain or percentile/target PASS.
-
-An isolated [leaf-result reuse prototype](qualification/reused-leaf-result-prototype-2026-10-23.md)
-replaces one semantic helper's `apply` then `forward.apply` pair with the
-existing `apply_with_result`. Five quiet pairs measure offscreen medians
-272.684834 /268.738125 ms, a small diagnostic difference with all replay and
-provenance guards passing. This prototype remains separate from the
-[qualified production change](qualification/reused-leaf-result-2026-10-23.md).
-The final production comparison passes five quiet guarded pairs with
-control/candidate input-to-commit medians 272.579417 /265.164417 ms and
-offscreen composition 275.099042 /267.862584 ms. The latter difference is
-7.236458 ms, about 2.63%. All Core, broader/UI, strict, media, native and
-portable checks pass, including differential pause/setter, binding/mark,
-inverse and authoritative replay checks. These n=5 diagnostics establish no
-percentile or latency target PASS; the 100 ms fallback and 50 ms ordinary-edit
-targets remain open.
-
-The separate [compact JSON size-count prototype](qualification/compact-json-size-prototype-2026-10-23.md)
-removes complete output buffers for size-only Store traversals, retaining
-capture bytes, serialization work and every budget charge. Twelve focused
-tests and its locked release build pass. Five quiet guarded pairs measure
-offscreen control/prototype medians 266.491583 /257.379000 ms. The 9.112583 ms
-difference is about 3.42%; this private batch remains separate from the
-[completed production qualification](qualification/compact-json-size-2026-10-23.md).
-All Core, broader/UI, strict, actual media/native and portable checks pass.
-Five final production pairs give commit medians 266.145459 /259.015416 ms and
-offscreen composition 268.773292 /261.593583 ms, a 7.179709 ms difference of
-about 2.67%. Peak memory remains unmeasured. No percentile or 100 ms/50 ms
-target PASS follows; do not pool the independent batches.
-
-The [Store preparation detail profile](qualification/store-preparation-detail-profile-2026-10-23.md)
-adds nine rotated control/off/on runs after size counting. All pause/shortcut,
-source/input/binary and authored-file guards pass. The enabled traces validate
-33 phases and ten containment equations. Median semantic planning is
-103.020292 ms; Store preparation is 110.396833 ms. Core replay takes 76.287833
-ms including a 5.053292 ms host visitor; stored-edit historical decode/equality
-takes 19.017083 ms. The 71.226624 ms replay-minus-visitor residual still needs
-internal attribution. Three samples per condition establish no percentile,
-calibrated timer overhead, further production improvement or target PASS.
-
-The subsequent [Core planning/replay profile](qualification/core-planning-detail-profile-2026-10-23.md)
-passes another nine rotated trials. Three enabled traces validate 24 exact
-phase counts and nine containment equations, including sums across two leaf
-applications and three net transactions. Leaf reduction totals 64.732208 ms
-and postprocessing 17.760625 ms median across both calls. Semantic execution
-has a 30.641416 ms residual outside its leaf call and after-leaf size/charge.
-Those inclusive groups still need attribution to a concrete repeated operation
-before choosing a fix. This separate n=3 diagnostic adds no production gain,
-calibrated overhead, percentile or target PASS.
-
-The [complete frozen-layout reuse qualification](qualification/full-timing-closure-reuse-2026-10-23.md)
-passes all 1,522 Core tests, broader/UI and strict checks, actual media/history,
-six native workflows and both portable copies. Full alias closure reuses an
-already admitted immutable table after its exact wire guard, retaining partial,
-provisional and reference behavior. Five final quiet pairs measure commit
-257.618792 /248.292125 ms and offscreen composition 260.353458 /250.976250 ms,
-a 9.377208 ms /3.60% diagnostic difference. This is separate from the earlier
-private prototype's 5.16% batch. The 100 ms/50 ms targets and peak memory remain
-open; no percentile follows from these five pairs.
-
-The [semantic refresh duration reuse qualification](qualification/semantic-refresh-duration-reuse-2026-10-23.md)
-passes all 1,526 Core tests, broader/UI and strict checks, actual media/history,
-six native workflows and both portable copies. Refresh shares a proved map
-for the same immutable staged document while retaining both anchor indexes,
-query/error order and reference/derived fallbacks. Five final quiet pairs give
-commit medians 246.381375 /238.914458 ms and offscreen composition
-248.946250 /241.268958 ms, a 7.677292 ms /3.08% diagnostic difference. Its
-470-file inventory verifies. This is separate from the prototype's 2.07%
-batch. Earlier Core24 costs precede both layout and refresh reuse; current
-leaf timing and sampled whole-process memory should be measured before a
-one-leaf replay cache. No memory ceiling, percentile or latency target closes.
-
-The subsequent [current leaf timing and owned-memory diagnostic](qualification/current-leaf-timing-memory-profile-2026-10-23.md)
-passes nine rotated timing trials and nine separate memory trials. Enabled
-service/semantic-leaf/replay-leaf medians are 233.354042 /43.780792 /43.559500 ms;
-the per-trial outer-minus-two-disjoint-leaves residual is 146.001626 ms median.
-Control/off/on composition medians are 239.352541 /243.290584 /242.288042 ms,
-without calibrated instrumentation overhead. Memory observation samples the
-owned main app's whole lifetime only: 16,303 samples, maximum gaps up to
-7.818667 ms, with observed footprint maxima about 659–700 MiB. These are lower
-bounds, not exact peaks, per-leaf allocation, cache retention or a ceiling.
-The 376-file inventory and separate toolchain witness verify. No production
-code changes or target closes.
-
-The private [one-leaf replay reuse prototype](qualification/one-leaf-replay-reuse-prototype-2026-10-23.md)
-passes 39 focused checks, source review and twenty fresh native trials.
-Five alternating timing pairs give commit medians 239.682292 /194.917708 ms
-and composition 242.163542 /197.496833 ms, an 18.44% diagnostic difference.
-The separate memory lane retains 18,296 whole-app samples with maximum gaps
-12.329791 ms. Median sampled footprint maxima are 731,940,088 /686,851,224
-bytes; they do not prove exact peaks, per-leaf retention or memory savings.
-All 394 evidence files verify. The 140 pause and twenty Kestrel checks pass;
-forty layout warnings remain. This remains a separate private batch.
-
-[Production one-leaf replay reuse](qualification/one-leaf-replay-reuse-2026-10-23.md)
-passes Core, broader/UI, strict and real-media/history qualification. An opaque
-exact-value/mode witness reuses a successful pure leaf application while all
-Core boundary charges and current Store authority remain. Both real-media
-paths publish matching canonical PCM/history and each emitted file verifies
-45 pictures /72,072 samples at zero offset. Six native reports pass 1,340
-workflow and six Kestrel checks; portable copies validate unchanged.
-Final five-pair commit medians are 240.560333 /195.108542 ms, and offscreen
-composition 243.137083 /197.389583 ms: 45.747500 ms /18.82% apart. All 995
-files /23,149,781 bytes verify, including five actual emitted movies. The
-reviewed test-only reader amendment retains original test maps and reruns
-strict/media controls; failures and clean isolated warning-case checks remain.
-No percentile, memory ceiling/retention result or latency target closes.
-
-| Section 25 target | Measurement | Notes |
+| Target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |
 | Cached ordinary edit to visible preview, p95 < 50 ms | ui `edit-latency` `cached_repeat_input_to_picture_complete_ms`; `perf edit` split, Repeat wrap and Undo | The replay measures input through real commit, decode and offscreen Metal completion on its small fixture. `perf edit` measures the store commit plus workspace refresh (the cached validated head and its plan compiled in that validation scope, as the native workspace does) on real and 10,000-beat packages, without the picture. A keyframe the edit left due is written afterwards and reported separately (`deferred_keyframe_ms`, informational row). It then reopens the edited package writable and read-only and reports `reopen_*` times and `reopen_validation`. |
@@ -435,16 +153,16 @@ No percentile, memory ceiling/retention result or latency target closes.
 | Audio: no callback underruns | `perf playback` `Engine::diagnostics()` | Counts starved and faulted device reports. The full editing/inference stress suite is not yet defined. |
 | Hold insertion fallback visible < 100 ms | ui `edit-latency` `hold_fallback_input_to_picture_complete_ms`; `perf edit` insert pause | The CLI stage commits the native `,h` freeze through the store. |
 | 10,000-beat navigation without a whole-document scan | ui `large-project` navigation CPU; `perf scale` frame lookup at 100 to 50,000 beats; code audit | Lookups use the compiled plan's binary search; per-revision work (validation, plan compile, rows) scales with size and is measured separately. |
-| Idle: event-driven UI | Release app opened with `--project`, settled 30 s, then CPU time from `ps` over 60 s, wakeups from `top` and footprint from `footprint` ([record](qualification/command-work-2026-10-05.md#idle-and-memory)) | Manual, not part of `cargo xtask perf`. A visible window only; occluded, background and display power are not measured. |
+| Idle: event-driven UI | Release app opened with `--project`, settled 30 s, then CPU time from `ps` over 60 s, wakeups from `top` and footprint from `footprint` | Manual, not part of `cargo xtask perf`. A visible window only; occluded, background and display power are not measured. |
 | AI generation | Cited from the [AI pause run](AI_HOLDS.md#measured-run-2026-10-04) | Not rerun here: a single run of minutes and about 21 GiB footprint. |
 | Export speed by workload | `perf` export stage through `deadpan-cli render` | Wall time per stage from timestamped events, encoding frames per second, and `real_time_factor` (content seconds from the committed frame rate ÷ wall), including encoder admission, full verification and publication. |
 | Memory | `/usr/bin/time -l` around every stage; the idle app's footprint | Peak RSS and footprint per process. Not a memory-pressure test: `memory_pressure -S` needs root, and no allocation-pressure run exists. |
 
 ## Diagnostics
 
-| Section 25.3 counter | Where | State |
+| Counter | Where | State |
 | --- | --- | --- |
-| Render-plan compile time | `deadpan-cli doctor --project PACKAGE` (`single_sample_ms.plan_compile`, with snapshot load, validation and anchor index; one cold sample each); `perf scale`; `perf edit` `plan_full_compile_ms` against `plan_incremental_compile_ms` per edit kind | Implemented. Workspace refreshes reuse unchanged node fragments ([incremental plans](qualification/incremental-plan-2026-11-10.md)). |
+| Render-plan compile time | `deadpan-cli doctor --project PACKAGE` (`single_sample_ms.plan_compile`, with snapshot load, validation and anchor index; one cold sample each); `perf scale`; `perf edit` `plan_full_compile_ms` against `plan_incremental_compile_ms` per edit kind | Implemented. Workspace refreshes reuse unchanged node fragments (incremental plans). |
 | History validation on open | `ProjectStore::open_validation()` and `validate_report`; `doctor --project` `history_validation`; `perf edit` `reopen_validation`: revisions, those proved by the [history receipt](TIMING_STORAGE.md#verified-history-receipts) and those recomputed | Implemented. `project validate` recomputes all; `--quick` reports what opening checks. |
 | Audio underruns and device faults | `deadpan_playback::Engine::diagnostics()`: activated generations, device reports, starved reports, faults, silent padding frames and maximum callback render cost; the native `:diagnostics` panel (PLAYBACK) | Implemented as cumulative atomics; observations only. |
 | Dropped video frames | `perf playback` (pictures skipped while following the heard clock); `deadpan_diagnostics::PLAYBACK_PICTURES` in the native app: playback pictures requested and frames skipped by the transport, pictures served exact or from the proxy, repositions started and reached; `:diagnostics` (PLAYBACK) | Cumulative per process. A loop wrap is not counted as a drop. |
@@ -502,5 +220,4 @@ asserts the identity). The nested Split test itself still takes 375 s
 convolution, not phase setup, so the cache helps sources whose rate differs
 from 48 kHz rather than this test. The remaining cost is spread over exact rational
 arithmetic and `BTreeMap<NodeId, _>` lookups in many plan queries, with no
-single dominant caller; that and continuous variable-rate DSP remain open
-DP-24 work.
+single dominant caller; that and continuous variable-rate DSP remain open.

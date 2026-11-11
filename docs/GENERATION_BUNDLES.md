@@ -43,10 +43,7 @@ undo/redo need no model or worker directory.
 
 Normal app/headless allocation now selects Bridge or Extension before input
 capture, with independent provider capabilities and native mode controls.
-The [normal workflow record](qualification/extension-native-2026-10-08.md)
-tracks production duration and packaging qualification. See also the
-[qualification record](qualification/extension-bundles-2026-10-08.md) and
-[saved acceptance record](qualification/extension-saved-2026-10-08.md).
+Production duration and packaging qualification remain open.
 
 ## Wire and storage contracts
 
@@ -143,8 +140,7 @@ its Ready API relies on this independent host qualification.
 4. Inspect every adjacent native frame pair for motion magnitude and abrupt
    lighting changes through the verified canonical descriptor. Motion uses the
    authored sampling clock; insufficient evidence stays unavailable. Reject
-   measured policy failures before Ready. See
-   [quality evidence](qualification/bridge-quality-2026-10-07.md). Compare the
+   measured policy failures before Ready. Compare the
    actual sampled first/last pictures with retained conditioning PNGs inside
    the captured presentation crop, rejecting broad endpoint RGB discontinuity.
    Fresh qualification requires context schema 4 or 5 with exact prepared geometry
@@ -155,8 +151,7 @@ its Ready API relies on this independent host qualification.
    Vision revision 3 observations drive conservative boundary-anchored face
    geometry and native-only mouth checks. Gaps, weak landmarks and ambiguous
    association remain unavailable; later faces start new continuous segments.
-   A measured rejection fails qualification. See
-   [face and mouth evidence](qualification/bridge-landmarks-2026-10-07.md).
+   A measured rejection fails qualification.
    When both captured region seeds are available, the same inspection also
    follows that subject continuously through left PNG, native pictures and
    right PNG with Vision object tracker revision 2. The host rejects sustained
@@ -219,6 +214,3 @@ and size limits, deleted worker inputs after host capture, missing objects,
 six-object publication, Ready persistence, explicit acceptance, undo/redo/revert
 and package relocation with all worker input/output files removed.
 They use a synthetic model-provenance fixture and do not establish model quality.
-
-[Measured local generation and repository verification](qualification/model-bundle-2026-09-21.md)
-records the actual model run, output identities, limitations and review results.
