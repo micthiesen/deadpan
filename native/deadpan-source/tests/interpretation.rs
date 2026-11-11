@@ -38,6 +38,32 @@ fn missing_yuv_range_is_recorded_correctable_and_never_export_evidence() {
 }
 
 #[test]
+fn untagged_sdr_yuv_is_read_as_bt709_recorded_and_never_export_evidence() {
+    // The same pictures as cfr-bframes.mp4 with matrix, transfer and primaries
+    // removed from the H.264 VUI (h264_metadata, values 2 = unspecified).
+    let mut untagged = open("untagged-yuv.mp4", VideoInterpretation::SOURCE, 1);
+    let mut declared = open("cfr-bframes.mp4", VideoInterpretation::SOURCE, 1);
+    assert!(untagged.info().color_assumed);
+    assert!(!declared.info().color_assumed);
+    assert_eq!(untagged.info().color, declared.info().color);
+    assert!(matches!(
+        untagged.next_i420(control()),
+        Err(SourceDecodeError::InvalidConfiguration(_))
+    ));
+    let expected = declared.next_rgba(control()).unwrap().unwrap();
+    let frame = untagged.next_rgba(control()).unwrap().unwrap();
+    assert_eq!(frame.rgba, expected.rgba);
+    // The existing interpret command still applies on top of the assumption.
+    let choice = VideoInterpretation {
+        range: Some(ColorRange::Full),
+        ..VideoInterpretation::SOURCE
+    };
+    let mut corrected = open("untagged-yuv.mp4", choice, 1);
+    assert!(corrected.info().color_assumed);
+    assert_ne!(corrected.next_rgba(control()).unwrap().unwrap().rgba, expected.rgba);
+}
+
+#[test]
 fn receipt_choice_validation_agrees_with_native_conversion_admission() {
     let rgb = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../deadpan-media-worker/tests/fixtures/rgb25_24.mp4");

@@ -65,6 +65,7 @@ pub(crate) fn sidecar(key: &ProxyKey, bytes: &[u8]) -> ProxySidecar {
             nominal_frame_duration_ns: None,
             chroma_assumed_left: false,
             range_assumed: false,
+            color_assumed: false,
             bwdif_fields: false,
             clean_aperture: None,
             width: 2,

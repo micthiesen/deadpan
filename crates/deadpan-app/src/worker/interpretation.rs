@@ -10,6 +10,9 @@ impl SourceSummary {
             ColorRange::Full => "full",
         };
         let mut notes = Vec::new();
+        if self.info.color_assumed {
+            notes.push("Colour assumed BT.709".into());
+        }
         if let Some(value) = self.interpretation.range {
             notes.push(format!("Source range corrected to {}", range(value)));
         } else if self.info.range_assumed {

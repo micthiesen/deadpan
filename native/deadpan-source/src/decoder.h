@@ -62,6 +62,8 @@ typedef struct {
     int32_t bwdif_fields;
     int32_t chroma_assumed_left;
     int32_t range_assumed;
+    /* Matrix, transfer and primaries were absent and read as BT.709. */
+    int32_t color_assumed;
 } DeadpanSourceInfo;
 typedef struct {
     int64_t pts, duration, dts;

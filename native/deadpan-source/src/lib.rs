@@ -299,6 +299,10 @@ pub struct SourceStreamInfo {
     /// range for RGB and limited range for YUV; `color.range` records that
     /// interpretation. The absent declaration remains absent in raw pictures.
     pub range_assumed: bool,
+    /// The decoded stream omitted matrix, transfer or primaries (and carried no
+    /// conflicting tag), so the picture is read as BT.709 SDR, the HD standard.
+    /// `color` records that reading; the raw pictures keep their absent tags.
+    pub color_assumed: bool,
     /// Original stream ticks. These are observations, not trusted frame endpoints.
     pub stream_start: Option<i64>,
     pub stream_duration: Option<i64>,
@@ -655,7 +659,7 @@ impl SourceDecoder {
     }
 
     fn require_uninterpreted_inspection(&self) -> Result<(), SourceDecodeError> {
-        if self.interpretation != VideoInterpretation::SOURCE || self.info.range_assumed {
+        if self.interpretation != VideoInterpretation::SOURCE || self.info.range_assumed || self.info.color_assumed {
             return Err(SourceDecodeError::InvalidConfiguration(
                 "raw export inspection requires a declared, unmodified source interpretation",
             ));
@@ -1090,6 +1094,7 @@ mod ffi {
         bwdif_fields: i32,
         chroma_assumed_left: i32,
         range_assumed: i32,
+        color_assumed: i32,
     }
     #[repr(C)]
     #[derive(Default)]
@@ -1637,6 +1642,11 @@ mod ffi {
                     _ => return Err(invalid_native()),
                 },
                 range_assumed: match info.range_assumed {
+                    0 => false,
+                    1 => true,
+                    _ => return Err(invalid_native()),
+                },
+                color_assumed: match info.color_assumed {
                     0 => false,
                     1 => true,
                     _ => return Err(invalid_native()),

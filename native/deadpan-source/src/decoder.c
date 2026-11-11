@@ -969,7 +969,22 @@ static int open_impl(DeadpanSource *s) {
     int assumed_range = f->color_range == AVCOL_RANGE_UNSPECIFIED;
     int range = assumed_range && pixel ?
         ((pixel->flags & AV_PIX_FMT_FLAG_RGB) ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG) : f->color_range;
-    if (color(s, p->codec_id, layout, range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
+    // Untagged eight-bit SDR YUV (common for downloaded H.264) is read as BT.709,
+    // the HD standard. Only absent tags are assumed, and only beside tags that
+    // already say BT.709; anything else keeps its qualified-or-refused path.
+    // The absence stays in the raw frames and in `color_assumed`, like range.
+    int matrix = f->colorspace, transfer = f->color_trc, primaries = f->color_primaries;
+    int assumed_color = 0;
+    if (pixel && !(pixel->flags & AV_PIX_FMT_FLAG_RGB) && pixel->comp[0].depth == 8 && pixel->comp[1].depth == 8 &&
+        pixel->comp[2].depth == 8 && pixel->nb_components == 3 &&
+        (matrix == AVCOL_SPC_UNSPECIFIED || matrix == AVCOL_SPC_BT709) &&
+        (transfer == AVCOL_TRC_UNSPECIFIED || transfer == AVCOL_TRC_BT709) &&
+        (primaries == AVCOL_PRI_UNSPECIFIED || primaries == AVCOL_PRI_BT709) &&
+        (matrix == AVCOL_SPC_UNSPECIFIED || transfer == AVCOL_TRC_UNSPECIFIED || primaries == AVCOL_PRI_UNSPECIFIED)) {
+        assumed_color = 1;
+        matrix = AVCOL_SPC_BT709; transfer = AVCOL_TRC_BT709; primaries = AVCOL_PRI_BT709;
+    }
+    if (color(s, p->codec_id, layout, range, matrix, transfer, primaries) < 0) return -1;
     int assumed_left = p->codec_id == AV_CODEC_ID_AV1 && !(s->av1_config[2] & 3) &&
                        f->chroma_location == AVCHROMA_LOC_UNSPECIFIED;
     if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
@@ -982,8 +997,9 @@ static int open_impl(DeadpanSource *s) {
     AVRational aspect = declared_aspect.num ? declared_aspect : sar(f->sample_aspect_ratio);
     if (aspect.num <= 0 || aspect.den <= 0 || aspect.num > 1000000 || aspect.den > 1000000)
         return fail(s, "unsupported_aspect", "invalid or excessive sample aspect ratio");
-    s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=range,.matrix=f->colorspace,.transfer=f->color_trc,.primaries=f->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
+    s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=range,.matrix=matrix,.transfer=transfer,.primaries=primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
     s->info.range_assumed = assumed_range;
+    s->info.color_assumed = assumed_color;
     s->info.chroma_assumed_left = assumed_left;
     s->info.bwdif_fields = !s->limits.progressive_only &&
         (s->h264_timing.field_cadence || f->repeat_pict == 1 || (f->flags & AV_FRAME_FLAG_INTERLACED) ||
@@ -1083,6 +1099,14 @@ int deadpan_source_interpret(DeadpanSource *s, int32_t range, int32_t chroma, ui
 }
 static int conversion_range(const DeadpanSource *s) { return s->range_override ? s->range_override : s->info.range; }
 static int conversion_chroma(const DeadpanSource *s) { return s->chroma_override ? s->chroma_override : s->chroma_location; }
+// An assumed interpretation admits frames whose tags are still absent or BT.709.
+static int frame_color_matches(const DeadpanSource *s, const AVFrame *f) {
+    if (!s->info.color_assumed)
+        return (int)f->colorspace == s->info.matrix && (int)f->color_trc == s->info.transfer && (int)f->color_primaries == s->info.primaries;
+    return (f->colorspace == AVCOL_SPC_UNSPECIFIED || f->colorspace == AVCOL_SPC_BT709) &&
+           (f->color_trc == AVCOL_TRC_UNSPECIFIED || f->color_trc == AVCOL_TRC_BT709) &&
+           (f->color_primaries == AVCOL_PRI_UNSPECIFIED || f->color_primaries == AVCOL_PRI_BT709);
+}
 static int check_frame(DeadpanSource *s) {
     AVFrame *f = s->frame;
     AVStream *stream = s->format->streams[s->stream];
@@ -1106,7 +1130,7 @@ static int check_frame(DeadpanSource *s) {
         if (result < 0) return fferror(s, "apply declared decoder crop", result);
     }
     if (f->width != s->info.width || f->height != s->info.height || picture_layout(s) != s->pixel_format ||
-        (int)f->color_range != (s->info.range_assumed ? AVCOL_RANGE_UNSPECIFIED : s->info.range) || (int)f->colorspace != s->info.matrix || (int)f->color_trc != s->info.transfer || (int)f->color_primaries != s->info.primaries)
+        (int)f->color_range != (s->info.range_assumed ? AVCOL_RANGE_UNSPECIFIED : s->info.range) || !frame_color_matches(s, f))
         return fail(s, "stream_changed", "source geometry, pixel layout, or color interpretation changed");
     if ((int)f->chroma_location != (s->info.chroma_assumed_left ? AVCHROMA_LOC_UNSPECIFIED : s->chroma_location))
         return fail(s, "stream_changed", "source chroma location changed");

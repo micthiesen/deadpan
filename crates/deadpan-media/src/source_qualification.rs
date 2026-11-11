@@ -515,6 +515,10 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || (info.bwdif_fields && !info.time_base_den.is_multiple_of(6))
         || (matches!(info.codec.as_str(), "vp9" | "av1") && info.bwdif_fields)
         || (info.chroma_assumed_left && !matches!(info.codec.as_str(), "vp9" | "av1"))
+        || (info.color_assumed
+            && (info.color.matrix != ColorMatrix::Bt709
+                || info.color.transfer != ColorTransfer::Bt709
+                || info.color.primaries != ColorPrimaries::Bt709))
         || (info.range_assumed
             && info.color.range
                 != if info.color.matrix == ColorMatrix::Rgb {
@@ -812,6 +816,8 @@ pub(crate) struct SourceStreamInfoWire {
     chroma_assumed_left: bool,
     #[serde(default, skip_serializing_if = "is_false")]
     range_assumed: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    color_assumed: bool,
     #[serde(deserialize_with = "required_option")]
     stream_start: Option<i64>,
     #[serde(deserialize_with = "required_option")]
