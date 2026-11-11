@@ -113,8 +113,11 @@ and write that evidence as one line under the item. No other records.
   acceptance movie.
 - [ ] **F10 Playback on real footage.** Sixty seconds of the acceptance edit
   plays without dropped pictures at 1080p. Evidence: measured run.
-- [ ] **F11 Clear refusals.** The combinations that refuse do so with a
+- [x] **F11 Clear refusals.** The combinations that refuse do so with a
   message that names the alternative. Evidence: a sampled list of ten.
+  Done 2026-11-11 (5c5d5944f): ten refusals sampled on the acceptance
+  project; six were unclear and are reworded, as is the attached-sound case
+  that said "split needs more node identities".
 
 ## Simplify list
 
@@ -129,13 +132,22 @@ and write that evidence as one line under the item. No other records.
   Done 2026-11-10 (787f039d1), full gate still to be confirmed at the end:
   the three test stages ran in 238 s, 117 s and 67 s with other builds
   running. `cargo xtask gate --slow` runs the 235 opt-in tests.
-- [ ] **S3 Derived audio timing.** Original audio placement is derived from
+- [x] **S3 Derived audio timing.** Original audio placement is derived from
   the current tree. The stored timing history that kept samples
   bit-identical across edits (bindings, lattices, reanchor steps) is
   removed. Accepted loss: at most one sample of difference at 29.97-style
   frame rates.
-- [ ] **S4 Dead layers.** Code that only served dropped requirements is
+  Done 2026-11-11 (9ae2dd271, 35b505c15, 6705fd584): the binding machinery
+  is gone. `deadpan-audio/tests/derived_timing.rs` matches the Original
+  exactly at 48 kHz and within -109 dB at 44.1 kHz; a pitch-preserved speed
+  change differs slightly (correlation above 0.98) and is accepted. Sound
+  clocks and their timing tables stay, because placed sounds use them.
+- [x] **S4 Dead layers.** Code that only served dropped requirements is
   removed where removal is safe and shortens the build or the gate.
+  Done 2026-11-11: chaos, fuzz, sanitizer and offline-distribution tooling,
+  the adversarial tests, trace recorders and legacy baselines are removed.
+  Left in place: per-allocation budget accounting, history validation, the
+  update and model-pack code, and placed-sound route journals.
 
 ## Done
 
