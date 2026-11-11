@@ -108,12 +108,17 @@ and write that evidence as one line under the item. No other records.
 
 ## Simplify list
 
-- [ ] **S1 Documents.** Spec, ledger, score, gates and qualification records
+- [x] **S1 Documents.** Spec, ledger, score, gates and qualification records
   are gone; `AGENTS.md` is under 15 KB.
-- [ ] **S2 Cheap verification.** `cargo xtask gate` runs its tests in under
+  Done 2026-11-10 (746ae182b, d4fdc2f2e): `AGENTS.md` is 8 KB; 70,800
+  evidence files and ten record documents removed.
+- [x] **S2 Cheap verification.** `cargo xtask gate` runs its tests in under
   ten minutes on this Mac. Tests that pin superseded behavior
   (before/after/trace/baseline oracles) are deleted; slow matrices run only
   on request.
+  Done 2026-11-10 (787f039d1), full gate still to be confirmed at the end:
+  the three test stages ran in 238 s, 117 s and 67 s with other builds
+  running. `cargo xtask gate --slow` runs the 235 opt-in tests.
 - [ ] **S3 Derived audio timing.** Original audio placement is derived from
   the current tree. The stored timing history that kept samples
   bit-identical across edits (bindings, lattices, reanchor steps) is
