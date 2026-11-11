@@ -32,9 +32,7 @@ use preview::DeadpanApp;
 fn version_line() -> String {
     let version = env!("CARGO_PKG_VERSION");
     let commit = deadpan_cli::bundle::running_contents()
-        .and_then(|contents| {
-            std::fs::read(contents.join("Resources/build-provenance.json")).ok()
-        })
+        .and_then(|contents| std::fs::read(contents.join("Resources/build-provenance.json")).ok())
         .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
         .and_then(|value| value["git_commit"].as_str().map(str::to_owned));
     match commit {

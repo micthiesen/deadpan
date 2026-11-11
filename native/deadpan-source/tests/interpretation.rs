@@ -60,7 +60,10 @@ fn untagged_sdr_yuv_is_read_as_bt709_recorded_and_never_export_evidence() {
     };
     let mut corrected = open("untagged-yuv.mp4", choice, 1);
     assert!(corrected.info().color_assumed);
-    assert_ne!(corrected.next_rgba(control()).unwrap().unwrap().rgba, expected.rgba);
+    assert_ne!(
+        corrected.next_rgba(control()).unwrap().unwrap().rgba,
+        expected.rgba
+    );
 }
 
 #[test]

@@ -1680,12 +1680,22 @@ pub(crate) fn crash_copy(from: &std::path::Path, to: &std::path::Path) -> Result
             {
                 continue;
             }
-            let kind = entry.file_type().map_err(|error| error.to_string())?;
+            // A running job creates and removes scratch files while this
+            // copies; an entry that vanished is not part of the crash image.
+            let kind = match entry.file_type() {
+                Ok(kind) => kind,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(error) => return Err(error.to_string()),
+            };
             let target = to.join(&name);
             if kind.is_dir() {
                 files(&entry.path(), &target, false)?;
             } else if kind.is_file() {
-                std::fs::copy(entry.path(), &target).map_err(|error| error.to_string())?;
+                match std::fs::copy(entry.path(), &target) {
+                    Ok(_) => {}
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(error) => return Err(error.to_string()),
+                }
             } else {
                 return Err(format!(
                     "package contains a link: {}",
