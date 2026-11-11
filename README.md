@@ -8,19 +8,10 @@ cuts, pauses, repeats, reframing, sound and local AI-generated Holds. Reuse
 moments from that Original and add external audio effects. New native projects
 belong in Documents/Deadpan.
 
-Deadpan is still in development and is **not yet a usable video editor or
-release candidate**. Implemented features have local verification evidence;
-that does not establish the complete editing workflow or release acceptance.
-The [full specification](docs/spec/DEADPAN_SPEC.md) remains normative.
+[The brief](docs/BRIEF.md) says what Deadpan must do and when it is done. It
+replaced the full specification and its requirement tracker on 2026-11-10.
 
 ## Current implementation
-
-As of 2026-10-23, the [requirement tracker](docs/REQUIREMENTS.md) marks **8 of
-24 requirements Complete and 16 Partial**, under the specification's local
-verification scope (§29.1). Completed sections cover projects/recovery, exact
-timing, model management, YouTube and local import, accepted-media portability,
-personal-app packaging, and license/privacy/security requirements. Every
-remaining requirement and Gate A through G remains in scope.
 
 The current application and shared command path include:
 
@@ -117,21 +108,14 @@ requires neither Developer ID signing nor notarization. Local packaging
 qualification does not establish support on another Mac or overall release
 readiness.
 
-[Development](docs/DEVELOPMENT.md) documents the appropriate checks and full
-gate. Qualification records preserve executed identities, real-media results,
-failed configurations, skipped checks and remaining limits. A build, generated
-design image or downloaded model is not acceptance evidence.
+[Development](docs/DEVELOPMENT.md) documents the checks and the gate.
 
-## Specification and project map
+## Project map
 
-- [Full product specification 1.1](docs/spec/DEADPAN_SPEC.md), the normative
-  Markdown source; [specification provenance](docs/SPEC_PROVENANCE.md).
-- [Original 1.0 archive](docs/spec/archive/1.0/), historical rather than current
-  authority.
-- [Requirements and delivery gates](docs/REQUIREMENTS.md), current status,
-  evidence and owner-verification steps.
-- [Implementation-agent handoff](docs/spec/AGENT_HANDOFF.md), current
-  continuation and retained checkpoints.
-- [Agent instructions](AGENTS.md), working agreement and project constraints.
-
-Completing an early gate does not reduce the full specification.
+- [Brief](docs/BRIEF.md): what Deadpan must do, the finish list and the
+  definition of done.
+- [Agent instructions](AGENTS.md): how to build, verify and work in this
+  repository.
+- [Commands](docs/COMMANDS.md): every action, generated from the registry.
+- [Architecture](docs/ARCHITECTURE.md) and the per-area documents under
+  `docs/`.
