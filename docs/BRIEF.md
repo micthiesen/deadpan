@@ -77,17 +77,20 @@ and write that evidence as one line under the item. No other records.
   place a sound effect, play, render. It runs through the real UI replay
   harness and headless. Evidence: both runs pass and `verify-export` passes
   on the rendered movie.
-- [ ] **F3 Timeline overview.** The whole edit is visible as one strip, to
+- [x] **F3 Timeline overview.** The whole edit is visible as one strip, to
   scale, with every beat, the cursor, selection, pauses, repeats and placed
   sounds, readable at 10 beats and at 1,000. Beat cards remain the detail
   view. Evidence: replay frames at 10 and 1,000 beats.
-- [ ] **F4 Transcript pane.** The transcript is readable as text (not a
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
+- [x] **F4 Transcript pane.** The transcript is readable as text (not a
   six-line rail list), follows the cursor, is searchable, and a word can be
   selected and operated on from it. Evidence: acceptance replay frames.
-- [ ] **F5 Quiet inspector and footer.** The inspector shows the selected
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
+- [x] **F5 Quiet inspector and footer.** The inspector shows the selected
   beat's main values first and folds the rest; the footer is one row of the
   keys that matter in the current context. Evidence: replay frames at
   1280x820 and 960x640.
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
 - [x] **F6 Word timing.** Word boundaries are good enough that a word repeat
   does not clip the word. Evidence: measured median word-start error under
   60 ms on real speech, with refinement on by default.
@@ -96,12 +99,14 @@ and write that evidence as one line under the item. No other records.
   93% within 60 ms, p90 50 ms with the phoneme aligner (50 ms median with
   DTW alone). Needs the `phoneme-ctc-en` pack installed; install it with the
   app (F1).
-- [ ] **F7 Picture first.** The picture is the largest thing on screen and is
+- [x] **F7 Picture first.** The picture is the largest thing on screen and is
   never clipped at 1280x820 or 960x640; a settled frame never shows
   "Preparing picture". Evidence: replay frames.
-- [ ] **F8 Render and Trim screens.** Render sits inside the layout and shows
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
+- [x] **F8 Render and Trim screens.** Render sits inside the layout and shows
   a destination, progress and result without raw internals; Trim shows its
   junction pictures. Evidence: replay frames.
+  Done 2026-11-10 (d7d72c608, 6db58ebba): `ui-real` and `ui-start` replay frames on Tears of Steel at both sizes; confirm in the final sweep.
 - [ ] **F9 Sound sanity on the real export.** No clicks at cuts
   (discontinuity scan), no clipping, A/V offset within one frame, levels
   unchanged where nothing was authored. Evidence: scan output on the
