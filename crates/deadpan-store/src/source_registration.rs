@@ -1446,12 +1446,15 @@ pub(crate) fn validate_hold_audio_source(
             }
             return Ok(());
         }
-        // A new pause can carry reversed audio, which reads qualified
-        // Original samples. (Room tone has always been chosen with
+        // A new pause can carry reversed audio or a custom sound, which read
+        // qualified samples. (Room tone has always been chosen with
         // SetHoldAudio, so earlier histories keep their admission; tails and
         // tones read no stored samples.)
         Command::InsertTime { hold, .. }
-            if matches!(hold.audio, deadpan_core::HoldAudio::Reverse { .. }) =>
+            if matches!(
+                hold.audio,
+                deadpan_core::HoldAudio::Reverse { .. } | deadpan_core::HoldAudio::Custom { .. }
+            ) =>
         {
             &hold.audio
         }
@@ -1472,7 +1475,8 @@ fn validate_hold_audio_recipe(
         | deadpan_core::HoldAudio::Tail { .. }
         | deadpan_core::HoldAudio::Rewind { .. } => return Ok(()),
         deadpan_core::HoldAudio::RoomTone { source }
-        | deadpan_core::HoldAudio::Reverse { source } => source,
+        | deadpan_core::HoldAudio::Reverse { source }
+        | deadpan_core::HoldAudio::Custom { source, .. } => source,
     };
     let record = current
         .assets()

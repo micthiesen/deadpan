@@ -6281,6 +6281,7 @@ fn beat_kind(kind: &NodeKind) -> String {
                 deadpan_core::HoldAudio::Reverse { .. }
                 | deadpan_core::HoldAudio::Rewind { .. } => "reversed sound",
                 deadpan_core::HoldAudio::Tone { .. } => "tone",
+                deadpan_core::HoldAudio::Custom { .. } => "custom sound",
             }
         ),
         NodeKind::Repeat { iterations, .. } => format!(

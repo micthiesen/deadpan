@@ -172,9 +172,26 @@ by definition, occurrence path, preceding play and content
   cannot sit inside a speed change: a document with a tail Hold or tail gap
   under a nonunity Retime of either pitch policy is invalid, so wrapping a
   tail in a Retime, changing a unity Retime around one to another speed, or
-  giving a pause inside a Retime a tail is refused at authoring time
-  (otherwise the ring would be stretched or pitch-shifted). Transparent
-  Partitions and unity Retimes are allowed.
+  giving a pause inside a Retime a tail is refused at authoring time with
+  that reason and the fix ("put the pause just after the Retime instead,
+  where it rings the sped-up sound at normal speed"). Transparent Partitions
+  and unity Retimes are allowed. Decided 2026-11-10 (specification §10.4):
+  the ring is defined at the edit's rate, but inside a speed change every
+  sample is read on the stage's input grid, which has no edit position, and
+  is then resampled (tape) or stretched (Preserve) by the one shared DSP
+  path. An output-rate ring there would need prepared audio that bypasses
+  the stage it sits in, which neither stage kind has exactly (pre-stretching
+  the ring by the inverse rate is an approximation, not the same samples).
+  A tail just after the Retime hears the processed, sped-up sound and rings
+  it at normal speed, which is the intended effect.
+- Loop seams (2026-11-10): every occurrence hears what the edit clock heard
+  just before it. A tail opening a Repeat play hears, in the first play, what
+  precedes the Repeat, and in later plays the end of the previous play and
+  its gap; a tail as the Repeat's gap hears the end of the play before it.
+  Other tails in the window (the previous play's own tail, a gap tail) are
+  silent. `a_tail_at_a_loop_seam_or_after_a_gap_hears_the_edit_just_before_it`
+  checks all three rings against the reverb of the authored bus over exactly
+  those windows.
 - The tail runs the fixed effect over that input in `f64` and keeps what rings
   afterwards ([`render_tail`](../crates/deadpan-audio/src/hold_effects.rs)):
   the reverb is a per-channel parallel-comb (8) and series-all-pass (4)
@@ -333,9 +350,12 @@ a `Tail of: Live 2 s before` row.
   43,181), `are-we-done`, `bleep` (pictures unchanged, the click replaced by
   the tone) and `lift`.
 
+A fourth pause sound, a user-chosen `custom` sound (once or looped, with
+fades), is documented with room tone ([custom pause sounds](ROOM_TONE_AUDIO.md#custom-pause-sounds)).
+
 ## Remaining
 
-A bleep mixed over the sound instead of replacing it, bleeping framed
+A tail inside a speed change (refused, see above), a bleep mixed over the sound instead of replacing it, bleeping framed
 pictures across a cut, choosing the tail's source range by hand, a captured
 (edit-independent) reversal of composite passages, reversing placed sounds,
 a passage longer than 20 s, a reverse inside a speed change, and listening

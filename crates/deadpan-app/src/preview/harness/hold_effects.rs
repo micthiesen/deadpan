@@ -34,6 +34,7 @@ fn describe(recipe: Option<&HoldRecipe>) -> Value {
                 HoldAudio::RoomTone { .. } => json!("room tone"),
                 HoldAudio::Tone { frequency_hz, .. } => json!({"tone": frequency_hz}),
                 HoldAudio::Rewind { bounce } => json!({"rewind": bounce}),
+                HoldAudio::Custom { looped, fade_in_ms, fade_out_ms, .. } => json!({"custom": {"looped": looped, "fade_in_ms": fade_in_ms, "fade_out_ms": fade_out_ms}}),
             },
         })
     })

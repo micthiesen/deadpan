@@ -268,7 +268,7 @@ qualification in the expected revision. For example, a 48 kHz original range:
 }
 ```
 
-Use `audio: { "type": "silence" }` for digital silence. `edit_occurrence` accepts
+Use `audio: { "type": "silence" }` for digital silence. A custom pause sound is `{ "type": "custom", "source": …, "looped": true, "fade_in_ms": 10, "fade_out_ms": 10 }` (`looped` and the fades default to false and 0; see [custom pause sounds](ROOM_TONE_AUDIO.md#custom-pause-sounds)). `edit_occurrence` accepts
 the same operation as `edit: { "type": "set_hold_audio", "audio": ... }` with
 the normal explicit instance and identity pool. Obsolete permissions belonging
 to a Hold changed away from Silence are removed atomically; Undo restores them.

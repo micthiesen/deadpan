@@ -1,4 +1,6 @@
-//! Explicit, captured-target room-tone drafts. Preview never authors a Hold.
+//! Explicit, captured-target pause sound drafts: room tone or a custom sound
+//! (a catalog sound or an Original range, once or looped, with fades).
+//! Preview never authors a Hold.
 
 use deadpan_core::{AudioSample, HoldAudio, SourceAudio, SourceSpan, SourceTimestamp};
 
@@ -9,6 +11,8 @@ use crate::transport::{ContentRef, Domain};
 const IN_ID: &str = "room-tone-in";
 const OUT_ID: &str = "room-tone-out";
 const FOCUS_ID: &str = "room-tone-focus";
+const FADE_IN_ID: &str = "custom-sound-fade-in";
+const FADE_OUT_ID: &str = "custom-sound-fade-out";
 
 #[derive(Clone)]
 struct Target {
@@ -29,6 +33,15 @@ struct Target {
 }
 
 impl Target {
+    fn heading_for(&self, custom: bool) -> String {
+        let heading = self.heading();
+        if custom {
+            heading.replacen("Room tone", "Custom sound", 1)
+        } else {
+            heading.to_owned()
+        }
+    }
+
     fn heading(&self) -> &'static str {
         if self.play_gap.is_some() {
             return "Room tone for this play's gap";
@@ -79,6 +92,24 @@ pub(super) struct CommandTarget {
     target: Result<Target, String>,
     selection: Option<RoomToneSelection>,
     copied: Option<RoomToneSelection>,
+    /// The pause's saved custom sound options, when it has one.
+    custom: Option<CustomOptions>,
+}
+
+/// A custom sound's playback options, as authored on the Hold.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct CustomOptions {
+    looped: bool,
+    fade_in_ms: u32,
+    fade_out_ms: u32,
+}
+
+/// One audio-only catalog sound a custom pause sound can start from.
+#[derive(Clone)]
+struct CatalogSound {
+    label: String,
+    source: SourceAudio,
+    qualification: deadpan_core::SourceQualificationId,
 }
 
 #[derive(Clone, Copy)]
@@ -86,6 +117,7 @@ enum SheetAction {
     Apply,
     Prepare,
     UseCopied,
+    UseSound(usize),
     Play,
     Loop,
     Cancel,
@@ -104,6 +136,12 @@ pub(super) struct Draft {
     focus_pending: bool,
     pub(super) cursor: u64,
     waveform: RangeWaveform,
+    /// Custom sound instead of room tone.
+    pub(super) custom: bool,
+    pub(super) looped: bool,
+    fade_in: String,
+    fade_out: String,
+    sounds: Vec<CatalogSound>,
 }
 
 /// The prepared range's measured stereo waveform, as its audition plays it.
@@ -163,6 +201,25 @@ impl Draft {
         })
     }
 
+    /// The Hold audio Apply authors from the prepared range.
+    fn audio(&self) -> Result<HoldAudio, String> {
+        let source = self
+            .prepared
+            .as_ref()
+            .ok_or("Prepare the source range first.")?
+            .source
+            .clone();
+        if !self.custom {
+            return Ok(HoldAudio::RoomTone { source });
+        }
+        Ok(HoldAudio::Custom {
+            source,
+            looped: self.looped,
+            fade_in_ms: parse_fade(&self.fade_in, "Fade in")?,
+            fade_out_ms: parse_fade(&self.fade_out, "Fade out")?,
+        })
+    }
+
     fn ready(&self) -> bool {
         self.pending.is_none()
             && self
@@ -191,11 +248,9 @@ impl DeadpanApp {
             return Err(draft
                 .error
                 .clone()
-                .unwrap_or_else(|| "Prepare the room tone range before committing it.".into()));
+                .unwrap_or_else(|| "Prepare the source range before committing it.".into()));
         }
-        let audio = HoldAudio::RoomTone {
-            source: draft.prepared.as_ref().expect("ready draft").source.clone(),
-        };
+        let audio = draft.audio()?;
         if self
             .workspace
             .as_ref()
@@ -299,7 +354,8 @@ impl DeadpanApp {
             let target = target.as_ref().ok()?;
             let workspace = self.workspace.as_ref()?;
             let recipe = target.pause.recipe(&workspace.document)?;
-            let HoldAudio::RoomTone { source } = &recipe.audio else {
+            let (HoldAudio::RoomTone { source } | HoldAudio::Custom { source, .. }) = &recipe.audio
+            else {
                 return None;
             };
             let registered = workspace.sources.get(&source.asset)?;
@@ -309,10 +365,27 @@ impl DeadpanApp {
             })
         })()
         .or_else(|| copied.clone());
+        let custom = target.as_ref().ok().and_then(|target| {
+            let recipe = target.pause.recipe(&self.workspace.as_ref()?.document)?;
+            match recipe.audio {
+                HoldAudio::Custom {
+                    looped,
+                    fade_in_ms,
+                    fade_out_ms,
+                    ..
+                } => Some(CustomOptions {
+                    looped,
+                    fade_in_ms,
+                    fade_out_ms,
+                }),
+                _ => None,
+            }
+        });
         CommandTarget {
             target,
             selection,
             copied,
+            custom,
         }
     }
 
@@ -393,17 +466,52 @@ impl DeadpanApp {
         captured: Option<CommandTarget>,
         context: &egui::Context,
     ) {
+        self.open_pause_sound(captured, context, false);
+    }
+
+    /// Open the pause sound sheet: room tone, or a custom sound when `custom`
+    /// is asked for or the pause already has one.
+    pub(super) fn open_pause_sound(
+        &mut self,
+        captured: Option<CommandTarget>,
+        context: &egui::Context,
+        custom: bool,
+    ) {
         if !self.hold_audio_entry_allowed() {
             return;
         }
+        let sounds = self.catalog_sounds();
         let result = (|| {
             let captured = captured.ok_or("No pause was captured when command entry opened.")?;
             let target = captured.target?;
             self.hold_audio_capture(&target)?;
-            let selection = captured.selection.ok_or_else(|| format!("Copy a quiet Original range first: :source, {}. Return to Your edit and select a pause, then :room-tone.", self.editor_copy_recipe()))?;
-            Ok::<_, String>((target, selection, captured.copied))
+            let options = captured.custom;
+            let custom = custom || options.is_some();
+            let selection = match captured.selection {
+                Some(selection) => Some(selection),
+                // A custom sound can start from a catalog sound instead.
+                None if custom && !sounds.is_empty() => None,
+                None => {
+                    return Err(format!(
+                        "Copy a quiet Original range first: :source, {}. Return to Your edit and select a pause, then :room-tone.{}",
+                        self.editor_copy_recipe(),
+                        if custom {
+                            " Or add a sound to the catalog."
+                        } else {
+                            ""
+                        }
+                    ));
+                }
+            };
+            Ok::<_, String>((
+                target,
+                selection,
+                captured.copied,
+                custom,
+                options.unwrap_or_default(),
+            ))
         })();
-        let (target, selection, copied) = match result {
+        let (target, selection, copied, custom, options) = match result {
             Ok(pair) => pair,
             Err(error) => {
                 self.error = Some(error);
@@ -428,9 +536,40 @@ impl DeadpanApp {
             focus_pending: true,
             cursor: 0,
             waveform: RangeWaveform::default(),
+            custom,
+            looped: options.looped,
+            fade_in: options.fade_in_ms.to_string(),
+            fade_out: options.fade_out_ms.to_string(),
+            sounds,
         });
-        self.prepare_room_tone(selection);
+        if let Some(selection) = selection {
+            self.prepare_room_tone(selection);
+        }
         context.request_repaint();
+    }
+
+    /// Audio-only catalog sounds with their complete measured audio.
+    fn catalog_sounds(&self) -> Vec<CatalogSound> {
+        let Some(workspace) = &self.workspace else {
+            return Vec::new();
+        };
+        workspace
+            .sources
+            .iter()
+            .filter_map(|(asset, registered)| {
+                let (label, source) = deadpan_cli::sound_events::catalog_source(
+                    &workspace.document,
+                    &registered.receipt,
+                    asset,
+                )
+                .ok()?;
+                Some(CatalogSound {
+                    label,
+                    source,
+                    qualification: registered.receipt.id().clone(),
+                })
+            })
+            .collect()
     }
 
     fn prepare_room_tone(&mut self, selection: RoomToneSelection) {
@@ -614,7 +753,7 @@ impl DeadpanApp {
             return;
         }
         let field = context.memory(|memory| {
-            [IN_ID, OUT_ID]
+            [IN_ID, OUT_ID, FADE_IN_ID, FADE_OUT_ID]
                 .iter()
                 .any(|id| memory.has_focus(egui::Id::new(id)))
         });
@@ -684,6 +823,7 @@ impl DeadpanApp {
             return;
         }
         let mut changed = false;
+        let mut options_changed = false;
         let busy = self.service.is_busy();
         let ready = draft.ready();
         let source_label = draft
@@ -695,29 +835,57 @@ impl DeadpanApp {
         egui::Modal::new(egui::Id::new("room-tone-sheet"))
             .frame(egui::Frame::popup(&context.style_of(egui::Theme::Dark)).inner_margin(24).corner_radius(10))
             .show(context, |ui| {
-                super::accessibility::dialog(ui, draft.target.heading());
+                let title = draft.target.heading_for(draft.custom);
+                super::accessibility::dialog(ui, &title);
                 ui.set_width(width);
                 let heading = ui.horizontal(|ui| {
-                    ui.heading(draft.target.heading());
+                    ui.heading(&title);
                     ui.colored_label(style::LAVENDER, "DRAFT");
                 }).response;
                 let focus = ui.interact(heading.rect, egui::Id::new(FOCUS_ID), egui::Sense::focusable_noninteractive());
                 if std::mem::take(&mut draft.focus_pending) { focus.request_focus(); }
                 ui.label(format!("{} · {} f · picture and duration stay intact", draft.target.label, draft.target.frames));
                 ui.separator();
-                egui::ScrollArea::vertical().id_salt("room-tone-details").max_height((context.content_rect().height() - 225.0).max(160.0)).show(ui, |ui| {
-                    ui.label(egui::RichText::new(source_label.as_deref().unwrap_or("Original range")).strong());
-                    ui.weak("Listen for quiet words. Choose non-speech material; nothing is detected or normalized automatically.");
+                ui.horizontal(|ui| {
+                    ui.label("Sound");
+                    options_changed |= ui.selectable_value(&mut draft.custom, false, "Room tone").changed();
+                    options_changed |= ui.selectable_value(&mut draft.custom, true, "Custom sound").changed();
+                });
+                egui::ScrollArea::vertical().id_salt("room-tone-details").max_height((context.content_rect().height() - 260.0).max(160.0)).show(ui, |ui| {
+                    ui.label(egui::RichText::new(source_label.as_deref().unwrap_or(if draft.custom { "Choose a sound" } else { "Original range" })).strong());
+                    if draft.custom {
+                        ui.weak("Any catalog sound or Original range plays from the pause's start at its natural speed. It never runs past the pause.");
+                    } else {
+                        ui.weak("Listen for quiet words. Choose non-speech material; nothing is detected or normalized automatically.");
+                    }
                     if ui.add_enabled(!busy && draft.copied.is_some(), egui::Button::new("Use copied Original range")).clicked() {
                         action = Some(SheetAction::UseCopied);
+                    }
+                    if draft.custom {
+                        for (index, sound) in draft.sounds.iter().enumerate() {
+                            if ui.add_enabled(!busy, egui::Button::new(format!("Use sound: {}", sound.label))).clicked() {
+                                action = Some(SheetAction::UseSound(index));
+                            }
+                        }
+                        if draft.sounds.is_empty() {
+                            ui.weak("No catalog sounds yet. Add one from Sources, or use a copied Original range.");
+                        }
+                        options_changed |= ui.checkbox(&mut draft.looped, "Loop until the pause ends (crossfaded like room tone)").changed();
+                        ui.columns(2, |columns| {
+                            let label = columns[0].label("Fade in (ms)");
+                            options_changed |= columns[0].add(egui::TextEdit::singleline(&mut draft.fade_in).id(egui::Id::new(FADE_IN_ID)).return_key(None).desired_width(f32::INFINITY)).labelled_by(label.id).changed();
+                            let label = columns[1].label("Fade out (ms)");
+                            options_changed |= columns[1].add(egui::TextEdit::singleline(&mut draft.fade_out).id(egui::Id::new(FADE_OUT_ID)).return_key(None).desired_width(f32::INFINITY)).labelled_by(label.id).changed();
+                        });
+                        ui.weak(if draft.looped { "Fades start at the pause's start and end at its end." } else { "Fades start at the pause's start and end where the sound ends, or at the pause's end if that comes first. Silence follows." });
                     }
                     if let Some((source, _)) = &draft.basis {
                         let rate = source.span.start().time_base.denominator();
                         ui.label(format!("Source samples · {rate} Hz · Out excluded"));
                         ui.columns(2, |columns| {
-                            let label = columns[0].label("Room tone In sample");
+                            let label = columns[0].label(if draft.custom { "Sound In sample" } else { "Room tone In sample" });
                             changed |= columns[0].add(egui::TextEdit::singleline(&mut draft.start).id(egui::Id::new(IN_ID)).return_key(None).desired_width(f32::INFINITY)).labelled_by(label.id).changed();
-                            let label = columns[1].label("Room tone Out sample");
+                            let label = columns[1].label(if draft.custom { "Sound Out sample" } else { "Room tone Out sample" });
                             changed |= columns[1].add(egui::TextEdit::singleline(&mut draft.end).id(egui::Id::new(OUT_ID)).return_key(None).desired_width(f32::INFINITY)).labelled_by(label.id).changed();
                         });
                         if let Ok(source) = draft.source() {
@@ -745,16 +913,21 @@ impl DeadpanApp {
                     if draft.prepared.is_some() && !changed {
                         range_waveform(ui, &draft.waveform, draft.cursor, total);
                     }
-                    ui.weak("Source preview has no lead-in or follow-through. After Apply, audition the pause to hear its crossfaded loop.");
+                    ui.weak(if draft.custom { "Source preview plays the range without fades. After Apply, audition the pause to hear it with its fades." } else { "Source preview has no lead-in or follow-through. After Apply, audition the pause to hear its crossfaded loop." });
                 });
                 ui.separator();
                 ui.weak(draft.target.scope_note());
                 ui.horizontal_wrapped(|ui| {
-                    if ui.add_enabled(ready && !changed && !busy, style::action("Apply room tone", crate::navigation::registry::mode_label("room-tone.apply")).fill(style::SELECTED)).clicked() { action = Some(SheetAction::Apply); }
+                    let apply = if draft.custom { "Apply custom sound" } else { "Apply room tone" };
+                    if ui.add_enabled(ready && !changed && !busy, style::action(apply, crate::navigation::registry::mode_label("room-tone.apply")).fill(style::SELECTED)).clicked() { action = Some(SheetAction::Apply); }
                     if ui.add(style::action("Cancel", crate::navigation::registry::mode_label("room-tone.cancel"))).clicked() { action = Some(SheetAction::Cancel); }
                 });
                 ui.weak("Tab / Shift+Tab moves through controls. Escape discards the draft.");
             });
+        if options_changed && !changed {
+            // Choosing the kind, loop or fades keeps the prepared range.
+            draft.error = None;
+        }
         if changed {
             if let Some(ticket) = draft.waveform.ticket.take() {
                 self.playback.cancel_waveform(ticket);
@@ -787,7 +960,7 @@ impl DeadpanApp {
             return;
         }
         if self.service.is_busy() {
-            let refusal = "Room tone did not change because another project command is still in progress. Try again when it finishes.";
+            let refusal = "The pause sound did not change because another project command is still in progress. Try again when it finishes.";
             if let Some(draft) = &mut self.room_tone {
                 draft.error = Some(refusal.into());
             }
@@ -796,6 +969,15 @@ impl DeadpanApp {
         if matches!(action, SheetAction::UseCopied) {
             if let Some(selection) = draft.copied.clone() {
                 self.prepare_room_tone(selection);
+            }
+            return;
+        }
+        if let SheetAction::UseSound(index) = action {
+            if let Some(sound) = draft.sounds.get(index).cloned() {
+                self.prepare_room_tone(RoomToneSelection::Exact {
+                    source: sound.source,
+                    qualification: sound.qualification,
+                });
             }
             return;
         }
@@ -830,7 +1012,15 @@ impl DeadpanApp {
         match action {
             SheetAction::Apply => {
                 let target = draft.target.clone();
-                let source = draft.prepared.as_ref().expect("ready draft").source.clone();
+                let audio = match draft.audio() {
+                    Ok(audio) => audio,
+                    Err(error) => {
+                        if let Some(draft) = &mut self.room_tone {
+                            draft.error = Some(error);
+                        }
+                        return;
+                    }
+                };
                 if !self.hold_audio_entry_allowed() {
                     return;
                 }
@@ -847,20 +1037,21 @@ impl DeadpanApp {
                     });
                     self.apply_recorded_instruction(
                         capture,
-                        Ok(deadpan_core::SemanticInstruction::SetHoldAudio {
-                            audio: HoldAudio::RoomTone { source },
-                        }),
+                        Ok(deadpan_core::SemanticInstruction::SetHoldAudio { audio }),
                     );
                     return;
                 }
-                if self.submit(hold_request(target, HoldAudio::RoomTone { source })) {
+                if self.submit(hold_request(target, audio)) {
                     self.close_room_tone(context);
                 }
             }
             SheetAction::Play | SheetAction::Loop => {
                 self.preview_room_tone(matches!(action, SheetAction::Loop))
             }
-            SheetAction::Prepare | SheetAction::UseCopied | SheetAction::Cancel => {}
+            SheetAction::Prepare
+            | SheetAction::UseCopied
+            | SheetAction::UseSound(_)
+            | SheetAction::Cancel => {}
         }
     }
 
@@ -925,6 +1116,32 @@ impl DeadpanApp {
             && let Some(recipe) = pause
                 .as_ref()
                 .and_then(|pause| pause.recipe(&workspace.document))
+            && let HoldAudio::Custom {
+                source,
+                looped,
+                fade_in_ms,
+                fade_out_ms,
+            } = &recipe.audio
+        {
+            let label = workspace
+                .sources
+                .get(&source.asset)
+                .map_or(source.asset.as_str(), |s| s.label.as_str());
+            ui.colored_label(style::LAVENDER, "Custom sound");
+            ui.label(label);
+            ui.small(format!(
+                "{} · fade in {fade_in_ms} ms · fade out {fade_out_ms} ms",
+                if *looped {
+                    "Loops to the end"
+                } else {
+                    "Plays once"
+                }
+            ));
+        }
+        if let Some(workspace) = &self.workspace
+            && let Some(recipe) = pause
+                .as_ref()
+                .and_then(|pause| pause.recipe(&workspace.document))
             && let HoldAudio::RoomTone { source } = &recipe.audio
         {
             let label = workspace
@@ -950,6 +1167,12 @@ impl DeadpanApp {
             .clicked()
         {
             self.open_room_tone(Some(self.capture_hold_command()), ui.ctx());
+        }
+        if ui
+            .add_enabled(ready, style::row_action(ui, "Custom sound…", ":room-tone"))
+            .clicked()
+        {
+            self.open_pause_sound(Some(self.capture_hold_command()), ui.ctx(), true);
         }
         if ui
             .add_enabled(ready, style::row_action(ui, "Use silence", ":hold-silence"))
@@ -985,6 +1208,20 @@ impl DeadpanApp {
         }
         workspace.document.pause_sound_target(node)
     }
+}
+
+/// Whole milliseconds, optionally ending in `ms`; empty means no fade.
+fn parse_fade(value: &str, name: &str) -> Result<u32, String> {
+    let value = value.trim();
+    let digits = value.strip_suffix("ms").unwrap_or(value).trim();
+    if digits.is_empty() {
+        return Ok(0);
+    }
+    digits
+        .parse::<u32>()
+        .ok()
+        .filter(|ms| *ms <= deadpan_core::MAX_CUSTOM_FADE_MS)
+        .ok_or_else(|| format!("{name} is whole milliseconds from 0 to 10000."))
 }
 
 fn hold_request(target: Target, audio: HoldAudio) -> ProjectRequest {
@@ -1087,6 +1324,21 @@ mod tests {
             focus_pending: false,
             cursor: 0,
             waveform: RangeWaveform::default(),
+            custom: false,
+            looped: false,
+            fade_in: String::new(),
+            fade_out: String::new(),
+            sounds: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn custom_fades_are_whole_milliseconds_within_ten_seconds() {
+        assert_eq!(parse_fade("", "Fade in"), Ok(0));
+        assert_eq!(parse_fade(" 25ms ", "Fade in"), Ok(25));
+        assert_eq!(parse_fade("10000", "Fade in"), Ok(10_000));
+        for invalid in ["10001", "-1", "2.5", "1s"] {
+            assert!(parse_fade(invalid, "Fade out").is_err(), "{invalid}");
         }
     }
 

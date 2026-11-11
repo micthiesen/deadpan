@@ -40,6 +40,12 @@ pub enum ReferenceAudioContent {
     Rewind {
         bounce: bool,
     },
+    /// A chosen source sound over the pause.
+    Custom {
+        looped: bool,
+        fade_in_ms: u32,
+        fade_out_ms: u32,
+    },
     Silence {
         reason: SilenceReason,
     },
@@ -831,6 +837,15 @@ fn content(audio: ReferenceAudibility) -> ReferenceAudioContent {
         },
         ReferenceAudibility::Reverse => ReferenceAudioContent::Reverse,
         ReferenceAudibility::Rewind { bounce } => ReferenceAudioContent::Rewind { bounce },
+        ReferenceAudibility::Custom {
+            looped,
+            fade_in_ms,
+            fade_out_ms,
+        } => ReferenceAudioContent::Custom {
+            looped,
+            fade_in_ms,
+            fade_out_ms,
+        },
         ReferenceAudibility::Tone {
             frequency_hz,
             level,

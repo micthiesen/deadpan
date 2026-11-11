@@ -73,6 +73,19 @@ pub enum ReferenceAudibility {
         #[serde(skip_serializing_if = "std::ops::Not::not")]
         bounce: bool,
     },
+    /// A chosen source sound, once or looped, with explicit fades.
+    Custom {
+        #[serde(skip_serializing_if = "std::ops::Not::not")]
+        looped: bool,
+        #[serde(skip_serializing_if = "is_zero")]
+        fade_in_ms: u32,
+        #[serde(skip_serializing_if = "is_zero")]
+        fade_out_ms: u32,
+    },
+}
+
+fn is_zero(value: &u32) -> bool {
+    *value == 0
 }
 
 #[derive(Deserialize)]
@@ -96,6 +109,14 @@ enum AudibilityWire {
         #[serde(default)]
         bounce: bool,
     },
+    Custom {
+        #[serde(default)]
+        looped: bool,
+        #[serde(default)]
+        fade_in_ms: u32,
+        #[serde(default)]
+        fade_out_ms: u32,
+    },
 }
 
 impl<'de> Deserialize<'de> for ReferenceAudibility {
@@ -114,6 +135,15 @@ impl<'de> Deserialize<'de> for ReferenceAudibility {
             },
             AudibilityWire::Reverse {} => Self::Reverse,
             AudibilityWire::Rewind { bounce } => Self::Rewind { bounce },
+            AudibilityWire::Custom {
+                looped,
+                fade_in_ms,
+                fade_out_ms,
+            } => Self::Custom {
+                looped,
+                fade_in_ms,
+                fade_out_ms,
+            },
             AudibilityWire::Tone {
                 frequency_hz,
                 level,
@@ -137,6 +167,15 @@ impl ReferenceAudibility {
             }
         ) {
             return Err(invalid("frozen Tail maximum must be positive"));
+        }
+        if let Self::Custom {
+            fade_in_ms,
+            fade_out_ms,
+            ..
+        } = self
+            && (fade_in_ms > crate::MAX_CUSTOM_FADE_MS || fade_out_ms > crate::MAX_CUSTOM_FADE_MS)
+        {
+            return Err(invalid("frozen custom sound fades for at most 10 s"));
         }
         Ok(())
     }
@@ -170,6 +209,16 @@ impl From<&HoldAudio> for ReferenceAudibility {
             },
             HoldAudio::Reverse { .. } => Self::Reverse,
             HoldAudio::Rewind { bounce } => Self::Rewind { bounce: *bounce },
+            HoldAudio::Custom {
+                looped,
+                fade_in_ms,
+                fade_out_ms,
+                ..
+            } => Self::Custom {
+                looped: *looped,
+                fade_in_ms: *fade_in_ms,
+                fade_out_ms: *fade_out_ms,
+            },
             HoldAudio::Tone {
                 frequency_hz,
                 level,

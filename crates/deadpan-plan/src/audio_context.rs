@@ -524,6 +524,16 @@ fn retained_hold_audio(
         },
         ReferenceAudibility::Reverse => HoldAudio::Reverse { source: source()? },
         ReferenceAudibility::Rewind { bounce } => HoldAudio::Rewind { bounce },
+        ReferenceAudibility::Custom {
+            looped,
+            fade_in_ms,
+            fade_out_ms,
+        } => HoldAudio::Custom {
+            source: source()?,
+            looped,
+            fade_in_ms,
+            fade_out_ms,
+        },
         ReferenceAudibility::Tone {
             frequency_hz,
             level,

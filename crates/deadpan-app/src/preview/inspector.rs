@@ -111,6 +111,12 @@ impl Inspector {
                         HoldAudio::RoomTone { .. } => "Room tone".into(),
                         HoldAudio::Reverse { .. } => "Reversed".into(),
                         HoldAudio::Rewind { .. } => "Reversed passage".into(),
+                        HoldAudio::Custom { looped, .. } => if *looped {
+                            "Custom sound · loop"
+                        } else {
+                            "Custom sound · once"
+                        }
+                        .into(),
                         HoldAudio::Tone {
                             frequency_hz,
                             level,

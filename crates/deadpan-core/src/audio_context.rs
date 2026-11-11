@@ -15,8 +15,9 @@ use crate::{
     RevisionId, SourceAudio, SourceAudioMapping,
 };
 
-/// Schema 12 adds continuous owner wet returns.
-const AUDIO_CONTEXT_SCHEMA: u32 = 13;
+/// Schema 12 adds continuous owner wet returns, 13 rewinds and 14 custom
+/// pause sounds.
+const AUDIO_CONTEXT_SCHEMA: u32 = 14;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -388,6 +389,23 @@ impl FrozenAudioContext {
                 "a schema-9 or older audio context cannot contain EQ",
             ));
         }
+        if self.schema_version < 14
+            && self.layout.nodes().values().any(|node| {
+                matches!(
+                    &node.kind,
+                    FrozenAudioKind::Hold {
+                        audio: ReferenceAudibility::Custom { .. }
+                    } | FrozenAudioKind::Repeat {
+                        gap_audio: ReferenceAudibility::Custom { .. },
+                        ..
+                    }
+                )
+            })
+        {
+            return Err(invalid(
+                "a schema-13 or older audio context cannot contain custom pause sounds",
+            ));
+        }
         if self.schema_version < 13
             && self.layout.nodes().values().any(|node| {
                 matches!(
@@ -451,10 +469,16 @@ impl FrozenAudioContext {
             match &node.kind {
                 FrozenAudioKind::Source { placement: Some(_) }
                 | FrozenAudioKind::Hold {
-                    audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Reverse,
+                    audio:
+                        ReferenceAudibility::RoomTone
+                        | ReferenceAudibility::Reverse
+                        | ReferenceAudibility::Custom { .. },
                 }
                 | FrozenAudioKind::Repeat {
-                    gap_audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Reverse,
+                    gap_audio:
+                        ReferenceAudibility::RoomTone
+                        | ReferenceAudibility::Reverse
+                        | ReferenceAudibility::Custom { .. },
                     ..
                 } => {
                     expected_inputs.insert(id.clone());
@@ -523,10 +547,16 @@ impl FrozenAudioContext {
                 }
                 (
                     FrozenAudioKind::Hold {
-                        audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Reverse,
+                        audio:
+                            ReferenceAudibility::RoomTone
+                            | ReferenceAudibility::Reverse
+                            | ReferenceAudibility::Custom { .. },
                     }
                     | FrozenAudioKind::Repeat {
-                        gap_audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Reverse,
+                        gap_audio:
+                            ReferenceAudibility::RoomTone
+                            | ReferenceAudibility::Reverse
+                            | ReferenceAudibility::Custom { .. },
                         ..
                     },
                     FrozenAudioInput::Hold { .. },
@@ -638,7 +668,9 @@ fn hold_source(audio: &HoldAudio) -> Option<&SourceAudio> {
         | HoldAudio::Tone { .. }
         | HoldAudio::Tail { .. }
         | HoldAudio::Rewind { .. } => None,
-        HoldAudio::RoomTone { source } | HoldAudio::Reverse { source } => Some(source),
+        HoldAudio::RoomTone { source }
+        | HoldAudio::Reverse { source }
+        | HoldAudio::Custom { source, .. } => Some(source),
     }
 }
 fn invalid(message: &str) -> DocumentError {

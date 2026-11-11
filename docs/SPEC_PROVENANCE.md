@@ -166,6 +166,22 @@ change, which keeps a caption's per-play reveal counting the same Repeat.
 Ungroup inside Repeat contents follows the existing This play and All plays
 choices.
 
+Also on 2026-11-10, Section 10.4 defined the `custom` pause sound policy
+and the remaining tail interactions under the same delegated authority,
+towards DP-09.3. The specification named `custom` beside silence, room tone
+and tail without saying what it was. It is now a user-chosen sound over the
+pause: a catalog sound or Original range at its natural rate from the
+pause's start, once (then silence) or looped with the room-tone crossfade,
+with explicit whole-millisecond linear fades that end where the heard sound
+ends. One bounded preparation block keeps preview and export identical, and
+the sound can never lengthen the pause. Tails at loop seams and after Repeat
+gaps ring what the edit clock heard just before them, as everywhere else.
+A tail inside a speed change stays refused: its ring is defined at the
+edit's rate, and inside a speed change every sample is resampled or
+stretched by the one shared DSP path (Section 10.5), so ringing at output
+rate would need audio bypassing the stage it sits in. Putting the pause just
+after the Retime gives the intended result and is what the refusal teaches.
+
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
 | [AGENT_HANDOFF.md](spec/archive/1.0/AGENT_HANDOFF.md) | 4,340 | `464f689e1eb5ad6b2905286e516259f07dc83fea8ebb2b0330663976b905ae6c` |

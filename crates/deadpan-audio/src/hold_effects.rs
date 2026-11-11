@@ -82,6 +82,62 @@ pub fn reverse(
     Ok(output)
 }
 
+/// A custom pause sound: the first `heard` samples of `sound` (the source
+/// once, or its room-tone loop), with linear fades, then exact digital
+/// silence up to `output_frames`. A fade of `F` samples (48 per millisecond,
+/// at most the heard length) multiplies sample `n` by `n / F` at the start
+/// and heard sample `heard - 1 - m` by `m / F` at the end, so the first and
+/// last heard samples are exact zero; overlapping fades multiply.
+pub fn custom_sound(
+    sound: &[[f32; 2]],
+    output_frames: u32,
+    fade_in_ms: u32,
+    fade_out_ms: u32,
+    cancelled: &AtomicBool,
+) -> Result<Vec<[f32; 2]>, PreparationError> {
+    // The sound is prepared PCM already (the qualified source or its loop),
+    // so only its presence is checked here.
+    if sound.is_empty() {
+        return Err(PreparationError::InvalidRecipe(
+            "a custom pause sound has at least one sample",
+        ));
+    }
+    validate_output(output_frames)?;
+    let heard = sound.len().min(output_frames as usize);
+    let frames = |ms: u32| (ms as usize).saturating_mul(48).min(heard);
+    let (fade_in, fade_out) = (frames(fade_in_ms), frames(fade_out_ms));
+    let mut output = Vec::with_capacity(output_frames as usize);
+    for (start, chunk) in (0..heard).step_by(MAX_OUTPUT_FRAMES as usize).map(|start| {
+        (
+            start,
+            &sound[start..heard.min(start + MAX_OUTPUT_FRAMES as usize)],
+        )
+    }) {
+        check_cancel(cancelled)?;
+        for (offset, sample) in chunk.iter().enumerate() {
+            let index = start + offset;
+            let mut gain = 1.0_f64;
+            if index < fade_in {
+                gain *= index as f64 / fade_in as f64;
+            }
+            let remaining = heard - 1 - index;
+            if remaining < fade_out {
+                gain *= remaining as f64 / fade_out as f64;
+            }
+            output.push(if gain == 1.0 {
+                *sample
+            } else {
+                sample.map(|value| (f64::from(value) * gain) as f32)
+            });
+        }
+    }
+    output.resize(output_frames as usize, [0.0; 2]);
+    check_cancel(cancelled)?;
+    Ok(output)
+}
+
+pub const CUSTOM_SOUND_ID: &str = "deadpan-custom-pause-sound-linear-fades-v1";
+
 /// A sine of `frequency_hz` at `level_millidecibels` below full scale for
 /// `output_frames`, with linear 2 ms ramps (shorter for tiny Holds) to exact
 /// zero at both ends. The phase of sample `n` is `n * f mod 48000` in exact

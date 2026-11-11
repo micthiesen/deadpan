@@ -1526,3 +1526,177 @@ pub(super) fn gaps(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     Ok(())
 }
+
+/// Focused control's accessible label.
+fn focused(d: &Driver<'_>) -> Option<String> {
+    d.widgets().as_array()?.iter().find_map(|widget| {
+        (widget["focused"] == true)
+            .then(|| widget["label"].as_str().map(str::to_owned))
+            .flatten()
+    })
+}
+
+/// Tab through the sheet until a control whose label starts with `prefix`
+/// has focus, as a keyboard user does.
+fn tab_to(d: &mut Driver<'_>, prefix: &str) -> Result<(), String> {
+    for _ in 0..30 {
+        if focused(d).is_some_and(|label| label.starts_with(prefix)) {
+            return d.step(&format!("{prefix} focused"), false);
+        }
+        d.key(Key::Tab)?;
+    }
+    Err(format!(
+        "Tab never focused {prefix:?}; focused {:?}",
+        focused(d)
+    ))
+}
+
+/// `custom-pause-sound`: the pause sound sheet switches from room tone to a
+/// custom sound with real keys, picks a catalog sound, loops it with fades and
+/// applies it as one undoable edit.
+pub(super) fn custom(d: &mut Driver<'_>) -> Result<(), String> {
+    d.report.skipped.push("The custom sound is applied through real qualification, preparation and project writes; its PCM is covered by StageAudio tests and the custom-pause-sound export fixture, not by this replay.".into());
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav")
+        .canonicalize()
+        .map_err(|error| error.to_string())?;
+    d.app_mut().dialogs = Dialogs::scripted(vec![(DialogKind::ImportSound, Some(fixture))]);
+    scenarios::choose_sound_interpretation(
+        d,
+        Some(crate::project::AudioLayoutInterpretation::StereoLeftRight),
+    )?;
+    scenarios::reveal_in_rail(d, "Add sound…  ⌘I")?;
+    d.click("Add sound…  ⌘I")?;
+    d.wait_for("The sound is qualified in the catalog", |app| {
+        app.sound_rows.len() == 1 && !app.service.is_busy() && !app.importing()
+    })?;
+    let catalog = d.app().sound_rows[0].0.clone();
+    // Copy a quiet Original range so the sheet opens on room tone.
+    d.command("source")?;
+    d.chord(&[
+        Key::G,
+        Key::G,
+        Key::Num1,
+        Key::Num0,
+        Key::L,
+        Key::V,
+        Key::Num1,
+        Key::Num0,
+        Key::L,
+        Key::Y,
+    ])?;
+    d.wait_for("The Original copy is saved", |app| {
+        !app.service.is_busy() && !app.copied.is_pending()
+    })?;
+    d.command("sequence")?;
+    d.chord(&[Key::G, Key::G, Key::Num1, Key::Num7, Key::L])?;
+    let before = d.revision();
+    d.command("hold 11f")?;
+    d.changed(&before)?;
+    let target = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("No inserted Hold selected")?;
+    let silent_revision = d.revision();
+    let silent_nodes = document(d)?.nodes().clone();
+    let duration = document(d)?.duration().map_err(|error| error.to_string())?;
+    open(d)?;
+    d.check(
+        "The pause sound sheet opens on room tone from the copied Original range",
+        d.app()
+            .room_tone
+            .as_ref()
+            .is_some_and(|draft| !draft.custom)
+            && !scenarios::text_paint_visibility(d, "Room tone for pause").is_empty(),
+        json!({"kind":"room tone"}),
+        d.snapshot(),
+    )?;
+    tab_to(d, "Custom sound")?;
+    d.key(Key::Space)?;
+    d.check(
+        "Space on the focused Custom sound choice switches the sheet without an edit",
+        d.app().room_tone.as_ref().is_some_and(|draft| draft.custom)
+            && !scenarios::text_paint_visibility(d, "Custom sound for pause").is_empty()
+            && d.revision() == silent_revision,
+        json!({"kind":"custom","revision":silent_revision}),
+        d.snapshot(),
+    )?;
+    tab_to(d, "Use sound:")?;
+    d.key(Key::Space)?;
+    wait_prepared(d)?;
+    let chosen = prepared(d)?.source.clone();
+    d.check(
+        "Choosing the catalog sound prepares its complete measured audio",
+        chosen.asset == catalog && d.revision() == silent_revision,
+        json!({"asset":catalog}),
+        json!(chosen),
+    )?;
+    tab_to(d, "Loop until the pause ends")?;
+    d.key(Key::Space)?;
+    tab_to(d, "Fade in (ms)")?;
+    d.key_modified(Key::A, Modifiers::COMMAND)?;
+    d.events("Type the fade in", vec![egui::Event::Text("5".into())])?;
+    d.key(Key::Tab)?;
+    d.key_modified(Key::A, Modifiers::COMMAND)?;
+    d.events("Type the fade out", vec![egui::Event::Text("40".into())])?;
+    d.check(
+        "Loop and fades are draft options that keep the prepared sound",
+        d.app().room_tone.as_ref().is_some_and(|draft| {
+            draft.looped && draft.prepared.as_ref().map(|p| &p.source) == Some(&chosen)
+        }) && d.revision() == silent_revision,
+        json!({"looped":true,"source":chosen}),
+        d.snapshot(),
+    )?;
+    d.capture("Custom sound chosen with loop and fades")?;
+    d.key(Key::Enter)?;
+    d.changed(&silent_revision)?;
+    let applied = d.revision();
+    let expected = HoldAudio::Custom {
+        source: chosen.clone(),
+        looped: true,
+        fade_in_ms: 5,
+        fade_out_ms: 40,
+    };
+    let recipe = hold(d, &target)?;
+    d.check(
+        "Enter in a fade field applies the custom sound to the pause in one edit; time is unchanged",
+        d.app().room_tone.is_none()
+            && recipe.audio == expected
+            && recipe.duration.frames() == 11
+            && document(d)?.duration().ok() == Some(duration),
+        json!({"audio":expected,"frames":11}),
+        json!(recipe.audio),
+    )?;
+    d.settled()?;
+    let painted = scenarios::text_paint_visibility(d, "Custom sound · loop");
+    d.check(
+        "The inspector's Sound row names the custom sound and that it loops",
+        painted.iter().any(|item| item["fully_visible"] == true),
+        json!("Custom sound · loop"),
+        json!(painted),
+    )?;
+    d.capture("Custom pause sound applied")?;
+    // Reopening starts from the saved custom sound and its options.
+    open(d)?;
+    d.check(
+        "Reopening shows the saved custom sound, loop and fades",
+        d.app().room_tone.as_ref().is_some_and(|draft| {
+            draft.custom
+                && draft.looped
+                && draft.prepared.as_ref().map(|p| &p.source) == Some(&chosen)
+        }),
+        json!({"custom":true,"looped":true}),
+        d.snapshot(),
+    )?;
+    d.key(Key::Escape)?;
+    d.key(Key::U)?;
+    d.changed(&applied)?;
+    d.check(
+        "One Undo restores the silent pause",
+        document(d)?.nodes() == &silent_nodes,
+        json!("silence"),
+        d.snapshot(),
+    )?;
+    Ok(())
+}

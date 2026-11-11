@@ -622,6 +622,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     room_tone::run(&mut driver)
                 } else if name == "room-tone-gaps" {
                     room_tone::gaps(&mut driver)
+                } else if name == "custom-pause-sound" {
+                    room_tone::custom(&mut driver)
                 } else if name == "wave-range" {
                     wave_range::run(&mut driver)
                 } else if name == "gain" {

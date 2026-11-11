@@ -404,7 +404,30 @@ pub enum HoldAudio {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         bounce: bool,
     },
+    /// A chosen sound over the pause (the `custom` policy): a qualified
+    /// source span (a catalog sound or an Original moment) at its natural
+    /// rate from the Hold's start. Once, it plays to its end and silence
+    /// follows; `looped`, it repeats with the room-tone crossfade until the
+    /// Hold ends. Linear fades of whole milliseconds (48 samples each) start
+    /// at the Hold's start and end where the heard sound ends; the sound
+    /// never runs past the Hold.
+    Custom {
+        source: SourceAudio,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        looped: bool,
+        #[serde(default, skip_serializing_if = "is_zero_millis")]
+        fade_in_ms: u32,
+        #[serde(default, skip_serializing_if = "is_zero_millis")]
+        fade_out_ms: u32,
+    },
 }
+
+fn is_zero_millis(value: &u32) -> bool {
+    *value == 0
+}
+
+/// The longest explicit fade of a custom pause sound.
+pub const MAX_CUSTOM_FADE_MS: u32 = 10_000;
 
 /// Hold effects prepare their whole input in one bounded block.
 pub const MAX_HOLD_EFFECT_INPUT_SAMPLES: i128 = 1_048_576;
@@ -1426,7 +1449,7 @@ impl ProjectDocument {
                 return Err(DocumentError::new(
                     DocumentErrorCode::InvalidTree,
                     format!(
-                        "a hanging tail cannot sit inside a speed change (at {id}); put the pause outside the Retime"
+                        "a hanging tail cannot sit inside a speed change (at {id}): the speed change would stretch or re-pitch its ring; put the pause just after the Retime instead, where it rings the sped-up sound at normal speed"
                     ),
                 ));
             }
@@ -2091,8 +2114,26 @@ impl ProjectDocument {
                 }
             }
             HoldAudio::RoomTone { source } => self.validate_audio(source)?,
-            HoldAudio::Reverse { source } => {
+            HoldAudio::Reverse { source }
+            | HoldAudio::Custom {
+                source,
+                fade_in_ms: _,
+                fade_out_ms: _,
+                looped: _,
+            } => {
                 self.validate_audio(source)?;
+                if let HoldAudio::Custom {
+                    fade_in_ms,
+                    fade_out_ms,
+                    ..
+                } = &recipe.audio
+                    && (*fade_in_ms > MAX_CUSTOM_FADE_MS || *fade_out_ms > MAX_CUSTOM_FADE_MS)
+                {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        "a custom pause sound fades for at most 10 s",
+                    ));
+                }
                 // The reversal reads its whole span in one bounded block.
                 let base = source.span.start().time_base;
                 let seconds = crate::ExactRatio::new(
@@ -2113,7 +2154,11 @@ impl ProjectDocument {
                 {
                     return Err(DocumentError::new(
                         DocumentErrorCode::SourceRangeInvalid,
-                        "a reversed span is at most 1,048,576 samples at 48 kHz (about 21.8 s)",
+                        if matches!(recipe.audio, HoldAudio::Custom { .. }) {
+                            "a custom pause sound is at most 1,048,576 samples at 48 kHz (about 21.8 s)"
+                        } else {
+                            "a reversed span is at most 1,048,576 samples at 48 kHz (about 21.8 s)"
+                        },
                     ));
                 }
             }

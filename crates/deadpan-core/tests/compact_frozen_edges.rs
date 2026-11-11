@@ -196,19 +196,20 @@ fn standalone_context_preserves_historical_codec_bytes_for_all_schemas() {
     let document = empty_document();
     let context = FrozenAudioContext::capture(&document).unwrap();
     let canonical = context.to_json().unwrap();
-    // Schema 13 adds reversed passages; the empty context's bytes are otherwise unchanged.
+    // Schemas 13 and 14 add reversed passages and custom pause sounds; the
+    // empty context's bytes are otherwise unchanged.
     assert_eq!(
         canonical,
-        HISTORICAL_AUTOMATIC.replacen("\"schema_version\":12", "\"schema_version\":13", 1)
+        HISTORICAL_AUTOMATIC.replacen("\"schema_version\":12", "\"schema_version\":14", 1)
     );
     let canonical_value: Value = serde_json::from_str(&canonical).unwrap();
     assert_eq!(serde_json::to_value(&context).unwrap(), canonical_value);
-    assert_eq!(canonical_value["schema_version"], json!(13));
+    assert_eq!(canonical_value["schema_version"], json!(14));
     assert!(context.matches_document(&document).unwrap());
 
     for (historical, should_match) in [(HISTORICAL_AUTOMATIC, true), (HISTORICAL_ASYMMETRIC, false)]
     {
-        for schema in 1..=13 {
+        for schema in 1..=14 {
             let expected = historical.replacen(
                 "\"schema_version\":12",
                 &format!("\"schema_version\":{schema}"),

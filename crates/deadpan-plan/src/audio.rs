@@ -166,6 +166,16 @@ pub enum AudioContent {
         bounce: bool,
         duration: FrameDuration,
     },
+    /// A chosen source sound from the Hold's local start: once (then
+    /// silence) or looped with the room-tone crossfade, with linear fades.
+    /// `duration` is the full intrinsic Hold duration, before crops.
+    Custom {
+        source: SourceAudio,
+        looped: bool,
+        fade_in_ms: u32,
+        fade_out_ms: u32,
+        duration: FrameDuration,
+    },
 }
 
 impl AudioContent {
@@ -194,6 +204,18 @@ impl AudioContent {
             },
             HoldAudio::Rewind { bounce } => Self::Rewind {
                 bounce: *bounce,
+                duration,
+            },
+            HoldAudio::Custom {
+                source,
+                looped,
+                fade_in_ms,
+                fade_out_ms,
+            } => Self::Custom {
+                source: source.clone(),
+                looped: *looped,
+                fade_in_ms: *fade_in_ms,
+                fade_out_ms: *fade_out_ms,
                 duration,
             },
             HoldAudio::Tone {

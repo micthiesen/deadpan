@@ -315,9 +315,11 @@ impl<'de> Visitor<'de> for Scan<'_> {
                 }
                 (Role::Mapping, "start" | "end") => (Role::Scalar, Charge::None),
                 (Role::Audibility, "type" | "effect" | "input") => (Role::String, Charge::None),
-                (Role::Audibility, "maximum" | "frequency_hz" | "level" | "bounce") => {
-                    (Role::Scalar, Charge::None)
-                }
+                (
+                    Role::Audibility,
+                    "maximum" | "frequency_hz" | "level" | "bounce" | "looped" | "fade_in_ms"
+                    | "fade_out_ms",
+                ) => (Role::Scalar, Charge::None),
                 (
                     Role::Edges,
                     "node_start"
@@ -426,6 +428,9 @@ fn record_field_bit(key: &str) -> u64 {
         "preserve_ramp" => 50,
         "ramp" => 51,
         "bounce" => 52,
+        "looped" => 53,
+        "fade_in_ms" => 54,
+        "fade_out_ms" => 55,
         _ => return 0,
     };
     1 << ordinal
@@ -509,6 +514,7 @@ mod tests {
             r#"{"nodes":{"a":{"kind":{"pitch":{"tape_ramp":{"ramp":{"start":1,"end":3}}}}}}}"#,
             r#"{"nodes":{"a":{"kind":{"pitch":{"preserve_ramp":{"ramp":{"start":3,"end":1}}}}}}}"#,
             r#"{"nodes":{"a":{"kind":{"audio":{"type":"rewind","bounce":true}}}}}"#,
+            r#"{"nodes":{"a":{"kind":{"audio":{"type":"custom","looped":true,"fade_in_ms":5,"fade_out_ms":9}}}}}"#,
         ] {
             check(input).unwrap();
         }
@@ -516,6 +522,7 @@ mod tests {
             r#"{"nodes":{"a":{"kind":{"pitch":{"tape_ramp":{"ramp":{"start":[1],"end":3}}}}}}}"#,
             r#"{"nodes":{"a":{"kind":{"pitch":{"tape_ramp":{"ramp":{"start":1,"start":3}}}}}}}"#,
             r#"{"nodes":{"a":{"kind":{"audio":{"type":"rewind","bounce":true,"bounce":false}}}}}"#,
+            r#"{"nodes":{"a":{"kind":{"audio":{"type":"custom","fade_in_ms":1,"fade_in_ms":2}}}}}"#,
         ] {
             assert_eq!(
                 check(input).unwrap_err().code,

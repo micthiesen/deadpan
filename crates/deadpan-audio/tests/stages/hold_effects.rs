@@ -711,3 +711,211 @@ fn a_tail_after_a_rewind_hears_it_as_silence() {
     .unwrap();
     assert_pcm_close(&all[200..], &expected);
 }
+
+/// The fade gain a custom pause sound applies to heard sample `n` of `heard`.
+fn custom_gain(n: usize, heard: usize, fade_in: usize, fade_out: usize) -> f64 {
+    let mut gain = 1.0;
+    if n < fade_in {
+        gain *= n as f64 / fade_in as f64;
+    }
+    if heard - 1 - n < fade_out {
+        gain *= (heard - 1 - n) as f64 / fade_out as f64;
+    }
+    gain
+}
+
+fn faded(samples: &[[f32; 2]], fade_in: usize, fade_out: usize) -> Vec<[f32; 2]> {
+    samples
+        .iter()
+        .enumerate()
+        .map(|(n, frame)| {
+            let gain = custom_gain(n, samples.len(), fade_in, fade_out);
+            frame.map(|value| (f64::from(value) * gain) as f32)
+        })
+        .collect()
+}
+
+fn custom_plan(hold: i64, audio: HoldAudio) -> Arc<RenderPlan> {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    plan(
+        rate,
+        &["speech", "custom"],
+        [
+            ("speech", source(rate, 299, 512..811)),
+            ("custom", effect_hold(hold, audio)),
+        ],
+    )
+}
+
+#[test]
+fn a_custom_sound_plays_once_with_exact_fades_then_silence_for_the_whole_pause() {
+    let sound: Vec<_> = (512..811).map(fixture_sample).collect();
+    for (hold, fade_in_ms, fade_out_ms) in [(400, 1, 2), (200, 1, 2), (400, 0, 0), (400, 10, 10)] {
+        let planned = custom_plan(
+            hold,
+            HoldAudio::Custom {
+                source: audio(512, 811),
+                looped: false,
+                fade_in_ms,
+                fade_out_ms,
+            },
+        );
+        // Heard for the sound's 299 samples or until the pause ends.
+        let heard = 299.min(hold as usize);
+        let fade_in = (fade_in_ms as usize * 48).min(heard);
+        let fade_out = (fade_out_ms as usize * 48).min(heard);
+        let mut expected = faded(&sound[..heard], fade_in, fade_out);
+        expected.resize(hold as usize, [0.0; 2]);
+        if fade_in > 0 {
+            assert_eq!(expected[0], [0.0; 2]);
+        }
+        if fade_out > 0 {
+            assert_eq!(expected[heard - 1], [0.0; 2]);
+        }
+        for pieces in [&[256][..], &[17, 251, 3]] {
+            let mut renderer = StageAudio::new(Arc::clone(&planned));
+            let mut provider = FixtureProvider::new();
+            let all = read_all(&mut renderer, &mut provider, pieces);
+            assert_eq!(all.len(), 299 + hold as usize, "exact pause length");
+            assert_pcm_close(&all[..299], &sound);
+            assert_pcm_close(&all[299..], &expected);
+            assert!(all[299 + heard..].iter().all(|frame| *frame == [0.0; 2]));
+            assert_eq!(renderer.cached_stage_count(), 1);
+        }
+    }
+}
+
+#[test]
+fn a_looped_custom_sound_is_the_room_tone_loop_with_fades_over_the_whole_pause() {
+    let room = {
+        let planned = custom_plan(
+            1_000,
+            HoldAudio::RoomTone {
+                source: audio(512, 811),
+            },
+        );
+        let mut renderer = StageAudio::new(planned);
+        let mut provider = FixtureProvider::new();
+        read_all(&mut renderer, &mut provider, &[256])[299..].to_vec()
+    };
+    assert_eq!(room.len(), 1_000);
+    let planned = custom_plan(
+        1_000,
+        HoldAudio::Custom {
+            source: audio(512, 811),
+            looped: true,
+            fade_in_ms: 1,
+            fade_out_ms: 3,
+        },
+    );
+    let expected = faded(&room, 48, 144);
+    for pieces in [&[256][..], &[17, 251, 3]] {
+        let mut renderer = StageAudio::new(Arc::clone(&planned));
+        let mut provider = FixtureProvider::new();
+        let all = read_all(&mut renderer, &mut provider, pieces);
+        assert_eq!(all.len(), 1_299);
+        assert_pcm_close(&all[299..], &expected);
+        // Still sounding well past the source's own 299 samples.
+        assert!(
+            all[299 + 600..299 + 800]
+                .iter()
+                .any(|frame| frame[0].abs() > 1e-4)
+        );
+    }
+}
+
+/// A tail opening each play of a Repeat, and a tail as its gap: every
+/// occurrence rings what was heard just before it on the edit clock, so the
+/// second play's tail hears the end of the first play and the gap.
+#[test]
+fn a_tail_at_a_loop_seam_or_after_a_gap_hears_the_edit_just_before_it() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let tail = |frames| HoldAudio::Tail {
+        input: Default::default(),
+        maximum: duration(frames),
+        effect: TailEffect::Reverb,
+    };
+    let repeat = BeatNode {
+        framing: None,
+        audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
+        audio_edges: Default::default(),
+        label: "Two plays".into(),
+        kind: NodeKind::Repeat {
+            child: id("group"),
+            iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2).unwrap(),
+            gap: Some(HoldRecipe {
+                picture_context: None,
+                duration: duration(1_200),
+                video: HoldVideo::Background,
+                audio: tail(1_200),
+            }),
+            escalation: None,
+        },
+        cutaways: Vec::new(),
+        captions: Vec::new(),
+    };
+    // intro [0, 4800); play 1: tail [4800, 7200), speech [7200, 9600);
+    // gap tail [9600, 10800); play 2: tail [10800, 13200), speech to 15600.
+    let document = document_with_asset(
+        rate,
+        &["intro", "repeat"],
+        [
+            ("intro", source(rate, 4_800, 0..4_800)),
+            ("pause", effect_hold(2_400, tail(2_400))),
+            ("speech", source(rate, 2_400, 5_000..7_400)),
+            (
+                "group",
+                BeatNode::sequence("Played", vec![id("pause"), id("speech")]),
+            ),
+            ("repeat", repeat),
+        ],
+        BTreeMap::new(),
+        audio(0, 8_197).span,
+    );
+    let planned = Arc::new(RenderPlan::compile(&document).unwrap());
+    let mut renderer = StageAudio::new(Arc::clone(&planned));
+    let mut provider = FixtureProvider::new();
+    provider.revisions.insert(document.revision_id().clone());
+    let bus = renderer
+        .prepare_authored_bus(
+            &mut provider,
+            AudioSample(0),
+            15_600,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap()
+        .samples;
+    // What each tail hears: the bus before it, with every other tail silent.
+    let heard = |end: usize| {
+        let mut input = bus[..end].to_vec();
+        for ring in [4_800..7_200, 9_600..10_800] {
+            for frame in &mut input[ring.start.min(end)..ring.end.min(end)] {
+                *frame = [0.0; 2];
+            }
+        }
+        input
+    };
+    let ring = |input: &[[f32; 2]], frames| {
+        deadpan_audio::render_tail(
+            deadpan_audio::TailRecipe::new(TailEffect::Reverb, frames, frames).unwrap(),
+            input,
+            &AtomicBool::new(false),
+        )
+        .unwrap()
+    };
+    let first = ring(&heard(4_800), 2_400);
+    let gap = ring(&heard(9_600), 1_200);
+    let second = ring(&heard(10_800), 2_400);
+    // The plays differ only by what precedes them: the second play's ring
+    // hears the first play's speech and differs from the first.
+    assert!(first.iter().any(|frame| frame[0].abs() > 1e-4));
+    assert_ne!(first, second);
+    // The rings themselves, before the shared edge fades at the pauses.
+    let mut renderer = StageAudio::new(planned);
+    let rings = read_all(&mut renderer, &mut provider, &[256, 61]);
+    assert_pcm_close(&rings[4_800..7_200], &first);
+    assert_pcm_close(&rings[9_600..10_800], &gap);
+    assert_pcm_close(&rings[10_800..13_200], &second);
+}

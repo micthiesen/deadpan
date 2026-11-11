@@ -77,7 +77,7 @@ impl Service {
             source,
             audition,
         });
-        self.message = Some("Room-tone source range prepared. The project is unchanged.".into());
+        self.message = Some("Source range prepared. The project is unchanged.".into());
         Ok(())
     }
 }

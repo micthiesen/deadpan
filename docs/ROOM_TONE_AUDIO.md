@@ -213,3 +213,64 @@ prepared source span as one semantic `SetHoldAudio { audio: RoomTone }`, and
 its own selected pause, where store admission rechecks the span against the
 qualified Original. Other pause sounds keep their own instructions. The
 `room-tone` replay records both and runs them.
+
+## Custom pause sounds
+
+Specification §10.4's fourth policy, `custom`, is `HoldAudio::Custom {
+source, looped, fade_in_ms, fade_out_ms }`: a sound the user chooses for the
+pause. The source is any qualified asset's exact audio span, a catalog sound
+(its complete measured audio) or an Original range, admitted by the store
+exactly like room tone (receipt, Original binding, contiguous measured samples,
+endpoints on original sample boundaries), for `SetHoldAudio`, occurrence and
+scoped edits and for `InsertTime`. It plays at its natural rate from the
+Hold's start:
+
+- Once (`looped` false): the first `min(L, H)` prepared samples, where `L` is
+  the source's `ceil` 48 kHz length and `H` the Hold's; digital silence
+  follows.
+- Looped: the [room-tone loop](#loop-construction) of the same span for the
+  whole Hold, with its crossfade and exact phase.
+- Fades: `F = min(ms × 48, heard)` samples. Heard sample `n` is multiplied by
+  `n / F_in` at the start and by `(heard - 1 - n) / F_out` at the end (both
+  in `f64`), so the first and last heard samples are exact zero; overlapping
+  fades multiply. Zero means no fade. The shared 2 ms Hold edge fades still
+  apply afterwards, as for any Hold sound.
+
+Validation bounds the span to one preparation block (1,048,576 samples at
+48 kHz, about 21.8 s) and each fade to 10 s. Core omits defaults on the wire
+(`looped` false, zero fades). Frozen audio context schema 14 carries
+`custom` (with its source as a Hold input); schema 13 and older reject it.
+`StageAudio` prepares it as one cached Hold block like room tone and reverse
+(`deadpan_audio::custom_sound`, engine `deadpan-custom-pause-sound-linear-fades-v1`),
+so a read starting mid-pause hears the same samples, and it composes with
+Retimes, Repeats, gaps and fragments exactly as room tone does. The
+source-stage inspector refuses it like room tone.
+
+Native: the pause sound sheet (`:room-tone`, or **Custom sound…** in the
+inspector's PAUSE SOUND section) has a Room tone / Custom sound choice. Custom
+offers **Use copied Original range** and one **Use sound: <label>** button per
+audio-only catalog sound (each prepares its complete measured audio, which
+the In/Out sample fields can then narrow), **Loop until the pause ends**, and
+**Fade in (ms)** / **Fade out (ms)** fields. Choosing the kind, loop or fades
+keeps the prepared range; Apply (Enter) authors one undoable `SetHoldAudio`
+(recorded in macros as the same instruction). Reopening starts from the saved
+sound and options. The inspector shows `Custom sound · once|loop` with the
+fades. Headless: `set_hold_audio`, `set_repeat_gap_audio` and the semantic
+`set_hold_audio` instruction take `{"type":"custom","source":…,"looped":true,
+"fade_in_ms":10,"fade_out_ms":10}`.
+
+Evidence: core `a_custom_sound_round_trips_with_undo_and_its_bounds_validate`,
+`a_custom_sound_span_is_bounded_by_the_one_block_dsp_limit`,
+`custom_pause_sounds_keep_their_source_input_and_require_context_schema_14`;
+store `pauses_inserted_with_reversed_audio_need_admitted_source_samples`
+(an unqualified custom source is refused, an admitted one previews);
+`StageAudio` decoded PCM in
+`a_custom_sound_plays_once_with_exact_fades_then_silence_for_the_whole_pause`
+(four fade/length cases, exact pause length, read in several piece sizes)
+and `a_looped_custom_sound_is_the_room_tone_loop_with_fades_over_the_whole_pause`;
+the `custom-pause-sound` replay (Tab and Space choose Custom, a catalog
+sound and Loop, typed fades, Enter applies, reopen, Undo); release exports
+`custom-pause-sound` (the click once, 2,000 samples into the pause, then
+silence) and `custom-pause-loop` (a 40,000-sample range looped: the click at
+29,829 and again 39,904 samples later, both audio windows at offset zero; a
+short, periodic loop would make the offset unobservable). Listening is an owner check.

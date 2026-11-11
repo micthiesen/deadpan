@@ -448,11 +448,25 @@ fn pauses_inserted_with_reversed_audio_need_admitted_source_samples() -> Result 
     assert!(matches!(
         store.commit(&insert(
             &baseline,
-            HoldAudio::Reverse { source: off_grid },
+            HoldAudio::Reverse {
+                source: off_grid.clone()
+            },
             "refused"
         )),
         Err(StoreError::SourceRegistration(_))
     ));
+    // A custom sound reads stored samples too.
+    let custom = |source: SourceAudio| HoldAudio::Custom {
+        source,
+        looped: true,
+        fade_in_ms: 2,
+        fade_out_ms: 20,
+    };
+    assert!(matches!(
+        store.preview(&insert(&baseline, custom(off_grid), "refused-custom")),
+        Err(StoreError::SourceRegistration(_))
+    ));
+    store.preview(&insert(&baseline, custom(selected.clone()), "custom"))?;
     assert_eq!(store.snapshot()?, baseline);
     // A live tail reads no stored samples, so it needs no source admission.
     store.preview(&insert(

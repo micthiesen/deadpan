@@ -231,6 +231,13 @@ impl OwnedHeap for AudioContent {
             | Self::Reverse {
                 source,
                 duration: _,
+            }
+            | Self::Custom {
+                source,
+                looped: _,
+                fade_in_ms: _,
+                fade_out_ms: _,
+                duration: _,
             } => budget.visit(source),
             Self::Silence { reason: _ }
             | Self::Rewind {

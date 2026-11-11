@@ -1124,7 +1124,9 @@ fn hold_assets(recipe: &HoldRecipe, output: &mut BTreeSet<AssetId>) {
         HoldVideo::Background | HoldVideo::Rewind { .. } => {}
     }
     match &recipe.audio {
-        HoldAudio::RoomTone { source } | HoldAudio::Reverse { source } => {
+        HoldAudio::RoomTone { source }
+        | HoldAudio::Reverse { source }
+        | HoldAudio::Custom { source, .. } => {
             output.insert(source.asset.clone());
         }
         HoldAudio::Silence

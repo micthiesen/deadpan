@@ -464,8 +464,8 @@ pub enum SemanticInstruction {
         register: RegisterName,
     },
     /// Give the selected direct-child pause (as for `SetRoomTone`) silence
-    /// (`:hold-silence`) or room tone from an exact Original sample span (the
-    /// room-tone sheet's Apply).
+    /// (`:hold-silence`), room tone from an exact Original sample span or a
+    /// custom sound (the pause sound sheet's Apply).
     /// Other pause sounds have their own instructions.
     SetHoldAudio {
         audio: crate::HoldAudio,
@@ -971,12 +971,14 @@ impl SemanticProgram {
             } = instruction
                 && !matches!(
                     audio,
-                    crate::HoldAudio::Silence | crate::HoldAudio::RoomTone { .. }
+                    crate::HoldAudio::Silence
+                        | crate::HoldAudio::RoomTone { .. }
+                        | crate::HoldAudio::Custom { .. }
                 )
             {
                 return Err(EditError::new(
                     EditErrorCode::InvalidCommand,
-                    "a recorded pause sound is silence or room tone",
+                    "a recorded pause sound is silence, room tone or a custom sound",
                 ));
             }
             if let SemanticInstruction::Ramp {

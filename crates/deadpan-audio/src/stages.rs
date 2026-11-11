@@ -856,7 +856,8 @@ impl WorkControl<'_> {
         match content {
             AudioContent::Source { source, .. }
             | AudioContent::RoomTone { source, .. }
-            | AudioContent::Reverse { source, .. } => self.admit_dependency(&source.asset),
+            | AudioContent::Reverse { source, .. }
+            | AudioContent::Custom { source, .. } => self.admit_dependency(&source.asset),
             AudioContent::Silence { .. }
             | AudioContent::Tone { .. }
             | AudioContent::Tail { .. }
@@ -2286,7 +2287,8 @@ impl StageAudio {
                     | AudioContent::Reverse { .. }
                     | AudioContent::Tail { .. }
                     | AudioContent::Rewind { .. }
-                    | AudioContent::Tone { .. }),
+                    | AudioContent::Tone { .. }
+                    | AudioContent::Custom { .. }),
                 ) => {
                     // The root sample where this occurrence's local clock is
                     // zero, from its actual (possibly retained) sampling map:
@@ -3003,7 +3005,10 @@ impl StageAudio {
         }
         let (source, duration) = match content {
             AudioContent::RoomTone { source, duration }
-            | AudioContent::Reverse { source, duration } => (source, *duration),
+            | AudioContent::Reverse { source, duration }
+            | AudioContent::Custom {
+                source, duration, ..
+            } => (source, *duration),
             AudioContent::Source { .. }
             | AudioContent::Silence { .. }
             | AudioContent::Tail { .. }
@@ -3050,6 +3055,31 @@ impl StageAudio {
                 )?,
                 AudioContent::Reverse { .. } => {
                     crate::reverse(&input, output_frames, control.cancelled)?
+                }
+                AudioContent::Custom {
+                    looped,
+                    fade_in_ms,
+                    fade_out_ms,
+                    ..
+                } => {
+                    // A loop is the room-tone loop for the whole Hold; once,
+                    // the source plays from the Hold's start to its end.
+                    let sound = if *looped {
+                        build_room_tone(
+                            &input,
+                            RoomToneRecipe::new(source_extent, output_frames)?,
+                            control,
+                        )?
+                    } else {
+                        input
+                    };
+                    crate::custom_sound(
+                        &sound,
+                        output_frames,
+                        *fade_in_ms,
+                        *fade_out_ms,
+                        control.cancelled,
+                    )?
                 }
                 AudioContent::Source { .. }
                 | AudioContent::Silence { .. }
@@ -4362,7 +4392,8 @@ impl StageAudio {
                         | AudioContent::Reverse { .. }
                         | AudioContent::Tail { .. }
                         | AudioContent::Rewind { .. }
-                        | AudioContent::Tone { .. }),
+                        | AudioContent::Tone { .. }
+                        | AudioContent::Custom { .. }),
                     ) => {
                         let prepared = self.prepare_hold(
                             PreparedKey::Hold {
@@ -4639,7 +4670,8 @@ impl StageAudio {
                                 | AudioContent::Reverse { .. }
                                 | AudioContent::Tail { .. }
                                 | AudioContent::Rewind { .. }
-                                | AudioContent::Tone { .. }),
+                                | AudioContent::Tone { .. }
+                                | AudioContent::Custom { .. }),
                             ) => {
                                 let prepared = {
                                     let _phase = read_signal_policy_before_trace::phase(
@@ -5208,6 +5240,7 @@ fn preflight(content: &AudioContent, plan: &RenderPlan) -> Result<(), StageAudio
         AudioContent::Silence { .. } => Ok(()),
         AudioContent::RoomTone { .. }
         | AudioContent::Reverse { .. }
+        | AudioContent::Custom { .. }
         | AudioContent::Tail { .. }
         | AudioContent::Rewind { .. }
         | AudioContent::Tone { .. } => Ok(()),

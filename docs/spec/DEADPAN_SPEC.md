@@ -643,6 +643,10 @@ An inserted silent hold defaults to suppressing direct audio and incoming effect
 
 Room tone is chosen from non-speech material with a visible source range and audition. Speech detection can suggest candidates but cannot guarantee absence of quiet words. The user can choose a different range. Loop crossfades stay within the allocated Hold duration.
 
+`custom` is a sound the user chooses for the pause: any qualified catalog sound or Original range, at its natural rate from the pause's start. It plays once and digital silence follows, or loops with the room-tone crossfade until the pause ends. Explicit linear fades in whole milliseconds start at the pause's start and end where the heard sound ends; the sound never runs past the pause and never changes its timing. A custom source is one bounded preparation block (at most 1,048,576 samples at 48 kHz) and each fade at most 10 s.
+
+A hanging tail rings what was heard on the edit clock just before its occurrence. At a loop seam that is the end of the previous play (and its gap); after a Repeat gap it includes the gap; a tail opening the first play hears what precedes the Repeat. Other tails in that window are silent, so tails never chain. A tail cannot sit inside a speed change: its ring is defined at the edit's own rate, while everything inside a speed change is resampled or stretched by it, so the pause belongs just after the Retime, where it rings the sped-up sound at normal speed. Authoring refuses with that reason.
+
 ## 10.5 Time and pitch
 
 Use a qualified native time-stretch implementation behind a narrow adapter; **Signalsmith Stretch** is the selected initial library candidate, with its exact distribution license recorded at pinning. Its author documents independent time/pitch processing. [S02]

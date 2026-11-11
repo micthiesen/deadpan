@@ -1023,17 +1023,17 @@ pub static SPECS: &[Spec] = &[
     },
     Spec {
         id: "room-tone",
-        name: "Room tone for a pause",
+        name: "Room tone or a custom sound for a pause",
         section: Section::Pauses,
         keys: &[],
         commands: &[verb("room-tone", ":room-tone")],
         contexts: C::EDIT.or(C::CONTENTS).or(C::SHARED_GAP),
         replay: Replay::Recorded,
         headless: gui(
-            "the sheet prepares and auditions; set_room_tone applies a yank_original range",
+            "the sheet prepares and auditions; set_room_tone applies a yank_original range, set_hold_audio a custom sound",
             HOLDS,
         ),
-        help: "Select a pause after copying a quiet Original range with {visual}, {frame.previous}/{frame.next}, {copy}. A split pause fragment changes only that fragment; a selected Repeat with a gap changes its default gap, heard in every gap without its own pause, and leaves explicit gap pauses alone. On the shared gap row after one play in Repeat contents, Apply gives only that play's gap its own copy with this room tone. The sheet shows exact source samples; reopening starts from the saved range, and Use copied Original range explicitly replaces it. Picture and duration stay unchanged.",
+        help: "Select a pause after copying a quiet Original range with {visual}, {frame.previous}/{frame.next}, {copy}. A split pause fragment changes only that fragment; a selected Repeat with a gap changes its default gap, heard in every gap without its own pause, and leaves explicit gap pauses alone. On the shared gap row after one play in Repeat contents, Apply gives only that play's gap its own copy with this room tone. The sheet shows exact source samples; reopening starts from the saved range, and Use copied Original range explicitly replaces it. Choose Custom sound in the sheet (or Custom sound… in the inspector) to play a catalog sound or Original range over the pause instead: once then silence, or looped with the room-tone crossfade, with fades in whole milliseconds; it never runs past the pause. Picture and duration stay unchanged.",
     },
     Spec {
         id: "reverse",
@@ -2549,7 +2549,7 @@ pub static SPECS: &[Spec] = &[
     },
     Spec {
         id: "room-tone.apply",
-        name: "Apply room tone",
+        name: "Apply room tone or a custom sound",
         section: Section::RoomTone,
         keys: &[mode(Mode::RoomTone, "Enter", &[chord(Key::Enter, Plain)])],
         commands: &[],
@@ -2559,7 +2559,7 @@ pub static SPECS: &[Spec] = &[
             "command set_hold_audio or set_repeat_gap_audio, or set_room_tone instruction",
             HOLDS,
         ),
-        help: "Apply the prepared range to the pause as one undoable edit. Tab / Shift+Tab move through controls.",
+        help: "Apply the prepared range to the pause as room tone or, with Custom sound chosen, as a custom sound with its loop and fades, in one undoable edit. Tab / Shift+Tab move through controls.",
     },
     Spec {
         id: "room-tone.cancel",

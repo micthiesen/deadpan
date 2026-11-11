@@ -248,6 +248,23 @@ pub fn attachment(
     Ok(event)
 }
 
+/// The complete measured audio of an audio-only catalog sound, with its label:
+/// the source a custom pause sound or a placed sound starts from.
+pub fn catalog_source(
+    document: &ProjectDocument,
+    receipt: &SourceQualificationReceipt,
+    asset: &AssetId,
+) -> Result<(String, SourceAudio), String> {
+    let (label, span) = catalog_span(document, receipt, asset)?;
+    Ok((
+        label,
+        SourceAudio {
+            asset: asset.clone(),
+            span,
+        },
+    ))
+}
+
 fn catalog_span(
     document: &ProjectDocument,
     receipt: &SourceQualificationReceipt,

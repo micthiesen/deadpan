@@ -206,6 +206,7 @@ impl SequenceAudio {
         match &span.content {
             AudioContent::Silence { .. } => Ok(()),
             AudioContent::RoomTone { .. } => Err(unsupported("room tone")),
+            AudioContent::Custom { .. } => Err(unsupported("a custom pause sound")),
             AudioContent::Tail { .. } => Err(unsupported(
                 "a hanging tail (an effect of the sound before it)",
             )),

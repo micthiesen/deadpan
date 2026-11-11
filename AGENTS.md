@@ -2240,9 +2240,11 @@ silence allowances in the same reversible patch. Explicit Silence does not
 recreate removed permissions. Admit RoomTone/Tail sources against the expected
 revision's qualified asset, stored receipt, Original binding and measured
 integer sample span. Stored admission is not fresh byte verification; playback
-uses verified snapshots. Keep unrelated retained recipes valid. Native
-Repeat-gap/fragment controls and tail DSP
-remain open. See [room-tone authoring](docs/ROOM_TONE_AUDIO.md).
+uses verified snapshots. Keep unrelated retained recipes valid. A `Custom`
+pause sound (§10.4 `custom`) is admitted like room tone, prepared as one cached
+Hold block (once or the room-tone loop, then exact linear fades ending where
+the heard sound ends) and never lengthens its Hold; tails stay invalid inside
+a speed change by definition. See [room-tone authoring](docs/ROOM_TONE_AUDIO.md).
 
 Gain preparation uses exact fixed owner-output coordinates and independent trim,
 envelopes and mute ranges. Interpolate in dB; never normalize dynamics or use a

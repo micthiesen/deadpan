@@ -442,6 +442,7 @@ fn a_tail_cannot_be_wrapped_in_or_moved_into_a_speed_change() {
         );
         let error = apply(&tail, &wrap).unwrap_err();
         assert!(error.message.contains("speed change"), "{error:?}");
+        assert!(error.message.contains("just after the Retime"), "{error:?}");
     }
     // A unity Retime keeps the edit clock, so the tail may stay inside it,
     // but making it a speed change is refused.
@@ -485,4 +486,123 @@ fn a_tail_cannot_be_wrapped_in_or_moved_into_a_speed_change() {
         },
     );
     assert!(apply(&slowed, &set).is_err());
+}
+
+#[test]
+fn a_custom_sound_round_trips_with_undo_and_its_bounds_validate() {
+    let before = fixture();
+    let custom = HoldAudio::Custom {
+        source: source(441, 22_050),
+        looped: true,
+        fade_in_ms: 10,
+        fade_out_ms: 250,
+    };
+    let (after, transaction) = edit(
+        &before,
+        Command::SetHoldAudio {
+            node: node("hold"),
+            audio: custom.clone(),
+        },
+    );
+    let NodeKind::Hold { recipe } = &after.nodes()[&node("hold")].kind else {
+        unreachable!()
+    };
+    assert_eq!(recipe.audio, custom);
+    assert_eq!(transaction.duration_delta, 0);
+    assert_eq!(transaction.changed_ids, vec![node("hold")]);
+    assert_eq!(after.duration().unwrap(), before.duration().unwrap());
+    assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
+    // Defaults stay off the wire: a one-shot without fades is just a source.
+    let once = HoldAudio::Custom {
+        source: source(0, 441),
+        looped: false,
+        fade_in_ms: 0,
+        fade_out_ms: 0,
+    };
+    let wire = serde_json::to_value(&once).unwrap();
+    assert_eq!(wire.as_object().unwrap().len(), 2, "{wire}");
+    assert_eq!(serde_json::from_value::<HoldAudio>(wire).unwrap(), once);
+    assert!(
+        serde_json::from_str::<HoldAudio>(
+            r#"{"type":"custom","source":{"asset":"original","span":{"start":{"ticks":0,"time_base":{"numerator":1,"denominator":44100}},"end":{"ticks":441,"time_base":{"numerator":1,"denominator":44100}}}},"pitch":1}"#
+        )
+        .is_err()
+    );
+    for (audio, valid) in [
+        (
+            HoldAudio::Custom {
+                source: source(0, 441),
+                looped: false,
+                fade_in_ms: MAX_CUSTOM_FADE_MS,
+                fade_out_ms: MAX_CUSTOM_FADE_MS,
+            },
+            true,
+        ),
+        (
+            HoldAudio::Custom {
+                source: source(0, 441),
+                looped: false,
+                fade_in_ms: MAX_CUSTOM_FADE_MS + 1,
+                fade_out_ms: 0,
+            },
+            false,
+        ),
+        (
+            HoldAudio::Custom {
+                source: source(0, 441),
+                looped: true,
+                fade_in_ms: 0,
+                fade_out_ms: MAX_CUSTOM_FADE_MS + 1,
+            },
+            false,
+        ),
+        // Outside the asset's audio.
+        (
+            HoldAudio::Custom {
+                source: source(0, 88_201),
+                looped: false,
+                fade_in_ms: 0,
+                fade_out_ms: 0,
+            },
+            false,
+        ),
+    ] {
+        let applied = apply(
+            &before,
+            &request(
+                &before,
+                Command::SetHoldAudio {
+                    node: node("hold"),
+                    audio: audio.clone(),
+                },
+            ),
+        );
+        assert_eq!(applied.is_ok(), valid, "{audio:?}");
+    }
+}
+
+#[test]
+fn a_custom_sound_span_is_bounded_by_the_one_block_dsp_limit() {
+    let before = fixture_with_audio(44_100 * 30);
+    for (end, valid) in [(963_379, true), (963_380, false)] {
+        let applied = apply(
+            &before,
+            &request(
+                &before,
+                Command::SetHoldAudio {
+                    node: node("hold"),
+                    audio: HoldAudio::Custom {
+                        source: source(0, end),
+                        looped: true,
+                        fade_in_ms: 0,
+                        fade_out_ms: 0,
+                    },
+                },
+            ),
+        );
+        assert_eq!(applied.is_ok(), valid, "{end}");
+        if let Err(error) = applied {
+            assert!(error.to_string().contains("custom pause sound"), "{error}");
+        }
+    }
 }

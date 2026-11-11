@@ -448,6 +448,9 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
                 deadpan_core::PlayGapChange::Audio {
                     audio: deadpan_core::HoldAudio::Silence,
                 } => "This play's gap is now its own silent pause".into(),
+                deadpan_core::PlayGapChange::Audio {
+                    audio: deadpan_core::HoldAudio::Custom { .. },
+                } => "This play's gap is now its own pause with a custom sound".into(),
                 deadpan_core::PlayGapChange::Audio { .. } => {
                     "This play's gap is now its own pause with room tone".into()
                 }
@@ -457,7 +460,15 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return match audio {
                 deadpan_core::HoldAudio::Silence => Some("Pause sound set to silence".into()),
                 deadpan_core::HoldAudio::RoomTone { .. } => Some("Room tone applied".into()),
-                // Program validation permits only Silence and RoomTone here.
+                deadpan_core::HoldAudio::Custom { looped, .. } => Some(
+                    if *looped {
+                        "Custom sound applied, looping over the pause"
+                    } else {
+                        "Custom sound applied, playing once"
+                    }
+                    .into(),
+                ),
+                // Program validation permits only Silence, RoomTone and Custom here.
                 deadpan_core::HoldAudio::Tail { .. }
                 | deadpan_core::HoldAudio::Reverse { .. }
                 | deadpan_core::HoldAudio::Rewind { .. }

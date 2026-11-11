@@ -1178,6 +1178,7 @@ impl DeadpanApp {
                 "reversed sound"
             }
             deadpan_core::HoldAudio::Tone { .. } => "tone",
+            deadpan_core::HoldAudio::Custom { .. } => "custom sound",
         };
         let summary = format!("Shared gap · {} f · {sound}", recipe.duration.frames());
         let layout = self.workspace_layout(ui);

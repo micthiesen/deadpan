@@ -368,6 +368,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
                         HoldAudio::Tail { .. } => "tail",
                         HoldAudio::Reverse { .. } | HoldAudio::Rewind { .. } => "reverse",
                         HoldAudio::Tone { .. } => "tone",
+                        HoldAudio::Custom { .. } => "custom",
                     },
                 )),
                 _ => None,

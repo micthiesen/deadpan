@@ -109,6 +109,18 @@ pub(in crate::plan) fn hold<A: AudioSoundContextAdmission>(
             bounce: *bounce,
             duration,
         },
+        HoldAudio::Custom {
+            source,
+            looped,
+            fade_in_ms,
+            fade_out_ms,
+        } => AudioContent::Custom {
+            source: budget.source(memory, source)?,
+            looped: *looped,
+            fade_in_ms: *fade_in_ms,
+            fade_out_ms: *fade_out_ms,
+            duration,
+        },
         HoldAudio::Tone {
             frequency_hz,
             level,

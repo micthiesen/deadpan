@@ -2878,6 +2878,108 @@ pub fn hanging_tail(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// A 30-frame freeze at Edit 18 whose sound is a custom sound: the Original
+/// samples around the click. `looped` repeats them with the room-tone
+/// crossfade; otherwise they play once and silence follows. The pause sound
+/// sheet's recorded `set_hold_audio` instruction, through the headless
+/// semantic path and store admission.
+fn custom_pause(
+    dir: &Path,
+    name: &'static str,
+    samples: (i64, i64),
+    looped: bool,
+) -> Result<(Project, ProjectDocument)> {
+    let mut project = Project::create(dir, name)?;
+    let document = project.shorten()?;
+    let audio = document.assets()[&project.asset]
+        .audio
+        .ok_or("the Original has audio")?;
+    let base = audio.start().time_base;
+    if base.numerator() != 1 || base.denominator() != 48_000 {
+        return Err(format!("unexpected Original audio clock {base:?}").into());
+    }
+    let span = SourceSpan::new(
+        SourceTimestamp {
+            ticks: samples.0,
+            time_base: base,
+        },
+        SourceTimestamp {
+            ticks: samples.1,
+            time_base: base,
+        },
+    )?;
+    let custom = HoldAudio::Custom {
+        source: SourceAudio {
+            asset: project.asset.clone(),
+            span,
+        },
+        looped,
+        fade_in_ms: 10,
+        fade_out_ms: 10,
+    };
+    let saved = project.run_semantic(
+        json!([
+            {"type":"insert_pause","length":{"unit":"frames","frames":30}},
+            {"type":"set_hold_audio","audio":custom}
+        ]),
+        18,
+        None,
+    )?;
+    let (pause, _) = root_child_at(&saved, 18)?;
+    match &saved.nodes()[&pause].kind {
+        NodeKind::Hold { recipe } if recipe.audio == custom && recipe.duration.frames() == 30 => {}
+        other => return Err(format!("unexpected custom pause {other:?}").into()),
+    }
+    Ok((project, saved))
+}
+
+/// Original samples [46,000, 50,000) once over the pause at B(18) = 28,829:
+/// the click (Original 48,000) lands 2,000 samples in, at 30,829; after the
+/// sound's 4,000 samples the rest of the pause is digital silence.
+pub fn custom_pause_sound(dir: &Path) -> Result<Fixture> {
+    let (project, _) = custom_pause(dir, "custom-pause-sound", (46_000, 50_000), false)?;
+    let expectations = vec![(17, original(29)), (18, original(29)), (48, original(30))];
+    let mut fixture = project.finish(
+        vec!["Custom pause sound", "`custom` Hold policy"],
+        expectations,
+        Vec::new(),
+    )?;
+    fixture.audio = vec![
+        (28_672, true),
+        (29_184, false),
+        (30_720, true),
+        (31_232, false),
+        (33_024, false),
+        (60_000, false),
+    ];
+    Ok(fixture)
+}
+
+/// Original samples [47,000, 87,000) looped over the same pause: the click
+/// 1,000 samples into each pass, passes 39,904 samples apart (40,000 less the
+/// 96-sample crossfade), at 29,829 and 69,733, so the loop's restart is heard
+/// and stays aperiodic for offset verification; the base after the pause
+/// stays quiet.
+pub fn custom_pause_loop(dir: &Path) -> Result<Fixture> {
+    let (project, _) = custom_pause(dir, "custom-pause-loop", (47_000, 87_000), true)?;
+    let expectations = vec![(17, original(29)), (18, original(29)), (48, original(30))];
+    let mut fixture = project.finish(
+        vec!["Custom pause sound", "`custom` Hold policy"],
+        expectations,
+        Vec::new(),
+    )?;
+    fixture.audio = vec![
+        (28_672, true),
+        (29_696, true),
+        (31_616, false),
+        (50_000, false),
+        (69_632, true),
+        (70_400, false),
+        (78_000, false),
+    ];
+    Ok(fixture)
+}
+
 /// `:tail 1s effect=delay` at Edit 18 with no pause selected: a new 30-frame
 /// freeze whose 300 ms echo of the click (28,781) repeats inside the pause
 /// at 43,181 and, at half level, 57,581: 60 frames.
@@ -4574,7 +4676,7 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 58] = [
+    let builders: [(&str, Builder); 60] = [
         ("audio-shift", audio_shift),
         ("ramp", ramp),
         ("continuous-ramp", continuous_ramp),
@@ -4606,6 +4708,8 @@ pub fn partition_with_skips(
         ("ping-pong", ping_pong),
         ("hanging-tail", hanging_tail),
         ("tail-echo", tail_echo),
+        ("custom-pause-sound", custom_pause_sound),
+        ("custom-pause-loop", custom_pause_loop),
         ("repeat-with-gap", repeat_with_gap),
         ("one-more-time", one_more_time),
         ("repeat-gaps-steps", repeat_gaps_steps),
