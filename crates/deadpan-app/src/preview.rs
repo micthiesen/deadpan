@@ -64,7 +64,9 @@ mod operators;
 mod overview;
 mod palette;
 mod playback;
+mod preparing;
 mod proxies;
+mod recent;
 mod recovery;
 mod refinement;
 mod render;
@@ -204,6 +206,8 @@ pub struct DeadpanApp {
     wave: Option<wave_range::WaveRange>,
     timing: timing::Timing,
     overview: overview::Overview,
+    recent: recent::Recent,
+    preparation: preparing::Timing,
     /// The left rail's tab: the transcript (`Some(true)`), the Original
     /// and sounds (`Some(false)`), or automatic: the transcript once ready.
     words_rail: Option<bool>,
@@ -440,6 +444,8 @@ impl DeadpanApp {
             wave: None,
             timing: timing::Timing::default(),
             overview: overview::Overview::default(),
+            recent: recent::Recent::default(),
+            preparation: preparing::Timing::default(),
             words_rail: None,
             correction: None,
             refinement: refinement::State::default(),
@@ -2707,6 +2713,9 @@ impl DeadpanApp {
         if self.youtube_keyboard(context) {
             return None;
         }
+        if self.recent_keyboard(context) {
+            return None;
+        }
         if help_scroll::defer_popup_input(
             context,
             self.dialogs.is_open(),
@@ -4262,36 +4271,20 @@ impl DeadpanApp {
         } else {
             self.scope_clock_label()
         };
-        // Time first, in the cursor's colour; the exact frame after it.
-        let mut job = egui::text::LayoutJob::default();
+        // Time first, in the cursor's colour; the exact frame after it, in
+        // the same font as the other footer labels so all share one row.
         let (time, frames) = clock
             .split_once(" · ")
             .map_or((clock.as_str(), None), |(time, frames)| {
                 (time, Some(frames))
             });
-        let font = egui::FontId::monospace(12.0);
-        job.append(
-            time,
-            0.0,
-            egui::TextFormat {
-                font_id: font.clone(),
-                color: style::CURSOR,
-                ..Default::default()
-            },
+        accessibility::full_text(
+            ui.label(egui::RichText::new(time).monospace().color(style::CURSOR)),
+            &clock,
         );
         if let Some(frames) = frames {
-            job.append(
-                &format!("  {frames}"),
-                0.0,
-                egui::TextFormat {
-                    font_id: egui::FontId::monospace(10.5),
-                    color: style::muted(ui),
-                    valign: egui::Align::Center,
-                    ..Default::default()
-                },
-            );
+            ui.label(egui::RichText::new(frames).monospace().weak());
         }
-        accessibility::full_text(ui.label(job), &clock);
         let mut hints = key_labels::Hints::new();
         if self.macros.recording() {
             // The way out of recording comes first; the footer keeps
@@ -5115,7 +5108,11 @@ impl DeadpanApp {
                     return;
                 }
                 style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("original-rail"), |ui| {
-                    if matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
+                    if matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) && self.preparing().is_some() {
+                        // The viewer shows the steps and time; the rail stays quiet.
+                        ui.label("Preparing the Original.");
+                        ui.weak("Its steps and elapsed time are shown in the viewer.");
+                    } else if matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
                         ui.label("Project created. Original not ready.");
                         ui.weak("Choose a video to start with its full picture and sound.");
                         if ui.add_enabled(!self.importing() && !self.service.is_busy(), egui::Button::new("Choose Original…  ⌘I")).clicked() {
@@ -5239,7 +5236,10 @@ impl DeadpanApp {
                     }
                     // A completed import is already visible in the rail and
                     // the status line; keep only in-progress or failed states.
-                    if let Some(import) = self.import.as_ref().filter(|import| import.stage != ImportStage::Complete || import.error.is_some()) {
+                    // While the Original itself is prepared, the viewer's card
+                    // carries this status and Cancel.
+                    let original_preparing = matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) && self.preparing().is_some();
+                    if let Some(import) = self.import.as_ref().filter(|import| !original_preparing && (import.stage != ImportStage::Complete || import.error.is_some())) {
                         let completed_sound = matches!(profile, Some(SingleSourceState::Ready { .. }))
                             && import.asset.as_ref().and_then(|asset| self.workspace.as_ref()?.sources.get(asset)).is_some_and(|source| {
                                 source.receipt.snapshot().video().is_none() && source.receipt.snapshot().audio().is_some()
@@ -5275,6 +5275,17 @@ impl DeadpanApp {
     fn timeline(&mut self, ui: &mut egui::Ui, compact_sounds_heading: bool) {
         if self.scoped.is_some() && self.view == View::Sequence {
             self.scoped_timeline(ui);
+            return;
+        }
+        // Without a project the start card needs the height; the panel stays
+        // in the tree at no size.
+        if self.workspace.is_none() {
+            egui::Panel::bottom("workspace-sequence")
+                .resizable(false)
+                .show_separator_line(false)
+                .exact_size(0.0)
+                .frame(egui::Frame::NONE)
+                .show(ui, |_| {});
             return;
         }
         let mut layout = self.workspace_layout(ui);
@@ -6086,7 +6097,12 @@ impl DeadpanApp {
             }
             // The empty start surface has no transport or moment controls; its
             // card uses the whole viewer.
-            let start_surface = self.workspace.is_none() && self.raw_source.is_none();
+            // Before the Original is ready there is nothing to play or step:
+            // the viewer holds only the start or preparation card.
+            let start_surface = (self.workspace.is_none() && self.raw_source.is_none())
+                || self.workspace.as_ref().is_some_and(|workspace| {
+                    matches!(workspace.single_source, Some(SingleSourceState::AwaitingSource { .. }))
+                });
             // At minimum height the caption joins the single-line clock row.
             // Both rows measure the same fonts the paint below uses.
             let merged_caption = compact_viewer
@@ -6170,7 +6186,7 @@ impl DeadpanApp {
             }
             self.render_picture(ui.ctx(), canvas.size());
             let displayed_label = self.presentation.displayed_label();
-            response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, displayed_label.as_deref().unwrap_or(if start_surface { "Picture viewer: no project open" } else { "No picture displayed" })));
+            response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, displayed_label.as_deref().unwrap_or(if self.workspace.is_none() { "Picture viewer: no project open" } else if start_surface { "Picture viewer: preparing the Original" } else { "No picture displayed" })));
             if self.presentation.has_displayed() && !(self.view == View::Sequence && self.sequence_length() == 0) {
                 if let Some(target) = &self.target {
                     // The retained texture includes its own composition and
@@ -6190,6 +6206,9 @@ impl DeadpanApp {
                 // The empty start surface: one card to choose, paste or open.
                 ui.painter().rect_filled(rect, 2.0, style::CANVAS);
                 self.start_card(ui, rect);
+            } else if self.preparing().is_some() && !self.presentation.has_displayed() {
+                ui.painter().rect_filled(rect, 2.0, style::CANVAS);
+                self.preparation_card(ui, rect);
             } else {
                 let message = if self.presentation.loading() { "Preparing picture…" } else if self.presentation.error().is_some() { "Picture unavailable" } else if self.view == View::Sequence { "Your edit is empty" } else if self.selected_source.is_some() && self.source_length() == 0 { "Audio source · no picture" } else { "Choose the Original to begin" };
                 ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, message, egui::FontId::proportional(18.0), style::muted(ui));
@@ -7284,78 +7303,88 @@ fn help_spec_row(
 ) {
     let keys = registry::key_text(spec, bindings);
     let help = registry::render(spec.help, bindings);
-    help_spec_row_with(ui, &keys, &help, spec, here);
+    help_spec_row_with(ui, &keys, &help, spec, here, false);
 }
 
+/// One compact row: the keys in a fixed column, then the action's short
+/// name. Only an `expanded` row (the highlighted search result) shows the
+/// explanation and where it works; every row speaks all of it.
 fn help_spec_row_with(
     ui: &mut egui::Ui,
     keys: &str,
     help: &str,
     spec: &registry::Spec,
     here: registry::Contexts,
+    expanded: bool,
 ) -> egui::Response {
-    ui.horizontal_wrapped(|ui| {
-        if !keys.is_empty() {
-            key_labels::keycap(ui, keys);
-        }
-        // Name the contexts unless "works here" already covers every editor
-        // context, and name macro/dot behaviour only for what can be recorded.
-        let here_now = spec.contexts.intersects(here);
-        let mut notes = Vec::new();
-        if here_now {
-            notes.push("Works here".to_owned());
-        }
-        if !(here_now && spec.contexts.contains(registry::Contexts::EDITOR)) {
-            notes.push(spec.contexts.label());
-        }
-        if spec.replay != registry::Replay::Ignored {
-            notes.push(spec.replay.label().to_owned());
-        }
-        notes.push(format!("headless {}", spec.headless.parity.label()));
-        // One label per row, so a screen reader hears name, help and notes
-        // together after the keycap.
-        let body = egui::TextStyle::Body.resolve(ui.style());
-        let small = egui::FontId::new(11.0, body.family.clone());
-        let mut job = egui::text::LayoutJob::default();
-        job.append(
-            spec.name,
-            0.0,
-            egui::TextFormat {
-                font_id: body.clone(),
-                color: ui.visuals().strong_text_color(),
-                ..Default::default()
-            },
-        );
-        job.append(
-            help,
-            8.0,
-            egui::TextFormat {
-                font_id: body,
-                color: ui.visuals().text_color(),
-                ..Default::default()
-            },
-        );
-        job.append(
-            &notes.join(" · "),
-            8.0,
-            egui::TextFormat {
-                font_id: small,
-                color: if here_now {
-                    style::LAVENDER
-                } else {
-                    ui.visuals().weak_text_color()
-                },
-                ..Default::default()
-            },
-        );
-        ui.label(job).on_hover_text(format!(
-            "Headless: {}, {} (docs/PARITY.md#{})",
-            spec.headless.parity.label(),
-            spec.headless.form,
-            spec.headless.anchor
-        ))
-    })
-    .inner
+    // Name the contexts unless "works here" already covers every editor
+    // context, and name macro/dot behaviour only for what can be recorded.
+    let here_now = spec.contexts.intersects(here);
+    let mut notes = Vec::new();
+    if here_now {
+        notes.push("Works here".to_owned());
+    }
+    if !(here_now && spec.contexts.contains(registry::Contexts::EDITOR)) {
+        notes.push(spec.contexts.label());
+    }
+    if spec.replay != registry::Replay::Ignored {
+        notes.push(spec.replay.label().to_owned());
+    }
+    notes.push(format!("headless {}", spec.headless.parity.label()));
+    let notes = notes.join(" · ");
+    let key_column = (ui.available_width() * 0.36).clamp(96.0, 190.0);
+    let response = ui
+        .vertical(|ui| {
+            ui.horizontal_top(|ui| {
+                ui.allocate_ui_with_layout(
+                    egui::vec2(key_column, 0.0),
+                    egui::Layout::top_down(egui::Align::Min),
+                    |ui| {
+                        ui.set_min_width(key_column);
+                        if !keys.is_empty() {
+                            ui.add(
+                                egui::Label::new(
+                                    egui::RichText::new(keys).monospace().size(11.5).color(
+                                        if here_now {
+                                            style::LAVENDER
+                                        } else {
+                                            style::TEXT
+                                        },
+                                    ),
+                                )
+                                .wrap(),
+                            );
+                        }
+                    },
+                );
+                let name = egui::RichText::new(spec.name);
+                ui.add(egui::Label::new(if here_now { name.strong() } else { name.weak() }).wrap());
+            });
+            if expanded {
+                ui.horizontal_top(|ui| {
+                    ui.add_space(key_column + ui.spacing().item_spacing.x);
+                    ui.vertical(|ui| {
+                        ui.add(egui::Label::new(egui::RichText::new(help).size(12.5)).wrap());
+                        ui.add(
+                            egui::Label::new(egui::RichText::new(&notes).size(11.0).color(
+                                if here_now {
+                                    style::LAVENDER
+                                } else {
+                                    ui.visuals().weak_text_color()
+                                },
+                            ))
+                            .wrap(),
+                        );
+                    });
+                });
+            }
+        })
+        .response;
+    let spoken = format!("{keys}: {}. {help} {notes}", spec.name);
+    accessibility::full_text(response, &spoken).on_hover_text(format!(
+        "{help}\n\n{notes}\nHeadless: {} (docs/PARITY.md#{})",
+        spec.headless.form, spec.headless.anchor
+    ))
 }
 
 /// Problem, next value, values and target.

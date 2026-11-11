@@ -42,13 +42,11 @@ fn palette_row_text_is_fully_visible(
     d: &Driver<'_>,
     found: &crate::navigation::palette::Match,
 ) -> bool {
+    // Rows show the key and the action's name; only the highlighted row
+    // adds its explanation.
     let body = super::scenarios::text_paint_visibility(d, found.spec.name)
         .into_iter()
-        .filter(|paint| {
-            paint["text"]
-                .as_str()
-                .is_some_and(|text| text.starts_with(found.spec.name) && text.contains(&found.help))
-        })
+        .filter(|paint| paint["text"].as_str() == Some(found.spec.name))
         .collect::<Vec<_>>();
     let key = super::scenarios::text_paint_visibility(d, &found.keys)
         .into_iter()

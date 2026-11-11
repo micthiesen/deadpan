@@ -128,6 +128,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "layouts",
     "acceptance-real",
     "ui-real",
+    "ui-start",
 ];
 
 pub(crate) struct Options {

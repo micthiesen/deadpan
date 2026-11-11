@@ -108,6 +108,11 @@ pub(super) struct Transcription {
     /// The word the pane last scrolled to, in Your edit (`true`) or the
     /// Original, so the text follows the cursor without fighting a scroll.
     followed: Option<(bool, usize)>,
+    /// Height of what follows the words in the pane (captions, warnings,
+    /// analysis offers), measured each pass so the words leave it room.
+    trailing: f32,
+    /// Where the words' scroll area ended this pass.
+    words_bottom: Option<f32>,
 }
 
 /// A recognition check and the published analyses it was derived from.
@@ -145,6 +150,8 @@ impl Default for Transcription {
             again: None,
             ranges: incremental::RangeFeed::default(),
             followed: None,
+            trailing: 72.0,
+            words_bottom: None,
         }
     }
 }
@@ -1005,6 +1012,17 @@ impl DeadpanApp {
             Status::Ready => self.transcript_words(ui),
         }
         self.activity_section(ui);
+        // Nothing below the words may run under the footer: measure it and
+        // give the words only what remains.
+        if let Some(bottom) = self.transcription.words_bottom.take() {
+            let trailing = ui.cursor().top() - bottom + 8.0;
+            if (trailing - self.transcription.trailing).abs() > 1.0 {
+                // The next frame lays the words out to fit; a retry here
+                // would compete with the footer's own measurement.
+                self.transcription.trailing = trailing;
+                ui.ctx().request_repaint();
+            }
+        }
     }
 
     fn transcript_words(&mut self, ui: &mut egui::Ui) {
@@ -1064,7 +1082,7 @@ impl DeadpanApp {
         let highlighted: Vec<Range<usize>> = self.transcription.matches.clone();
         let annotation = transcript.transcript.non_speech();
         let mut clicked = None;
-        let height = words_height(ui);
+        let height = words_height(ui, self.transcription.trailing);
         let mut followed = self.transcription.followed;
         egui::ScrollArea::vertical()
             .id_salt("transcript-words")
@@ -1122,6 +1140,7 @@ impl DeadpanApp {
                 }
                 ui.add_space(2.0);
             });
+        self.transcription.words_bottom = Some(ui.cursor().top());
         self.transcription.followed = followed;
         let approximate = words[start..end]
             .iter()
@@ -1210,7 +1229,7 @@ impl DeadpanApp {
             .selected_edit_range()
             .map(|range| range.start().0..range.end().0);
         let mut clicked = None;
-        let height = words_height(ui);
+        let height = words_height(ui, self.transcription.trailing);
         let mut followed = self.transcription.followed;
         egui::ScrollArea::vertical()
             .id_salt("transcript-edit-words")
@@ -1270,6 +1289,7 @@ impl DeadpanApp {
                 }
                 ui.add_space(2.0);
             });
+        self.transcription.words_bottom = Some(ui.cursor().top());
         self.transcription.followed = followed;
         let kept: std::collections::BTreeSet<u32> = runs.iter().map(|run| run.word).collect();
         ui.label(
@@ -1549,8 +1569,8 @@ fn phrase(ui: &mut egui::Ui, entries: &[Entry<'_>], repeats: usize) -> Phrase {
 }
 
 /// The words' scroll height: the rest of the pane, less its caption lines.
-fn words_height(ui: &egui::Ui) -> f32 {
-    (ui.available_height() - 72.0).max(120.0)
+fn words_height(ui: &egui::Ui, trailing: f32) -> f32 {
+    (ui.available_height() - trailing).max(80.0)
 }
 
 /// Scroll to the current word when it changes, until it is in view; after

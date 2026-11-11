@@ -446,6 +446,17 @@ pub const CONFIRM_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 const EVENT_CAPACITY: usize = 32;
 
 impl Jobs {
+    /// The project library new projects go to: the injected one, else
+    /// Documents/Deadpan.
+    pub fn library_root(&self) -> Option<std::path::PathBuf> {
+        match &self.library {
+            Some(library) => Some(library.root().to_owned()),
+            None => ProjectLibrary::documents()
+                .ok()
+                .map(|library| library.root().to_owned()),
+        }
+    }
+
     pub fn new(
         downloader: Arc<dyn Downloader>,
         library: Option<ProjectLibrary>,

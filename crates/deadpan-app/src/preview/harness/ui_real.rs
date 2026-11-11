@@ -141,7 +141,30 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.step(&format!("Real footage default viewport {frame}"), false)?;
     }
     settle(d)?;
-    d.capture("Real footage · back to 1280x820")
+    d.capture("Real footage · back to 1280x820")?;
+
+    // The Keys sheet: a compact list, then a search with one row explained.
+    for (width, height) in [(1280.0, 820.0), (960.0, 640.0)] {
+        d.harness.set_size(egui::vec2(width, height));
+        for frame in 0..4 {
+            d.step(&format!("Help viewport {width}x{height} {frame}"), false)?;
+        }
+        d.key(Key::Questionmark)?;
+        d.step("Help opens", false)?;
+        d.capture(&format!("Real footage · Keys sheet at {width}x{height}"))?;
+        d.key(Key::Slash)?;
+        d.events(
+            "Search Keys for pause",
+            vec![egui::Event::Text("pause".into())],
+        )?;
+        d.step("Search results", false)?;
+        d.capture(&format!("Real footage · Keys search at {width}x{height}"))?;
+        d.key(Key::Escape)?;
+        d.key(Key::Escape)?;
+        d.step("Help closes", false)?;
+    }
+    d.harness.set_size(egui::vec2(1280.0, 820.0));
+    d.step("Default viewport", false)
 }
 
 fn settle(d: &mut Driver<'_>) -> Result<(), String> {

@@ -216,6 +216,7 @@ pub(super) fn search_results(
                         ),
                         &found.spec,
                         here,
+                        selected,
                     )
                 })
                 .inner

@@ -1158,6 +1158,20 @@ fn help(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::Questionmark)?;
     d.key(Key::Home)?;
     for needle in [":group name=", "single-child group"] {
+        if needle == "single-child group" {
+            // Rows name actions; a search highlights Ungroup and shows its
+            // explanation.
+            d.events(
+                "Search Keys for Ungroup",
+                vec![
+                    key_event(Key::Slash, Modifiers::NONE, true),
+                    Event::Text("/".into()),
+                    key_event(Key::Slash, Modifiers::NONE, false),
+                    Event::Text("ungroup".into()),
+                ],
+            )?;
+            d.step("Ungroup search results", false)?;
+        }
         for _ in 0..32 {
             let paint = scenarios::text_paint_visibility(d, needle);
             if paint.iter().any(|part| part["fully_visible"] == true) {
@@ -1181,6 +1195,7 @@ fn help(d: &mut Driver<'_>) -> Result<(), String> {
         )?;
     }
     d.capture("Group and safe Ungroup help at the current viewport")?;
+    d.key(Key::Escape)?;
     d.key(Key::Escape)
 }
 

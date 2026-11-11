@@ -316,61 +316,70 @@ impl DeadpanApp {
                 .monospace(),
             );
             ui.separator();
-            let keys: Vec<(&str, &str)> =
-                if self.youtube.opening.is_some() || matches!(status, Status::Created(_)) {
-                    ui.weak("Opening the new project");
-                    Vec::new()
-                } else {
-                    match status {
-                        Status::Confirm { .. } => {
-                            vec![("Enter", "download and create"), ("Esc", "cancel")]
-                        }
-                        Status::Working(_) | Status::Installing(_) => vec![("Esc", "cancel")],
-                        Status::Created(_) => Vec::new(),
-                        Status::Cancelling => {
-                            ui.weak("Stopping");
-                            Vec::new()
-                        }
-                        Status::NeedsDownloader => {
-                            vec![("Enter", "install downloader"), ("Esc", "not now")]
-                        }
-                        Status::Failed(_) if field => vec![
-                            ("Enter", "try again"),
-                            ("Esc", "dismiss"),
-                            ("⌘N", "choose video"),
-                            ("⌘O", "open project"),
-                        ],
-                        Status::Failed(_) => vec![
-                            ("Esc", "dismiss"),
-                            ("⌘N", "choose video"),
-                            ("⌘⇧N", "YouTube URL"),
-                            ("⌘O", "open project"),
-                        ],
-                        Status::Idle | Status::Cancelled if field => vec![
-                            ("Enter", "fetch details"),
-                            (
-                                "Esc",
-                                if self.youtube.modal {
-                                    "close"
-                                } else {
-                                    "leave field"
-                                },
-                            ),
-                            ("⌘N", "choose video"),
-                            ("⌘O", "open project"),
-                        ],
-                        Status::Idle | Status::Cancelled if self.youtube.modal => {
-                            vec![("⌘⇧N", "YouTube URL"), ("Esc", "close")]
-                        }
-                        Status::Idle | Status::Cancelled => vec![
-                            ("⌘N", "choose video"),
-                            ("⌘⇧N", "YouTube URL"),
-                            ("⌘O", "open project"),
-                            (":", "command"),
-                            ("?", "keys"),
-                        ],
+            let keys: Vec<(&str, &str)> = if self.youtube.opening.is_some()
+                || matches!(status, Status::Created(_))
+            {
+                ui.weak("Opening the new project");
+                Vec::new()
+            } else {
+                match status {
+                    Status::Confirm { .. } => {
+                        vec![("Enter", "download and create"), ("Esc", "cancel")]
                     }
-                };
+                    Status::Working(_) | Status::Installing(_) => vec![("Esc", "cancel")],
+                    Status::Created(_) => Vec::new(),
+                    Status::Cancelling => {
+                        ui.weak("Stopping");
+                        Vec::new()
+                    }
+                    Status::NeedsDownloader => {
+                        vec![("Enter", "install downloader"), ("Esc", "not now")]
+                    }
+                    Status::Failed(_) if field => vec![
+                        ("Enter", "try again"),
+                        ("Esc", "dismiss"),
+                        ("⌘N", "choose video"),
+                        ("⌘O", "open project"),
+                    ],
+                    Status::Failed(_) => vec![
+                        ("Esc", "dismiss"),
+                        ("⌘N", "choose video"),
+                        ("⌘⇧N", "YouTube URL"),
+                        ("⌘O", "open project"),
+                    ],
+                    Status::Idle | Status::Cancelled if field => vec![
+                        ("Enter", "fetch details"),
+                        (
+                            "Esc",
+                            if self.youtube.modal {
+                                "close"
+                            } else {
+                                "leave field"
+                            },
+                        ),
+                        ("⌘N", "choose video"),
+                        ("⌘O", "open project"),
+                    ],
+                    Status::Idle | Status::Cancelled if self.youtube.modal => {
+                        vec![("⌘⇧N", "YouTube URL"), ("Esc", "close")]
+                    }
+                    Status::Idle | Status::Cancelled if !self.recent.projects.is_empty() => vec![
+                        ("⌘N", "choose video"),
+                        ("⌘⇧N", "YouTube URL"),
+                        ("⌘O", "open project"),
+                        ("1–5", "recent project"),
+                        (":", "command"),
+                        ("?", "keys"),
+                    ],
+                    Status::Idle | Status::Cancelled => vec![
+                        ("⌘N", "choose video"),
+                        ("⌘⇧N", "YouTube URL"),
+                        ("⌘O", "open project"),
+                        (":", "command"),
+                        ("?", "keys"),
+                    ],
+                }
+            };
             for (key, label) in keys {
                 style::key_hint(ui, key, label);
             }
@@ -773,6 +782,7 @@ impl DeadpanApp {
                         self.youtube_steps(ui);
                         ui.add_space(if compact { 2.0 } else { 10.0 });
                         ui.separator();
+                        self.recent_projects(ui);
                         ui.horizontal(|ui| {
                             ui.label(
                                 egui::RichText::new("Library location: Documents / Deadpan")

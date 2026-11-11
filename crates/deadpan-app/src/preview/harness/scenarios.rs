@@ -93,6 +93,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "full-session" => super::full_session::run(d),
         "layouts" => super::layouts::run(d),
         "ui-real" => super::ui_real::run(d),
+        "ui-start" => super::ui_start::run(d),
         _ => Err(format!("Unknown scenario {name}")),
     }
 }

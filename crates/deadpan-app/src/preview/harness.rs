@@ -93,6 +93,7 @@ mod terminal_playback;
 mod transcript;
 mod trim;
 mod ui_real;
+mod ui_start;
 mod wake;
 mod wave_range;
 mod wet_returns;
@@ -397,6 +398,16 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             if options.project.is_some() { DialogKind::OpenProject } else { DialogKind::CreateProject },
                             Some(fixture.to_owned()),
                         )]);
+                        // Recent projects and YouTube destinations stay in the
+                        // replay's private library, never the user's Documents.
+                        {
+                            let repaint = context.egui_ctx.clone();
+                            app.youtube = super::youtube::Flow::new(crate::youtube::Jobs::new(
+                                Arc::new(crate::youtube::Pinned::new(None)),
+                                Some(youtube_library.clone()),
+                                Arc::new(move || repaint.request_repaint()),
+                            ));
+                        }
                         app.feedback.simulate_playback = !ui_harness::real_playback(name);
                         if name == "ai-playback-interference" {
                             app.follow_system_conditions();

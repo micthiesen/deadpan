@@ -78,6 +78,8 @@ pub(super) struct Overview {
     /// Spoken spans on the Edit clock, from the speech timeline they came
     /// from; annotations such as "[music playing]" are not speech.
     speech: Option<SpeechSpans>,
+    /// Painting geometry for the current revision and width.
+    layout: Option<Layout>,
 }
 
 impl Overview {
@@ -103,6 +105,53 @@ impl Overview {
         self.sounds = Arc::new(sounds);
         self.total = total;
         self.key = Some(key);
+    }
+}
+
+/// The strip at one width: beats wide enough for their own block, and
+/// what each shared one-point column shows.
+struct Layout {
+    key: Option<(u64, RevisionId)>,
+    width: u32,
+    wide: Vec<usize>,
+    dense: Vec<Option<(Kind, bool)>>,
+    counts: [usize; 4],
+}
+
+impl Layout {
+    fn compute(overview: &Overview, width: f32) -> Self {
+        let total = overview.total.max(1) as f64;
+        let x = |frame: f64| width * (frame / total).clamp(0.0, 1.0) as f32;
+        let columns = width.ceil() as usize + 1;
+        let mut dense: Vec<Option<(Kind, bool)>> = vec![None; columns];
+        let mut wide = Vec::new();
+        let mut counts = [0usize; 4];
+        for (index, row) in overview.rows.iter().enumerate() {
+            counts[row.kind as usize] += 1;
+            let left = x(row.start as f64);
+            let right = x((row.start + row.frames) as f64);
+            if right - left >= 3.0 {
+                wide.push(index);
+            } else {
+                let widen = usize::from(row.kind != Kind::Original);
+                let first = (left.floor().max(0.0) as usize)
+                    .saturating_sub(widen)
+                    .min(columns - 1);
+                let last = ((right.floor().max(0.0) as usize) + widen).min(columns - 1);
+                for column in &mut dense[first..=last] {
+                    if column.is_none_or(|(kind, _)| kind <= row.kind) {
+                        *column = Some((row.kind, index % 2 == 1));
+                    }
+                }
+            }
+        }
+        Self {
+            key: overview.key.clone(),
+            width: width.round() as u32,
+            wide,
+            dense,
+            counts,
+        }
     }
 }
 
@@ -297,50 +346,51 @@ impl DeadpanApp {
         // most specific kind and alternates shade with its last beat, so
         // dense runs read as many beats; pauses, repeats and speed changes
         // keep at least three points so each stays visible among thousands.
-        let columns = rect.width().ceil() as usize + 1;
-        let mut dense: Vec<Option<(Kind, bool)>> = vec![None; columns];
-        let mut counts = [0usize; 4];
-        for (index, row) in overview.rows.iter().enumerate() {
-            counts[row.kind as usize] += 1;
+        // Which beats get their own block and what each shared column shows
+        // depend only on the revision and the strip's width: computed once
+        // for both, so a frame paints from the cache.
+        let width_key = rect.width().round() as u32;
+        if self
+            .overview
+            .layout
+            .as_ref()
+            .is_none_or(|layout| layout.width != width_key || layout.key != self.overview.key)
+        {
+            let layout = Layout::compute(&self.overview, rect.width());
+            self.overview.layout = Some(layout);
+        }
+        let overview = &self.overview;
+        let layout = overview.layout.as_ref().expect("overview layout");
+        let columns = layout.dense.len();
+        let dense = &layout.dense;
+        let counts = layout.counts;
+        for &index in &layout.wide {
+            let row = &overview.rows[index];
             let left = x(row.start as f64);
             let right = x((row.start + row.frames) as f64);
-            if right - left >= 3.0 {
-                let block = egui::Rect::from_min_max(
-                    egui::pos2(left + 0.5, lane.top() + 1.0),
-                    egui::pos2(right - 0.5, lane.bottom() - 1.0),
+            let block = egui::Rect::from_min_max(
+                egui::pos2(left + 0.5, lane.top() + 1.0),
+                egui::pos2(right - 0.5, lane.bottom() - 1.0),
+            );
+            painter.rect_filled(block, 2.0, row.kind.color(index % 2 == 1));
+            if block.width() >= 44.0 {
+                painter.with_clip_rect(block.shrink(1.0)).text(
+                    block.left_center() + egui::vec2(4.0, 0.0),
+                    egui::Align2::LEFT_CENTER,
+                    format!("{}", index + 1),
+                    egui::FontId::monospace(9.5),
+                    style::TEXT,
                 );
-                painter.rect_filled(block, 2.0, row.kind.color(index % 2 == 1));
-                if block.width() >= 44.0 {
-                    painter.with_clip_rect(block.shrink(1.0)).text(
-                        block.left_center() + egui::vec2(4.0, 0.0),
-                        egui::Align2::LEFT_CENTER,
-                        format!("{}", index + 1),
-                        egui::FontId::monospace(9.5),
-                        style::TEXT,
-                    );
-                }
-                for play in &row.plays {
-                    let at = x(*play as f64);
-                    painter.line_segment(
-                        [
-                            egui::pos2(at, block.top() + 1.0),
-                            egui::pos2(at, block.bottom() - 1.0),
-                        ],
-                        egui::Stroke::new(1.0, style::TEXT),
-                    );
-                }
-            } else {
-                let widen = usize::from(row.kind != Kind::Original);
-                let first = ((left - rect.left()).floor().max(0.0) as usize)
-                    .saturating_sub(widen)
-                    .min(columns - 1);
-                let last =
-                    (((right - rect.left()).floor().max(0.0) as usize) + widen).min(columns - 1);
-                for column in &mut dense[first..=last] {
-                    if column.is_none_or(|(kind, _)| kind <= row.kind) {
-                        *column = Some((row.kind, index % 2 == 1));
-                    }
-                }
+            }
+            for play in &row.plays {
+                let at = x(*play as f64);
+                painter.line_segment(
+                    [
+                        egui::pos2(at, block.top() + 1.0),
+                        egui::pos2(at, block.bottom() - 1.0),
+                    ],
+                    egui::Stroke::new(1.0, style::TEXT),
+                );
             }
         }
         let mut column = 0;
